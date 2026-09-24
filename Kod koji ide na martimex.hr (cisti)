@@ -1,0 +1,72 @@
+<!-- Marti chat (Martimex) – ovaj kod se ne mijenja, sve izmjene rade se na GitHubu -->
+<script>
+(function () {
+  // Zaštita ako je kod slučajno zalijepljen dvaput
+  if (window.__martimexChat) return;
+  window.__martimexChat = true;
+
+  var GITHUB_LOADER = 'https://notturno-labs.github.io/martimex-hr-chat/loader.js';
+  var CEKAJ_GITHUB  = 5000;  // ms – nakon toga chat kreće bez dodataka s GitHuba
+
+  // Osnovne Voiceflow postavke – s njima chat radi i kad GitHub ne radi
+  var osnovno = {
+    verify: { projectID: '6aabec2e323cb129d034dd89' },
+    url: 'https://general-runtime.voiceflow.com',
+    voice: { url: 'https://runtime-api.voiceflow.com' }
+  };
+
+  var vfSpreman = false, githubGotov = false, domSpreman = false, pokrenut = false, dodatno = {};
+
+  function ucitajChat(cfg) {
+    return Promise.resolve().then(function () { return window.voiceflow.chat.load(cfg); });
+  }
+
+  // Chat kreće tek kad su spremni Voiceflow, stranica i GitHub (ili je GitHub otpisan)
+  function pokreni() {
+    if (pokrenut || !vfSpreman || !githubGotov || !domSpreman) return;
+    pokrenut = true;
+    ucitajChat(Object.assign({}, osnovno, dodatno))
+      .catch(function (e) {
+        console.error('[Martimex] Chat se nije pokrenuo s GitHub postavkama – pokrećem osnovni', e);
+        return ucitajChat(osnovno);
+      })
+      .catch(function (e) { console.error('[Martimex] Chat se nije pokrenuo', e); });
+  }
+
+  function bezGithuba() {
+    if (githubGotov) return;
+    console.warn('[Martimex] GitHub nije odgovorio – chat kreće bez dodataka s GitHuba');
+    githubGotov = true;
+    pokreni();
+  }
+
+  // loader.js s GitHuba javlja se ovdje kad je spreman
+  window.__martimexGitHub = function (cfg) {
+    if (githubGotov) return;  // stiglo prekasno – chat već radi bez toga
+    dodatno = cfg || {};
+    githubGotov = true;
+    pokreni();
+  };
+
+  // 1) Stranica
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { domSpreman = true; pokreni(); });
+  } else {
+    domSpreman = true;
+  }
+
+  // 2) Voiceflow widget – uvijek izravno s Voiceflowa
+  var vf = document.createElement('script');
+  vf.src = 'https://cdn.voiceflow.com/widget-next/bundle.mjs';
+  vf.onload = function () { vfSpreman = true; pokreni(); };
+  vf.onerror = function () { console.error('[Martimex] Voiceflow widget se nije učitao'); };
+  document.head.appendChild(vf);
+
+  // 3) Ekstenzije (i kasnije dizajn) s GitHuba – učitava se istovremeno s Voiceflowom
+  var gh = document.createElement('script');
+  gh.src = GITHUB_LOADER + '?v=' + Math.floor(Date.now() / 60000);
+  gh.onerror = bezGithuba;
+  document.head.appendChild(gh);
+  setTimeout(bezGithuba, CEKAJ_GITHUB);
+})();
+</script>
