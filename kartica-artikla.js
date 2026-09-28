@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v17)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v18)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -58,8 +58,13 @@
   //   - fotografija se kvalitetno umanji točno na piksele ekrana u kojima se
   //     prikazuje, pa je preglednik ne mora umanjivati dok se bočica pomiče:
   //     ostaje oštra i dok pluta
-  //   - gumb na hover: lagano se podigne, a preko njega jednom prijeđe
-  //     odsjaj svjetla, kao po staklu bočice (boja gumba se ne mijenja)
+  //   - opis je poravnat obostrano (kao u knjizi): tekst uvijek jednako
+  //     popuni lijevu i desnu stranu, a duge riječi se po potrebi dijele
+  //     po hrvatskim pravilima, da među riječima ne ostanu rupe
+  //   - gumb je iste širine kao opis, pa donji dio čini uredan blok:
+  //     sitna razmaknuta velika slova i tanka strelica. Na hover se gumb
+  //     lagano podigne, strelica pomakne udesno, a preko gumba jednom
+  //     prijeđe odsjaj svjetla, kao po staklu bočice
   //   - tanka linija koja se prema krajevima gubi odvaja gornji dio od opisa
   //
   //  Mjere: okomito jedan ritam od 20 px (gornji i donji rub, razmaci između
@@ -161,6 +166,7 @@
       return 'rgb(' + [0, 1, 2].map(function (i) { return Math.round(a[i] * udio + b[i] * (1 - udio)); }).join(', ') + ')';
     }
 
+    const IKONA_STRELICA = '<svg class="mx-gumb-strelica" viewBox="0 0 18 8" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M.5 4h16.5M13.5.8 17 4l-3.5 3.2"/></svg>';
     const IKONA_BOCA = '<svg viewBox="0 0 48 64" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M19 4.5h10v6.5H19z"/><path d="M21.5 11v4.5M26.5 11v4.5"/><rect x="9.5" y="15.5" width="29" height="44" rx="7"/><path d="M15.5 33.5h17M15.5 38.5h10" stroke-linecap="round" opacity=".55"/></svg>';
 
     // ── STIL ─────────────────────────────────────────────────────────────
@@ -489,11 +495,17 @@
           ${prozirna(B.roza, 0)} 100%);
       }
 
-      /* opis: s obje strane uvučen 12 px više od slike i linije, pa je uži od kartice */
+      /* opis: s obje strane uvučen 6 px više od slike i linije, pa je uži od kartice.
+         Poravnat obostrano, s dijeljenjem riječi, da nema rupa među riječima. */
       .mx-opis {
-        margin: 15px 12px 0;          /* gore: + prored prvog retka ≈ 20 px vidljivog razmaka */
-        text-wrap: pretty;            /* bez usamljene riječi u zadnjem retku */
-        font-size: 13px;
+        margin: 15px 6px 0;           /* gore: + prored prvog retka ≈ 20 px vidljivog razmaka */
+        text-align: justify;
+        word-spacing: -.04em;         /* malo uži razmaci, pa se kod poravnanja manje rastežu */
+        text-align-last: left;        /* zadnji redak ostaje normalan */
+        -webkit-hyphens: auto;
+        hyphens: auto;
+        hyphenate-limit-chars: 7 3 3; /* dijele se samo dulje riječi */
+        font-size: 12.5px;
         line-height: 1.6;
         color: var(--mx-dim);
         overflow-wrap: break-word;
@@ -502,24 +514,26 @@
       /* razmak iznad gumba */
       .mx-razmak { display: block; flex: 1 0 17px; }
 
-      /* gumb: tamno siva pilula */
+      /* gumb: tamno siva pilula iste širine kao opis, sitna razmaknuta slova i strelica */
       .mx-gumb {
         position: relative;
-        display: inline-flex;
+        display: flex;
         align-items: center;
         justify-content: center;
-        align-self: center;
+        gap: 10px;
+        align-self: stretch;
         flex: none;
-        max-width: 100%;
-        min-height: 36px;
-        padding: 0 22px;
+        margin: 0 6px;                /* poravnat s rubovima opisa */
+        min-height: 42px;
+        padding: 0 18px;
         border-radius: 999px;
         background: ${B.gumb};
         color: var(--mx-puder);
-        font-size: 12px;
+        font-size: 11px;
         line-height: 1.2;
         font-weight: 500;
-        letter-spacing: .03em;
+        letter-spacing: .16em;
+        text-transform: uppercase;
         text-align: center;
         text-decoration: none;
         white-space: nowrap;
@@ -527,10 +541,18 @@
         -webkit-tap-highlight-color: transparent;
         overflow: hidden;
         isolation: isolate;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, .1);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), 0 1px 2px rgba(0, 0, 0, .1);
         transition: transform .35s var(--mx-glatko), box-shadow .35s var(--mx-glatko);
       }
-      .mx-gumb > span { position: relative; z-index: 1; }   /* tekst ostaje iznad odsjaja */
+      .mx-gumb-strelica {
+        display: block;
+        flex: none;
+        width: 18px;
+        height: 8px;
+        opacity: .85;
+        transition: transform .45s var(--mx-glatko);
+      }
+      .mx-gumb > span, .mx-gumb > svg { position: relative; z-index: 1; }   /* tekst i strelica ostaju iznad odsjaja */
       /* odsjaj svjetla: tanka svijetla pruga koja na hover jednom prijeđe preko gumba */
       .mx-gumb::after {
         content: "";
@@ -591,8 +613,9 @@
         .mx-kartica:hover::before { border-color: var(--mx-rub-hover); }
         .mx-gumb:hover {
           transform: translateY(-1.5px);
-          box-shadow: 0 7px 14px -7px rgba(0, 0, 0, .45);
+          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), 0 7px 14px -7px rgba(0, 0, 0, .45);
         }
+        .mx-gumb:hover .mx-gumb-strelica { transform: translateX(4px); }
         .mx-gumb:hover::after { transform: translateX(340%) skewX(-18deg); transition: transform .9s var(--mx-meko); }
         .mx-gumb:active {
           transform: translateY(0) scale(.97);
@@ -683,11 +706,11 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '17');
+      stil.setAttribute('data-mx-kartice', '18');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '17') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '18') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
@@ -811,6 +834,34 @@
       r.naziv = v.naziv;
       r.vrsta = v.vrsta;
       return r;
+    }
+
+    // Duge riječi dobiju nevidljiva mjesta za dijeljenje (meke crtice) po
+    // slogovima: preglednik ih prelomi samo kad treba, s crticom na kraju retka.
+    // Tako obostrano poravnat opis nema rupa među riječima ni na uređajima
+    // koji sami ne znaju dijeliti hrvatske riječi.
+    const SAMOGLASNIK = /[aeiou]/i;
+    function slogovi(rijec) {
+      if (rijec.length < 9) return rijec;
+      const s = rijec, z = function (i) { return SAMOGLASNIK.test(s[i]); };
+      let van = s[0] + s[1], zadnji = 0;
+      for (let i = 2; i < s.length; i++) {
+        const lijevo = i, desno = s.length - i;
+        let dijeli = false;
+        if (lijevo >= 2 && desno >= 3 && i - zadnji >= 2 && !z(i) && z(i + 1)) {
+          if (z(i - 1)) dijeli = true;                                   // sa-mo
+          // kon-ven; ali lj, nj, dž i skupine s r/l ostaju zajedno (du-go-traj)
+          else if (z(i - 2) && !/^(lj|nj|dž)$/i.test(s[i - 1] + s[i]) && !/[rl]/i.test(s[i])) dijeli = true;
+        }
+        // do-go-traj: suglasnik + r/l ispred samoglasnika idu zajedno u novi slog
+        if (!dijeli && lijevo >= 2 && desno >= 3 && i - zadnji >= 2 && z(i - 1) && !z(i) && /[rl]/i.test(s[i + 1] || '') && z(i + 2)) dijeli = true;
+        if (dijeli) { van += '\u00ad'; zadnji = i; }
+        van += s[i];
+      }
+      return van;
+    }
+    function mekeCrtice(tekst) {
+      return tekst.replace(/[a-zčćđšž]{9,}/gi, slogovi);
     }
 
     function skrati(s, max) {
@@ -1177,7 +1228,9 @@
         const crta = el('div', 'mx-crta');
         crta.setAttribute('aria-hidden', 'true');
         kartica.appendChild(crta);
-        kartica.appendChild(el('p', 'mx-opis', opis));
+        const p = el('p', 'mx-opis', mekeCrtice(opis));
+        p.lang = 'hr';                  // dijeljenje riječi po hrvatskim pravilima
+        kartica.appendChild(p);
       }
 
       // GUMB: jedini link na kartici
@@ -1193,6 +1246,7 @@
           gumb.target = '_self';
         }
         gumb.appendChild(el('span', '', P.tekstGumba));
+        gumb.insertAdjacentHTML('beforeend', IKONA_STRELICA);
         const zaCitac = [d.marka, d.naziv, d.vrsta.split(' \u00b7 ').join(', ')].filter(Boolean).join(' ');
         if (zaCitac) gumb.appendChild(el('span', 'mx-skriveno', ': ' + zaCitac));
         if (P.novaKartica) gumb.appendChild(el('span', 'mx-skriveno', ' (otvara se u novoj kartici)'));
