@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v15)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v16)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -28,18 +28,26 @@
   //
   //  Marka i naziv složeni su kao natpis na etiketi bočice:
   //   - marka sitnim, razmaknutim velikim slovima (XERJOFF)
-  //   - naziv je glavni redak: malo veći, srednje debljine
+  //   - naziv je glavni redak, u otmjenom serifnom fontu (Cormorant Garamond)
   //   - vrsta mirisa ("Eau de Parfum", "Extrait de Parfum"...) odvaja se s
   //     kraja naziva u zaseban, tiši redak, pa se naziv manje lomi
-  //   - kratka roza crtica odvaja naziv od cijene
+  //   - kratka roza crtica odvaja naziv od cijene, a cijena je sitna i diskretna
+  //
+  //  Fontovi (Jost za tekst, Cormorant Garamond za naziv) nalaze se u mapi
+  //  fonts/ ovog repozitorija, pa kartica izgleda jednako na iPhoneu,
+  //  Androidu i Windowsima. Oba fonta imaju besplatnu licencu SIL OFL 1.1.
   //
   //  Sitni detalji:
   //   - dvostruki tanki rub kartice, kao na etiketi parfemske bočice
   //     (unutarnja linija se zarumeni kad je miš iznad kartice)
   //   - bočica nema kutiju oko sebe: lebdi na prozirnoj podlozi, u blagoj
   //     auri boje vlastitog stakla (kao svjetlo koje prolazi kroz obojenu
-  //     bočicu), s mekom sjenom ispod. Kad je miš iznad kartice, bočica se
-  //     malo podigne, sjena se smanji, a aura se raširi
+  //     bočicu), s mekom sjenom ispod
+  //   - bočica neprestano polako "pluta" gore-dolje na svim uređajima
+  //     (mobitel, tablet, računalo): kad se digne, sjena ispod nje se suzi,
+  //     a aura malo raširi. Bočice u istoj poruci ne plutaju u istom ritmu.
+  //     Plutanje se vrti samo dok je kartica na ekranu (štedi bateriju), a
+  //     isključeno je ako je na uređaju uključeno "Smanji pokrete"
   //   - bijela pozadina fotografije pretvara se u pravu prozirnost (canvas);
   //     kad to nije moguće (slika s druge domene), stapa se CSS-om. Pokreti
   //     su izvedeni pomicanjem položaja, ne transformacijama, pa preglednik
@@ -47,7 +55,7 @@
   //     Safariju oko bočice zna pojaviti bijeli pravokutnik)
   //   - fotografija se kvalitetno umanji točno na piksele ekrana u kojima se
   //     prikazuje, pa je preglednik ne mora umanjivati dok se bočica pomiče:
-  //     ostaje oštra i na hoveru
+  //     ostaje oštra i dok pluta
   //   - gumb na hover: lagano se podigne, a preko njega jednom prijeđe
   //     odsjaj svjetla, kao po staklu bočice (boja gumba se ne mijenja)
   //   - tanka linija koja se prema krajevima gubi odvaja gornji dio od opisa
@@ -79,15 +87,11 @@
       gumb:    '#333333'  // tamno siva: gumb "Pogledaj proizvod"
     },
 
-    // Font za sav tekst u karticama. Avenir je ugrađen u Apple uređaje;
-    // Windows i Android ga nemaju, pa tamo vrijedi redom sljedeći font u nizu.
-    font: 'Avenir, "Avenir Next", "Avenir LT Std", "Avenir LT Pro", "Avenir Web", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-
-    // Neobavezno: datoteke fonta (.woff2) da Avenir vide i Windows i Android.
-    // Upiši poveznice na licencirane datoteke, npr. s GitHub Pagesa:
-    //   { url: 'https://marinko99.github.io/martimex-chat/fonts/avenir-book.woff2', tezina: 400 },
-    //   { url: 'https://marinko99.github.io/martimex-chat/fonts/avenir-heavy.woff2', tezina: 800 }
-    fontDatoteke: [],
+    // Fontovi: sav tekst u Jostu, naziv proizvoda u Cormorant Garamondu.
+    // "MX ..." su fontovi iz mape fonts/ ovog repozitorija; ako se iz nekog
+    // razloga ne učitaju, vrijedi redom sljedeći font u nizu.
+    font: '"MX Jost", "Avenir Next", Avenir, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontNaziva: '"MX Cormorant", "Cormorant Garamond", Garamond, Georgia, "Times New Roman", serif',
 
     tekstGumba: 'Pogledaj proizvod',
 
@@ -125,6 +129,9 @@
     'use strict';
 
     const P = MX_POSTAVKE;
+    // adresa mape u kojoj je ova skripta (GitHub Pages) — odatle se učitavaju fontovi
+    const BAZA = ((document.currentScript && document.currentScript.src) || 'https://notturno-labs.github.io/martimex-hr-chat/kartica-artikla.js')
+      .replace(/[?#].*$/, '').replace(/[^\/]*$/, '');
     const B = P.boje;
     const EUR = (function () {
       try { return new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR' }); }
@@ -171,6 +178,7 @@
         --mx-ikona: ${mijesaj(B.roza, B.tinta, .55)};
         --mx-kap: ${mijesaj(B.roza, B.tinta, .8)};
         --mx-font: ${P.font};
+        --mx-font-naziv: ${P.fontNaziva};
         --mx-glatko: cubic-bezier(.16, 1, .3, 1);
         --mx-meko: cubic-bezier(.45, 0, .2, 1);
         position: relative;
@@ -380,27 +388,29 @@
         max-width: 100%;
         font-size: 10.5px;
         line-height: 1.4;
-        font-weight: 800;
-        letter-spacing: .16em;
+        font-weight: 600;
+        letter-spacing: .18em;
         text-transform: uppercase;
         color: var(--mx-tinta);
         overflow-wrap: break-word;
       }
-      /* naziv: glavni redak kartice */
+      /* naziv: glavni redak kartice, u serifnom fontu */
       .mx-naziv {
         max-width: 100%;
         margin: 0;
-        font-size: 15px;
-        line-height: 1.3;
-        font-weight: 500;
-        letter-spacing: -.005em;
+        font-family: var(--mx-font-naziv);
+        font-size: 18px;
+        line-height: 1.14;
+        font-weight: 600;
+        letter-spacing: .002em;
+        font-variant-numeric: lining-nums;   /* brojke u nazivu (npr. 540) iste visine kao slova */
         color: var(--mx-tinta);
         overflow-wrap: break-word;
       }
-      .mx-marka + .mx-naziv { margin-top: 5px; }
+      .mx-marka + .mx-naziv { margin-top: 4px; }
       /* vrsta mirisa (Eau de Parfum...): tiši redak ispod naziva */
       .mx-vrsta {
-        margin-top: 3px;
+        margin-top: 4px;
         font-size: 12px;
         line-height: 1.4;
         letter-spacing: .01em;
@@ -426,10 +436,10 @@
       /* cijena: diskretna, ne privlači pogled više od naziva */
       .mx-cijena {
         display: block;
-        font-size: 13.5px;
+        font-size: 12.5px;
         line-height: 1.3;
         font-weight: 400;
-        letter-spacing: .02em;
+        letter-spacing: .04em;
         color: var(--mx-cijena);
         font-variant-numeric: lining-nums;
         white-space: nowrap;
@@ -472,7 +482,7 @@
       .mx-opis {
         margin: 15px 12px 0;          /* gore: + prored prvog retka ≈ 20 px vidljivog razmaka */
         text-wrap: pretty;            /* bez usamljene riječi u zadnjem retku */
-        font-size: 12.5px;
+        font-size: 13px;
         line-height: 1.6;
         color: var(--mx-dim);
         overflow-wrap: break-word;
@@ -540,24 +550,39 @@
       .mx-istaknuta { padding: 8px 4px 10px; }
       .mx-kartica--istaknuta { max-width: 380px; }
 
-      /* ── interakcija: kad je miš iznad kartice, bočica se podigne ── */
+      /* ── plutanje: bočica se neprestano polako diže i spušta, na svim uređajima.
+         Pomiču se samo margine (ne transform), iz istog razloga kao gore.
+         Kad se bočica digne, sjena ispod nje se suzi, a aura malo raširi. ── */
+      .mx-ucitano:not(.mx-foto) .mx-boca,
+      .mx-ucitano:not(.mx-foto) .mx-sjena,
+      .mx-ucitano:not(.mx-foto) .mx-aura {
+        animation: 5.6s ease-in-out infinite both;
+        animation-delay: calc(var(--mx-i, 0) * -1.9s);   /* bočice u istoj poruci ne plutaju u istom ritmu */
+        animation-play-state: paused;                     /* vrti se samo dok je kartica na ekranu */
+      }
+      .mx-ucitano:not(.mx-foto) .mx-boca { animation-name: mx-plutanje-boca; }
+      .mx-ucitano:not(.mx-foto) .mx-sjena { animation-name: mx-plutanje-sjena; }
+      .mx-ucitano:not(.mx-foto) .mx-aura { animation-name: mx-plutanje-aura; }
+      .mx-vidljivo .mx-ucitano:not(.mx-foto) .mx-boca,
+      .mx-vidljivo .mx-ucitano:not(.mx-foto) .mx-sjena,
+      .mx-vidljivo .mx-ucitano:not(.mx-foto) .mx-aura { animation-play-state: running; }
+
+      @keyframes mx-plutanje-boca {
+        0%, 100% { margin-top: 0; }
+        50%      { margin-top: -7px; }
+      }
+      @keyframes mx-plutanje-sjena {
+        0%, 100% { margin: 0; }
+        50%      { margin: 0 8%; }
+      }
+      @keyframes mx-plutanje-aura {
+        0%, 100% { margin: 0; }
+        50%      { margin: -3% -6%; }
+      }
+
+      /* ── interakcija mišem: unutarnji rub se zarumeni, gumb se podigne ── */
       @media (hover: hover) and (pointer: fine) {
         .mx-kartica:hover::before { border-color: var(--mx-rub-hover); }
-        .mx-kartica:hover .mx-ucitano .mx-boca { top: calc(1% - 5px); }
-        .mx-kartica:hover .mx-ucitano .mx-sjena { left: 30%; right: 30%; top: 81%; height: 7%; }
-        .mx-kartica:hover .mx-ucitano .mx-aura { top: 1%; right: -5%; bottom: 9%; left: -5%; }
-        .mx-kartica:hover .mx-foto.mx-ucitano .mx-boca { top: 0; }
-        .mx-kartica:hover .mx-prozirno.mx-ucitano .mx-boca { top: -5px; }
-        .mx-kartica:hover .mx-prozirno.mx-ucitano .mx-sjena {
-          left: calc(var(--mx-sjena-x, 23%) + 6%);
-          right: calc(var(--mx-sjena-x, 23%) + 6%);
-          top: 88%;
-          height: 7%;
-        }
-        .mx-kartica:hover .mx-prozirno.mx-ucitano .mx-aura {
-          top: calc(var(--mx-sredina, 46%) - 45%);
-          bottom: calc(100% - var(--mx-sredina, 46%) - 45%);
-        }
         .mx-gumb:hover {
           transform: translateY(-1.5px);
           box-shadow: 0 7px 14px -7px rgba(0, 0, 0, .45);
@@ -642,6 +667,7 @@
         .mx-maglica, .mx-gumb::after { display: none; }
         .mx-pojava .mx-kartica { animation: mx-samo-prozirnost .35s linear backwards; animation-delay: 0s; }
         .mx-kartica, .mx-kartica::before, .mx-nisa, .mx-boca, .mx-aura, .mx-sjena, .mx-gumb { transition-duration: .01s !important; }
+        .mx-boca, .mx-aura, .mx-sjena { animation: none !important; }
       }
     `;
 
@@ -651,27 +677,56 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '15');
+      stil.setAttribute('data-mx-kartice', '16');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '15') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '16') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
 
-    // Neobavezne datoteke fonta idu u <head> stranice: fontovi iz <head>
-    // vrijede i unutar shadow roota widgeta (obrnuto ne vrijedi)
+    // Fontovi iz mape fonts/ (Jost i Cormorant Garamond, licenca SIL OFL 1.1).
+    // Svaki font ima dvije datoteke: osnovna slova i dodatna (č, ć, đ, š, ž...).
+    // Idu u <head> stranice: fontovi iz <head> vrijede i unutar shadow roota
+    // widgeta (obrnuto ne vrijedi).
+    const FONTOVI = [
+      { obitelj: 'MX Jost', datoteka: 'jost', tezine: '400 600' },
+      { obitelj: 'MX Cormorant', datoteka: 'cormorant-garamond', tezine: '500 700' }
+    ];
+    const RASPONI = {
+      'latin': 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD',
+      'latin-ext': 'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF'
+    };
     function ubaciFontove() {
-      const datoteke = Array.isArray(P.fontDatoteke) ? P.fontDatoteke.filter(function (f) { return f && f.url; }) : [];
-      if (!datoteke.length || document.getElementById('mx-kartice-font')) return;
+      if (document.getElementById('mx-kartice-font') || !document.head) return;
       const stil = document.createElement('style');
       stil.id = 'mx-kartice-font';
-      stil.textContent = datoteke.map(function (f) {
-        return '@font-face{font-family:"Avenir Web";src:url("' + String(f.url).replace(/"/g, '%22') + '") format("woff2");' +
-          'font-weight:' + (parseInt(f.tezina, 10) || 400) + ';font-style:' + (f.stil === 'italic' ? 'italic' : 'normal') + ';font-display:swap}';
+      stil.textContent = FONTOVI.map(function (f) {
+        return Object.keys(RASPONI).map(function (r) {
+          return '@font-face{font-family:"' + f.obitelj + '";src:url("' + BAZA + 'fonts/' + f.datoteka + '-' + r + '.woff2") format("woff2");' +
+            'font-weight:' + f.tezine + ';font-style:normal;font-display:swap;unicode-range:' + RASPONI[r] + '}';
+        }).join('\n');
       }).join('\n');
       document.head.appendChild(stil);
+      // fontovi se preuzimaju odmah, a ne tek kad stigne prva preporuka
+      if (document.fonts && document.fonts.load) {
+        FONTOVI.forEach(function (f) {
+          document.fonts.load('400 16px "' + f.obitelj + '"', 'Aa č').catch(function () { /* nije kritično */ });
+        });
+      }
+    }
+    ubaciFontove();
+
+    // Plutanje se vrti samo dok je kartica na ekranu (štedi bateriju na mobitelu)
+    const PROMATRAC = typeof IntersectionObserver === 'function'
+      ? new IntersectionObserver(function (zapisi) {
+          zapisi.forEach(function (z) { z.target.classList.toggle('mx-vidljivo', z.isIntersecting); });
+        })
+      : null;
+    function pratiVidljivost(kartica) {
+      if (PROMATRAC) PROMATRAC.observe(kartica);
+      else kartica.classList.add('mx-vidljivo');
     }
 
     // ── PODACI ───────────────────────────────────────────────────────────
@@ -707,9 +762,17 @@
     // "Mancera ▻ Red Tobacco Eau de Parfum"
     //   → marka "Mancera", naziv "Red Tobacco", vrsta "Eau de Parfum"
     const RAZDJELNIK = /\s*[▻►▸▹▶›»|]\s*/;
-    // vrsta mirisa na kraju naziva, po želji s volumenom ("Eau de Parfum 100 ml")
-    const VRSTA = /\s+(extrait de parfum|eau de parfum(?: intense)?|eau de toilette(?: intense)?|eau de cologne|eau fra[iî]che|parfum|parfemska voda|toaletna voda|kolonjska voda|edp|edt|edc)(?:\s*[,–-]?\s*(\d+(?:[.,]\d+)?\s?ml))?\s*$/i;
+    // vrsta mirisa na kraju naziva, po želji s volumenom i oznakom testera
+    // ("Eau de Parfum 100 ml", "Eau de Toilette (50 ml)", "EDP 100ml Tester")
+    const VRSTA = /\s+(extrait de parfum|eau de parfum(?: intense)?|eau de toilette(?: intense)?|eau de cologne|parfum|parfemska voda|toaletna voda|kolonjska voda|edp|edt|edc)(?:\s*[,\u2013-]?\s*\(?(\d+(?:[.,]\d+)?\s?ml)\)?)?(?:\s*[,\u2013-]?\s*\(?(tester)\)?)?\s*$/i;
     const KRATICE = { edp: 'Eau de Parfum', edt: 'Eau de Toilette', edc: 'Eau de Cologne' };
+    // jednako pisanje bez obzira na to kako je naziv upisan ("Eau De Toilette", "EAU DE PARFUM"...)
+    function urednaVrsta(v) {
+      const m = v.toLowerCase();
+      if (KRATICE[m]) return KRATICE[m];
+      if (/^(eau|extrait) /.test(m)) return m.replace(/(^|\s)(eau|extrait|parfum|toilette|cologne|intense)\b/g, function (x) { return x.charAt(0) === ' ' ? ' ' + x.charAt(1).toUpperCase() + x.slice(2) : x.charAt(0).toUpperCase() + x.slice(1); });
+      return m.charAt(0).toUpperCase() + m.slice(1);
+    }
 
     function odvojiVrstu(naziv) {
       const m = P.odvojiVrstu && naziv ? naziv.match(VRSTA) : null;
@@ -719,8 +782,11 @@
       if (!ostatak || (/^parfum$/i.test(m[1]) && /(^|\s)(le|la|les|the|de|du|des|di|il)$/i.test(ostatak))) {
         return { naziv: naziv, vrsta: '' };
       }
-      const vrsta = KRATICE[m[1].toLowerCase()] || m[1].charAt(0).toUpperCase() + m[1].slice(1);
-      return { naziv: ostatak, vrsta: m[2] ? vrsta + ' · ' + m[2].replace(/\s?ml$/i, ' ml') : vrsta };
+      const vrsta = urednaVrsta(m[1]);
+      const dijelovi = [vrsta];
+      if (m[2]) dijelovi.push(m[2].replace(/\s?ml$/i, '\u00a0ml'));
+      if (m[3]) dijelovi.push('Tester');
+      return { naziv: ostatak, vrsta: dijelovi.join(' \u00b7 ') };
     }
 
     function razdvojiNaziv(pun) {
@@ -1036,6 +1102,7 @@
       const link = sigurniLink(k.url);
       const kartica = el('div', istaknuta ? 'mx-kartica mx-kartica--istaknuta' : 'mx-kartica');
       kartica.style.setProperty('--mx-i', String(i));
+      pratiVidljivost(kartica);
       const vrh = el('div', 'mx-vrh');
 
       // SLIKA: bočica u auri, sa sjenom ispod
@@ -1118,7 +1185,7 @@
           gumb.target = '_self';
         }
         gumb.appendChild(el('span', '', P.tekstGumba));
-        const zaCitac = [d.marka, d.naziv, d.vrsta.replace(' \u00b7 ', ' ')].filter(Boolean).join(' ');
+        const zaCitac = [d.marka, d.naziv, d.vrsta.split(' \u00b7 ').join(', ')].filter(Boolean).join(' ');
         if (zaCitac) gumb.appendChild(el('span', 'mx-skriveno', ': ' + zaCitac));
         if (P.novaKartica) gumb.appendChild(el('span', 'mx-skriveno', ' (otvara se u novoj kartici)'));
         kartica.appendChild(gumb);
