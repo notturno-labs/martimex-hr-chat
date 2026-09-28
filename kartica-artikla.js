@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v19)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v20)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -91,7 +91,7 @@
       linija:  '#eee3de', // tanki rubovi i traka napretka
       dim:     '#6b605c', // opis proizvoda
       kartica: '#ffffff', // pozadina kartice
-      gumb:    '#333333'  // tamno siva: gumb "Pogledaj proizvod"
+      gumb:    '#5e5755'  // topla tamnosiva: gumb "Pogledaj proizvod" (mekša od crne, ne krade pažnju)
     },
 
     // Fontovi: sav tekst u Jostu, naziv proizvoda u Cormorant Garamondu.
@@ -698,11 +698,11 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '19');
+      stil.setAttribute('data-mx-kartice', '20');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '19') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '20') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
