@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v16)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v17)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -44,15 +44,17 @@
   //     auri boje vlastitog stakla (kao svjetlo koje prolazi kroz obojenu
   //     bočicu), s mekom sjenom ispod
   //   - bočica neprestano polako "pluta" gore-dolje na svim uređajima
-  //     (mobitel, tablet, računalo): kad se digne, sjena ispod nje se suzi,
-  //     a aura malo raširi. Bočice u istoj poruci ne plutaju u istom ritmu.
+  //     (mobitel, tablet, računalo): kad se digne, sjena ispod nje se suzi i
+  //     posvijetli. Pokret ide preko grafičke kartice (transform), pa je
+  //     gladak, bez skakanja po pikselima. Bočice u istoj poruci ne plutaju
+  //     u istom ritmu.
   //     Plutanje se vrti samo dok je kartica na ekranu (štedi bateriju), a
   //     isključeno je ako je na uređaju uključeno "Smanji pokrete"
   //   - bijela pozadina fotografije pretvara se u pravu prozirnost (canvas);
-  //     kad to nije moguće (slika s druge domene), stapa se CSS-om. Pokreti
-  //     su izvedeni pomicanjem položaja, ne transformacijama, pa preglednik
-  //     nikad ne razdvaja bočicu i auru u zasebne slojeve (inače se u
-  //     Safariju oko bočice zna pojaviti bijeli pravokutnik)
+  //     kad to nije moguće (slika s druge domene), stapa se CSS-om. Bočica i
+  //     aura su u istom omotu koji pluta kao cjelina, pa ih preglednik nikad
+  //     ne razdvaja u zasebne slojeve (inače se u Safariju oko bočice zna
+  //     pojaviti bijeli pravokutnik)
   //   - fotografija se kvalitetno umanji točno na piksele ekrana u kojima se
   //     prikazuje, pa je preglednik ne mora umanjivati dok se bočica pomiče:
   //     ostaje oštra i dok pluta
@@ -241,9 +243,9 @@
       }
 
       /* prostor slike: bez kutije, prozirna podloga
-         Važno: unutar .mx-nisa ništa se ne animira transformacijom, prozirnošću
-         ni filterom — samo položajem (top/left...). Tako preglednik bočicu i
-         auru uvijek crta u istom sloju i stapanje bijele pozadine ne puca. */
+         Važno: bočica i aura su u istom omotu (.mx-lebdi) i plutaju zajedno.
+         Tako ih preglednik uvijek crta u istom sloju i stapanje bijele
+         pozadine ne puca. Sjena je izvan omota i ostaje na mjestu. */
       .mx-izlog {
         position: relative;
         flex: none;
@@ -261,6 +263,15 @@
       }
       .mx-nisa.mx-ucitano,
       .mx-nisa.mx-bez-slike { opacity: 1; }
+
+      /* omot bočice i aure: pluta kao jedna cjelina */
+      .mx-lebdi {
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        z-index: 1;
+        isolation: isolate;
+        pointer-events: none;
+      }
 
       /* aura: meki oblak boje stakla iza bočice */
       .mx-aura {
@@ -553,31 +564,26 @@
       /* ── plutanje: bočica se neprestano polako diže i spušta, na svim uređajima.
          Pomiču se samo margine (ne transform), iz istog razloga kao gore.
          Kad se bočica digne, sjena ispod nje se suzi, a aura malo raširi. ── */
-      .mx-ucitano:not(.mx-foto) .mx-boca,
-      .mx-ucitano:not(.mx-foto) .mx-sjena,
-      .mx-ucitano:not(.mx-foto) .mx-aura {
-        animation: 5.6s ease-in-out infinite both;
+      .mx-ucitano:not(.mx-foto) .mx-lebdi,
+      .mx-ucitano:not(.mx-foto) .mx-sjena {
+        animation: 5.6s cubic-bezier(.37, 0, .63, 1) infinite both;   /* meko kao sinus, bez trzaja na okretu */
         animation-delay: calc(var(--mx-i, 0) * -1.9s);   /* bočice u istoj poruci ne plutaju u istom ritmu */
         animation-play-state: paused;                     /* vrti se samo dok je kartica na ekranu */
+        will-change: transform;
       }
-      .mx-ucitano:not(.mx-foto) .mx-boca { animation-name: mx-plutanje-boca; }
+      .mx-ucitano:not(.mx-foto) .mx-lebdi { animation-name: mx-plutanje; }
       .mx-ucitano:not(.mx-foto) .mx-sjena { animation-name: mx-plutanje-sjena; }
-      .mx-ucitano:not(.mx-foto) .mx-aura { animation-name: mx-plutanje-aura; }
-      .mx-vidljivo .mx-ucitano:not(.mx-foto) .mx-boca,
-      .mx-vidljivo .mx-ucitano:not(.mx-foto) .mx-sjena,
-      .mx-vidljivo .mx-ucitano:not(.mx-foto) .mx-aura { animation-play-state: running; }
+      .mx-vidljivo .mx-ucitano:not(.mx-foto) .mx-lebdi,
+      .mx-vidljivo .mx-ucitano:not(.mx-foto) .mx-sjena { animation-play-state: running; }
 
-      @keyframes mx-plutanje-boca {
-        0%, 100% { margin-top: 0; }
-        50%      { margin-top: -7px; }
+      /* transform se pomiče i za dijelove piksela, pa je pokret gladak */
+      @keyframes mx-plutanje {
+        0%, 100% { transform: translate3d(0, 0, 0); }
+        50%      { transform: translate3d(0, -7px, 0); }
       }
       @keyframes mx-plutanje-sjena {
-        0%, 100% { margin: 0; }
-        50%      { margin: 0 8%; }
-      }
-      @keyframes mx-plutanje-aura {
-        0%, 100% { margin: 0; }
-        50%      { margin: -3% -6%; }
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50%      { transform: scale(.74, .85); opacity: .7; }
       }
 
       /* ── interakcija mišem: unutarnji rub se zarumeni, gumb se podigne ── */
@@ -667,7 +673,7 @@
         .mx-maglica, .mx-gumb::after { display: none; }
         .mx-pojava .mx-kartica { animation: mx-samo-prozirnost .35s linear backwards; animation-delay: 0s; }
         .mx-kartica, .mx-kartica::before, .mx-nisa, .mx-boca, .mx-aura, .mx-sjena, .mx-gumb { transition-duration: .01s !important; }
-        .mx-boca, .mx-aura, .mx-sjena { animation: none !important; }
+        .mx-lebdi, .mx-sjena { animation: none !important; }
       }
     `;
 
@@ -677,11 +683,11 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '16');
+      stil.setAttribute('data-mx-kartice', '17');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '16') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '17') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
@@ -1108,8 +1114,10 @@
       // SLIKA: bočica u auri, sa sjenom ispod
       const izlog = el('div', 'mx-izlog');
       const nisa = el('div', 'mx-nisa');
-      nisa.appendChild(el('span', 'mx-aura'));
       nisa.appendChild(el('span', 'mx-sjena'));
+      const lebdi = el('span', 'mx-lebdi');          // bočica i aura plutaju zajedno
+      lebdi.appendChild(el('span', 'mx-aura'));
+      nisa.appendChild(lebdi);
       if (k.slika) {
         const img = el('img', 'mx-boca');
         img.alt = '';                 // naziv je već u tekstu kartice
@@ -1126,7 +1134,7 @@
         img.addEventListener('load', gotovo, { once: true });
         img.addEventListener('error', function () { img.remove(); prazanIzlog(nisa); }, { once: true });
         img.src = k.slika;
-        nisa.appendChild(img);
+        lebdi.appendChild(img);
         if (img.complete) gotovo();
       } else {
         prazanIzlog(nisa);
