@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v18)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v19)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -61,10 +61,10 @@
   //   - opis je poravnat obostrano (kao u knjizi): tekst uvijek jednako
   //     popuni lijevu i desnu stranu, a duge riječi se po potrebi dijele
   //     po hrvatskim pravilima, da među riječima ne ostanu rupe
-  //   - gumb je iste širine kao opis, pa donji dio čini uredan blok:
-  //     sitna razmaknuta velika slova i tanka strelica. Na hover se gumb
-  //     lagano podigne, strelica pomakne udesno, a preko gumba jednom
-  //     prijeđe odsjaj svjetla, kao po staklu bočice
+  //   - opis je uvučen od rubova kartice, a marka i naziv gore ne smiju ići
+  //     desnije od opisa: tekst cijele kartice ima isti desni rub (--mx-uvlaka)
+  //   - gumb je mala pilula sa sitnim razmaknutim velikim slovima; na hover
+  //     se lagano podigne, a preko njega jednom prijeđe odsjaj svjetla
   //   - tanka linija koja se prema krajevima gubi odvaja gornji dio od opisa
   //
   //  Mjere: okomito jedan ritam od 20 px (gornji i donji rub, razmaci između
@@ -166,7 +166,6 @@
       return 'rgb(' + [0, 1, 2].map(function (i) { return Math.round(a[i] * udio + b[i] * (1 - udio)); }).join(', ') + ')';
     }
 
-    const IKONA_STRELICA = '<svg class="mx-gumb-strelica" viewBox="0 0 18 8" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M.5 4h16.5M13.5.8 17 4l-3.5 3.2"/></svg>';
     const IKONA_BOCA = '<svg viewBox="0 0 48 64" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M19 4.5h10v6.5H19z"/><path d="M21.5 11v4.5M26.5 11v4.5"/><rect x="9.5" y="15.5" width="29" height="44" rx="7"/><path d="M15.5 33.5h17M15.5 38.5h10" stroke-linecap="round" opacity=".55"/></svg>';
 
     // ── STIL ─────────────────────────────────────────────────────────────
@@ -187,6 +186,7 @@
         --mx-kap: ${mijesaj(B.roza, B.tinta, .8)};
         --mx-font: ${P.font};
         --mx-font-naziv: ${P.fontNaziva};
+        --mx-uvlaka: 20px;            /* koliko je opis uvučen s obje strane; do tu smije ići i tekst gore */
         --mx-glatko: cubic-bezier(.16, 1, .3, 1);
         --mx-meko: cubic-bezier(.45, 0, .2, 1);
         position: relative;
@@ -390,6 +390,7 @@
       /* marka, naziv, cijena: poravnato lijevo */
       .mx-glava {
         flex: 1 1 0;
+        padding-right: var(--mx-uvlaka);   /* marka i naziv ne idu desnije od opisa */
         display: flex;
         flex-direction: column;
         align-items: flex-start;
@@ -495,10 +496,10 @@
           ${prozirna(B.roza, 0)} 100%);
       }
 
-      /* opis: s obje strane uvučen 6 px više od slike i linije, pa je uži od kartice.
+      /* opis: s obje strane uvučen (--mx-uvlaka), pa je skupljen prema sredini kartice.
          Poravnat obostrano, s dijeljenjem riječi, da nema rupa među riječima. */
       .mx-opis {
-        margin: 15px 6px 0;           /* gore: + prored prvog retka ≈ 20 px vidljivog razmaka */
+        margin: 15px var(--mx-uvlaka) 0;   /* gore: + prored prvog retka ≈ 20 px vidljivog razmaka */
         text-align: justify;
         word-spacing: -.04em;         /* malo uži razmaci, pa se kod poravnanja manje rastežu */
         text-align-last: left;        /* zadnji redak ostaje normalan */
@@ -512,24 +513,24 @@
       }
 
       /* razmak iznad gumba */
-      .mx-razmak { display: block; flex: 1 0 17px; }
+      .mx-razmak { display: block; flex: 1 0 20px; }
 
-      /* gumb: tamno siva pilula iste širine kao opis, sitna razmaknuta slova i strelica */
+      /* gumb: mala tamno siva pilula, sitna razmaknuta velika slova */
       .mx-gumb {
         position: relative;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
-        align-self: stretch;
+        align-self: center;
         flex: none;
-        margin: 0 6px;                /* poravnat s rubovima opisa */
-        min-height: 42px;
-        padding: 0 18px;
+        max-width: 100%;
+        min-height: 34px;
+        margin-bottom: 4px;           /* uz donji rub kartice: vidljivo ~24 px do ruba */
+        padding: 0 22px 0 calc(22px + .16em);   /* razmak iza zadnjeg slova izjednačen */
         border-radius: 999px;
         background: ${B.gumb};
         color: var(--mx-puder);
-        font-size: 11px;
+        font-size: 10.5px;
         line-height: 1.2;
         font-weight: 500;
         letter-spacing: .16em;
@@ -541,18 +542,10 @@
         -webkit-tap-highlight-color: transparent;
         overflow: hidden;
         isolation: isolate;
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), 0 1px 2px rgba(0, 0, 0, .1);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .1);
         transition: transform .35s var(--mx-glatko), box-shadow .35s var(--mx-glatko);
       }
-      .mx-gumb-strelica {
-        display: block;
-        flex: none;
-        width: 18px;
-        height: 8px;
-        opacity: .85;
-        transition: transform .45s var(--mx-glatko);
-      }
-      .mx-gumb > span, .mx-gumb > svg { position: relative; z-index: 1; }   /* tekst i strelica ostaju iznad odsjaja */
+      .mx-gumb > span { position: relative; z-index: 1; }   /* tekst ostaje iznad odsjaja */
       /* odsjaj svjetla: tanka svijetla pruga koja na hover jednom prijeđe preko gumba */
       .mx-gumb::after {
         content: "";
@@ -613,9 +606,8 @@
         .mx-kartica:hover::before { border-color: var(--mx-rub-hover); }
         .mx-gumb:hover {
           transform: translateY(-1.5px);
-          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), 0 7px 14px -7px rgba(0, 0, 0, .45);
+          box-shadow: 0 7px 14px -7px rgba(0, 0, 0, .45);
         }
-        .mx-gumb:hover .mx-gumb-strelica { transform: translateX(4px); }
         .mx-gumb:hover::after { transform: translateX(340%) skewX(-18deg); transition: transform .9s var(--mx-meko); }
         .mx-gumb:active {
           transform: translateY(0) scale(.97);
@@ -706,11 +698,11 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '18');
+      stil.setAttribute('data-mx-kartice', '19');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '18') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '19') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
@@ -1246,7 +1238,6 @@
           gumb.target = '_self';
         }
         gumb.appendChild(el('span', '', P.tekstGumba));
-        gumb.insertAdjacentHTML('beforeend', IKONA_STRELICA);
         const zaCitac = [d.marka, d.naziv, d.vrsta.split(' \u00b7 ').join(', ')].filter(Boolean).join(' ');
         if (zaCitac) gumb.appendChild(el('span', 'mx-skriveno', ': ' + zaCitac));
         if (P.novaKartica) gumb.appendChild(el('span', 'mx-skriveno', ' (otvara se u novoj kartici)'));
