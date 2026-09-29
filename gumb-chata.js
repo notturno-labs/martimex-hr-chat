@@ -1,43 +1,36 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — diskretni efekti gumba koji otvara chat s Marti (v1)
+  //  MARTIMEX — efekti gumba koji otvara chat s Marti (v2)
   //
   //  Gumb u kutu ekrana ("Asistent") i dalje crta Voiceflow; ovaj modul mu
-  //  samo dodaje nekoliko tihih detalja, u istom duhu kao kartice proizvoda,
-  //  da ne izgleda obično, a da ne napada posjetitelja:
+  //  dodaje nekoliko detalja u istom duhu kao kartice proizvoda:
   //
+  //   - roza tekućina: bijela slova "Asistent" i bijeli oblačić u ikoni
+  //     neprestano se polako pune rozom tekućinom. Površina tekućine se
+  //     blago valja (dva vala u različitim nijansama idu jedan preko
+  //     drugoga), a kad se sve napuni, tekućina se naglo ispusti, kratko
+  //     stane i krug kreće ispočetka. Slova i ikona pune se u istom ritmu,
+  //     kao jedna posuda. Vrti se stalno, i na mobitelu i na računalu.
   //   - pojava: kad se stranica učita, gumb izroni iz blage izmaglice
   //     (kao bočice u preporukama), umjesto da samo "iskoči"
   //   - tanki roza rub s unutarnje strane gumba, kao na etiketi parfemske
   //     bočice, i topla meka sjena ispod gumba
-  //   - "mig": gumb se nekoliko puta po stranici kratko javi:
-  //       · oko njega se rasplamsa i nestane meka roza aura
-  //       · preko njega jednom prijeđe odsjaj svjetla
-  //       · oblačić u ikoni lagano kimne, a točkice u njemu zasvijetle
-  //         jedna za drugom, kao da Marti tipka
-  //     Prvi mig dođe nekoliko sekundi nakon što se gumb pojavi, sljedeći
-  //     tek nakon dužeg razmaka, najviše 3 puta po stranici.
   //   - miš iznad gumba: gumb se lagano podigne, rub se zarumeni, oko njega
   //     zasja blaga aura i preko njega prijeđe odsjaj (umjesto Voiceflowova
   //     naglog povećanja); gumb pritom ostaje svoje boje (Voiceflow ga posivi)
   //   - pritisak: gumb se tek malo stisne (umjesto velikog "skoka")
   //   - fokus s tipkovnice (Tab): vidljiv obrub oko gumba (Voiceflow ga nema)
   //
-  //  Mjera:
-  //   - gumb ne miga dok je chat otvoren ni dok je kartica preglednika u
-  //     pozadini
-  //   - kad posjetitelj jednom otvori chat, gumb do kraja posjeta (dok je ta
-  //     kartica preglednika otvorena) više ne miga: tko je već pričao s
-  //     Marti, zna gdje je
-  //   - ako je na uređaju uključeno "Smanji pokrete", gumb se samo tiho
-  //     pojavi i ne miga
+  //  Ako je na uređaju uključeno "Smanji pokrete", tekućina miruje (slova i
+  //  ikona su bijeli), a gumb se samo tiho pojavi.
   //
   //  Tehnički: Voiceflow crta chat u shadow DOM-u elementa #voiceflow-chat.
-  //  Modul onamo ubaci svoj stil, a trenutak miga zapisuje kao atribut na
-  //  sam #voiceflow-chat; u gumb (koji crta Voiceflow) ništa ne umeće.
-  //  Oslanja se na klasu .vfrc-launcher, koju Voiceflow službeno podržava za
-  //  prilagodbu izgleda. Ako Voiceflow jednog dana promijeni gumb, efekti
-  //  jednostavno izostanu, a chat radi normalno.
+  //  Modul onamo ubaci svoj stil; u gumb (koji crta Voiceflow) ništa ne
+  //  umeće. Oslanja se na klasu .vfrc-launcher, koju Voiceflow službeno
+  //  podržava za prilagodbu izgleda. Tekućina u ikoni radi samo na
+  //  Voiceflowovoj zadanoj ikoni (oblačić s točkicama); ako se u Voiceflowu
+  //  postavi druga ikona, ona ostaje kakva jest. Ako Voiceflow jednog dana
+  //  promijeni gumb, efekti jednostavno izostanu, a chat radi normalno.
   // ═════════════════════════════════════════════════════════════════════
 
   if (window.__mxGumbChata) return;   // zaštita ako se modul učita dvaput
@@ -48,24 +41,19 @@
   //  POSTAVKE — sve što ćeš možda htjeti mijenjati nalazi se ovdje
   // ─────────────────────────────────────────────────────────────────────
   const MX_GUMB_POSTAVKE = {
-    boje: {                   // uvijek u obliku #rrggbb
-      roza:    '#e2c3ba', // prašnjava roza iza loga: aura oko gumba, tanki rub u gumbu
-      tinta:   '#000000', // obrub gumba kad se do njega dođe tipkovnicom (Tab)
-      svjetlo: '#ffffff'  // odsjaj koji prijeđe preko gumba
+    boje: {                        // uvijek u obliku #rrggbb
+      tekucina:      '#dcb3a7',    // roza tekućina (prednji val); malo dublja od roze brenda da se vidi na bijelom
+      tekucinaDno:   '#c99a8d',    // tekućina pri dnu je malo tamnija, kao u bočici
+      tekucinaVal:   '#ecd3cb',    // stražnji, svjetliji val iza prednjeg
+      roza:          '#e2c3ba',    // prašnjava roza iza loga: tanki rub u gumbu, aura na hover
+      tinta:         '#000000',    // obrub gumba kad se do njega dođe tipkovnicom (Tab)
+      svjetlo:       '#ffffff'     // odsjaj koji na hover prijeđe preko gumba
     },
 
+    tekucina: true,           // slova i ikona se pune rozom tekućinom
+    krug: 9,                  // sekundi: punjenje + kratka stanka + naglo ispuštanje + stanka
     pojava: true,             // gumb pri učitavanju stranice izroni iz blage izmaglice
-    unutarnjiRub: true,       // tanki roza rub s unutarnje strane gumba
-
-    // "Mig": aura + odsjaj + oblačić koji kimne i točkice koje "tipkaju"
-    prviMig: 4,               // sekundi nakon što se gumb pojavi
-    razmakMigova: 18,         // sekundi između dva miga
-    migovaPoStranici: 3,      // koliko najviše puta po stranici; 0 = gumb nikad ne miga
-    kimanje: true,            // oblačić u ikoni lagano kimne
-    tipkanje: true,           // točkice u oblačiću zasvijetle jedna za drugom
-
-    // true → kad posjetitelj jednom otvori chat, gumb do kraja posjeta više ne miga
-    tihoNakonOtvaranja: true
+    unutarnjiRub: true        // tanki roza rub s unutarnje strane gumba
   };
 
 
@@ -79,27 +67,15 @@
     const B = P.boje;
     const HOST = 'voiceflow-chat';        // element u čiji shadow DOM Voiceflow crta chat
     const GUMB = '.vfrc-launcher';        // Voiceflowova službena klasa gumba
-    const KLJUC = 'mx_gumb_otvaran';      // sessionStorage: posjetitelj je u ovom posjetu otvarao chat
-    const TRAJANJE_MIGA = 3000;           // ms; sve animacije jednog miga stanu u to
+    // natpis gumba: zadnji div u gumbu (kad postoji i ikona ili prostor za nju)
+    const NATPIS = GUMB + ' > div:last-child:not(:first-child)';
+    // Voiceflowova zadana ikona (bijeli oblačić s tri točkice)
+    const IKONA = GUMB + ' img[src*="/widget-next/message.png"]';
 
-    // Voiceflowova zadana ikona: bijeli oblačić s tri točkice (480 × 480 px,
-    // na gumbu prikazan u 24 × 24 px). Točkice su na y = 11,125 px, središta
-    // na x = 8,625 / 12 / 15,375 px. "Tipkanje" radi samo na toj ikoni; ako se
-    // u Voiceflowu postavi druga ikona, oblačić samo kimne.
-    const IKONA = /\/widget-next\/message\.png([?#]|$)/;
-
-    // Maska ikone za vrijeme tipkanja, dva sloja:
-    //  1) elipsa oko točkica (ne dira rub oblačića) priguši točkice na 28 %
-    //  2) traka od 50 px koja klizi udesno: svijetli kraj, dva "svjetla",
-    //     svijetli početak. Na početku i na kraju klizanja točkice su pod
-    //     svijetlim dijelom (izgledaju kao inače), a u sredini ih "svjetla"
-    //     redom prelaze slijeva nadesno, dvaput.
-    const MASKA =
-      'radial-gradient(5.8px 2.4px at 12px 11.125px, rgba(0, 0, 0, .28) 96%, #000 100%), ' +
-      'linear-gradient(90deg, #000 10px, transparent 12px, ' +
-        'transparent 18.8px, #000 20.2px, #000 21.8px, transparent 23.2px, ' +
-        'transparent 28.8px, #000 30.2px, #000 31.8px, transparent 33.2px, ' +
-        'transparent 38px, #000 40px)';
+    // Oblik te ikone (96 × 96 px, bijelo na prozirnom): u njega se ulijeva
+    // tekućina. Ugrađen je ovdje, pa ne ovisi o tome smije li se Voiceflowova
+    // slika čitati s druge domene.
+    const OBLIK_IKONE = 'data:image/png;base64,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';
 
     function rgb(hex) {
       let h = String(hex || '').trim().replace('#', '');
@@ -109,11 +85,36 @@
     }
     function prozirna(hex, a) { return 'rgba(' + rgb(hex).join(', ') + ', ' + a + ')'; }
 
-    // pojava ostaje prva u popisu animacija i kad gumb miga: tako se ne
-    // pokrene ponovno kad mig završi
+    // Val tekućine kao SVG: gornja polovica prozirna, donja je tekućina, a
+    // između je valovita površina. Sloj je dvostruko viši od slova/ikone, pa
+    // se pomicanjem gore-dolje mijenja razina tekućine, a pomicanjem u
+    // stranu površina se valja. Širina sloja je jedna duljina vala.
+    function val(sirina, vrh, dno, visina) {
+      const s = sirina, p = s / 2, a = 2.4, y = visina;   // a: visina vala (u jedinicama od 100 = dvostruka visina slova)
+      const svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + s + ' 100" preserveAspectRatio="none">' +
+        '<defs><linearGradient id="t" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="' + vrh + '"/>' +          // na površini
+        '<stop offset="1" stop-color="' + dno + '"/></linearGradient></defs>' +
+        '<path fill="url(#t)" d="M0 ' + y +
+        ' C' + (p / 3) + ' ' + (y - a) + ' ' + (2 * p / 3) + ' ' + (y - a) + ' ' + p + ' ' + y +
+        ' S' + (s - p / 3) + ' ' + (y + a) + ' ' + s + ' ' + y +
+        ' V100 H0 Z"/></svg>';
+      return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
+    }
+    const VAL_PREDNJI = val(28, B.tekucina, B.tekucinaDno, 50);
+    const VAL_STRAZNJI = val(34, B.tekucinaVal, B.tekucina, 47.5);   // malo viši, svjetliji
+
     const POJAVA = P.pojava ? 'mx-g-pojava 1s var(--mx-g-glatko) .15s backwards' : 'none';
-    const KIMANJE = P.kimanje ? 'mx-g-kimanje 1.1s cubic-bezier(.37, 0, .63, 1) .25s backwards' : 'none';
-    const TIPKANJE = 'mx-g-tipkanje 2.4s linear .35s both';
+    const KRUG = Math.max(3, +P.krug || 9) + 's';
+
+    // Razina tekućine: pomak sloja u postocima (4 % = prazno, površina tik
+    // ispod slova i ikone; 96 % = puno, i dolovi vala su iznad njih).
+    // Punjenje je sporo i
+    // ravnomjerno, puna posuda kratko stoji, a onda se sve naglo ispusti
+    // (ubrzava kao da je povuče sila teže) i krug kreće ispočetka.
+    const PRAZNO = '4%', PUNO = '96%';
+    function razina(p) { return p + ', ' + p + ', 0'; }
 
     // ── STIL ─────────────────────────────────────────────────────────────
     // Selektori počinju s :host (element #voiceflow-chat), pa su jači od
@@ -122,7 +123,6 @@
       :host {
         --mx-g-rub: ${prozirna(B.roza, .34)};
         --mx-g-rub-jaci: ${prozirna(B.roza, .72)};
-        --mx-g-aura: ${prozirna(B.roza, .62)};
         --mx-g-aura-blaga: ${prozirna(B.roza, .4)};
         --mx-g-aura-0: ${prozirna(B.roza, 0)};
         --mx-g-svjetlo: ${prozirna(B.svjetlo, .22)};
@@ -155,7 +155,7 @@
         pointer-events: none;
         transition: border-color .5s var(--mx-g-meko);
       }` : ''}
-      /* odsjaj svjetla: tanka svijetla pruga koja prijeđe preko gumba */
+      /* odsjaj svjetla: tanka svijetla pruga koja na hover prijeđe preko gumba */
       :host ${GUMB}::after {
         content: "";
         position: absolute;
@@ -177,52 +177,55 @@
       :host([data-mx-boja]) ${GUMB}:hover,
       :host([data-mx-boja]) ${GUMB}:active { background-color: var(--mx-g-pozadina); }
 
-      /* ── mig: aura, odsjaj, oblačić kimne, točkice tipkaju ── */
-      :host([data-mx-mig]) ${GUMB} {
-        animation: ${POJAVA}, mx-g-aura 2.4s var(--mx-g-meko) backwards;
+      ${P.tekucina ? `
+      /* ── roza tekućina u slovima i u ikoni ──
+         Tri sloja pozadine: prednji val, stražnji val, a ispod njih bijela
+         (boja slova / ikone). Slova: pozadina se vidi samo kroz slova.
+         Ikona: slika se makne iz vidnog polja, a pozadina se izreže u
+         oblik oblačića (maska). Voiceflow ikonu i dalje sam skriva i
+         prikazuje (kad se chat otvori), jer je to i dalje ista slika. */
+      @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+        :host ${NATPIS} {
+          background-image: ${VAL_PREDNJI}, ${VAL_STRAZNJI}, linear-gradient(currentColor, currentColor);
+          -webkit-background-clip: text;
+                  background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
       }
-      :host([data-mx-mig]) ${GUMB}::after {
-        animation: mx-g-odsjaj 1.25s var(--mx-g-meko) .2s both;
+      @supports ((-webkit-mask-image: none) or (mask-image: none)) {
+        :host ${IKONA} {
+          object-position: -9999px 0;         /* slika se ne crta; vidi se pozadina u obliku ikone */
+          background-image: ${VAL_PREDNJI}, ${VAL_STRAZNJI}, linear-gradient(#fff, #fff);
+          -webkit-mask: url("${OBLIK_IKONE}") center / 100% 100% no-repeat;
+                  mask: url("${OBLIK_IKONE}") center / 100% 100% no-repeat;
+        }
       }
-      :host([data-mx-mig]) ${GUMB} img {
-        transform-origin: 32% 86%;    /* oko repića oblačića */
-        animation: ${KIMANJE};
+      :host ${NATPIS},
+      :host ${IKONA} {
+        background-size: 28px 200%, 34px 200%, 100% 100%;
+        background-repeat: repeat-x, repeat-x, no-repeat;
+        background-position: 0 ${PRAZNO}, 0 ${PRAZNO}, 0 0;
+        animation: mx-g-razina ${KRUG} linear infinite,
+                   mx-g-valovi 4.4s linear infinite;
       }
-      :host([data-mx-mig][data-mx-tockice]) ${GUMB} img {
-        -webkit-mask-image: ${MASKA};
-                mask-image: ${MASKA};
-        -webkit-mask-size: 100% 100%, 50px 100%;
-                mask-size: 100% 100%, 50px 100%;
-        -webkit-mask-repeat: no-repeat;
-                mask-repeat: no-repeat;
-        -webkit-mask-position: 0 0, -33px 0;
-                mask-position: 0 0, -33px 0;
-        animation: ${KIMANJE}, ${TIPKANJE};
+
+      @keyframes mx-g-razina {
+        0%   { background-position-y: ${razina(PRAZNO)}; animation-timing-function: cubic-bezier(.4, .12, .6, .92); }
+        70%  { background-position-y: ${razina(PUNO)};   animation-timing-function: linear; }
+        80%  { background-position-y: ${razina(PUNO)};   animation-timing-function: cubic-bezier(.62, 0, .9, .42); }
+        85%  { background-position-y: ${razina(PRAZNO)}; }
+        100% { background-position-y: ${razina(PRAZNO)}; }
       }
+      /* prednji val ide udesno, stražnji polaganije ulijevo: površina se valja */
+      @keyframes mx-g-valovi {
+        from { background-position-x: 0, 0, 0; }
+        to   { background-position-x: 56px, -34px, 0; }
+      }` : ''}
 
       @keyframes mx-g-pojava {
         0%   { opacity: 0; filter: blur(8px); transform: translateY(12px) scale(.94); }
         55%  { opacity: 1; }
         100% { opacity: 1; filter: blur(0); transform: none; }
-      }
-      @keyframes mx-g-aura {
-        0%   { box-shadow: var(--mx-g-sjena), 0 0 0 0 var(--mx-g-aura-0); }
-        30%  { box-shadow: var(--mx-g-sjena), 0 0 16px 3px var(--mx-g-aura); }
-        100% { box-shadow: var(--mx-g-sjena), 0 0 30px 10px var(--mx-g-aura-0); }
-      }
-      @keyframes mx-g-odsjaj {
-        from { transform: translateX(-150%) skewX(-18deg); }
-        to   { transform: translateX(360%) skewX(-18deg); }
-      }
-      @keyframes mx-g-kimanje {
-        0%, 100% { transform: none; }
-        22%      { transform: rotate(-8deg) scale(1.06); }
-        48%      { transform: rotate(4deg) scale(1.02); }
-        72%      { transform: rotate(-1.5deg); }
-      }
-      @keyframes mx-g-tipkanje {
-        from { -webkit-mask-position: 0 0, -33px 0; mask-position: 0 0, -33px 0; }
-        to   { -webkit-mask-position: 0 0, 7px 0;   mask-position: 0 0, 7px 0; }
       }
       @keyframes mx-g-prozirnost {
         from { opacity: 0; }
@@ -239,127 +242,34 @@
         :host ${GUMB}:active { transform: translateY(0) scale(.97); }
       }
 
+      /* "Smanji pokrete": tekućina miruje (prazno), gumb se samo tiho pojavi */
       @media (prefers-reduced-motion: reduce) {
-        :host ${GUMB},
-        :host([data-mx-mig]) ${GUMB} { animation: ${P.pojava ? 'mx-g-prozirnost .4s linear backwards' : 'none'}; }
+        :host ${GUMB} { animation: ${P.pojava ? 'mx-g-prozirnost .4s linear backwards' : 'none'}; }
         :host ${GUMB}:hover,
         :host ${GUMB}:active { transform: none; }
         :host ${GUMB}::after { display: none; }
-        :host([data-mx-mig]) ${GUMB} img,
-        :host([data-mx-mig][data-mx-tockice]) ${GUMB} img { animation: none; -webkit-mask: none; mask: none; }
+        :host ${NATPIS},
+        :host ${IKONA} { animation: none; }
       }
     `;
 
     // Stil ide u shadow root chata (jednom; starija verzija se zamijeni)
     function ubaciStil(korijen) {
       const stari = korijen.querySelector('style[data-mx-gumb]');
-      if (stari && stari.getAttribute('data-mx-gumb') === '1') return;
+      if (stari && stari.getAttribute('data-mx-gumb') === '2') return;
       if (stari) stari.remove();
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-gumb', '1');
+      stil.setAttribute('data-mx-gumb', '2');
       stil.textContent = CSS;
       korijen.appendChild(stil);
     }
 
-    // ── STANJE ───────────────────────────────────────────────────────────
-    let host = null, korijen = null;
-    let timer = null, krajMiga = null;
-    let migova = 0, otvoren = false, cekaVidljivost = false;
-    let tiho = P.tihoNakonOtvaranja && (function () {
-      try { return sessionStorage.getItem(KLJUC) === '1'; } catch (e) { return false; }
-    })();
-
-    function mirno() {
-      return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    }
-    function imaJos() { return !tiho && migova < P.migovaPoStranici; }
-
-    function zakazi(sekundi) {
-      clearTimeout(timer);
-      timer = imaJos() ? setTimeout(mig, sekundi * 1000) : null;
-    }
-
-    function zavrsiMig() {
-      clearTimeout(krajMiga);
-      if (host) host.removeAttribute('data-mx-mig');
-    }
-
-    // gumb postoji i vidi se (Voiceflow ga zna sakriti)
-    function vidljivGumb() {
-      const g = korijen && korijen.querySelector(GUMB);
-      if (!g) return null;
-      const r = g.getBoundingClientRect();
-      return r.width > 0 && r.height > 0 ? g : null;
-    }
-
-    // točkice "tipkaju" samo na Voiceflowovoj zadanoj ikoni, u veličini za
-    // koju je maska izmjerena
-    function tipkanjeMoguce(gumb) {
-      if (!P.tipkanje) return false;
-      const img = gumb.querySelector('img');
-      return !!img && IKONA.test(img.currentSrc || img.src || '') && img.complete &&
-        img.naturalWidth === 480 && img.naturalHeight === 480 &&
-        img.offsetWidth === 24 && img.offsetHeight === 24;
-    }
-
-    function mig() {
-      timer = null;
-      if (!imaJos() || otvoren || mirno()) return;   // nakon zatvaranja chata mig se ponovno zakaže
-      if (document.hidden) { cekaVidljivost = true; return; }   // pričeka povratak na karticu
-      const gumb = vidljivGumb();
-      if (!gumb) { zakazi(P.razmakMigova / 2); return; }
-      if (tipkanjeMoguce(gumb)) host.setAttribute('data-mx-tockice', '');
-      else host.removeAttribute('data-mx-tockice');
-      host.setAttribute('data-mx-mig', '');
-      clearTimeout(krajMiga);
-      krajMiga = setTimeout(zavrsiMig, TRAJANJE_MIGA);
-      migova++;
-      zakazi(P.razmakMigova);
-    }
-
-    function zapamtiRazgovor() {
-      if (!P.tihoNakonOtvaranja) return;
-      tiho = true;
-      clearTimeout(timer);
-      timer = null;
-      try { sessionStorage.setItem(KLJUC, '1'); } catch (e) { /* bez sessionStorage: vrijedi samo za ovu stranicu */ }
-    }
-
-    // Voiceflow javlja otvaranje i zatvaranje chata porukom na window
-    // ('{"type":"voiceflow:open"}' / '{"type":"voiceflow:close"}')
-    function naPoruku(e) {
-      let d = e.data;
-      if (typeof d === 'string') {
-        if (d.indexOf('voiceflow:') === -1) return;
-        try { d = JSON.parse(d); } catch (x) { return; }
-      }
-      const tip = d && d.type;
-      if (tip === 'voiceflow:open') {
-        otvoren = true;
-        clearTimeout(timer);
-        timer = null;
-        zavrsiMig();
-        zapamtiRazgovor();
-      } else if (tip === 'voiceflow:close') {
-        otvoren = false;
-        if (!timer) zakazi(P.razmakMigova);
-      }
-    }
-
-    // rezerva: klik na gumb znači da posjetitelj zna za chat
-    function naKlik(e) {
-      const t = e.target;
-      if (!t || !t.closest || !t.closest(GUMB)) return;
-      zavrsiMig();
-      zapamtiRazgovor();
-    }
-
     // Boja gumba u mirovanju (iz Voiceflowovih postavki), da je gumb zadrži i
     // na dodir; bez toga ostaje Voiceflowova boja
-    function zapamtiBoju() {
+    function zapamtiBoju(host, korijen) {
       const g = korijen.querySelector(GUMB);
       if (!g) return;
-      if (g.matches(':hover, :active')) { setTimeout(zapamtiBoju, 1000); return; }
+      if (g.matches(':hover, :active')) { setTimeout(function () { zapamtiBoju(host, korijen); }, 1000); return; }
       const boja = getComputedStyle(g).backgroundColor;
       if (!boja || boja === 'transparent' || /^rgba\(.*,\s*0\)$/.test(boja)) return;   // prozirno
       host.style.setProperty('--mx-g-pozadina', boja);
@@ -377,7 +287,7 @@
     }
 
     // gumb se pojavi tek kad chat dobije svoje postavke s Voiceflowa
-    function cekajGumb(gotovo) {
+    function cekajGumb(korijen, gotovo) {
       if (korijen.querySelector(GUMB)) { gotovo(); return; }
       const promatrac = new MutationObserver(function () {
         if (!korijen.querySelector(GUMB)) return;
@@ -388,19 +298,10 @@
     }
 
     function pokreni() {
-      window.addEventListener('message', naPoruku);
-      document.addEventListener('visibilitychange', function () {
-        if (!document.hidden && cekaVidljivost) { cekaVidljivost = false; zakazi(3); }
-      });
-      cekajHost(function (h) {
-        host = h;
-        korijen = h.shadowRoot;
+      cekajHost(function (host) {
+        const korijen = host.shadowRoot;
         ubaciStil(korijen);
-        korijen.addEventListener('click', naKlik, true);
-        cekajGumb(function () {
-          zapamtiBoju();
-          zakazi(P.prviMig);
-        });
+        cekajGumb(korijen, function () { zapamtiBoju(host, korijen); });
       });
     }
 
