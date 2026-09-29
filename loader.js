@@ -15,6 +15,7 @@
   // Redak koji počinje s # se preskače (tako privremeno isključiš modul).
   var MODULI = `
     kartica-artikla.js
+    gumb-chata.js
   `;
 
   // Ostale Voiceflow postavke koje želiš dodati s GitHuba (za sada ništa).
