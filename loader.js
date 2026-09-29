@@ -16,6 +16,7 @@
   var MODULI = `
     kartica-artikla.js
     gumb-chata.js
+    pocetna-chata.js
   `;
 
   // Ostale Voiceflow postavke koje želiš dodati s GitHuba (za sada ništa).
@@ -30,6 +31,9 @@
   var v = Math.floor(Date.now() / 60000);                         // nova oznaka svake minute
 
   window.MartimexExtensions = window.MartimexExtensions || [];
+  // Voiceflow postavke koje traže moduli (npr. pocetna-chata.js isključuje
+  // autostart); kad se modul isključi, nestane i njegova postavka
+  window.MartimexVoiceflow = window.MartimexVoiceflow || {};
 
   // Učita jednu skriptu; ako je nema, zapiše upozorenje i ide dalje
   function load(src) {
@@ -73,8 +77,9 @@
         })
         .map(sigurno);
 
-      var cfg = Object.assign({}, DODATNO);
-      cfg.assistant = Object.assign({}, DODATNO.assistant, { extensions: ekstenzije });
+      var odModula = window.MartimexVoiceflow || {};
+      var cfg = Object.assign({}, DODATNO, odModula);
+      cfg.assistant = Object.assign({}, DODATNO.assistant, odModula.assistant, { extensions: ekstenzije });
       if (CSS_FILE) cfg.assistant.stylesheet = BASE + CSS_FILE + '?v=' + v;
 
       window.MartimexConfig = cfg;  // za kraću verziju koda na stranici
