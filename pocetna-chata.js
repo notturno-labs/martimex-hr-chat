@@ -24,10 +24,13 @@
   //   - gore: natpis MARTIMEX i gumb za zatvaranje chata
   //   - na računalu se objekt lagano nagne prema mišu
   //
-  //  Početni ekran se prikazuje samo dok razgovor još nije započeo. Ako
-  //  razgovor već postoji (npr. korisnik je s preporuke otišao na stranicu
-  //  proizvoda), chat se otvori ravno na razgovor. Svako otvaranje chata
-  //  pokreće animaciju ispočetka.
+  //  Početni ekran se prikaže pri prvom otvaranju chata nakon svakog
+  //  učitavanja stranice. Ako razgovor već postoji (npr. korisnik je s
+  //  preporuke otišao na stranicu proizvoda), "Početak" samo otkrije taj
+  //  razgovor; nakon toga se chat do sljedećeg učitavanja stranice otvara
+  //  ravno na razgovor. Voiceflow razgovor pamti samo dok je kartica
+  //  preglednika otvorena, pa svaki novi posjet počinje ispočetka (oboje se
+  //  mijenja u POSTAVKAMA). Svako otvaranje pokreće animaciju ispočetka.
   //
   //  Tehnički:
   //   - Voiceflowu se isključi "autostart" (preko window.MartimexVoiceflow,
@@ -93,9 +96,20 @@
 
     nagibPremaMisu: true,     // na računalu se objekt lagano nagne prema mišu
 
-    // true → početni ekran i kad razgovor već postoji; "Početak" tada samo
-    // otkrije postojeći razgovor (novi krene samo ako je stari završio)
-    iKadRazgovorPostoji: false
+    // Kad se prikazuje početni ekran:
+    // true  → pri prvom otvaranju chata nakon svakog učitavanja stranice, i
+    //         kad razgovor već postoji ("Početak" ga tada samo otkrije; novi
+    //         razgovor krene samo ako ga još nema ili je stari završio)
+    // false → samo dok razgovor još nije započeo
+    iKadRazgovorPostoji: true,
+
+    // Koliko dugo Voiceflow pamti razgovor:
+    // 'sessionStorage' → dok je kartica preglednika otvorena: kupac može
+    //                    šetati po webshopu, a svaki novi posjet počinje ispočetka
+    // 'localStorage'   → trajno (i idući tjedan se otvori stari razgovor)
+    // 'memory'         → samo do sljedećeg učitavanja stranice
+    // ''               → kako je postavljeno u Voiceflowu
+    pamcenje: 'sessionStorage'
   };
 
 
@@ -117,6 +131,7 @@
     const MIRNO = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
     const MOBITEL = !!(window.matchMedia && window.matchMedia('(max-width: 768px), (pointer: coarse)').matches);
     const MIS = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+    const PAMCENJE = ['sessionStorage', 'localStorage', 'memory'].indexOf(P.pamcenje) !== -1 ? P.pamcenje : '';
 
     function rgb(hex) {
       let h = String(hex || '').trim().replace('#', '');
@@ -1422,11 +1437,16 @@
       return s.pointerEvents !== 'none' && s.display !== 'none' && s.visibility !== 'hidden';
     }
 
-    // Postoji li već razgovor (spremljen u pregledniku ili prikazan u prozoru)
+    // Postoji li već razgovor (spremljen u pregledniku ili prikazan u prozoru).
+    // Gleda se samo spremište koje Voiceflow koristi: stari razgovor iz
+    // drugog spremišta Voiceflow ne učita (i sam ga obriše)
     function imaRazgovor(kor) {
       if (kor.querySelector(PROZOR + ' .vfrc-system-response, ' + PROZOR + ' .vfrc-user-response')) return true;
       try {
-        const spremista = [window.localStorage, window.sessionStorage];
+        const spremista = PAMCENJE === 'memory' ? []
+          : PAMCENJE === 'sessionStorage' ? [window.sessionStorage]
+          : PAMCENJE === 'localStorage' ? [window.localStorage]
+          : [window.localStorage, window.sessionStorage];
         for (let s = 0; s < spremista.length; s++) {
           const sp = spremista[s];
           if (!sp) continue;
@@ -1595,8 +1615,11 @@
         cekajProzor(korijen, function () { provjeri(otvoren); });
       });
       // Voiceflow više sam ne pokreće razgovor pri otvaranju chata (to radi
-      // gumb "Početak"); loader.js ovo preda Voiceflowu
-      window.MartimexVoiceflow = Object.assign(window.MartimexVoiceflow || {}, { autostart: false });
+      // gumb "Početak") i pamti razgovor koliko je zadano u POSTAVKAMA;
+      // loader.js ovo preda Voiceflowu
+      const vf = window.MartimexVoiceflow = window.MartimexVoiceflow || {};
+      vf.autostart = false;
+      if (PAMCENJE) vf.assistant = Object.assign({}, vf.assistant, { persistence: PAMCENJE });
     }
 
     return { pokreni: pokreni };
