@@ -1,0 +1,1608 @@
+(function () {
+  // ═════════════════════════════════════════════════════════════════════
+  //  MARTIMEX — početni ekran chata s Marti (v1)
+  //
+  //  Kad se chat otvori, umjesto praznog Voiceflow prozora prikaže se
+  //  početni ekran na crnoj podlozi:
+  //
+  //   - u sredini "živi" AI objekt od tisuća svjetlećih točkica složenih
+  //     u tanke linije, kao metalna tkanina: polako se okreće,
+  //     diše, a površina mu se stalno valovito gužva i mijenja
+  //   - objekt se zatim fluidno pretopi u bočicu parfema (stakleni flakon
+  //     s čepom i rozom tekućinom koja se lagano njiše; niz staklo prođe
+  //     odsjaj), a bočica u natpis "Marti", koji se slaže slovo po slovo
+  //     slijeva nadesno; ispod natpisa se pojavi podnaslov
+  //   - natpis neko vrijeme svjetluca (preko njega prijeđe sjaj), pa se
+  //     pretopi natrag u objekt i sve kreće ispočetka
+  //   - svaki prijelaz je tekuć: točkice ne putuju sve odjednom nego u
+  //     valu, zavrtlože se kao dim i slegnu na novo mjesto; objekt se pri
+  //     tome okreće tako da natpis na kraju uvijek stoji ravno prema nama
+  //   - na dnu gumb "Početak" (s rubom od ružičastog zlata kao gumb chata):
+  //     tek kad se on pritisne, kreće razgovor, tj. standardni Voiceflow
+  //     workflow. Točkice se tada rasprše kao izmaglica parfema, a chat
+  //     se otvori u krugu koji se širi od gumba
+  //   - gore: natpis MARTIMEX i gumb za zatvaranje chata
+  //   - na računalu se objekt lagano nagne prema mišu
+  //
+  //  Početni ekran se prikazuje samo dok razgovor još nije započeo. Ako
+  //  razgovor već postoji (npr. korisnik je s preporuke otišao na stranicu
+  //  proizvoda), chat se otvori ravno na razgovor. Svako otvaranje chata
+  //  pokreće animaciju ispočetka.
+  //
+  //  Tehnički:
+  //   - Voiceflowu se isključi "autostart" (preko window.MartimexVoiceflow,
+  //     koji loader.js preda Voiceflowu), pa otvaranje chata više samo ne
+  //     pokreće razgovor
+  //   - početni ekran je sloj unutar Voiceflowova prozora chata
+  //     (.vfrc-chat, u shadow DOM-u elementa #voiceflow-chat), preko
+  //     svega ostalog; dijelovi chata ispod njega su za to vrijeme
+  //     isključeni (inert), pa ih ni tipkovnica ne može dohvatiti
+  //   - "Početak" pritisne Voiceflowov (skriveni) gumb za početak razgovora
+  //     (#vfrc-start-chat), pa razgovor kreće potpuno standardno
+  //   - animacija se crta u WebGL-u: jedan poziv crtanja po sličici, sav
+  //     račun (oblici, šum, prijelazi) radi grafička kartica, pa je glatka
+  //     i na mobitelu. Oblici se izračunaju unaprijed, dok preglednik
+  //     miruje, a animacija se vrti samo dok je početni ekran otvoren
+  //   - ako WebGL ne radi, umjesto animacije je natpis "Marti"
+  //   - "Smanji pokrete" (postavka uređaja): natpis "Marti" od točkica
+  //     miruje, bez prijelaza
+  //   - ako se ovaj modul ne učita, chat se ponaša kao prije (razgovor krene
+  //     čim se chat otvori); ako zakaže pri otvaranju, razgovor se pokrene
+  //     sam. Ako Voiceflow jednog dana promijeni prozor pa se početni ekran
+  //     ne može prikazati, ostaje Voiceflowov gumb za početak razgovora
+  // ═════════════════════════════════════════════════════════════════════
+
+  if (window.__mxPocetna) return;   // zaštita ako se modul učita dvaput
+  window.__mxPocetna = true;
+
+
+  // ─────────────────────────────────────────────────────────────────────
+  //  POSTAVKE — sve što ćeš možda htjeti mijenjati nalazi se ovdje
+  // ─────────────────────────────────────────────────────────────────────
+  const MX_POCETNA_POSTAVKE = {
+    boje: {                   // uvijek u obliku #rrggbb
+      podloga: '#000000',     // crna podloga početnog ekrana
+      srebro:  '#e8e6eb',     // točkice AI objekta i stakla bočice
+      roza:    '#e2c3ba',     // prašnjava roza iza loga: tekućina u bočici, rub gumba
+      puder:   '#f6ebe7'      // najsvjetlija roza: natpis "Marti", tekst, gumb
+    },
+
+    // Fontovi iz mape fonts/ (učitava ih i kartica-artikla.js); natpis
+    // "Marti" se od točkica slaže u Cormorant Garamondu, kao nazivi parfema
+    font: '"MX Jost", "Avenir Next", Avenir, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontNatpisa: '"MX Cormorant", "Cormorant Garamond", Garamond, Georgia, "Times New Roman", serif',
+
+    natpis: 'Marti',                          // riječ u koju se pretopi bočica
+    podnaslov: 'Vodič kroz svijet mirisa',    // ispod natpisa ('' = bez podnaslova)
+    zaglavlje: 'Martimex',                    // gore u sredini ('' = bez)
+    tekstGumba: 'Početak',
+
+    // Trajanje dijelova animacije u sekundama
+    trajanje: {
+      pojava: 1.6,            // točkice se iz izmaglice skupe u AI objekt
+      objekt: 3.4,            // živi AI objekt
+      bocica: 3.2,            // bočica parfema
+      natpis: 5,              // natpis "Marti"
+      prijelaz: 2.4           // svaki prijelaz iz oblika u oblik
+    },
+    ponavljaj: true,          // false → animacija stane na natpisu "Marti"
+
+    // Broj točkica: više = gušće i sjajnije, ali više posla za uređaj
+    tocaka: 26000,            // računalo
+    tocakaMobitel: 16000,     // mobitel i tablet
+
+    nagibPremaMisu: true,     // na računalu se objekt lagano nagne prema mišu
+
+    // true → početni ekran i kad razgovor već postoji; "Početak" tada samo
+    // otkrije postojeći razgovor (novi krene samo ako je stari završio)
+    iKadRazgovorPostoji: false
+  };
+
+
+  // ─────────────────────────────────────────────────────────────────────
+  //  MOTOR — ispod ove linije ne treba ništa mijenjati
+  // ─────────────────────────────────────────────────────────────────────
+  const MX_POCETNA = (function () {
+    'use strict';
+
+    const P = MX_POCETNA_POSTAVKE;
+    const B = P.boje;
+    const T = P.trajanje || {};
+    const HOST = 'voiceflow-chat';        // element u čiji shadow DOM Voiceflow crta chat
+    const PROZOR = '.vfrc-chat';          // Voiceflowov prozor chata (službena klasa)
+    const START = '#vfrc-start-chat';     // Voiceflowov gumb "Start new chat"
+    // adresa mape u kojoj je ova skripta (GitHub Pages) — odatle se učitavaju fontovi
+    const BAZA = ((document.currentScript && document.currentScript.src) || 'https://notturno-labs.github.io/martimex-hr-chat/pocetna-chata.js')
+      .replace(/[?#].*$/, '').replace(/[^\/]*$/, '');
+    const MIRNO = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+    const MOBITEL = !!(window.matchMedia && window.matchMedia('(max-width: 768px), (pointer: coarse)').matches);
+    const MIS = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+
+    function rgb(hex) {
+      let h = String(hex || '').trim().replace('#', '');
+      if (h.length === 3) h = h.replace(/./g, '$&$&');
+      const n = parseInt(h.slice(0, 6), 16);
+      return isNaN(n) ? [0, 0, 0] : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    function prozirna(hex, a) { return 'rgba(' + rgb(hex).join(', ') + ', ' + a + ')'; }
+    function boja01(hex) { return rgb(hex).map(function (v) { return v / 255; }); }
+    function sat(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+    function zasiti(c, k) {                      // jača zasićenost boje (0..1)
+      const l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+      return c.map(function (v) { return sat(l + (v - l) * k); });
+    }
+    function glatko(x) { x = sat(x); return x * x * (3 - 2 * x); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function sekunde(v, zadano, min) { v = +v; return isFinite(v) && v >= min ? v : zadano; }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  OBLICI — tri oblika od istog broja točkica, izračunata unaprijed
+    //
+    //  Točkice se u svakom obliku slažu u linije (prstenove oko objekta i
+    //  bočice, retke u slovima), a po linijama su gušće nego što su linije
+    //  razmaknute: zato oblik izgleda kao da je satkan od tankih niti.
+    //  Mjere su u "svjetskim jedinicama" (objekt ima polumjer 0,8).
+    // ═══════════════════════════════════════════════════════════════════
+    const OMJER = 2.3;             // koliko su točkice na liniji gušće nego razmak linija
+    const SIRINA_NATPISA = 1.9;    // širina natpisa "Marti"
+    const RED_NATPISA = 0.0155;    // razmak među linijama u slovima
+    const PASOVA = 48;             // oblici se spajaju u vodoravnim pojasevima (vidi spoji)
+
+    // Profil bočice odozgo prema dolje:
+    // [visina, pola širine, pola dubine, oblik presjeka]
+    // (oblik 2 = krug, veći broj = pravokutnik sa sve oštrijim kutovima)
+    const BOCICA = [
+      [ 0.90, 0.00, 0.00, 6],      // sredina vrha čepa
+      [ 0.90, 0.26, 0.18, 6],      // rub vrha čepa
+      [ 0.52, 0.26, 0.18, 6],      // dno čepa
+      [ 0.52, 0.14, 0.14, 2.4],    // ispod čepa prema prstenu
+      [ 0.47, 0.14, 0.14, 2],      // prsten na grlu
+      [ 0.47, 0.095, 0.095, 2],
+      [ 0.37, 0.095, 0.095, 2],    // grlo
+      [ 0.335, 0.34, 0.22, 4],     // rame
+      [ 0.31, 0.55, 0.31, 6],
+      [-0.83, 0.55, 0.31, 6],      // bok tijela
+      [-0.86, 0.52, 0.29, 6],      // zaobljeni rub dna
+      [-0.86, 0.00, 0.00, 6]       // sredina dna
+    ];
+    const DNO_BOCICE = -0.86, VRH_BOCICE = 0.90;
+
+    // Ponovljiv "slučajni" niz (isti oblik pri svakom učitavanju)
+    function slucajno(sjeme) {
+      let a = sjeme >>> 0;
+      return function () {
+        a = (a + 0x6D2B79F5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    // n točaka jednoliko po ukupnoj duljini svih linija; za svaku točku
+    // vraća redni broj linije i udio duljine te linije (0..1)
+    function poLinijama(duljine, n) {
+      let ukupno = 0;
+      for (let i = 0; i < duljine.length; i++) ukupno += duljine[i];
+      const korak = ukupno / n;
+      const linija = new Int32Array(n), udio = new Float32Array(n);
+      let l = 0, pocetak = 0;
+      for (let i = 0; i < n; i++) {
+        const s = (i + 0.5) * korak;
+        while (l < duljine.length - 1 && s >= pocetak + duljine[l]) { pocetak += duljine[l]; l++; }
+        linija[i] = l;
+        udio[i] = duljine[l] > 0 ? sat((s - pocetak) / duljine[l]) : 0;
+      }
+      return { linija: linija, udio: udio };
+    }
+
+    // ── AI objekt: jedinična kugla od vodoravnih prstenova (šum je gužva
+    //    tek u grafičkoj kartici, pa se ovdje sprema samo smjer točke)
+    function kugla(n) {
+      const K = Math.max(8, Math.round(Math.PI / Math.sqrt(4 * Math.PI * OMJER / n)));
+      const duljine = [];
+      for (let k = 0; k < K; k++) duljine.push(2 * Math.PI * Math.sin((k + 0.5) / K * Math.PI));
+      const r = poLinijama(duljine, n);
+      const poz = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        const fi = (r.linija[i] + 0.5) / K * Math.PI;
+        const th = (r.udio[i] + r.linija[i] * 0.618034) * 2 * Math.PI;   // prstenovi ne počinju u istoj točki
+        poz[3 * i] = Math.sin(fi) * Math.cos(th);
+        poz[3 * i + 1] = Math.cos(fi);
+        poz[3 * i + 2] = Math.sin(fi) * Math.sin(th);
+      }
+      return { poz: poz };
+    }
+
+    // ── Bočica: prstenovi po profilu; presjek je superelipsa (od kruga do
+    //    pravokutnika zaobljenih kutova), točkice jednoliko po obodu
+    function tockaPresjeka(a, b, e, th) {
+      const c = Math.cos(th), s = Math.sin(th);
+      return [a * Math.sign(c) * Math.pow(Math.abs(c), 2 / e), b * Math.sign(s) * Math.pow(Math.abs(s), 2 / e)];
+    }
+    function obodPresjeka(a, b, e) {           // duljina oboda od kuta 0 do kuta th (tablica)
+      const M = 96, tab = new Float32Array(M + 1);
+      let px = a, pz = 0, d = 0;
+      for (let j = 1; j <= M; j++) {
+        const q = tockaPresjeka(a, b, e, j / M * 2 * Math.PI);
+        d += Math.hypot(q[0] - px, q[1] - pz);
+        px = q[0]; pz = q[1];
+        tab[j] = d;
+      }
+      return tab;
+    }
+    function kutNaObodu(tab, s) {
+      const M = tab.length - 1;
+      let lo = 0, hi = M;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (tab[m] <= s) lo = m; else hi = m; }
+      const dl = tab[hi] - tab[lo];
+      return (lo + (dl > 0 ? (s - tab[lo]) / dl : 0)) / M * 2 * Math.PI;
+    }
+    function bocica(n) {
+      const seg = [];
+      let ukupno = 0;
+      for (let i = 0; i < BOCICA.length - 1; i++) {
+        const p = BOCICA[i], q = BOCICA[i + 1];
+        const dm = (q[1] + q[2] - p[1] - p[2]) / 2, dy = q[0] - p[0];
+        const d = Math.hypot(dm, dy);
+        if (d < 1e-6) continue;
+        // normala profila prema van: (vodoravno, okomito)
+        seg.push({ p: p, q: q, d: d, od: ukupno, nr: -dy / d, ny: dm / d });
+        ukupno += d;
+      }
+      function prstenovi(korak) {
+        const k = Math.max(6, Math.round(ukupno / korak)), kk = ukupno / k, pr = [];
+        for (let i = 0; i < k; i++) {
+          const s = (i + 0.5) * kk;
+          let j = 0;
+          while (j < seg.length - 1 && s > seg[j].od + seg[j].d) j++;
+          const g = seg[j], t = sat((s - g.od) / g.d);
+          const a = lerp(g.p[1], g.q[1], t), b = lerp(g.p[2], g.q[2], t), e = lerp(g.p[3], g.q[3], t);
+          const tab = obodPresjeka(a, b, e);
+          pr.push({ y: lerp(g.p[0], g.q[0], t), a: a, b: b, e: e, nr: g.nr, ny: g.ny, tab: tab, obod: tab[tab.length - 1] });
+        }
+        return pr;
+      }
+      // razmak prstenova ovisi o površini bočice, a površina o prstenovima:
+      // prvo gruba procjena, pa točan izračun
+      let pr = prstenovi(Math.sqrt(4.5 * OMJER / n));
+      const povrsina = pr.reduce(function (z, r) { return z + r.obod; }, 0) * ukupno / pr.length;
+      pr = prstenovi(Math.sqrt(povrsina * OMJER / n));
+
+      const r = poLinijama(pr.map(function (x) { return x.obod; }), n);
+      const poz = new Float32Array(n * 3), nor = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        const R = pr[r.linija[i]];
+        const th = kutNaObodu(R.tab, ((r.udio[i] + r.linija[i] * 0.618034) % 1) * R.obod);
+        const q = tockaPresjeka(R.a, R.b, R.e, th);
+        // normala: presjek (superelipsa) × nagib profila
+        const c = Math.cos(th), s = Math.sin(th);
+        let nx = Math.sign(c) * Math.pow(Math.abs(c), 2 * (R.e - 1) / R.e) / Math.max(R.a, 1e-3);
+        let nz = Math.sign(s) * Math.pow(Math.abs(s), 2 * (R.e - 1) / R.e) / Math.max(R.b, 1e-3);
+        const nl = Math.hypot(nx, nz) || 1;
+        nx = nx / nl * R.nr; nz = nz / nl * R.nr;
+        const NL = Math.hypot(nx, R.ny, nz) || 1;
+        poz[3 * i] = q[0]; poz[3 * i + 1] = R.y; poz[3 * i + 2] = q[1];
+        nor[3 * i] = nx / NL; nor[3 * i + 1] = R.ny / NL; nor[3 * i + 2] = nz / NL;
+      }
+      return { poz: poz, nor: nor };
+    }
+
+    // ── Natpis: slova se nacrtaju u skriveno platno i "skeniraju" u
+    //    vodoravnim linijama; točkice se jednoliko rasporede po dijelovima
+    //    linija koji padaju u slova
+    function natpis(n, rnd) {
+      const tekst = String(P.natpis || 'Marti');
+      const F = 240;
+      const font = '700 ' + F + 'px ' + P.fontNatpisa;
+      const c = document.createElement('canvas');
+      let ctx = c.getContext('2d');
+      if (!ctx) return null;
+      ctx.font = font;
+      const m = ctx.measureText(tekst);
+      const lijevo = m.actualBoundingBoxLeft || 0, desno = m.actualBoundingBoxRight || m.width;
+      const gore = m.actualBoundingBoxAscent || F * 0.72, dolje = m.actualBoundingBoxDescent || F * 0.05;
+      const w = Math.ceil(lijevo + desno) + 8, h = Math.ceil(gore + dolje) + 8;
+      if (w < 10 || h < 10) return null;
+      c.width = w; c.height = h;
+      ctx = c.getContext('2d');
+      ctx.font = font;
+      ctx.fillStyle = '#fff';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(tekst, 4 + lijevo, 4 + gore);
+      const px = ctx.getImageData(0, 0, w, h).data;
+
+      const k = SIRINA_NATPISA / (lijevo + desno);     // svjetske jedinice po pikselu platna
+      const sx = 4 + (lijevo + desno) / 2, sy = 4 + (gore + dolje) / 2;
+      const korak = RED_NATPISA / k;
+      const dijelovi = [], duljine = [];
+      for (let y = korak / 2; y < h; y += korak) {
+        const yi = Math.min(h - 1, Math.round(y));
+        let od = -1;
+        for (let x = 0; x <= w; x++) {
+          const puno = x < w && px[(yi * w + x) * 4 + 3] >= 128;
+          if (puno && od < 0) od = x;
+          else if (!puno && od >= 0) { dijelovi.push([od, x, y]); duljine.push((x - od) * k); od = -1; }
+        }
+      }
+      if (!dijelovi.length) return null;
+      const r = poLinijama(duljine, n);
+      const poz = new Float32Array(n * 3);
+      let pola = 0;
+      for (let i = 0; i < n; i++) {
+        const d = dijelovi[r.linija[i]];
+        poz[3 * i] = (lerp(d[0], d[1], r.udio[i]) - sx) * k;
+        poz[3 * i + 1] = (sy - d[2]) * k;
+        poz[3 * i + 2] = (rnd() - 0.5) * 0.05;          // malo dubine, da natpis nije posve ravan
+        pola = Math.max(pola, Math.abs(poz[3 * i + 1]));
+      }
+      return { poz: poz, pola: pola };
+    }
+
+    // ── Spajanje: koja točkica objekta postaje koja točkica bočice i
+    //    natpisa. Sva tri oblika podijele se na vodoravne pojaseve (gornji
+    //    pojas objekta → gornji pojas bočice → gornji redci natpisa). Unutar
+    //    pojasa objekt i bočica se spoje po kutu oko osi, a bočica i natpis
+    //    slijeva nadesno. Tako svaka točkica putuje kratkim, glatkim putem i
+    //    prijelaz izgleda kao da se jedan oblik prelije u drugi.
+    //    Rezultat: po točkici 16 brojeva (objekt, bočica, normala bočice,
+    //    natpis, 4 slučajna broja), redom kako ih čita grafička kartica.
+    function spoji(kug, boc, nat, n, rnd) {
+      function poVisini(poz) {
+        const idx = new Array(n);
+        for (let i = 0; i < n; i++) idx[i] = i;
+        return idx.sort(function (a, b) { return poz[3 * b + 1] - poz[3 * a + 1]; });
+      }
+      function kutovi(poz) {
+        const k = new Float32Array(n);
+        for (let i = 0; i < n; i++) k[i] = Math.atan2(poz[3 * i + 2], poz[3 * i]);
+        return k;
+      }
+      const iK = poVisini(kug.poz), iB = poVisini(boc.poz), iN = poVisini(nat.poz);
+      const kutK = kutovi(kug.poz), kutB = kutovi(boc.poz);
+      const natZaBoc = new Int32Array(n);
+      const out = new Float32Array(n * 16);
+      for (let p = 0; p < PASOVA; p++) {
+        const lo = Math.floor(p * n / PASOVA), hi = Math.floor((p + 1) * n / PASOVA);
+        const pK = iK.slice(lo, hi).sort(function (a, b) { return kutK[a] - kutK[b]; });
+        const pBk = iB.slice(lo, hi).sort(function (a, b) { return kutB[a] - kutB[b]; });
+        const pBx = iB.slice(lo, hi).sort(function (a, b) { return boc.poz[3 * a] - boc.poz[3 * b]; });
+        const pN = iN.slice(lo, hi).sort(function (a, b) { return nat.poz[3 * a] - nat.poz[3 * b]; });
+        for (let j = 0; j < pBx.length; j++) natZaBoc[pBx[j]] = pN[j];
+        for (let j = 0; j < pBk.length; j++) {
+          const bi = pBk[j], ki = pK[j], ni = natZaBoc[bi], o = (lo + j) * 16;
+          out[o] = kug.poz[3 * ki]; out[o + 1] = kug.poz[3 * ki + 1]; out[o + 2] = kug.poz[3 * ki + 2];
+          out[o + 3] = boc.poz[3 * bi]; out[o + 4] = boc.poz[3 * bi + 1]; out[o + 5] = boc.poz[3 * bi + 2];
+          out[o + 6] = boc.nor[3 * bi]; out[o + 7] = boc.nor[3 * bi + 1]; out[o + 8] = boc.nor[3 * bi + 2];
+          out[o + 9] = nat.poz[3 * ni]; out[o + 10] = nat.poz[3 * ni + 1]; out[o + 11] = nat.poz[3 * ni + 2];
+          out[o + 12] = rnd(); out[o + 13] = rnd(); out[o + 14] = rnd(); out[o + 15] = rnd();
+        }
+      }
+      return out;
+    }
+
+    // Priprema ide u manjim koracima s pauzama, da stranica nijednom ne
+    // zapne; dok je chat otvoren (HITNO), pauze su najkraće moguće
+    let HITNO = false;
+    function pauza() {
+      return new Promise(function (gotovo) {
+        if (!HITNO && window.requestIdleCallback) window.requestIdleCallback(function () { gotovo(); }, { timeout: 400 });
+        else setTimeout(gotovo, 0);
+      });
+    }
+
+    // Oblici se računaju jednom (i čekaju font natpisa, najviše 2,5 s)
+    let OBLICI = null;
+    function pripremiOblike() {
+      if (OBLICI) return OBLICI;
+      const font = document.fonts && document.fonts.load
+        ? Promise.race([
+            document.fonts.load('700 100px ' + P.fontNatpisa, P.natpis).catch(function () {}),
+            new Promise(function (r) { setTimeout(r, 2500); })
+          ])
+        : Promise.resolve();
+      const o = { n: Math.max(2000, Math.round(+(MOBITEL ? P.tocakaMobitel : P.tocaka) || 16000)), rnd: slucajno(20251) };
+      OBLICI = font.then(pauza).then(function () {
+        o.kug = kugla(o.n);
+        o.nat = natpis(o.n, o.rnd) || { poz: o.kug.poz.map(function (v, i) { return i % 3 === 2 ? 0 : v * 0.6; }), pola: 0.6 };
+        return pauza();
+      }).then(function () {
+        o.boc = bocica(o.n);
+        return pauza();
+      }).then(function () {
+        return { podaci: spoji(o.kug, o.boc, o.nat, o.n, o.rnd), n: o.n, pola: o.nat.pola };
+      });
+      return OBLICI;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  SHADERI — program za grafičku karticu
+    //
+    //  Svaka točkica zna svoja tri mjesta (objekt, bočica, natpis). Shader
+    //  u svakoj sličici izračuna gdje je sada: oblik objekta gužva
+    //  simplex šumom, prijelaz radi u valu (svaka točkica kreće s malim
+    //  zakašnjenjem) uz vrtlog i dimni šum, a svjetlo (sjena, odsjaj, rub)
+    //  daje metalni izgled. Točkice se zbrajaju (aditivno), pa su gušća
+    //  mjesta i rubovi sjajniji, kao na pravoj metalnoj tkanini.
+    // ═══════════════════════════════════════════════════════════════════
+    const VS = `
+      precision highp float;
+
+      attribute vec3 aSph;     // smjer točke na kugli (AI objekt)
+      attribute vec3 aBot;     // mjesto na bočici
+      attribute vec3 aBotN;    // normala bočice
+      attribute vec3 aTxt;     // mjesto u natpisu
+      attribute vec4 aRnd;     // slučajni brojevi 0..1
+
+      uniform float uTime;
+      uniform float uSeg;      // 0: objekt → bočica, 1: bočica → natpis, 2: natpis → objekt
+      uniform float uProg;     // napredak prijelaza (0 = oblik miruje)
+      uniform float uIntro;    // pojava (0..1)
+      uniform float uExit;     // raspršivanje nakon "Početak" (0..1)
+      uniform mat3 uRot;
+      uniform vec2 uPx;        // svjetska jedinica → ekran
+      uniform vec2 uCenter;
+      uniform float uSize;
+      uniform vec2 uSweep;     // x: sjaj preko natpisa, y: odsjaj niz bočicu
+      uniform vec3 uAlpha;     // jačina točkica: objekt, bočica, natpis
+      uniform float uTextW;
+      uniform vec3 uSilver;
+      uniform vec3 uLiquid;
+      uniform vec3 uPowder;
+
+      varying vec4 vCol;
+
+      const float PI = 3.14159265;
+      const float VAL = 0.6;   // koliki dio prijelaza zauzima "val" zakašnjenja
+      const float CAM = 4.2;   // udaljenost kamere
+
+      // 3D simplex šum s gradijentom — Ian McEwan, Stefan Gustavson
+      // (Ashima Arts, webgl-noise, licenca MIT)
+      vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+      vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+      vec4 permute(vec4 x) { return mod289(((x * 34.0) + 10.0) * x); }
+      vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+      float snoise(vec3 v, out vec3 gradient) {
+        const vec2 C = vec2(1.0 / 6.0, 1.0 / 3.0);
+        const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+        vec3 i = floor(v + dot(v, C.yyy));
+        vec3 x0 = v - i + dot(i, C.xxx);
+        vec3 g = step(x0.yzx, x0.xyz);
+        vec3 l = 1.0 - g;
+        vec3 i1 = min(g.xyz, l.zxy);
+        vec3 i2 = max(g.xyz, l.zxy);
+        vec3 x1 = x0 - i1 + C.xxx;
+        vec3 x2 = x0 - i2 + C.yyy;
+        vec3 x3 = x0 - D.yyy;
+        i = mod289(i);
+        vec4 p = permute(permute(permute(
+                   i.z + vec4(0.0, i1.z, i2.z, 1.0))
+                 + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+                 + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+        float n_ = 0.142857142857;
+        vec3 ns = n_ * D.wyz - D.xzx;
+        vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+        vec4 x_ = floor(j * ns.z);
+        vec4 y_ = floor(j - 7.0 * x_);
+        vec4 x = x_ * ns.x + ns.yyyy;
+        vec4 y = y_ * ns.x + ns.yyyy;
+        vec4 h = 1.0 - abs(x) - abs(y);
+        vec4 b0 = vec4(x.xy, y.xy);
+        vec4 b1 = vec4(x.zw, y.zw);
+        vec4 s0 = floor(b0) * 2.0 + 1.0;
+        vec4 s1 = floor(b1) * 2.0 + 1.0;
+        vec4 sh = -step(h, vec4(0.0));
+        vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+        vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+        vec3 p0 = vec3(a0.xy, h.x);
+        vec3 p1 = vec3(a0.zw, h.y);
+        vec3 p2 = vec3(a1.xy, h.z);
+        vec3 p3 = vec3(a1.zw, h.w);
+        vec4 norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
+        p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+        vec4 m = max(0.5 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
+        vec4 m2 = m * m;
+        vec4 m4 = m2 * m2;
+        vec4 pdotx = vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3));
+        vec4 temp = m2 * m * pdotx;
+        gradient = -8.0 * (temp.x * x0 + temp.y * x1 + temp.z * x2 + temp.w * x3);
+        gradient += m4.x * p0 + m4.y * p1 + m4.z * p2 + m4.w * p3;
+        gradient *= 105.0;
+        return 105.0 * dot(m4, pdotx);
+      }
+
+      vec2 okreni(vec2 v, float k) {
+        float c = cos(k), s = sin(k);
+        return vec2(c * v.x - s * v.y, s * v.x + c * v.y);
+      }
+
+      // AI objekt: kugla čiju površinu stalno gužvaju dva sloja šuma
+      void objekt(out vec3 p, out vec3 n, out vec3 c, out float lit, out float back) {
+        vec3 d = aSph;
+        float t = uTime;
+        vec3 g1, g2;
+        float n1 = snoise(d * 1.15 + vec3(0.0, t * 0.19, t * 0.11), g1);
+        float n2 = snoise(d * 2.5 + vec3(t * 0.23, -t * 0.09, 0.0) + g1 * 0.08, g2);
+        float disp = n1 * 0.25 + n2 * 0.085;
+        vec3 grad = g1 * (1.15 * 0.25) + g2 * (2.5 * 0.085);
+        vec3 tg = grad - dot(grad, d) * d;
+        p = d * 0.8 * (1.0 + disp) * (1.0 + 0.02 * sin(t * 1.3));
+        n = normalize(d - tg / (1.0 + disp));
+        c = uSilver * (0.9 + 0.3 * n1);
+        lit = 1.0;
+        back = 0.14;
+      }
+
+      // Bočica: staklo s rozom tekućinom koja se njiše; niz nju putuje odsjaj
+      void bocica(out vec3 p, out vec3 n, out vec3 c, out float lit, out float back) {
+        float t = uTime;
+        p = aBot;
+        p.y += 0.018 * sin(t * 0.8);
+        n = aBotN;
+        float razina = 0.02 + 0.022 * sin(t * 1.4 + aBot.x * 2.6) + 0.012 * sin(t * 2.3 - aBot.z * 4.0);
+        float tijelo = step(aBot.y, 0.3);
+        float tekucina = tijelo * (1.0 - smoothstep(razina - 0.012, razina + 0.012, aBot.y));
+        float dr = (aBot.y - razina) / 0.016, dv = (aBot.y - uSweep.y) / 0.06;
+        float povrsina = tijelo * exp(-dr * dr);
+        c = mix(uSilver, uLiquid * 1.35, tekucina) + uLiquid * povrsina;
+        c += vec3(0.55) * exp(-dv * dv);
+        lit = 0.75;
+        back = 0.45;
+      }
+
+      // Natpis: lagani val kroz slova i sjaj koji prijeđe slijeva nadesno
+      void natpis(out vec3 p, out vec3 n, out vec3 c, out float lit, out float back) {
+        float t = uTime;
+        p = aTxt;
+        p.z += 0.03 * sin(aTxt.x * 2.4 - t * 1.2);
+        p.y += 0.005 * sin(aTxt.x * 6.0 + t * 1.8);
+        n = vec3(0.0, 0.0, 1.0);
+        float ds = (aTxt.x - uSweep.x) / 0.16;
+        float sjaj = exp(-ds * ds);
+        c = uPowder * (0.95 + 0.9 * sjaj);
+        lit = 0.0;
+        back = 1.0;
+      }
+
+      void main() {
+        vec3 pA, nA, cA, pB, nB, cB;
+        float lA, lB, bA, bB, aA, aB, kasni;
+        float xt = clamp(aTxt.x / uTextW * 0.5 + 0.5, 0.0, 1.0);
+
+        if (uSeg < 0.5) {
+          objekt(pA, nA, cA, lA, bA); aA = uAlpha.x;
+          kasni = 0.75 * clamp((aBot.y + 0.86) / 1.76, 0.0, 1.0) + 0.25 * aRnd.x;  // bočica se puni odozdo
+        } else if (uSeg < 1.5) {
+          bocica(pA, nA, cA, lA, bA); aA = uAlpha.y;
+          kasni = 0.8 * xt + 0.2 * aRnd.x;                                           // slova slijeva nadesno
+        } else {
+          natpis(pA, nA, cA, lA, bA); aA = uAlpha.z;
+          kasni = 0.55 * xt + 0.45 * aRnd.x;
+        }
+        pB = pA; nB = nA; cB = cA; lB = lA; bB = bA; aB = aA;
+        if (uProg > 0.0) {
+          if (uSeg < 0.5) { bocica(pB, nB, cB, lB, bB); aB = uAlpha.y; }
+          else if (uSeg < 1.5) { natpis(pB, nB, cB, lB, bB); aB = uAlpha.z; }
+          else { objekt(pB, nB, cB, lB, bB); aB = uAlpha.x; }
+        }
+
+        float k = clamp(uProg * (1.0 + VAL) - kasni * VAL, 0.0, 1.0);
+        k = k * k * k * (k * (k * 6.0 - 15.0) + 10.0);
+        float luk = sin(PI * k);
+
+        vec3 p = mix(pA, pB, k);
+        vec3 n = normalize(mix(nA, nB, k) + vec3(0.0, 0.0, 1e-4));
+        vec3 col = mix(cA, cB, k);
+        float lit = mix(lA, lB, k);
+        float back = mix(bA, bB, k);
+        float alpha = mix(aA, aB, k);
+
+        // prijelaz: dimni vrtlog i lagano dizanje
+        if (uProg > 0.0) {
+          vec3 g;
+          snoise(p * 1.4 + vec3(0.0, -uTime * 0.3, uTime * 0.17), g);
+          p += (g * 0.03 + cross(g, vec3(0.0, 1.0, 0.0)) * 0.05) * luk;
+          p.xz = okreni(p.xz, luk * (0.6 + 0.5 * aRnd.w));
+          p.y += 0.05 * luk;
+          alpha *= 1.0 + 0.3 * luk;
+        }
+
+        // pojava: točkice doplove iz izmaglice u vrtlogu
+        if (uIntro < 1.0) {
+          float ki = clamp(uIntro * 1.6 - aRnd.y * 0.6, 0.0, 1.0);
+          ki = 1.0 - pow(1.0 - ki, 3.0);
+          vec3 izvor = normalize(vec3(aRnd.z, aRnd.w, aRnd.x) - 0.5 + 0.001) * (1.5 + 1.3 * aRnd.y);
+          izvor.xz = okreni(izvor.xz, (1.0 - ki) * 2.4);
+          p = mix(izvor, p, ki);
+          alpha *= ki;
+        }
+
+        // "Početak": točkice se rasprše prema van i gore, kao izmaglica parfema
+        if (uExit > 0.0) {
+          float ke = clamp(uExit * 1.45 - aRnd.x * 0.45, 0.0, 1.0);
+          ke = ke * ke * (3.0 - 2.0 * ke);
+          vec3 smjer = normalize(p + (aRnd.yzw - 0.5) * 0.8 + vec3(0.0, 0.25, 0.0));
+          p += smjer * ke * 1.5 + vec3(0.0, 0.45, 0.0) * ke;
+          alpha *= 1.0 - ke;
+        }
+
+        vec3 q = uRot * p;
+        vec3 nq = normalize(uRot * n);
+        float persp = CAM / (CAM - q.z);
+        gl_Position = vec4(q.x * uPx.x * persp + uCenter.x, q.y * uPx.y * persp + uCenter.y, 0.0, 1.0);
+        float iskra = step(0.993, aRnd.z);
+        gl_PointSize = uSize * persp * (1.0 + iskra * 0.7);
+
+        // svjetlo gore lijevo: sjena, odsjaj i svijetli rub
+        vec3 L = normalize(vec3(-0.5, 0.62, 0.6));
+        vec3 H = normalize(L + vec3(0.0, 0.0, 1.0));
+        float dif = max(dot(nq, L), 0.0);
+        float spe = pow(max(dot(nq, H), 0.0), 26.0);
+        float rub = pow(1.0 - abs(nq.z), 2.2);
+        float nebo = smoothstep(-0.08, 0.3, nq.y);                   // odraz neba i tla, kao na kromu
+        float svjetlo = 0.08 + 0.7 * dif + 1.5 * spe + 0.6 * rub + 0.28 * nebo;
+        float lice = mix(back, 1.0, smoothstep(-0.2, 0.25, nq.z));   // stražnja strana tamnija
+        float dubina = mix(1.0, clamp(0.62 + 0.42 * q.z, 0.25, 1.15), lit);
+        float treptaj = 0.84 + 0.16 * sin(uTime * (1.5 + 2.0 * aRnd.w) + aRnd.y * 40.0);
+        treptaj = mix(treptaj, 1.0 + 1.1 * max(0.0, sin(uTime * 2.1 + aRnd.x * 50.0)), iskra);
+        vCol = vec4(col * mix(1.0, svjetlo, lit) * lice, alpha * treptaj * dubina);
+      }
+    `;
+
+    const FS = `
+      precision mediump float;
+      varying vec4 vCol;
+      void main() {
+        vec2 d = gl_PointCoord * 2.0 - 1.0;
+        float r = dot(d, d);
+        if (r > 1.0) discard;
+        gl_FragColor = vec4(vCol.rgb, vCol.a * (1.0 - 0.6 * r));
+      }
+    `;
+
+    const UNIFORME = ['uTime', 'uSeg', 'uProg', 'uIntro', 'uExit', 'uRot', 'uPx', 'uCenter', 'uSize',
+      'uSweep', 'uAlpha', 'uTextW', 'uSilver', 'uLiquid', 'uPowder'];
+    const ATRIBUTI = [['aSph', 3, 0], ['aBot', 3, 3], ['aBotN', 3, 6], ['aTxt', 3, 9], ['aRnd', 4, 12]];
+    // jačina točkica (objekt, bočica, natpis); natpis je najgušći pa ima najslabije točkice
+    const JACINA = [0.9, 0.8, 0.3];
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  VREMENSKI TIJEK — koji je oblik na ekranu u trenutku t (sekunde od
+    //  otvaranja) i koliko je objekt okrenut
+    //
+    //  Ciklus: objekt → prijelaz → bočica → prijelaz → natpis → prijelaz.
+    //  Objekt i bočica se okreću oko okomite osi, a brzina okretanja je
+    //  preračunata tako da se svaki put kad nastaje natpis okret točno
+    //  zaustavi licem prema nama (natpis nikad nije okrenut naopako).
+    // ═══════════════════════════════════════════════════════════════════
+    function napraviTijek() {
+      const pojava = sekunde(T.pojava, 1.6, 0.3);
+      const d0 = sekunde(T.objekt, 3.4, 0.5), d1 = sekunde(T.bocica, 3.2, 0.5), d2 = sekunde(T.natpis, 5, 0.5);
+      const D = sekunde(T.prijelaz, 2.4, 0.6);
+      const L = d0 + d1 + d2 + 3 * D;
+      const POCETAK_NATPISA = d0 + D + d1 + D;
+      const wO = 0.3, wB = 0.55;                          // kutne brzine objekta i bočice (rad/s)
+      function E(x) { x = sat(x); return x * x * x - x * x * x * x / 2; }   // integral od glatko()
+      const ukupno = wO * d0 + (wO * D + (wB - wO) * D / 2) + wB * d1 + wB * D / 2 + wO * D / 2;
+      const s = 2 * Math.PI * Math.max(1, Math.round(ukupno / (2 * Math.PI))) / ukupno;
+      function kut(c) {                                   // okret od početka ciklusa
+        let a = 0;
+        if (c <= d0) return s * wO * c;
+        a += wO * d0; c -= d0;
+        if (c <= D) return s * (a + wO * c + (wB - wO) * D * E(c / D));
+        a += wO * D + (wB - wO) * D / 2; c -= D;
+        if (c <= d1) return s * (a + wB * c);
+        a += wB * d1; c -= d1;
+        if (c <= D) return s * (a + wB * (c - D * E(c / D)));
+        a += wB * D / 2; c -= D;
+        if (c <= d2) return s * a;
+        return s * (a + wO * D * E((c - d2) / D));
+      }
+      const kutNatpisa = kut(POCETAK_NATPISA);
+
+      return function (t) {
+        const st = { seg: 0, prog: 0, uvod: 1, w: [1, 0, 0], kut: 0, odsjaj: 99, sjaj: 99, podnaslov: false };
+        if (t < pojava) {
+          st.uvod = t / pojava;
+          st.kut = s * wO * (t - pojava) - kutNatpisa;
+          return st;
+        }
+        const u = t - pojava;
+        let c = P.ponavljaj ? u % L : Math.min(u, POCETAK_NATPISA + 0.001);
+        st.kut = kut(c) - kutNatpisa;
+        if (c < d0) return st;
+        c -= d0;
+        if (c < D) { st.prog = c / D; const e = glatko(st.prog); st.w = [1 - e, e, 0]; return st; }
+        c -= D;
+        st.seg = 1; st.w = [0, 1, 0];
+        if (c < d1) { st.odsjaj = lerp(1.15, -1.25, (c - 0.5) / 1.7); return st; }
+        c -= d1;
+        if (c < D) {
+          st.prog = c / D; const e = glatko(st.prog); st.w = [0, 1 - e, e];
+          st.podnaslov = st.prog > 0.8;
+          return st;
+        }
+        c -= D;
+        st.seg = 2; st.w = [0, 0, 1];
+        if (c < d2 || !P.ponavljaj) {
+          const ct = P.ponavljaj ? c : (u - POCETAK_NATPISA) % 6;
+          st.sjaj = lerp(-1.35, 1.35, (ct - 0.5) / 1.8);
+          st.podnaslov = true;
+          return st;
+        }
+        c -= d2;
+        st.prog = c / D; const e = glatko(st.prog); st.w = [e, 0, 1 - e];
+        return st;
+      };
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  ANIMACIJA — WebGL platno koje crta točkice
+    // ═══════════════════════════════════════════════════════════════════
+    function napraviAnimaciju(platno, scena, dogadaji) {
+      const tijek = napraviTijek();
+      const POD = boja01(B.podloga);
+      let gl = null, program = null, spremnik = null, U = {}, n = 0, pola = 0.35;
+      let spremno = false, unisteno = false, priprema = null;
+      let raf = 0, vrti = false, vrijeme = 0, zadnje = 0;
+      let izlazOd = -1, izlazTrajanje = 1.1, izlazGotov = null;
+      let W = 1, H = 1, dpr = 1, S = 160, sx = 0, sy = 0;
+      let misX = 0, misY = 0, nagibX = 0, nagibY = 0;
+      let podnaslov = null;
+
+      // 1. dio: WebGL i prevođenje shadera; gdje preglednik to zna, shader se
+      //    prevodi usporedo (KHR_parallel_shader_compile) dok se računaju oblici
+      let sh = null, usporedo = null;
+      function pocniGL() {
+        const opcije = { alpha: false, antialias: false, depth: false, stencil: false, premultipliedAlpha: false, preserveDrawingBuffer: false };
+        gl = platno.getContext('webgl', opcije) || platno.getContext('experimental-webgl', opcije);
+        if (!gl) return false;
+        usporedo = gl.getExtension('KHR_parallel_shader_compile');
+        sh = [gl.createShader(gl.VERTEX_SHADER), gl.createShader(gl.FRAGMENT_SHADER)];
+        gl.shaderSource(sh[0], VS);
+        gl.shaderSource(sh[1], FS);
+        gl.compileShader(sh[0]);
+        gl.compileShader(sh[1]);
+        program = gl.createProgram();
+        gl.attachShader(program, sh[0]);
+        gl.attachShader(program, sh[1]);
+        gl.linkProgram(program);
+        return true;
+      }
+      function cekajShader() {
+        return new Promise(function (gotovo) {
+          (function provjeri() {
+            if (unisteno || !usporedo || gl.isContextLost() || gl.getProgramParameter(program, usporedo.COMPLETION_STATUS_KHR)) gotovo();
+            else setTimeout(provjeri, 16);
+          })();
+        });
+      }
+      // 2. dio: podaci o točkicama idu u grafičku karticu
+      function dovrsiGL(oblici) {
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+          console.warn('[Martimex] Početni ekran – shader:', gl.getShaderInfoLog(sh[0]) || gl.getShaderInfoLog(sh[1]) || gl.getProgramInfoLog(program));
+          return false;
+        }
+        gl.useProgram(program);
+        spremnik = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, spremnik);
+        gl.bufferData(gl.ARRAY_BUFFER, oblici.podaci, gl.STATIC_DRAW);
+        ATRIBUTI.forEach(function (a) {
+          const mjesto = gl.getAttribLocation(program, a[0]);
+          if (mjesto < 0) return;
+          gl.enableVertexAttribArray(mjesto);
+          gl.vertexAttribPointer(mjesto, a[1], gl.FLOAT, false, 64, a[2] * 4);
+        });
+        UNIFORME.forEach(function (u) { U[u] = gl.getUniformLocation(program, u); });
+        gl.disable(gl.DEPTH_TEST);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE);           // točkice se zbrajaju (svjetlo)
+        gl.uniform3fv(U.uSilver, boja01(B.srebro));
+        gl.uniform3fv(U.uLiquid, zasiti(boja01(B.roza), 2));   // na crnoj podlozi roza mora biti jača da se vidi
+        gl.uniform3fv(U.uPowder, boja01(B.puder));
+        gl.uniform3fv(U.uAlpha, JACINA);
+        gl.uniform1f(U.uTextW, SIRINA_NATPISA / 2);
+        n = oblici.n;
+        pola = oblici.pola;
+        return true;
+      }
+
+      // Oblici + WebGL; poziva se unaprijed (kad preglednik miruje) ili pri otvaranju
+      function pripremi() {
+        if (priprema) return priprema;
+        priprema = Promise.resolve().then(function () {
+          if (unisteno) return false;
+          if (!pocniGL()) { dogadaji.bezAnimacije(); return false; }
+          return pripremiOblike().then(function (oblici) {
+            return cekajShader().then(pauza).then(function () {
+              if (unisteno || gl.isContextLost()) return false;      // izgubljen kontekst: vidi webglcontextrestored
+              if (!dovrsiGL(oblici)) { dogadaji.bezAnimacije(); return false; }
+              velicina();
+              nacrtaj(0);                               // prvo crtanje unaprijed, a ne tek pri otvaranju
+              spremno = true;
+              return true;
+            });
+          });
+        }).catch(function (e) {
+          console.warn('[Martimex] Početni ekran bez animacije:', e);
+          dogadaji.bezAnimacije();
+          return false;
+        });
+        return priprema;
+      }
+
+      function velicina() {
+        if (!gl) return;
+        W = Math.max(1, platno.clientWidth); H = Math.max(1, platno.clientHeight);
+        dpr = Math.min(2, window.devicePixelRatio || 1);
+        const pw = Math.round(W * dpr), ph = Math.round(H * dpr);
+        if (platno.width !== pw || platno.height !== ph) { platno.width = pw; platno.height = ph; }
+        gl.viewport(0, 0, pw, ph);
+        // prostor za animaciju je .mx-p-scena (između zaglavlja i gumba)
+        const sw = Math.max(1, scena.offsetWidth), sh = Math.max(1, scena.offsetHeight);
+        S = Math.max(40, Math.min(sw / 2.5, sh / 2.2));
+        sx = scena.offsetLeft + sw / 2;
+        sy = scena.offsetTop + sh / 2;
+        dogadaji.mjere(sh / 2 + pola * S + 22);         // podnaslov ispod natpisa
+        if (!vrti && spremno) nacrtaj(MIRNO.matches ? 99 : vrijeme);
+      }
+
+      function matrica(kutY, nagib, valjanje) {
+        const cy = Math.cos(kutY), sy_ = Math.sin(kutY), cx = Math.cos(nagib), sx_ = Math.sin(nagib);
+        const cz = Math.cos(valjanje), sz = Math.sin(valjanje);
+        // Rx(nagib) · Ry(kutY)
+        const m = [
+          [cy, 0, sy_],
+          [sx_ * sy_, cx, -sx_ * cy],
+          [-cx * sy_, sx_, cx * cy]
+        ];
+        // Rz(valjanje) · m
+        const r = [
+          [cz * m[0][0] - sz * m[1][0], cz * m[0][1] - sz * m[1][1], cz * m[0][2] - sz * m[1][2]],
+          [sz * m[0][0] + cz * m[1][0], sz * m[0][1] + cz * m[1][1], sz * m[0][2] + cz * m[1][2]],
+          m[2]
+        ];
+        // WebGL čita matricu po stupcima
+        return [r[0][0], r[1][0], r[2][0], r[0][1], r[1][1], r[2][1], r[0][2], r[1][2], r[2][2]];
+      }
+
+      function nacrtaj(t) {
+        const mirno = MIRNO.matches;
+        let st;
+        if (mirno) st = { seg: 2, prog: 0, uvod: 1, w: [0, 0, 1], kut: 0, odsjaj: 99, sjaj: 99, podnaslov: true };
+        else st = tijek(t);
+        const wO = st.w[0], wB = st.w[1];
+        const nagib = 0.3 * wO + 0.08 * wB + wO * 0.07 * Math.sin(t * 0.47) + nagibY * 0.16;
+        const valjanje = wO * 0.1 * Math.sin(t * 0.29);
+        const izlaz = izlazOd < 0 ? 0 : sat((vrijeme - izlazOd) / izlazTrajanje);
+
+        gl.clearColor(POD[0], POD[1], POD[2], 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.uniform1f(U.uTime, mirno ? 7 : t);
+        gl.uniform1f(U.uSeg, st.seg);
+        gl.uniform1f(U.uProg, st.prog);
+        gl.uniform1f(U.uIntro, st.uvod);
+        gl.uniform1f(U.uExit, izlaz);
+        gl.uniformMatrix3fv(U.uRot, false, matrica(st.kut + nagibX * 0.3, nagib, valjanje));
+        gl.uniform2f(U.uPx, 2 * S / W, 2 * S / H);
+        gl.uniform2f(U.uCenter, 2 * sx / W - 1, 1 - 2 * sy / H);
+        gl.uniform1f(U.uSize, 1.35 * dpr * Math.min(1.25, Math.max(0.8, Math.sqrt(S / 160))));
+        gl.uniform2f(U.uSweep, st.sjaj, st.odsjaj);
+        gl.drawArrays(gl.POINTS, 0, n);
+
+        if (st.podnaslov !== podnaslov) { podnaslov = st.podnaslov; dogadaji.podnaslov(podnaslov); }
+        if (izlaz >= 1 && izlazGotov) { const f = izlazGotov; izlazGotov = null; f(); }
+      }
+
+      function sljedeca(sad) {
+        raf = requestAnimationFrame(sljedeca);
+        // korak vremena je ograničen: ako uređaj zastane, animacija se ne preskače
+        const dt = Math.min(0.05, Math.max(0, (sad - zadnje) / 1000));
+        zadnje = sad;
+        vrijeme += dt;
+        const f = 1 - Math.exp(-dt * 3.5);
+        nagibX += (misX - nagibX) * f;
+        nagibY += (misY - nagibY) * f;
+        nacrtaj(vrijeme);
+      }
+
+      function pokreni() {
+        if (!spremno || vrti || unisteno) return;
+        if (MIRNO.matches) { nacrtaj(99); return; }
+        vrti = true;
+        zadnje = performance.now();
+        raf = requestAnimationFrame(sljedeca);
+      }
+      function stani() {
+        vrti = false;
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+      }
+
+      platno.addEventListener('webglcontextlost', function (e) {
+        e.preventDefault();
+        stani();
+        spremno = false;
+        priprema = null;
+      });
+      platno.addEventListener('webglcontextrestored', function () {
+        if (unisteno) return;
+        pripremi().then(function (ok) { if (ok && dogadaji.otvoreno()) pokreni(); });
+      });
+
+      return {
+        pripremi: pripremi,
+        velicina: velicina,
+        // svako otvaranje: animacija ispočetka
+        ispocetka: function () {
+          HITNO = true;
+          stani();
+          vrijeme = 0; izlazOd = -1; izlazGotov = null; podnaslov = null;
+          return pripremi().then(function (ok) { if (ok && dogadaji.otvoreno()) pokreni(); return ok; });
+        },
+        stani: stani,
+        mis: function (x, y) { misX = x; misY = y; },
+        izlaz: function (gotovo) {
+          if (!spremno || MIRNO.matches) { gotovo(); return; }
+          izlazOd = vrijeme;
+          izlazGotov = gotovo;
+          pokreni();
+        },
+        unisti: function () {
+          unisteno = true;
+          stani();
+          if (gl && !gl.isContextLost()) {
+            gl.deleteBuffer(spremnik);
+            gl.deleteProgram(program);
+            const ext = gl.getExtension('WEBGL_lose_context');
+            if (ext) ext.loseContext();
+          }
+          gl = null;
+        }
+      };
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  STIL — ide u shadow root chata
+    // ═══════════════════════════════════════════════════════════════════
+    const CSS = `
+      :host .mx-p {
+        --mx-p-podloga: ${B.podloga};
+        --mx-p-puder: ${B.puder};
+        --mx-p-puder-78: ${prozirna(B.puder, .78)};
+        --mx-p-staklo: ${prozirna(B.puder, .07)};
+        --mx-p-staklo-jace: ${prozirna(B.puder, .13)};
+        --mx-p-rub: ${prozirna(B.roza, .5)};
+        --mx-p-rub-sjaj: ${prozirna(B.puder, .95)};
+        --mx-p-sjaj: ${prozirna(B.roza, .1)};
+        --mx-p-sjaj-2: ${prozirna(B.roza, .035)};
+        --mx-p-sjaj-0: ${prozirna(B.roza, 0)};
+        --mx-p-sjena: ${prozirna(B.roza, .5)};
+        --mx-p-sjena-jaca: ${prozirna(B.roza, .7)};
+        --mx-p-glatko: cubic-bezier(.16, 1, .3, 1);
+        --mx-p-meko: cubic-bezier(.45, 0, .2, 1);
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border-radius: inherit;
+        background: var(--mx-p-podloga);
+        color: var(--mx-p-puder);
+        font-family: ${P.font};
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.4;
+        letter-spacing: normal;
+        text-align: left;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-user-select: none;
+                user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      :host .mx-p * { box-sizing: border-box; }
+
+      :host .mx-p-platno {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        display: block;
+        opacity: 0;
+        transition: opacity .5s linear;
+      }
+      :host .mx-p-spremno .mx-p-platno { opacity: 1; }
+
+      /* blagi rozi sjaj iza objekta i uz dno */
+      :host .mx-p-sjaj {
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(ellipse 72% 36% at 50% var(--mx-p-sredina, 45%), var(--mx-p-sjaj), var(--mx-p-sjaj-2) 50%, var(--mx-p-sjaj-0) 76%),
+          radial-gradient(ellipse 110% 48% at 50% 112%, var(--mx-p-sjaj-2), var(--mx-p-sjaj-0) 70%);
+      }
+
+      /* ── zaglavlje ── */
+      :host .mx-p-vrh {
+        position: relative;
+        z-index: 2;
+        flex: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: calc(58px + env(safe-area-inset-top, 0px));
+        padding: env(safe-area-inset-top, 0px) 56px 0;
+      }
+      :host .mx-p-marka {
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: .38em;
+        text-indent: .38em;             /* razmak iza zadnjeg slova, da natpis stoji točno u sredini */
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: var(--mx-p-puder-78);
+      }
+      :host .mx-p-zatvori {
+        -webkit-appearance: none;
+                appearance: none;
+        position: absolute;
+        right: 12px;
+        top: calc(env(safe-area-inset-top, 0px) + 11px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--mx-p-puder);
+        opacity: .72;
+        cursor: pointer;
+        transition: opacity .3s var(--mx-p-meko), background-color .3s var(--mx-p-meko);
+      }
+      :host .mx-p-zatvori:hover { opacity: 1; background-color: var(--mx-p-staklo); }
+      :host .mx-p-zatvori:focus { outline: none; }
+      :host .mx-p-zatvori:focus-visible { opacity: 1; outline: 2px solid var(--mx-p-puder); outline-offset: 2px; }
+      :host .mx-p-zatvori svg { width: 16px; height: 16px; display: block; }
+
+      /* ── prostor animacije ── */
+      :host .mx-p-scena {
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+      :host .mx-p-naslov {                /* "Marti" za čitače zaslona (na ekranu ga crtaju točkice) */
+        position: absolute;
+        width: 1px; height: 1px;
+        margin: -1px; padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      :host .mx-p-podnaslov {
+        position: absolute;
+        left: 20px;
+        right: 20px;
+        top: var(--mx-p-ispod, 72%);
+        margin: 0;
+        text-align: center;
+        font-size: 11px;
+        font-weight: 400;
+        letter-spacing: .3em;
+        text-indent: .3em;
+        text-transform: uppercase;
+        color: var(--mx-p-puder);
+        opacity: 0;
+        transform: translateY(8px);
+        filter: blur(3px);
+        transition: opacity .9s var(--mx-p-meko), transform 1.3s var(--mx-p-glatko), filter 1s var(--mx-p-meko);
+        pointer-events: none;
+      }
+      :host .mx-p-podnaslov-da .mx-p-podnaslov { opacity: .72; transform: none; filter: none; }
+
+      /* bez WebGL-a: natpis "Marti" slovima */
+      :host .mx-p-rezerva {
+        display: none;
+        position: absolute;
+        left: 0; right: 0;
+        top: 50%;
+        margin: 0;
+        transform: translateY(-62%);
+        text-align: center;
+        font-family: ${P.fontNatpisa};
+        font-size: 76px;
+        font-weight: 600;
+        line-height: 1;
+        color: var(--mx-p-puder);
+      }
+      :host .mx-p-bez-gl .mx-p-rezerva { display: block; animation: mx-p-rezerva 1.6s var(--mx-p-glatko) .2s backwards; }
+      :host .mx-p-bez-gl .mx-p-podnaslov { top: calc(50% + 34px); opacity: .72; transform: none; filter: none; }
+
+      /* ── dno: gumb "Početak" ── */
+      :host .mx-p-dno {
+        position: relative;
+        z-index: 2;
+        flex: none;
+        display: flex;
+        justify-content: center;
+        padding: 16px 24px calc(30px + env(safe-area-inset-bottom, 0px));
+      }
+      :host .mx-p-gumb {
+        -webkit-appearance: none;
+                appearance: none;
+        position: relative;
+        isolation: isolate;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        width: 100%;
+        max-width: 280px;
+        height: 54px;
+        margin: 0;
+        padding: 0 28px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--mx-p-staklo);
+        box-shadow: 0 18px 40px -22px var(--mx-p-sjena);
+        color: var(--mx-p-puder);
+        font: inherit;
+        font-size: 15px;
+        font-weight: 500;
+        letter-spacing: .14em;
+        text-indent: .14em;
+        cursor: pointer;
+        transition: background-color .35s var(--mx-p-meko), box-shadow .35s var(--mx-p-meko), transform .2s var(--mx-p-meko);
+      }
+      /* rub od ružičastog zlata s odsjajem koji putuje (kao gumb chata) */
+      :host .mx-p-gumb::before {
+        content: "";
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        z-index: -1;
+        padding: 1px;
+        border-radius: inherit;
+        background: linear-gradient(105deg, var(--mx-p-rub) 0%, var(--mx-p-rub) 40%, var(--mx-p-rub-sjaj) 50%, var(--mx-p-rub) 60%, var(--mx-p-rub) 100%) 0 0 / 200% 100% repeat-x;
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+                mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+        pointer-events: none;
+        animation: mx-p-zlato 5s linear infinite;
+      }
+      :host .mx-p-gumb svg { width: 18px; height: 18px; display: block; flex: none; transition: transform .45s var(--mx-p-glatko); }
+      :host .mx-p-gumb:hover { background-color: var(--mx-p-staklo-jace); box-shadow: 0 20px 44px -20px var(--mx-p-sjena-jaca); }
+      :host .mx-p-gumb:hover svg { transform: translateX(4px); }
+      :host .mx-p-gumb:active { transform: scale(.975); transition-duration: .1s; }
+      :host .mx-p-gumb:focus { outline: none; }
+      :host .mx-p-gumb:focus-visible { outline: 2px solid var(--mx-p-puder); outline-offset: 4px; }
+
+      /* ── pojava pri svakom otvaranju ── */
+      :host .mx-p-ulaz .mx-p-vrh { animation: mx-p-pojava .9s var(--mx-p-glatko) .1s backwards; }
+      :host .mx-p-ulaz .mx-p-dno { animation: mx-p-pojava 1s var(--mx-p-glatko) .5s backwards; }
+
+      /* ── nakon "Početak": tekst i gumb se povuku, chat se otvori u krugu ── */
+      :host .mx-p-izlaz { pointer-events: none; }
+      :host .mx-p-izlaz .mx-p-vrh,
+      :host .mx-p-izlaz .mx-p-dno,
+      :host .mx-p-izlaz .mx-p-podnaslov {
+        opacity: 0;
+        transform: translateY(6px);
+        transition: opacity .35s var(--mx-p-meko), transform .5s var(--mx-p-meko);
+      }
+
+      @keyframes mx-p-zlato {
+        from { background-position: 100% 0; }
+        to   { background-position: -100% 0; }
+      }
+      @keyframes mx-p-pojava {
+        from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
+      }
+      @keyframes mx-p-rezerva {
+        from { opacity: 0; transform: translateY(-56%); filter: blur(10px); letter-spacing: .12em; }
+      }
+      @keyframes mx-p-prozirnost {
+        from { opacity: 0; }
+      }
+
+      /* "Smanji pokrete": ništa se ne pomiče, samo se tiho pojavi */
+      @media (prefers-reduced-motion: reduce) {
+        :host .mx-p-ulaz .mx-p-vrh,
+        :host .mx-p-ulaz .mx-p-dno,
+        :host .mx-p-bez-gl .mx-p-rezerva { animation: mx-p-prozirnost .4s linear backwards; }
+        :host .mx-p-gumb::before { animation: none; }
+        :host .mx-p-gumb svg,
+        :host .mx-p-gumb:active { transition: none; transform: none; }
+        :host .mx-p-podnaslov { transition: opacity .4s linear; transform: none; filter: none; }
+      }
+    `;
+
+    // Stil ide u shadow root chata (jednom; starija verzija se zamijeni)
+    function ubaciStil(korijen) {
+      const stari = korijen.querySelector('style[data-mx-pocetna]');
+      if (stari && stari.getAttribute('data-mx-pocetna') === '1') return;
+      if (stari) stari.remove();
+      const stil = document.createElement('style');
+      stil.setAttribute('data-mx-pocetna', '1');
+      stil.textContent = CSS;
+      korijen.appendChild(stil);
+    }
+
+    // Fontove (Jost i Cormorant Garamond iz mape fonts/) inače učitava
+    // kartica-artikla.js; ako je taj modul isključen, učitaju se ovdje.
+    // Idu u <head> stranice: fontovi iz <head> vrijede i unutar shadow roota.
+    function ubaciFontove() {
+      if (document.getElementById('mx-kartice-font') || document.getElementById('mx-pocetna-font') || !document.head) return;
+      const rasponi = {
+        'latin': 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD',
+        'latin-ext': 'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF'
+      };
+      const stil = document.createElement('style');
+      stil.id = 'mx-pocetna-font';
+      stil.textContent = [['MX Jost', 'jost', '400 600'], ['MX Cormorant', 'cormorant-garamond', '500 700']].map(function (f) {
+        return Object.keys(rasponi).map(function (r) {
+          return '@font-face{font-family:"' + f[0] + '";src:url("' + BAZA + 'fonts/' + f[1] + '-' + r + '.woff2") format("woff2");' +
+            'font-weight:' + f[2] + ';font-style:normal;font-display:swap;unicode-range:' + rasponi[r] + '}';
+        }).join('\n');
+      }).join('\n');
+      document.head.appendChild(stil);
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  POČETNI EKRAN — sloj preko Voiceflowova prozora chata
+    // ═══════════════════════════════════════════════════════════════════
+    const IKONA_X = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>';
+    const IKONA_STRELICA = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9h11.5M10 4.5L14.5 9 10 13.5"/></svg>';
+
+    function el(oznaka, klasa, tekst) {
+      const e = document.createElement(oznaka);
+      if (klasa) e.className = klasa;
+      if (tekst) e.textContent = tekst;
+      return e;
+    }
+
+    function napraviPocetnu(radnje) {
+      const korijen = el('div', 'mx-p');
+      korijen.setAttribute('role', 'region');
+      korijen.setAttribute('aria-label', String(P.natpis || 'Marti'));
+
+      const platno = el('canvas', 'mx-p-platno');
+      platno.setAttribute('aria-hidden', 'true');
+      const sjaj = el('div', 'mx-p-sjaj');
+      sjaj.setAttribute('aria-hidden', 'true');
+
+      const vrh = el('div', 'mx-p-vrh');
+      if (P.zaglavlje) vrh.appendChild(el('span', 'mx-p-marka', P.zaglavlje));
+      const zatvori = el('button', 'mx-p-zatvori');
+      zatvori.type = 'button';
+      zatvori.setAttribute('aria-label', 'Zatvori chat');
+      zatvori.innerHTML = IKONA_X;
+      vrh.appendChild(zatvori);
+
+      const scena = el('div', 'mx-p-scena');
+      scena.appendChild(el('h2', 'mx-p-naslov', P.natpis));
+      const rezerva = el('p', 'mx-p-rezerva', P.natpis);
+      rezerva.setAttribute('aria-hidden', 'true');
+      scena.appendChild(rezerva);
+      if (P.podnaslov) scena.appendChild(el('p', 'mx-p-podnaslov', P.podnaslov));
+
+      const dno = el('div', 'mx-p-dno');
+      const gumb = el('button', 'mx-p-gumb');
+      gumb.type = 'button';
+      gumb.appendChild(el('span', '', P.tekstGumba || 'Početak'));
+      gumb.insertAdjacentHTML('beforeend', IKONA_STRELICA);
+      dno.appendChild(gumb);
+
+      korijen.appendChild(platno);
+      korijen.appendChild(sjaj);
+      korijen.appendChild(vrh);
+      korijen.appendChild(scena);
+      korijen.appendChild(dno);
+
+      let otvoreno = false, izlazi = false;
+      const anim = napraviAnimaciju(platno, scena, {
+        bezAnimacije: function () { korijen.classList.add('mx-p-bez-gl'); },
+        podnaslov: function (da) { korijen.classList.toggle('mx-p-podnaslov-da', da); },
+        mjere: function (ispod) {
+          korijen.style.setProperty('--mx-p-ispod', ispod + 'px');
+          korijen.style.setProperty('--mx-p-sredina', (scena.offsetTop + scena.offsetHeight / 2) / Math.max(1, korijen.offsetHeight) * 100 + '%');
+        },
+        otvoreno: function () { return otvoreno; }
+      });
+
+      const promatracVelicine = typeof ResizeObserver === 'function'
+        ? new ResizeObserver(function () { anim.velicina(); })
+        : null;
+      if (promatracVelicine) promatracVelicine.observe(korijen);
+      else window.addEventListener('resize', anim.velicina);
+
+      if (P.nagibPremaMisu && MIS) {
+        korijen.addEventListener('pointermove', function (e) {
+          const r = korijen.getBoundingClientRect();
+          anim.mis(sat((e.clientX - r.left) / r.width) * 2 - 1, sat((e.clientY - r.top) / r.height) * 2 - 1);
+        });
+        korijen.addEventListener('pointerleave', function () { anim.mis(0, 0); });
+      }
+
+      zatvori.addEventListener('click', radnje.zatvori);
+      gumb.addEventListener('click', function (e) {
+        if (izlazi) return;
+        izlazi = true;
+        radnje.pocetak(e.detail === 0);   // detail 0 = pritisnut tipkovnicom
+      });
+
+      // Chat se otvori u krugu koji se širi od gumba "Početak"
+      function otvoriKrug(gotovo) {
+        const r = korijen.getBoundingClientRect(), g = gumb.getBoundingClientRect();
+        const x = g.left + g.width / 2 - r.left, y = g.top + g.height / 2 - r.top;
+        const max = Math.hypot(Math.max(x, r.width - x), Math.max(y, r.height - y)) + 60;
+        const trajanje = MIRNO.matches ? 350 : 950, kasni = MIRNO.matches ? 0 : 180;
+        const pocetak = performance.now();
+        (function korak(sad) {
+          const t = sat((sad - pocetak - kasni) / trajanje);
+          if (MIRNO.matches) korijen.style.opacity = String(1 - t);
+          else {
+            const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            const rr = e * max;
+            const maska = 'radial-gradient(circle at ' + x + 'px ' + y + 'px, transparent ' + Math.max(0, rr - 60) + 'px, #000 ' + rr + 'px)';
+            korijen.style.webkitMaskImage = maska;
+            korijen.style.maskImage = maska;
+          }
+          if (t < 1) requestAnimationFrame(korak);
+          else gotovo();
+        })(pocetak);
+      }
+
+      return {
+        el: korijen,
+        pripremi: anim.pripremi,
+        otvoreno: function () { return otvoreno; },
+        prikazi: function () {
+          if (izlazi) return;
+          otvoreno = true;
+          korijen.classList.remove('mx-p-ulaz', 'mx-p-spremno', 'mx-p-podnaslov-da');
+          void korijen.offsetWidth;                       // da se animacija pojave ponovi
+          korijen.classList.add('mx-p-ulaz');
+          anim.velicina();
+          anim.ispocetka().then(function (ok) {
+            if (ok && otvoreno) korijen.classList.add('mx-p-spremno');
+          });
+        },
+        sakrij: function () {
+          otvoreno = false;
+          anim.stani();
+        },
+        izlaz: function (gotovo) {
+          korijen.classList.add('mx-p-izlaz');
+          let ostalo = 2;
+          function jedno() { if (--ostalo === 0) gotovo(); }
+          anim.izlaz(jedno);
+          otvoriKrug(jedno);
+        },
+        unisti: function () {
+          otvoreno = false;
+          anim.unisti();
+          if (promatracVelicine) promatracVelicine.disconnect();
+          else window.removeEventListener('resize', anim.velicina);
+          korijen.remove();
+        }
+      };
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  VEZA S VOICEFLOWOM
+    // ═══════════════════════════════════════════════════════════════════
+    let pocetna = null;       // početni ekran, dok postoji
+    let pokrenuto = false;    // "Početak" je pritisnut (u ovom učitavanju stranice)
+    let otvoren = false;      // chat je otvoren
+    let promatracProzora = null;
+
+    function korijenChata() {
+      const h = document.getElementById(HOST);
+      return h && h.shadowRoot;
+    }
+
+    // Razgovor još nije krenuo: Voiceflow tada pokazuje svoj gumb za početak
+    function cekaPocetak(kor) {
+      const g = kor.querySelector(START);
+      if (!g || !g.parentElement) return false;
+      const s = getComputedStyle(g.parentElement);
+      return s.pointerEvents !== 'none' && s.display !== 'none' && s.visibility !== 'hidden';
+    }
+
+    // Postoji li već razgovor (spremljen u pregledniku ili prikazan u prozoru)
+    function imaRazgovor(kor) {
+      if (kor.querySelector(PROZOR + ' .vfrc-system-response, ' + PROZOR + ' .vfrc-user-response')) return true;
+      try {
+        const spremista = [window.localStorage, window.sessionStorage];
+        for (let s = 0; s < spremista.length; s++) {
+          const sp = spremista[s];
+          if (!sp) continue;
+          for (let i = 0; i < sp.length; i++) {
+            const kljuc = sp.key(i);
+            if (!kljuc || kljuc.indexOf('voiceflow-session-') !== 0) continue;
+            const sesija = JSON.parse(sp.getItem(kljuc) || 'null');
+            if (sesija && Array.isArray(sesija.turns) && sesija.turns.length) return true;
+          }
+        }
+      } catch (e) { /* spremište nedostupno: odlučuje prozor */ }
+      return false;
+    }
+
+    function trebaPocetna(kor) {
+      if (pokrenuto || !kor.querySelector(START)) return false;
+      if (P.iKadRazgovorPostoji) return true;
+      return cekaPocetak(kor) && !imaRazgovor(kor);
+    }
+
+    // Dijelovi chata ispod početnog ekrana: isključeni dok je on preko njih
+    function iskljuciIspod(prozor, da) {
+      Array.prototype.forEach.call(prozor.children, function (d) {
+        if (pocetna && d === pocetna.el) return;
+        if (da) { if (!d.hasAttribute('inert')) { d.setAttribute('inert', ''); d.setAttribute('data-mx-p-inert', ''); } }
+        else if (d.hasAttribute('data-mx-p-inert')) { d.removeAttribute('inert'); d.removeAttribute('data-mx-p-inert'); }
+      });
+    }
+
+    // Početni ekran mora biti u prozoru chata (ako ga Voiceflow iscrta
+    // iznova, ekran se premjesti u novi prozor)
+    function prikvaci(kor) {
+      const prozor = kor.querySelector(PROZOR);
+      if (!prozor || !pocetna) return false;
+      if (pocetna.el.parentNode !== prozor) prozor.appendChild(pocetna.el);
+      iskljuciIspod(prozor, true);
+      if (!promatracProzora) {
+        promatracProzora = new MutationObserver(function () {
+          if (!pocetna) return;
+          const p = kor.querySelector(PROZOR);
+          if (p && (pocetna.el.parentNode !== p || p.querySelector(':scope > :not(.mx-p):not([inert])'))) prikvaci(kor);
+        });
+      }
+      promatracProzora.disconnect();
+      promatracProzora.observe(kor, { childList: true, subtree: true });
+      return true;
+    }
+
+    function ukloni() {
+      if (promatracProzora) promatracProzora.disconnect();
+      if (!pocetna) return;
+      const prozor = pocetna.el.parentNode;
+      pocetna.unisti();
+      pocetna = null;
+      OBLICI = null;                                  // oblici više ne trebaju (oslobodi memoriju)
+      if (prozor) iskljuciIspod(prozor, false);
+    }
+
+    // Pritisak Voiceflowova gumba za početak → standardni početak razgovora
+    function pokreniRazgovor(kor) {
+      const g = kor && kor.querySelector(START);
+      if (g && cekaPocetak(kor)) g.click();
+    }
+
+    function pocetak(tipkovnicom) {
+      const kor = korijenChata();
+      pokrenuto = true;
+      if (kor) pokreniRazgovor(kor);
+      if (!pocetna) return;
+      pocetna.izlaz(function () {
+        ukloni();
+        // tko je krenuo tipkovnicom, nastavlja u polju za poruku (na mobitelu
+        // se tipkovnica ne otvara sama)
+        if (tipkovnicom && kor) {
+          const polje = kor.querySelector(PROZOR + ' textarea, ' + PROZOR + ' input[type="text"]');
+          if (polje) try { polje.focus({ preventScroll: true }); } catch (e) { /* nije bitno */ }
+        }
+      });
+    }
+
+    function zatvoriChat() {
+      try { window.voiceflow.chat.close(); } catch (e) { /* nije bitno */ }
+    }
+
+    function napravi(kor) {
+      if (pocetna) return pocetna;
+      pocetna = napraviPocetnu({ pocetak: pocetak, zatvori: zatvoriChat });
+      if (!prikvaci(kor)) { ukloni(); return null; }
+      // oblici i WebGL se pripreme unaprijed, kad preglednik miruje
+      const kasnije = window.requestIdleCallback || function (f) { return setTimeout(f, 1200); };
+      kasnije(function () { if (pocetna) pocetna.pripremi(); }, { timeout: 2500 });
+      return pocetna;
+    }
+
+    // Provjera stanja: pri pojavi prozora chata i pri svakom otvaranju
+    function provjeri(priOtvaranju) {
+      const kor = korijenChata();
+      if (!kor || !kor.querySelector(PROZOR)) return;
+      try {
+        if (trebaPocetna(kor)) {
+          if (!napravi(kor)) throw new Error('prozor chata nije pronađen');
+          prikvaci(kor);
+          if (priOtvaranju) pocetna.prikazi();
+        } else if (pocetna && !pocetna.el.classList.contains('mx-p-izlaz')) {
+          ukloni();
+        }
+      } catch (e) {
+        // sigurnosna mreža: bez početnog ekrana chat radi kao prije
+        console.warn('[Martimex] Početni ekran nije prikazan:', e);
+        ukloni();
+        pokrenuto = true;
+        if (priOtvaranju) pokreniRazgovor(kor);
+      }
+    }
+
+    // Voiceflow javlja otvaranje i zatvaranje chata porukom na window
+    // ('{"type":"voiceflow:open"}' / '{"type":"voiceflow:close"}')
+    function pratiOtvaranje() {
+      window.addEventListener('message', function (e) {
+        if (e.source && e.source !== window) return;
+        let d = e.data;
+        if (typeof d === 'string') {
+          if (d.indexOf('voiceflow:') === -1) return;
+          try { d = JSON.parse(d); } catch (x) { return; }
+        }
+        const tip = d && d.type;
+        if (tip === 'voiceflow:open') {
+          otvoren = true;
+          provjeri(true);
+        } else if (tip === 'voiceflow:close') {
+          otvoren = false;
+          const p = pocetna;
+          // animacija staje kad se prozor spusti (Voiceflow ga spušta 0,3 s)
+          if (p) setTimeout(function () { if (!otvoren && pocetna === p) p.sakrij(); }, 400);
+        }
+      });
+    }
+
+    // Voiceflow se učitava usporedo s ovim modulom: pričeka se njegov element
+    function cekajHost(gotovo) {
+      const pocetak = Date.now();
+      (function trazi() {
+        const h = document.getElementById(HOST);
+        if (h && h.shadowRoot) { gotovo(h); return; }
+        if (Date.now() - pocetak < 60000) setTimeout(trazi, 150);
+      })();
+    }
+
+    // prozor chata se pojavi tek kad chat dobije svoje postavke s Voiceflowa
+    function cekajProzor(korijen, gotovo) {
+      if (korijen.querySelector(PROZOR) && korijen.querySelector(START)) { gotovo(); return; }
+      const promatrac = new MutationObserver(function () {
+        if (!korijen.querySelector(PROZOR) || !korijen.querySelector(START)) return;
+        promatrac.disconnect();
+        gotovo();
+      });
+      promatrac.observe(korijen, { childList: true, subtree: true });
+    }
+
+    function pokreni() {
+      pratiOtvaranje();
+      ubaciFontove();
+      cekajHost(function (host) {
+        const korijen = host.shadowRoot;
+        ubaciStil(korijen);
+        cekajProzor(korijen, function () { provjeri(otvoren); });
+      });
+      // Voiceflow više sam ne pokreće razgovor pri otvaranju chata (to radi
+      // gumb "Početak"); loader.js ovo preda Voiceflowu
+      window.MartimexVoiceflow = Object.assign(window.MartimexVoiceflow || {}, { autostart: false });
+    }
+
+    return { pokreni: pokreni };
+  })();
+
+  try { MX_POCETNA.pokreni(); }
+  catch (e) { console.warn('[Martimex] Početni ekran chata nije pokrenut:', e); }
+
+})();
