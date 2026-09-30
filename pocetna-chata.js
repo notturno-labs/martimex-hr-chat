@@ -11,8 +11,8 @@
   //   - objekt se zatim fluidno pretopi u flakon po uzoru na Xerjoff 1861
   //     (Naxos): fasetirano staklo (jednako široko sprijeda i sa strane) s
   //     medenom tekućinom, zlatni prsten, zlatni čep sa šiljkom i zlatna
-  //     pločica u obliku trapeza sa znakom X; flakon nastane okrenut prednjom
-  //     stranom prema nama, kratko miruje, pa se počne okretati
+  //     pločica u obliku trapeza sa znakom X; flakon nastane malo okrenut
+  //     ulijevo i bez zastoja se jednoliko okreće (kao bočica)
   //   - flakon se pretopi u drugu bočicu parfema (staklo s čepom i rozom
   //     tekućinom koja se lagano njiše; niz staklo prođe odsjaj), a ona u
   //     natpis "Marti", koji se slaže slovo po slovo slijeva nadesno; ispod
@@ -90,7 +90,7 @@
     trajanje: {
       pojava: 1.6,            // točkice se iz izmaglice skupe u AI objekt
       objekt: 3.4,            // živi AI objekt
-      flakon: 4.4,            // flakon po uzoru na Xerjoff 1861 (Naxos): najprije miruje licem prema nama, pa se okreće
+      flakon: 4.4,            // flakon po uzoru na Xerjoff 1861 (Naxos): nastane malo okrenut ulijevo i jednoliko se okreće
       bocica: 3.2,            // bočica parfema
       natpis: 5,              // natpis "Marti"
       prijelaz: 2.4           // svaki prijelaz iz oblika u oblik
@@ -1043,8 +1043,9 @@
     //  Ciklus: objekt → prijelaz → flakon → prijelaz → bočica → prijelaz →
     //  natpis → prijelaz. Svaki oblik ima vlastiti okret oko okomite osi:
     //   - objekt se stalno polako okreće
-    //   - flakon nastane okrenut prednjom stranom (pločicom) prema nama,
-    //     kratko tako miruje, pa se glatko zaleti i okreće
+    //   - flakon se okreće jednoliko, bez zastoja (kao bočica): nastane malo
+    //     okrenut ulijevo (gledano od nas), pločica mu prođe ispred nas i
+    //     okreće se dalje
     //   - bočica se okreće i glatko zaustavi licem prema nama točno kad
     //     nastaje natpis, pa se natpis slaže s njom (nikad nije naopako)
     //  U prijelazu točkice putuju između dva oblika, svaki okrenut po svome.
@@ -1053,13 +1054,12 @@
     function napraviTijek() {
       const pojava = sekunde(T.pojava, 1.6, 0.3);
       const D = sekunde(T.prijelaz, 2.4, 0.6);
-      const TRAJANJA = [sekunde(T.objekt, 3.4, 0.5), sekunde(T.flakon, 4.4, 1.2), sekunde(T.bocica, 3.2, 0.5), sekunde(T.natpis, 5, 0.5)];
+      const TRAJANJA = [sekunde(T.objekt, 3.4, 0.5), sekunde(T.flakon, 4.4, 0.5), sekunde(T.bocica, 3.2, 0.5), sekunde(T.natpis, 5, 0.5)];
       const wO = 0.4, wF = 0.55, wB = 0.7;           // kutne brzine objekta, flakona i bočice (rad/s)
       const NAGIB = 0.08;                            // flakon i bočica malo nagnuti prema nama
-      const MIRUJE = 0.8, ZALET = 1.2;               // flakon najprije miruje licem prema nama, pa se zaleti
+      const KUT_FLAKONA = -0.3;                      // flakon nastane malo okrenut ulijevo, gledano od nas (oko 17°)
       const NATPIS = 3;
       function E(x) { x = sat(x); return x * x * x - x * x * x * x / 2; }   // integral od glatko()
-      function zalet(x, T) { return x <= 0 ? 0 : x <= T ? T * E(x / T) : T / 2 + (x - T); }
       const faze = [];
       let od = 0;
       TRAJANJA.forEach(function (d, i) {
@@ -1073,8 +1073,9 @@
       // u = vrijeme od početka mirovanja objekta (u prijelazu iz natpisa je
       // negativno: okret se tada glatko pokrene iz mirovanja)
       function kutObjekta(u) { return u >= 0 ? wO * (D / 2 + u) : wO * D * E((u + D) / D); }
-      // u = vrijeme od početka mirovanja flakona
-      function kutFlakona(u) { return wF * zalet(u - MIRUJE, ZALET); }
+      // u = vrijeme od nastanka flakona: okreće se jednoliko, bez zastoja (kao
+      // bočica), i dok nastaje (u < 0) i dok se pretapa u bočicu
+      function kutFlakona(u) { return KUT_FLAKONA + wF * u; }
       // u = vrijeme do početka natpisa (≤ 0): okret se glatko zaustavi točno na 0
       function kutBocice(u) {
         if (u >= 0) return 0;
