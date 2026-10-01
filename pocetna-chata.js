@@ -22,6 +22,9 @@
   //   - svaki prijelaz je tekuć: točkice ne putuju sve odjednom nego u
   //     valu, zavrtlože se kao dim i slegnu na novo mjesto; objekt se pri
   //     tome okreće tako da natpis na kraju uvijek stoji ravno prema nama
+  //   - animacija je u gornjem dijelu, a ispod nje stalno stoji tekst
+  //     (pozdrav i kratki opis): ne mijenja se dok se oblici izmjenjuju;
+  //     pozdrav u Cormorant Garamondu, preko njega povremeno prijeđe sjaj
   //   - na dnu gumb "Početak" (s rubom od ružičastog zlata kao gumb chata):
   //     tek kad se on pritisne, kreće razgovor, tj. standardni Voiceflow
   //     workflow. Točkice se tada rasprše kao izmaglica parfema, a chat
@@ -85,6 +88,10 @@
     podnaslov: 'Vodič kroz svijet mirisa',    // ispod natpisa ('' = bez podnaslova)
     zaglavlje: 'Martimex',                    // gore u sredini ('' = bez)
     tekstGumba: 'Početak',
+
+    // Tekst između animacije i gumba; stoji cijelo vrijeme ('' = bez)
+    pozdrav: 'Ja sam Vaš AI beauty asistent!',
+    opis: 'Trebate pomoć pri odabiru proizvoda, imate pitanje o narudžbi ili Vas zanima nešto drugo vezano uz Martimex? Slobodno mi se obratite.',
 
     // Trajanje dijelova animacije u sekundama
     trajanje: {
@@ -1363,6 +1370,10 @@
         --mx-p-podloga: ${B.podloga};
         --mx-p-puder: ${B.puder};
         --mx-p-puder-78: ${prozirna(B.puder, .78)};
+        --mx-p-puder-66: ${prozirna(B.puder, .66)};
+        --mx-p-roza: ${B.roza};
+        --mx-p-roza-0: ${prozirna(B.roza, 0)};
+        --mx-p-roza-70: ${prozirna(B.roza, .7)};
         --mx-p-staklo: ${prozirna(B.puder, .07)};
         --mx-p-staklo-jace: ${prozirna(B.puder, .13)};
         --mx-p-rub: ${prozirna(B.roza, .5)};
@@ -1377,6 +1388,7 @@
         position: absolute;
         top: 0; right: 0; bottom: 0; left: 0;
         z-index: 1000;
+        container-type: size;           /* za @container: na niskom prozoru opis se skrati */
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -1517,6 +1529,80 @@
       :host .mx-p-bez-gl .mx-p-rezerva { display: block; animation: mx-p-rezerva 1.6s var(--mx-p-glatko) .2s backwards; }
       :host .mx-p-bez-gl .mx-p-podnaslov { top: calc(50% + 34px); opacity: .72; transform: none; filter: none; }
 
+      /* ── tekst između animacije i gumba (stoji cijelo vrijeme) ── */
+      :host .mx-p-uvod {
+        position: relative;
+        z-index: 2;
+        flex: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 32px 26px;
+        text-align: center;
+      }
+      :host .mx-p-pozdrav {
+        margin: 0;
+        font-family: ${P.fontNatpisa};
+        font-size: 25px;
+        font-weight: 500;
+        line-height: 1.15;
+        letter-spacing: .01em;
+        color: var(--mx-p-puder);
+        text-wrap: balance;
+      }
+      /* sjaj koji povremeno prijeđe preko pozdrava (kao preko natpisa "Marti") */
+      @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+        :host .mx-p-pozdrav span {
+          background: linear-gradient(105deg, var(--mx-p-puder) 0%, var(--mx-p-puder) 40%, var(--mx-p-roza) 46%, #fff 50%, var(--mx-p-roza) 54%, var(--mx-p-puder) 60%, var(--mx-p-puder) 100%) 100% 0 / 300% 100%;
+          -webkit-background-clip: text;
+                  background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        :host .mx-p-ulaz .mx-p-pozdrav span { animation: mx-p-sjaj-teksta 7s var(--mx-p-meko) 1.6s infinite; }
+      }
+      /* tanka crta od ružičastog zlata s rombom u sredini */
+      :host .mx-p-crta {
+        position: relative;
+        display: block;
+        flex: none;
+        width: 64px;
+        height: 1px;
+        margin: 13px 0 12px;
+        background: linear-gradient(90deg, var(--mx-p-roza-0), var(--mx-p-roza-70) 35%, var(--mx-p-roza-0) 46%, var(--mx-p-roza-0) 54%, var(--mx-p-roza-70) 65%, var(--mx-p-roza-0));
+      }
+      :host .mx-p-crta::after {
+        content: "";
+        position: absolute;
+        left: 50%; top: 50%;
+        width: 4px; height: 4px;
+        margin: -2px 0 0 -2px;
+        background: var(--mx-p-roza);
+        transform: rotate(45deg);
+        opacity: .85;
+      }
+      :host .mx-p-opis {
+        max-width: 316px;
+        margin: 0;
+        font-size: 13.5px;
+        font-weight: 400;
+        line-height: 1.62;
+        letter-spacing: .015em;
+        color: var(--mx-p-puder-66);
+        text-wrap: balance;
+      }
+
+      /* nizak prozor (npr. mobitel položen): opis se smanji, pa makne, da animacija ima mjesta */
+      @container (max-height: 700px) {
+        :host .mx-p-pozdrav { font-size: 22px; }
+        :host .mx-p-crta { margin: 9px 0 8px; }
+        :host .mx-p-uvod { padding-bottom: 14px; }
+        :host .mx-p-opis { font-size: 12.5px; line-height: 1.5; }
+      }
+      @container (max-height: 470px) {
+        :host .mx-p-crta,
+        :host .mx-p-opis { display: none; }
+      }
+
       /* ── dno: gumb "Početak" ── */
       :host .mx-p-dno {
         position: relative;
@@ -1577,11 +1663,15 @@
 
       /* ── pojava pri svakom otvaranju ── */
       :host .mx-p-ulaz .mx-p-vrh { animation: mx-p-pojava .9s var(--mx-p-glatko) .1s backwards; }
-      :host .mx-p-ulaz .mx-p-dno { animation: mx-p-pojava 1s var(--mx-p-glatko) .5s backwards; }
+      :host .mx-p-ulaz .mx-p-pozdrav { animation: mx-p-pojava 1.1s var(--mx-p-glatko) .3s backwards; }
+      :host .mx-p-ulaz .mx-p-crta { animation: mx-p-crta 1.2s var(--mx-p-glatko) .45s backwards; }
+      :host .mx-p-ulaz .mx-p-opis { animation: mx-p-pojava 1.1s var(--mx-p-glatko) .5s backwards; }
+      :host .mx-p-ulaz .mx-p-dno { animation: mx-p-pojava 1s var(--mx-p-glatko) .65s backwards; }
 
       /* ── nakon "Početak": tekst i gumb se povuku, chat se otvori u krugu ── */
       :host .mx-p-izlaz { pointer-events: none; }
       :host .mx-p-izlaz .mx-p-vrh,
+      :host .mx-p-izlaz .mx-p-uvod,
       :host .mx-p-izlaz .mx-p-dno,
       :host .mx-p-izlaz .mx-p-podnaslov {
         opacity: 0;
@@ -1596,6 +1686,13 @@
       @keyframes mx-p-pojava {
         from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
       }
+      @keyframes mx-p-crta {
+        from { opacity: 0; transform: scaleX(0); }
+      }
+      @keyframes mx-p-sjaj-teksta {
+        0%        { background-position: 100% 0; }
+        45%, 100% { background-position: 0 0; }
+      }
       @keyframes mx-p-rezerva {
         from { opacity: 0; transform: translateY(-56%); filter: blur(10px); letter-spacing: .12em; }
       }
@@ -1606,9 +1703,13 @@
       /* "Smanji pokrete": ništa se ne pomiče, samo se tiho pojavi */
       @media (prefers-reduced-motion: reduce) {
         :host .mx-p-ulaz .mx-p-vrh,
+        :host .mx-p-ulaz .mx-p-pozdrav,
+        :host .mx-p-ulaz .mx-p-crta,
+        :host .mx-p-ulaz .mx-p-opis,
         :host .mx-p-ulaz .mx-p-dno,
         :host .mx-p-bez-gl .mx-p-rezerva { animation: mx-p-prozirnost .4s linear backwards; }
-        :host .mx-p-gumb::before { animation: none; }
+        :host .mx-p-gumb::before,
+        :host .mx-p-ulaz .mx-p-pozdrav span { animation: none; }
         :host .mx-p-gumb svg,
         :host .mx-p-gumb:active { transition: none; transform: none; }
         :host .mx-p-podnaslov { transition: opacity .4s linear; transform: none; filter: none; }
@@ -1618,10 +1719,10 @@
     // Stil ide u shadow root chata (jednom; starija verzija se zamijeni)
     function ubaciStil(korijen) {
       const stari = korijen.querySelector('style[data-mx-pocetna]');
-      if (stari && stari.getAttribute('data-mx-pocetna') === '1') return;
+      if (stari && stari.getAttribute('data-mx-pocetna') === '2') return;
       if (stari) stari.remove();
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-pocetna', '1');
+      stil.setAttribute('data-mx-pocetna', '2');
       stil.textContent = CSS;
       korijen.appendChild(stil);
     }
@@ -1660,6 +1761,11 @@
       return e;
     }
 
+    // jednoslovne riječi (o, i, u, s, k, a, z) ne ostaju same na kraju retka
+    function bezUdovica(tekst) {
+      return String(tekst).replace(/(^|\s)([aiouskzAIOUSKZ])\s+/g, '$1$2 ');
+    }
+
     function napraviPocetnu(radnje) {
       const korijen = el('div', 'mx-p');
       korijen.setAttribute('role', 'region');
@@ -1685,6 +1791,21 @@
       scena.appendChild(rezerva);
       if (P.podnaslov) scena.appendChild(el('p', 'mx-p-podnaslov', P.podnaslov));
 
+      // tekst ispod animacije: zauzme svoj dio visine, pa se prostor
+      // animacije (.mx-p-scena) smanji i oblici se pomaknu prema gore
+      const uvod = el('div', 'mx-p-uvod');
+      if (P.pozdrav) {
+        const pozdrav = el('p', 'mx-p-pozdrav');
+        pozdrav.appendChild(el('span', '', bezUdovica(P.pozdrav)));
+        uvod.appendChild(pozdrav);
+      }
+      if (P.pozdrav && P.opis) {
+        const crta = el('span', 'mx-p-crta');
+        crta.setAttribute('aria-hidden', 'true');
+        uvod.appendChild(crta);
+      }
+      if (P.opis) uvod.appendChild(el('p', 'mx-p-opis', bezUdovica(P.opis)));
+
       const dno = el('div', 'mx-p-dno');
       const gumb = el('button', 'mx-p-gumb');
       gumb.type = 'button';
@@ -1696,6 +1817,7 @@
       korijen.appendChild(sjaj);
       korijen.appendChild(vrh);
       korijen.appendChild(scena);
+      if (uvod.firstChild) korijen.appendChild(uvod);
       korijen.appendChild(dno);
 
       let otvoreno = false, izlazi = false;
@@ -1769,6 +1891,7 @@
         },
         sakrij: function () {
           otvoreno = false;
+          korijen.classList.remove('mx-p-ulaz');         // i sjaj preko pozdrava staje
           anim.stani();
         },
         izlaz: function (gotovo) {
