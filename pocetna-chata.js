@@ -23,9 +23,10 @@
   //     valu, zavrtlože se kao dim i slegnu na novo mjesto; objekt se pri
   //     tome okreće tako da natpis na kraju uvijek stoji ravno prema nama
   //   - raspored (prema dizajnu "Početni ekran – stil K"): gore zaglavlje
-  //     MARTIMEX i gumb za zatvaranje; ispod njega okvir animacije (420 px,
+  //     MARTIMEX i gumb za zatvaranje; ispod njega okvir animacije (450 px,
   //     animacija u prostoru 345 × 393 px poravnatom na dno, iza nje meki
-  //     zlatni sjaj); zatim tekst koji stoji cijelo vrijeme: naslov u dva
+  //     zlatni sjaj; animacija je 15 % veća, vidi velicinaAnimacije);
+  //     zatim tekst koji stoji cijelo vrijeme: naslov u dva
   //     reda ("Vaš osobni" bjelokost, "AI beauty savjetnik" rose-gold),
   //     tanka statična crta i kratki opis
   //   - na dnu poziv "POČETAK": preko slova prelazi svjetlosni odsjaj, a
@@ -122,6 +123,10 @@
 
     nagibPremaMisu: true,     // na računalu se objekt lagano nagne prema mišu
 
+    // Veličina animacije: 1 = prema dizajnu (oblici ispune prostor 345 × 393 px),
+    // 1.15 = 15 % veća (oblici malo izađu iz tog prostora, što se ne vidi)
+    velicinaAnimacije: 1.15,
+
     // Kad se prikazuje početni ekran:
     // true  → pri prvom otvaranju chata nakon svakog učitavanja stranice, i
     //         kad razgovor već postoji ("Početak" ga tada samo otkrije; novi
@@ -148,6 +153,7 @@
     const P = MX_POCETNA_POSTAVKE;
     const B = P.boje;
     const T = P.trajanje || {};
+    const VELICINA = sekunde(P.velicinaAnimacije, 1, 0.3);   // povećanje animacije
     const HOST = 'voiceflow-chat';        // element u čiji shadow DOM Voiceflow crta chat
     const PROZOR = '.vfrc-chat';          // Voiceflowov prozor chata (službena klasa)
     const START = '#vfrc-start-chat';     // Voiceflowov gumb "Start new chat"
@@ -1252,11 +1258,12 @@
         gl.viewport(0, 0, pw, ph);
         // prostor za animaciju je .mx-p-animacija (345 × 393 px na dnu
         // okvira ispod zaglavlja); oblici ga ispune, a natpis "Marti" (širok
-        // 1,9 jedinica) stane u njegovu širinu. Položaj se zbraja po
+        // 1,9 jedinica) stane u njegovu širinu; velicinaAnimacije ih poveća
+        // (sve oblike: najviši sežu 0,9 jedinica od sredine). Položaj se zbraja po
         // offsetParentima do platna (ne getBoundingClientRect, da ga ne
         // pomakne Voiceflowovo skaliranje prozora pri otvaranju)
         const sw = Math.max(1, scena.offsetWidth), sh = Math.max(1, scena.offsetHeight);
-        S = Math.max(40, Math.min(sw / 2.15, sh / 2.3));
+        S = Math.max(40, Math.min(sw / 2.15, sh / 2.3) * VELICINA);
         let ox = 0, oy = 0;
         for (let e = scena; e && e !== platno.offsetParent; e = e.offsetParent) { ox += e.offsetLeft; oy += e.offsetTop; }
         sx = ox + sw / 2;
@@ -1479,9 +1486,9 @@
       :host .mx-p-zatvori:focus-visible { outline: 1px solid var(--mx-p-rose); outline-offset: 2px; }
       :host .mx-p-zatvori svg { width: 16px; height: 16px; display: block; }
 
-      /* ── 2. hero: okvir animacije (420 px), iza nje meki zlatni sjaj ── */
+      /* ── 2. hero: okvir animacije (450 px), iza nje meki zlatni sjaj ── */
       :host .mx-p-scena {
-        flex: 0 1 420px;
+        flex: 0 1 450px;
         min-height: 150px;
         display: flex;
         align-items: flex-end;
@@ -1537,7 +1544,7 @@
         transform: translateY(-62%);
         text-align: center;
         font-family: ${P.fontNatpisa};
-        font-size: 76px;
+        font-size: 87px;
         font-weight: 600;
         line-height: 1;
         color: var(--mx-p-puder);
@@ -1554,13 +1561,13 @@
         flex-direction: column;
         align-items: center;
         justify-content: flex-start;
-        gap: 20px;
-        padding: 52px 40px 16px;
+        gap: 18px;
+        padding: 44px 40px 16px;
         text-align: center;
       }
       :host .mx-p-naslov {
         margin: 0;
-        font-size: 33px;
+        font-size: 29px;
         font-weight: 300;
         line-height: 1.14;
         letter-spacing: -.02em;
@@ -1572,17 +1579,17 @@
       :host .mx-p-crta {
         display: block;
         flex: none;
-        width: 340px;
+        width: 300px;
         max-width: 100%;
         height: 1px;
         background: linear-gradient(90deg, var(--mx-p-rose-0), var(--mx-p-rose-90), var(--mx-p-rose-0));
       }
       :host .mx-p-opis {
         margin: 0;
-        max-width: 340px;
-        font-size: 15px;
+        max-width: 320px;
+        font-size: 14px;
         font-weight: 300;
-        line-height: 1.65;
+        line-height: 1.6;
         color: var(--mx-p-opis);
       }
 
@@ -1593,7 +1600,7 @@
         flex: none;
         display: flex;
         justify-content: center;
-        padding: 0 0 calc(44px + env(safe-area-inset-bottom, 0px));
+        padding: 0 0 calc(34px + env(safe-area-inset-bottom, 0px));
       }
       :host .mx-p-gumb {
         -webkit-appearance: none;
@@ -1601,9 +1608,9 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 14px;
+        gap: 12px;
         margin: 0;
-        padding: 12px 28px;
+        padding: 10px 24px;
         border: 0;
         border-radius: 8px;
         background: transparent;
@@ -1615,7 +1622,7 @@
       :host .mx-p-gumb:focus-visible { outline: 1px solid var(--mx-p-rose); outline-offset: 4px; }
       :host .mx-p-gumb-tekst {
         display: block;
-        font-size: 19px;
+        font-size: 16px;
         font-weight: 400;
         line-height: 1.4;
         letter-spacing: .42em;
@@ -1644,7 +1651,7 @@
       /* crta ispod poziva "diše" */
       :host .mx-p-gumb-crta {
         display: block;
-        width: 185px;
+        width: 160px;
         height: 1px;
         background: linear-gradient(90deg, var(--mx-p-rose-0), var(--mx-p-rose-90), var(--mx-p-rose-0));
         animation: mx-p-linija 2.6s ease-in-out infinite;
@@ -1652,13 +1659,13 @@
 
       /* nizak prozor chata: animacija se smanji, a tekst se stisne */
       @container (max-height: 820px) {
-        :host .mx-p-tekst { padding-top: 34px; }
+        :host .mx-p-tekst { padding-top: 30px; }
       }
       @container (max-height: 720px) {
-        :host .mx-p-tekst { gap: 16px; padding-top: 22px; }
-        :host .mx-p-naslov { font-size: 29px; }
-        :host .mx-p-opis { font-size: 14px; line-height: 1.55; }
-        :host .mx-p-dno { padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
+        :host .mx-p-tekst { gap: 14px; padding-top: 22px; }
+        :host .mx-p-naslov { font-size: 26px; }
+        :host .mx-p-opis { font-size: 13px; line-height: 1.5; }
+        :host .mx-p-dno { padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px)); }
       }
       @container (max-height: 580px) {
         :host .mx-p-opis { display: none; }
@@ -1666,7 +1673,6 @@
       /* uzak prozor (mobitel) */
       @container (max-width: 400px) {
         :host .mx-p-tekst { padding-left: 24px; padding-right: 24px; }
-        :host .mx-p-naslov { font-size: 30px; }
       }
 
       /* ── pojava pri svakom otvaranju ── */
