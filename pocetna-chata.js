@@ -22,17 +22,17 @@
   //   - svaki prijelaz je tekuć: točkice ne putuju sve odjednom nego u
   //     valu, zavrtlože se kao dim i slegnu na novo mjesto; objekt se pri
   //     tome okreće tako da natpis na kraju uvijek stoji ravno prema nama
-  //   - animacija je u gornjem dijelu, a ispod nje stalno stoji tekst
-  //     (pozdrav i kratki opis): ne mijenja se dok se oblici izmjenjuju.
-  //     Iznad pozdrava treperi zvjezdica od ružičastog zlata, "AI beauty
-  //     asistent!" je metalno ružičasto zlato preko kojeg prelazi sjaj, a
-  //     opis se pri otvaranju ispiše riječ po riječ, kao da ga AI upravo
-  //     piše (uz kursor koji nakon toga nestane)
-  //   - na dnu gumb "Početak" (s rubom od ružičastog zlata kao gumb chata):
-  //     tek kad se on pritisne, kreće razgovor, tj. standardni Voiceflow
-  //     workflow. Točkice se tada rasprše kao izmaglica parfema, a chat
-  //     se otvori u krugu koji se širi od gumba
-  //   - gore: natpis MARTIMEX i gumb za zatvaranje chata
+  //   - raspored (prema dizajnu "Početni ekran – stil K"): gore zaglavlje
+  //     MARTIMEX i gumb za zatvaranje; ispod njega okvir animacije (420 px,
+  //     animacija u prostoru 345 × 393 px poravnatom na dno, iza nje meki
+  //     zlatni sjaj); zatim tekst koji stoji cijelo vrijeme: naslov u dva
+  //     reda ("Vaš osobni" bjelokost, "AI beauty savjetnik" rose-gold),
+  //     tanka statična crta i kratki opis
+  //   - na dnu poziv "POČETAK": preko slova prelazi svjetlosni odsjaj, a
+  //     crta ispod njih se širi i skuplja ("diše"). Tek kad se on pritisne,
+  //     kreće razgovor, tj. standardni Voiceflow workflow. Točkice se tada
+  //     rasprše kao izmaglica parfema, a chat se otvori u krugu koji se
+  //     širi od poziva
   //   - na računalu se objekt lagano nagne prema mišu
   //
   //  Početni ekran se prikaže pri prvom otvaranju chata nakon svakog
@@ -76,26 +76,34 @@
   const MX_POCETNA_POSTAVKE = {
     boje: {                   // uvijek u obliku #rrggbb
       podloga: '#000000',     // crna podloga početnog ekrana
+      // animacija
       srebro:  '#e8e6eb',     // točkice AI objekta i stakla bočice
-      roza:    '#e2c3ba',     // prašnjava roza iza loga: tekućina u bočici, rub gumba
-      puder:   '#f6ebe7',     // najsvjetlija roza: natpis "Marti", tekst, gumb
-      zlato:   '#e0bb72'      // zlatni čep, prsten i pločica flakona, medena tekućina u njemu
+      roza:    '#e2c3ba',     // prašnjava roza iza loga: tekućina u bočici
+      puder:   '#f6ebe7',     // najsvjetlija roza: natpis "Marti" i podnaslov ispod njega
+      zlato:   '#e0bb72',     // zlatni čep, prsten i pločica flakona, medena tekućina u njemu
+      // tekst početnog ekrana
+      bjelokost:  '#f4ece6',  // 1. red naslova
+      roseGold:   '#e3c1ac',  // 2. red naslova, crte, "POČETAK"
+      sjajPoziva: '#fff7f0',  // odsjaj koji prelazi preko "POČETAK"
+      opis:       '#a89d95',  // opis ispod naslova (prigušena topla siva)
+      zaglavlje:  '#cfc6bf',  // natpis MARTIMEX i X
+      zlatniSjaj: '#c9a45c'   // meki sjaj iza animacije (na 10 % jačine)
     },
 
     // Fontovi iz mape fonts/ (učitava ih i kartica-artikla.js); natpis
     // "Marti" se od točkica slaže u Cormorant Garamondu, kao nazivi parfema
-    font: '"MX Jost", "Avenir Next", Avenir, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    font: '"MX Jost", "Futura", "Century Gothic", "Avenir Next", Avenir, "Segoe UI", Roboto, Arial, sans-serif',
     fontNatpisa: '"MX Cormorant", "Cormorant Garamond", Garamond, Georgia, "Times New Roman", serif',
 
     natpis: 'Marti',                          // riječ u koju se pretopi bočica
     podnaslov: 'Vodič kroz svijet mirisa',    // ispod natpisa ('' = bez podnaslova)
-    zaglavlje: 'Martimex',                    // gore u sredini ('' = bez)
-    tekstGumba: 'Početak',
+    zaglavlje: 'Martimex',                    // gore u sredini ('' = bez); piše se velikim slovima
+    tekstGumba: 'Početak',                    // poziv na dnu; piše se velikim slovima
 
-    // Tekst između animacije i gumba; stoji cijelo vrijeme ('' = bez)
-    predPozdrav: 'Ja sam Vaš',                 // mali razmaknuti redak iznad pozdrava
-    pozdrav: 'AI beauty asistent!',
-    opis: 'Trebate pomoć pri odabiru proizvoda, imate pitanje o narudžbi ili Vas zanima nešto drugo vezano uz Martimex? Slobodno mi se obratite.',
+    // Tekst između animacije i poziva "POČETAK"; stoji cijelo vrijeme ('' = bez)
+    naslov: 'Vaš osobni',                     // 1. red naslova (bjelokost)
+    naslovNaglasak: 'AI beauty savjetnik',    // 2. red naslova (rose-gold)
+    opis: 'Trebate pomoć pri odabiru proizvoda, imate pitanje o narudžbi ili vas zanima nešto vezano uz Martimex? Sve odgovore možete dobiti ovdje.',
 
     // Trajanje dijelova animacije u sekundama
     trajanje: {
@@ -1242,11 +1250,17 @@
         const pw = Math.round(W * dpr), ph = Math.round(H * dpr);
         if (platno.width !== pw || platno.height !== ph) { platno.width = pw; platno.height = ph; }
         gl.viewport(0, 0, pw, ph);
-        // prostor za animaciju je .mx-p-scena (između zaglavlja i gumba)
+        // prostor za animaciju je .mx-p-animacija (345 × 393 px na dnu
+        // okvira ispod zaglavlja); oblici ga ispune, a natpis "Marti" (širok
+        // 1,9 jedinica) stane u njegovu širinu. Položaj se zbraja po
+        // offsetParentima do platna (ne getBoundingClientRect, da ga ne
+        // pomakne Voiceflowovo skaliranje prozora pri otvaranju)
         const sw = Math.max(1, scena.offsetWidth), sh = Math.max(1, scena.offsetHeight);
-        S = Math.max(40, Math.min(sw / 2.5, sh / 2.2));
-        sx = scena.offsetLeft + sw / 2;
-        sy = scena.offsetTop + sh / 2;
+        S = Math.max(40, Math.min(sw / 2.15, sh / 2.3));
+        let ox = 0, oy = 0;
+        for (let e = scena; e && e !== platno.offsetParent; e = e.offsetParent) { ox += e.offsetLeft; oy += e.offsetTop; }
+        sx = ox + sw / 2;
+        sy = oy + sh / 2;
         dogadaji.mjere(sh / 2 + pola * S + 22);         // podnaslov ispod natpisa
         if (!vrti && spremno) nacrtaj(MIRNO.matches ? 99 : vrijeme);
       }
@@ -1373,36 +1387,32 @@
       :host .mx-p {
         --mx-p-podloga: ${B.podloga};
         --mx-p-puder: ${B.puder};
-        --mx-p-puder-78: ${prozirna(B.puder, .78)};
-        --mx-p-puder-86: ${prozirna(B.puder, .86)};
-        --mx-p-zlato-roza: ${B.zlato};
-        --mx-p-roza: ${B.roza};
-        --mx-p-roza-0: ${prozirna(B.roza, 0)};
-        --mx-p-roza-70: ${prozirna(B.roza, .7)};
-        --mx-p-staklo: ${prozirna(B.puder, .07)};
-        --mx-p-staklo-jace: ${prozirna(B.puder, .13)};
-        --mx-p-rub: ${prozirna(B.roza, .5)};
-        --mx-p-rub-sjaj: ${prozirna(B.puder, .95)};
-        --mx-p-sjaj: ${prozirna(B.roza, .1)};
-        --mx-p-sjaj-2: ${prozirna(B.roza, .035)};
-        --mx-p-sjaj-0: ${prozirna(B.roza, 0)};
-        --mx-p-sjena: ${prozirna(B.roza, .5)};
-        --mx-p-sjena-jaca: ${prozirna(B.roza, .7)};
+        --mx-p-bjelokost: ${B.bjelokost};
+        --mx-p-rose: ${B.roseGold};
+        --mx-p-rose-0: ${prozirna(B.roseGold, 0)};
+        --mx-p-rose-90: ${prozirna(B.roseGold, .9)};
+        --mx-p-rose-25: ${prozirna(B.roseGold, .25)};
+        --mx-p-sjaj-poziva: ${B.sjajPoziva};
+        --mx-p-opis: ${B.opis};
+        --mx-p-zaglavlje: ${B.zaglavlje};
+        --mx-p-zlatni-sjaj: ${prozirna(B.zlatniSjaj, .1)};
+        --mx-p-zlatni-sjaj-0: ${prozirna(B.zlatniSjaj, 0)};
+        --mx-p-staklo: ${prozirna(B.zaglavlje, .08)};
         --mx-p-glatko: cubic-bezier(.16, 1, .3, 1);
         --mx-p-meko: cubic-bezier(.45, 0, .2, 1);
         position: absolute;
         top: 0; right: 0; bottom: 0; left: 0;
         z-index: 1000;
-        container-type: size;           /* za @container: na niskom prozoru opis se skrati */
+        container-type: size;           /* za @container: na niskom prozoru se raspored stisne */
         display: flex;
         flex-direction: column;
         overflow: hidden;
         border-radius: inherit;
         background: var(--mx-p-podloga);
-        color: var(--mx-p-puder);
+        color: var(--mx-p-bjelokost);
         font-family: ${P.font};
-        font-size: 14px;
-        font-weight: 400;
+        font-size: 15px;
+        font-weight: 300;
         line-height: 1.4;
         letter-spacing: normal;
         text-align: left;
@@ -1424,17 +1434,7 @@
       }
       :host .mx-p-spremno .mx-p-platno { opacity: 1; }
 
-      /* blagi rozi sjaj iza objekta i uz dno */
-      :host .mx-p-sjaj {
-        position: absolute;
-        top: 0; right: 0; bottom: 0; left: 0;
-        pointer-events: none;
-        background:
-          radial-gradient(ellipse 72% 36% at 50% var(--mx-p-sredina, 45%), var(--mx-p-sjaj), var(--mx-p-sjaj-2) 50%, var(--mx-p-sjaj-0) 76%),
-          radial-gradient(ellipse 110% 48% at 50% 112%, var(--mx-p-sjaj-2), var(--mx-p-sjaj-0) 70%);
-      }
-
-      /* ── zaglavlje ── */
+      /* ── 1. zaglavlje ── */
       :host .mx-p-vrh {
         position: relative;
         z-index: 2;
@@ -1442,51 +1442,62 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        height: calc(58px + env(safe-area-inset-top, 0px));
-        padding: env(safe-area-inset-top, 0px) 56px 0;
+        height: calc(64px + env(safe-area-inset-top, 0px));
+        padding: env(safe-area-inset-top, 0px) 64px 0;
       }
       :host .mx-p-marka {
-        font-size: 11px;
-        font-weight: 500;
-        letter-spacing: .38em;
-        text-indent: .38em;             /* razmak iza zadnjeg slova, da natpis stoji točno u sredini */
+        font-size: 12px;
+        font-weight: 400;
+        letter-spacing: .42em;
+        padding-left: .42em;            /* optički centrira razmaknuta slova */
         text-transform: uppercase;
         white-space: nowrap;
-        color: var(--mx-p-puder-78);
+        color: var(--mx-p-zaglavlje);
       }
       :host .mx-p-zatvori {
         -webkit-appearance: none;
                 appearance: none;
         position: absolute;
-        right: 12px;
-        top: calc(env(safe-area-inset-top, 0px) + 11px);
+        right: 14px;
+        top: calc(env(safe-area-inset-top, 0px) + 10px);
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 36px;
-        height: 36px;
+        width: 44px;
+        height: 44px;
         margin: 0;
         padding: 0;
         border: 0;
         border-radius: 50%;
         background: transparent;
-        color: var(--mx-p-puder);
-        opacity: .72;
+        color: var(--mx-p-zaglavlje);
         cursor: pointer;
-        transition: opacity .3s var(--mx-p-meko), background-color .3s var(--mx-p-meko);
+        transition: background-color .3s var(--mx-p-meko);
       }
-      :host .mx-p-zatvori:hover { opacity: 1; background-color: var(--mx-p-staklo); }
+      :host .mx-p-zatvori:hover { background-color: var(--mx-p-staklo); }
       :host .mx-p-zatvori:focus { outline: none; }
-      :host .mx-p-zatvori:focus-visible { opacity: 1; outline: 2px solid var(--mx-p-puder); outline-offset: 2px; }
+      :host .mx-p-zatvori:focus-visible { outline: 1px solid var(--mx-p-rose); outline-offset: 2px; }
       :host .mx-p-zatvori svg { width: 16px; height: 16px; display: block; }
 
-      /* ── prostor animacije ── */
+      /* ── 2. hero: okvir animacije (420 px), iza nje meki zlatni sjaj ── */
       :host .mx-p-scena {
-        position: relative;
-        flex: 1 1 auto;
-        min-height: 0;
+        flex: 0 1 420px;
+        min-height: 150px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        background: radial-gradient(closest-side, var(--mx-p-zlatni-sjaj), var(--mx-p-zlatni-sjaj-0) 100%);
       }
-      :host .mx-p-naslov {                /* "Marti" za čitače zaslona (na ekranu ga crtaju točkice) */
+      /* prostor animacije: 345 × 393 px, poravnat na dno okvira */
+      :host .mx-p-animacija {
+        position: relative;
+        flex: none;
+        width: 345px;
+        max-width: 100%;
+        height: 393px;
+        max-height: 100%;
+      }
+      :host .mx-p-naslov-sr {             /* "Marti" za čitače zaslona (na ekranu ga crtaju točkice) */
         position: absolute;
         width: 1px; height: 1px;
         margin: -1px; padding: 0;
@@ -1497,8 +1508,8 @@
       }
       :host .mx-p-podnaslov {
         position: absolute;
-        left: 20px;
-        right: 20px;
+        left: -40px;
+        right: -40px;
         top: var(--mx-p-ispod, 72%);
         margin: 0;
         text-align: center;
@@ -1534,208 +1545,157 @@
       :host .mx-p-bez-gl .mx-p-rezerva { display: block; animation: mx-p-rezerva 1.6s var(--mx-p-glatko) .2s backwards; }
       :host .mx-p-bez-gl .mx-p-podnaslov { top: calc(50% + 34px); opacity: .72; transform: none; filter: none; }
 
-      /* ── tekst između animacije i gumba (stoji cijelo vrijeme) ── */
-      :host .mx-p-uvod {
+      /* ── 3. tekst: naslov → statična crta → opis (stoji cijelo vrijeme) ── */
+      :host .mx-p-tekst {
         position: relative;
         z-index: 2;
-        flex: none;
+        flex: 1 0 auto;
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin-top: -34px;              /* tekst se primakne animaciji */
-        padding: 0 26px 40px;
+        justify-content: flex-start;
+        gap: 20px;
+        padding: 52px 40px 16px;
         text-align: center;
       }
-      /* zvjezdica od ružičastog zlata: treperi i polako se okreće */
-      :host .mx-p-zvijezda {
-        position: relative;
-        width: 18px; height: 18px;
-        margin-bottom: 10px;
-        color: var(--mx-p-roza);
-        filter: drop-shadow(0 0 6px var(--mx-p-roza-70));
-      }
-      :host .mx-p-zvijezda svg { display: block; width: 100%; height: 100%; }
-      :host .mx-p-zvijezda::before,
-      :host .mx-p-zvijezda::after {
-        content: "";
-        position: absolute;
-        top: 50%; height: 1px;
-        width: 54px;
-      }
-      :host .mx-p-zvijezda::before { right: calc(100% + 10px); background: linear-gradient(90deg, var(--mx-p-roza-0), var(--mx-p-roza-70)); }
-      :host .mx-p-zvijezda::after  { left: calc(100% + 10px);  background: linear-gradient(90deg, var(--mx-p-roza-70), var(--mx-p-roza-0)); }
-      :host .mx-p-ulaz .mx-p-zvijezda svg { animation: mx-p-treptaj 4.2s ease-in-out 1.2s infinite; }
-
-      :host .mx-p-pred {
-        margin: 0 0 6px;
-        font-size: 11px;
-        font-weight: 500;
-        letter-spacing: .42em;
-        text-indent: .42em;
-        text-transform: uppercase;
-        color: var(--mx-p-puder-78);
-      }
-      :host .mx-p-pozdrav {
+      :host .mx-p-naslov {
         margin: 0;
-        font-size: 27px;
-        font-weight: 500;
-        line-height: 1.12;
-        letter-spacing: .015em;
-        color: var(--mx-p-roza);
-        text-wrap: balance;
+        font-size: 33px;
+        font-weight: 300;
+        line-height: 1.14;
+        letter-spacing: -.02em;
+        color: var(--mx-p-bjelokost);
       }
-      /* metalno ružičasto zlato preko kojeg povremeno prijeđe sjaj */
-      @supports ((-webkit-background-clip: text) or (background-clip: text)) {
-        :host .mx-p-pozdrav span {
-          background:
-            linear-gradient(105deg, transparent 0%, transparent 42%, rgba(255, 255, 255, .95) 50%, transparent 58%, transparent 100%) 100% 0 / 300% 100%,
-            linear-gradient(180deg, var(--mx-p-puder) 0%, var(--mx-p-roza) 55%, var(--mx-p-zlato-roza) 100%);
-          -webkit-background-clip: text;
-                  background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-        :host .mx-p-ulaz .mx-p-pozdrav span { animation: mx-p-sjaj-teksta 6s var(--mx-p-meko) 2.2s infinite; }
+      :host .mx-p-naslov-naglasak { color: var(--mx-p-rose); }
+
+      /* ── 4. statična crta ispod naslova (bez animacije) ── */
+      :host .mx-p-crta {
+        display: block;
+        flex: none;
+        width: 340px;
+        max-width: 100%;
+        height: 1px;
+        background: linear-gradient(90deg, var(--mx-p-rose-0), var(--mx-p-rose-90), var(--mx-p-rose-0));
       }
       :host .mx-p-opis {
-        max-width: 330px;
-        margin: 14px 0 0;
-        font-size: 15.5px;
-        font-weight: 400;
-        line-height: 1.6;
-        letter-spacing: .01em;
-        color: var(--mx-p-puder-86);
-        text-wrap: balance;
-      }
-      /* opis se ispisuje riječ po riječ */
-      :host .mx-p-rijec { display: inline; }
-      :host .mx-p-ulaz .mx-p-rijec { animation: mx-p-rijec .7s var(--mx-p-glatko) calc(1s + var(--i) * 55ms) backwards; }
-      :host .mx-p-kursor {
-        display: inline-block;
-        width: 1.5px; height: 1em;
-        margin-left: 3px;
-        vertical-align: -.12em;
-        background: var(--mx-p-roza);
-        opacity: 0;
-      }
-      :host .mx-p-ulaz .mx-p-kursor { animation: mx-p-kursor 1s steps(1) calc(1s + var(--n) * 55ms) 4; }
-
-      /* nizak prozor (npr. mobitel): tekst malo manji, a vrlo nizak: samo pozdrav */
-      @container (max-height: 700px) {
-        :host .mx-p-uvod { margin-top: -26px; padding-bottom: 22px; }
-        :host .mx-p-zvijezda { width: 15px; height: 15px; margin-bottom: 7px; }
-        :host .mx-p-pozdrav { font-size: 23px; }
-        :host .mx-p-opis { font-size: 14.5px; line-height: 1.5; margin-top: 10px; }
-      }
-      @container (max-height: 470px) {
-        :host .mx-p-zvijezda,
-        :host .mx-p-opis { display: none; }
+        margin: 0;
+        max-width: 340px;
+        font-size: 15px;
+        font-weight: 300;
+        line-height: 1.65;
+        color: var(--mx-p-opis);
       }
 
-      /* ── dno: gumb "Početak" ── */
+      /* ── 5. poziv "POČETAK" na dnu ── */
       :host .mx-p-dno {
         position: relative;
         z-index: 2;
         flex: none;
         display: flex;
         justify-content: center;
-        padding: 16px 24px calc(30px + env(safe-area-inset-bottom, 0px));
+        padding: 0 0 calc(44px + env(safe-area-inset-bottom, 0px));
       }
       :host .mx-p-gumb {
         -webkit-appearance: none;
                 appearance: none;
-        position: relative;
-        isolation: isolate;
-        display: inline-flex;
+        display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: 12px;
-        width: 100%;
-        max-width: 280px;
-        height: 54px;
+        gap: 14px;
         margin: 0;
-        padding: 0 28px;
+        padding: 12px 28px;
         border: 0;
-        border-radius: 999px;
-        background: var(--mx-p-staklo);
-        box-shadow: 0 18px 40px -22px var(--mx-p-sjena);
-        color: var(--mx-p-puder);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--mx-p-rose);
         font: inherit;
-        font-size: 15px;
-        font-weight: 500;
-        letter-spacing: .14em;
-        text-indent: .14em;
         cursor: pointer;
-        transition: background-color .35s var(--mx-p-meko), box-shadow .35s var(--mx-p-meko), transform .2s var(--mx-p-meko);
       }
-      /* rub od ružičastog zlata s odsjajem koji putuje (kao gumb chata) */
-      :host .mx-p-gumb::before {
-        content: "";
-        position: absolute;
-        top: 0; right: 0; bottom: 0; left: 0;
-        z-index: -1;
-        padding: 1px;
-        border-radius: inherit;
-        background: linear-gradient(105deg, var(--mx-p-rub) 0%, var(--mx-p-rub) 40%, var(--mx-p-rub-sjaj) 50%, var(--mx-p-rub) 60%, var(--mx-p-rub) 100%) 0 0 / 200% 100% repeat-x;
-        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-        -webkit-mask-composite: xor;
-                mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-        pointer-events: none;
-        animation: mx-p-zlato 5s linear infinite;
-      }
-      :host .mx-p-gumb svg { width: 18px; height: 18px; display: block; flex: none; transition: transform .45s var(--mx-p-glatko); }
-      :host .mx-p-gumb:hover { background-color: var(--mx-p-staklo-jace); box-shadow: 0 20px 44px -20px var(--mx-p-sjena-jaca); }
-      :host .mx-p-gumb:hover svg { transform: translateX(4px); }
-      :host .mx-p-gumb:active { transform: scale(.975); transition-duration: .1s; }
       :host .mx-p-gumb:focus { outline: none; }
-      :host .mx-p-gumb:focus-visible { outline: 2px solid var(--mx-p-puder); outline-offset: 4px; }
+      :host .mx-p-gumb:focus-visible { outline: 1px solid var(--mx-p-rose); outline-offset: 4px; }
+      :host .mx-p-gumb-tekst {
+        display: block;
+        font-size: 19px;
+        font-weight: 400;
+        line-height: 1.4;
+        letter-spacing: .42em;
+        padding-left: .42em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: var(--mx-p-rose);
+      }
+      /* svjetlosni odsjaj prelazi preko slova */
+      @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+        :host .mx-p-gumb-tekst {
+          background: linear-gradient(90deg,
+            var(--mx-p-rose) 0%,
+            var(--mx-p-rose) 38%,
+            var(--mx-p-sjaj-poziva) 50%,
+            var(--mx-p-rose) 62%,
+            var(--mx-p-rose) 100%);
+          background-size: 200% 100%;
+          -webkit-background-clip: text;
+                  background-clip: text;
+          -webkit-text-fill-color: transparent;
+          color: transparent;
+          animation: mx-p-sjaj-poziva 3.6s linear infinite;
+        }
+      }
+      /* crta ispod poziva "diše" */
+      :host .mx-p-gumb-crta {
+        display: block;
+        width: 185px;
+        height: 1px;
+        background: linear-gradient(90deg, var(--mx-p-rose-0), var(--mx-p-rose-90), var(--mx-p-rose-0));
+        animation: mx-p-linija 2.6s ease-in-out infinite;
+      }
+
+      /* nizak prozor chata: animacija se smanji, a tekst se stisne */
+      @container (max-height: 820px) {
+        :host .mx-p-tekst { padding-top: 34px; }
+      }
+      @container (max-height: 720px) {
+        :host .mx-p-tekst { gap: 16px; padding-top: 22px; }
+        :host .mx-p-naslov { font-size: 29px; }
+        :host .mx-p-opis { font-size: 14px; line-height: 1.55; }
+        :host .mx-p-dno { padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
+      }
+      @container (max-height: 580px) {
+        :host .mx-p-opis { display: none; }
+      }
+      /* uzak prozor (mobitel) */
+      @container (max-width: 400px) {
+        :host .mx-p-tekst { padding-left: 24px; padding-right: 24px; }
+        :host .mx-p-naslov { font-size: 30px; }
+      }
 
       /* ── pojava pri svakom otvaranju ── */
       :host .mx-p-ulaz .mx-p-vrh { animation: mx-p-pojava .9s var(--mx-p-glatko) .1s backwards; }
-      :host .mx-p-ulaz .mx-p-zvijezda { animation: mx-p-zvijezda 1.2s var(--mx-p-glatko) .2s backwards; }
-      :host .mx-p-ulaz .mx-p-pred { animation: mx-p-pojava 1s var(--mx-p-glatko) .35s backwards; }
-      :host .mx-p-ulaz .mx-p-pozdrav { animation: mx-p-pozdrav 1.3s var(--mx-p-glatko) .5s backwards; }
-      :host .mx-p-ulaz .mx-p-dno { animation: mx-p-pojava 1s var(--mx-p-glatko) .65s backwards; }
+      :host .mx-p-ulaz .mx-p-tekst { animation: mx-p-pojava 1.1s var(--mx-p-glatko) .35s backwards; }
+      :host .mx-p-ulaz .mx-p-dno { animation: mx-p-pojava 1s var(--mx-p-glatko) .6s backwards; }
 
-      /* ── nakon "Početak": tekst i gumb se povuku, chat se otvori u krugu ── */
+      /* ── nakon "Početak": tekst i poziv se povuku, chat se otvori u krugu ── */
       :host .mx-p-izlaz { pointer-events: none; }
       :host .mx-p-izlaz .mx-p-vrh,
-      :host .mx-p-izlaz .mx-p-uvod,
+      :host .mx-p-izlaz .mx-p-tekst,
       :host .mx-p-izlaz .mx-p-dno,
       :host .mx-p-izlaz .mx-p-podnaslov {
         opacity: 0;
         transform: translateY(6px);
         transition: opacity .35s var(--mx-p-meko), transform .5s var(--mx-p-meko);
       }
+      :host .mx-p-izlaz .mx-p-scena { opacity: 0; transition: opacity .6s var(--mx-p-meko); }
 
-      @keyframes mx-p-zlato {
-        from { background-position: 100% 0; }
-        to   { background-position: -100% 0; }
+      @keyframes mx-p-sjaj-poziva {
+        0%   { background-position: 150% 0; }
+        100% { background-position: -150% 0; }
+      }
+      @keyframes mx-p-linija {
+        0%, 100% { transform: scaleX(.35); opacity: .45; }
+        50%      { transform: scaleX(1);   opacity: 1; }
       }
       @keyframes mx-p-pojava {
         from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
-      }
-      @keyframes mx-p-zvijezda {
-        from { opacity: 0; transform: scale(.2) rotate(-90deg); }
-      }
-      @keyframes mx-p-treptaj {
-        0%, 100% { transform: scale(1) rotate(0); opacity: .9; }
-        12%      { transform: scale(1.35) rotate(45deg); opacity: 1; }
-        30%      { transform: scale(.85) rotate(90deg); opacity: .7; }
-        45%      { transform: scale(1) rotate(90deg); opacity: .9; }
-      }
-      @keyframes mx-p-pozdrav {
-        from { opacity: 0; letter-spacing: .2em; filter: blur(8px); }
-      }
-      @keyframes mx-p-rijec {
-        from { opacity: 0; filter: blur(6px); }
-      }
-      @keyframes mx-p-kursor {
-        0%  { opacity: 1; }
-        50% { opacity: 0; }
-      }
-      @keyframes mx-p-sjaj-teksta {
-        0%        { background-position: 100% 0; }
-        45%, 100% { background-position: 0 0; }
       }
       @keyframes mx-p-rezerva {
         from { opacity: 0; transform: translateY(-56%); filter: blur(10px); letter-spacing: .12em; }
@@ -1747,18 +1707,16 @@
       /* "Smanji pokrete": ništa se ne pomiče, samo se tiho pojavi */
       @media (prefers-reduced-motion: reduce) {
         :host .mx-p-ulaz .mx-p-vrh,
-        :host .mx-p-ulaz .mx-p-zvijezda,
-        :host .mx-p-ulaz .mx-p-pred,
-        :host .mx-p-ulaz .mx-p-pozdrav,
-        :host .mx-p-ulaz .mx-p-rijec,
+        :host .mx-p-ulaz .mx-p-tekst,
         :host .mx-p-ulaz .mx-p-dno,
         :host .mx-p-bez-gl .mx-p-rezerva { animation: mx-p-prozirnost .4s linear backwards; }
-        :host .mx-p-gumb::before,
-        :host .mx-p-ulaz .mx-p-pozdrav span,
-        :host .mx-p-ulaz .mx-p-zvijezda svg,
-        :host .mx-p-ulaz .mx-p-kursor { animation: none; }
-        :host .mx-p-gumb svg,
-        :host .mx-p-gumb:active { transition: none; transform: none; }
+        :host .mx-p-gumb-tekst {
+          animation: none;
+          background: none;
+          -webkit-text-fill-color: currentColor;
+          color: var(--mx-p-rose);
+        }
+        :host .mx-p-gumb-crta { animation: none; }
         :host .mx-p-podnaslov { transition: opacity .4s linear; transform: none; filter: none; }
       }
     `;
@@ -1766,10 +1724,10 @@
     // Stil ide u shadow root chata (jednom; starija verzija se zamijeni)
     function ubaciStil(korijen) {
       const stari = korijen.querySelector('style[data-mx-pocetna]');
-      if (stari && stari.getAttribute('data-mx-pocetna') === '3') return;
+      if (stari && stari.getAttribute('data-mx-pocetna') === '4') return;
       if (stari) stari.remove();
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-pocetna', '3');
+      stil.setAttribute('data-mx-pocetna', '4');
       stil.textContent = CSS;
       korijen.appendChild(stil);
     }
@@ -1777,30 +1735,35 @@
     // Fontove (Jost i Cormorant Garamond iz mape fonts/) inače učitava
     // kartica-artikla.js; ako je taj modul isključen, učitaju se ovdje.
     // Idu u <head> stranice: fontovi iz <head> vrijede i unutar shadow roota.
+    // Tanki Jost (300) za naslov i opis početnog ekrana dodaje se uvijek:
+    // kartica ga ne učitava (ista datoteka, ona sadrži sve debljine).
     function ubaciFontove() {
-      if (document.getElementById('mx-kartice-font') || document.getElementById('mx-pocetna-font') || !document.head) return;
+      if (!document.head) return;
       const rasponi = {
         'latin': 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD',
         'latin-ext': 'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF'
       };
-      const stil = document.createElement('style');
-      stil.id = 'mx-pocetna-font';
-      stil.textContent = [['MX Jost', 'jost', '400 600'], ['MX Cormorant', 'cormorant-garamond', '500 700']].map(function (f) {
-        return Object.keys(rasponi).map(function (r) {
-          return '@font-face{font-family:"' + f[0] + '";src:url("' + BAZA + 'fonts/' + f[1] + '-' + r + '.woff2") format("woff2");' +
-            'font-weight:' + f[2] + ';font-style:normal;font-display:swap;unicode-range:' + rasponi[r] + '}';
+      function dodaj(id, fontovi) {
+        const stil = document.createElement('style');
+        stil.id = id;
+        stil.textContent = fontovi.map(function (f) {
+          return Object.keys(rasponi).map(function (r) {
+            return '@font-face{font-family:"' + f[0] + '";src:url("' + BAZA + 'fonts/' + f[1] + '-' + r + '.woff2") format("woff2");' +
+              'font-weight:' + f[2] + ';font-style:normal;font-display:swap;unicode-range:' + rasponi[r] + '}';
+          }).join('\n');
         }).join('\n');
-      }).join('\n');
-      document.head.appendChild(stil);
+        document.head.appendChild(stil);
+      }
+      if (!document.getElementById('mx-pocetna-font-300')) dodaj('mx-pocetna-font-300', [['MX Jost', 'jost', '300']]);
+      if (document.getElementById('mx-kartice-font') || document.getElementById('mx-pocetna-font')) return;
+      dodaj('mx-pocetna-font', [['MX Jost', 'jost', '400 600'], ['MX Cormorant', 'cormorant-garamond', '500 700']]);
     }
 
 
     // ═══════════════════════════════════════════════════════════════════
     //  POČETNI EKRAN — sloj preko Voiceflowova prozora chata
     // ═══════════════════════════════════════════════════════════════════
-    const IKONA_X = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>';
-    const IKONA_ZVIJEZDA = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C12.6 6.6 17.4 11.4 24 12 17.4 12.6 12.6 17.4 12 24 11.4 17.4 6.6 12.6 0 12 6.6 11.4 11.4 6.6 12 0z"/></svg>';
-    const IKONA_STRELICA = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9h11.5M10 4.5L14.5 9 10 13.5"/></svg>';
+    const IKONA_X = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg>';
 
     function el(oznaka, klasa, tekst) {
       const e = document.createElement(oznaka);
@@ -1821,9 +1784,8 @@
 
       const platno = el('canvas', 'mx-p-platno');
       platno.setAttribute('aria-hidden', 'true');
-      const sjaj = el('div', 'mx-p-sjaj');
-      sjaj.setAttribute('aria-hidden', 'true');
 
+      // 1. zaglavlje: MARTIMEX i X
       const vrh = el('div', 'mx-p-vrh');
       if (P.zaglavlje) vrh.appendChild(el('span', 'mx-p-marka', P.zaglavlje));
       const zatvori = el('button', 'mx-p-zatvori');
@@ -1832,65 +1794,52 @@
       zatvori.innerHTML = IKONA_X;
       vrh.appendChild(zatvori);
 
+      // 2. hero: okvir animacije; točkice se crtaju u prostoru .mx-p-animacija
       const scena = el('div', 'mx-p-scena');
-      scena.appendChild(el('h2', 'mx-p-naslov', P.natpis));
+      const prostor = el('div', 'mx-p-animacija');
+      prostor.appendChild(el('h2', 'mx-p-naslov-sr', P.natpis));
       const rezerva = el('p', 'mx-p-rezerva', P.natpis);
       rezerva.setAttribute('aria-hidden', 'true');
-      scena.appendChild(rezerva);
-      if (P.podnaslov) scena.appendChild(el('p', 'mx-p-podnaslov', P.podnaslov));
+      prostor.appendChild(rezerva);
+      if (P.podnaslov) prostor.appendChild(el('p', 'mx-p-podnaslov', P.podnaslov));
+      scena.appendChild(prostor);
 
-      // tekst ispod animacije: zauzme svoj dio visine, pa se prostor
-      // animacije (.mx-p-scena) smanji i oblici se pomaknu prema gore
-      const uvod = el('div', 'mx-p-uvod');
-      if (P.pozdrav) {
-        const zvijezda = el('span', 'mx-p-zvijezda');
-        zvijezda.setAttribute('aria-hidden', 'true');
-        zvijezda.innerHTML = IKONA_ZVIJEZDA;
-        uvod.appendChild(zvijezda);
-        if (P.predPozdrav) uvod.appendChild(el('p', 'mx-p-pred', bezUdovica(P.predPozdrav)));
-        const pozdrav = el('p', 'mx-p-pozdrav');
-        pozdrav.appendChild(el('span', '', bezUdovica(P.pozdrav)));
-        uvod.appendChild(pozdrav);
+      // 3. tekst: naslov (dva reda) → statična crta → opis
+      const tekst = el('div', 'mx-p-tekst');
+      if (P.naslov || P.naslovNaglasak) {
+        const naslov = el('h2', 'mx-p-naslov');
+        if (P.naslov) naslov.appendChild(document.createTextNode(bezUdovica(P.naslov)));
+        if (P.naslov && P.naslovNaglasak) naslov.appendChild(document.createElement('br'));
+        if (P.naslovNaglasak) naslov.appendChild(el('span', 'mx-p-naslov-naglasak', bezUdovica(P.naslovNaglasak)));
+        tekst.appendChild(naslov);
+        const crta = el('span', 'mx-p-crta');
+        crta.setAttribute('aria-hidden', 'true');
+        tekst.appendChild(crta);
       }
-      if (P.opis) {
-        // riječ po riječ (svaka sa svojim zakašnjenjem), na kraju kursor
-        const opis = el('p', 'mx-p-opis');
-        const rijeci = bezUdovica(P.opis).split(' ');
-        rijeci.forEach(function (r, i) {
-          const s = el('span', 'mx-p-rijec', r);
-          s.style.setProperty('--i', i);
-          opis.appendChild(s);
-          if (i < rijeci.length - 1) opis.appendChild(document.createTextNode(' '));
-        });
-        const kursor = el('span', 'mx-p-kursor');
-        kursor.setAttribute('aria-hidden', 'true');
-        kursor.style.setProperty('--n', rijeci.length);
-        opis.appendChild(kursor);
-        uvod.appendChild(opis);
-      }
+      if (P.opis) tekst.appendChild(el('p', 'mx-p-opis', bezUdovica(P.opis)));
 
+      // 4. poziv "POČETAK" s crtom koja diše
       const dno = el('div', 'mx-p-dno');
       const gumb = el('button', 'mx-p-gumb');
       gumb.type = 'button';
-      gumb.appendChild(el('span', '', P.tekstGumba || 'Početak'));
-      gumb.insertAdjacentHTML('beforeend', IKONA_STRELICA);
+      gumb.setAttribute('aria-label', 'Početak razgovora');
+      gumb.appendChild(el('span', 'mx-p-gumb-tekst', P.tekstGumba || 'Početak'));
+      const gumbCrta = el('span', 'mx-p-gumb-crta');
+      gumbCrta.setAttribute('aria-hidden', 'true');
+      gumb.appendChild(gumbCrta);
       dno.appendChild(gumb);
 
       korijen.appendChild(platno);
-      korijen.appendChild(sjaj);
       korijen.appendChild(vrh);
       korijen.appendChild(scena);
-      if (uvod.firstChild) korijen.appendChild(uvod);
+      if (tekst.firstChild) korijen.appendChild(tekst);
       korijen.appendChild(dno);
 
       let otvoreno = false, izlazi = false;
-      const anim = napraviAnimaciju(platno, scena, {
+      const anim = napraviAnimaciju(platno, prostor, {
         bezAnimacije: function () { korijen.classList.add('mx-p-bez-gl'); },
         podnaslov: function (da) { korijen.classList.toggle('mx-p-podnaslov-da', da); },
-        mjere: function (ispod) {
-          korijen.style.setProperty('--mx-p-ispod', ispod + 'px');
-          korijen.style.setProperty('--mx-p-sredina', (scena.offsetTop + scena.offsetHeight / 2) / Math.max(1, korijen.offsetHeight) * 100 + '%');
-        },
+        mjere: function (ispod) { korijen.style.setProperty('--mx-p-ispod', ispod + 'px'); },
         otvoreno: function () { return otvoreno; }
       });
 
@@ -1954,7 +1903,7 @@
         },
         sakrij: function () {
           otvoreno = false;
-          korijen.classList.remove('mx-p-ulaz');         // i sjaj preko pozdrava staje
+          korijen.classList.remove('mx-p-ulaz');
           anim.stani();
         },
         izlaz: function (gotovo) {
