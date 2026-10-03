@@ -674,6 +674,9 @@
     //    ispunu po nagibu zamućenih slova (sredina poteza je greben, pa je
     //    jedna strana poteza svjetlija, a druga tamnija). Sredine slova (x)
     //    idu posebno (uniforma uSredina)
+    //    Priprema ide u dva koraka, da stranica ne zapne: natpis() nacrta
+    //    slova i nađe im rub, a vrati funkciju koja (u idućem koraku) složi
+    //    točkice
     const ISPUNA = 0, OBRUB = 1, ISKRA = 2, SJAJ = 3;
     const SVJETLO_NATPISA = [-0.55, -0.83];       // smjer prema svjetlu na platnu (gore lijevo; y ide prema dolje)
     const SLOVA_NATPISA = Math.max(1, Array.from(String(P.natpis || 'MARTIMEX')).length);
@@ -865,66 +868,77 @@
         iskre.push(u);
       });
 
-      // svjetske mjere: natpis je širok SIRINA_NATPISA, sredina mu je u 0
-      const k = SIRINA_NATPISA / (desno - lijevo);     // svjetske jedinice po pikselu platna
-      const cx0 = PAD + (desno - lijevo) / 2, cy0 = PAD + (gore + dolje) / 2, dno = oy + dolje, visina = gore + dolje;
-      const sredine = mj.map(function (m) { return (ox + (m.l + m.d) / 2 - cx0) * k; });
-      const poz = new Float32Array(n * 4);
-      function upisi(i, x, y, slovo, vrsta, udio, svjetlo) {
-        poz[4 * i] = (x - cx0) * k;
-        poz[4 * i + 1] = (cy0 - y) * k;
-        poz[4 * i + 2] = svjetlo;
-        poz[4 * i + 3] = slovo * 8 + vrsta * 2 + Math.min(0.999, Math.max(0, udio));
-      }
-      const L = SVJETLO_NATPISA;
-      function prema(x, y, t) {                    // smjer ruba prema van i koliko gleda prema svjetlu
-        let nx = t[3], ny = -t[2];
-        if (puno(x + nx * 2, y + ny * 2)) { nx = -nx; ny = -ny; }
-        return [nx, ny, nx * L[0] + ny * L[1]];
-      }
-      const nObrub = Math.round(n * UDIO_OBRUBA), nSjaj = Math.round(n * UDIO_SJAJA), nIspuna = n - nObrub - nSjaj;
-
-      // obrub: jednoliko po svim petljama
-      const r = poLinijama(petlje.map(function (pt) { return pt.duljina; }), nObrub);
-      for (let i = 0; i < nObrub; i++) {
-        const pt = petlje[r.linija[i]], t = naPetlji(pt, r.udio[i] * pt.duljina);
-        upisi(i, t[0], t[1], pt.slovo, OBRUB, r.udio[i], prema(t[0], t[1], t)[2]);
-      }
-      // iskra je točkica obruba najbliža uglu
-      iskre.forEach(function (u) {
-        const ux = (u.x - cx0) * k, uy = (cy0 - u.y) * k;
-        let naj = -1, min = Infinity;
-        for (let i = 0; i < nObrub; i++) {
-          const dx = poz[4 * i] - ux, dy = poz[4 * i + 1] - uy;
-          if (dx * dx + dy * dy < min) { min = dx * dx + dy * dy; naj = i; }
+      // drugi korak: točkice
+      return function () {
+        // svjetske mjere: natpis je širok SIRINA_NATPISA, sredina mu je u 0
+        const k = SIRINA_NATPISA / (desno - lijevo);     // svjetske jedinice po pikselu platna
+        const cx0 = PAD + (desno - lijevo) / 2, cy0 = PAD + (gore + dolje) / 2, dno = oy + dolje, visina = gore + dolje;
+        const sredine = mj.map(function (m) { return (ox + (m.l + m.d) / 2 - cx0) * k; });
+        const poz = new Float32Array(n * 4);
+        function upisi(i, x, y, slovo, vrsta, udio, svjetlo) {
+          poz[4 * i] = (x - cx0) * k;
+          poz[4 * i + 1] = (cy0 - y) * k;
+          poz[4 * i + 2] = svjetlo;
+          poz[4 * i + 3] = slovo * 8 + vrsta * 2 + Math.min(0.999, Math.max(0, udio));
         }
-        if (naj >= 0 && Math.floor((poz[4 * naj + 3] % 8) / 2) === OBRUB) poz[4 * naj + 3] += (ISKRA - OBRUB) * 2;
-      });
+        const L = SVJETLO_NATPISA;
+        function prema(x, y, t) {                    // smjer ruba prema van i koliko gleda prema svjetlu
+          let nx = t[3], ny = -t[2];
+          if (puno(x + nx * 2, y + ny * 2)) { nx = -nx; ny = -ny; }
+          return [nx, ny, nx * L[0] + ny * L[1]];
+        }
+        const nObrub = Math.round(n * UDIO_OBRUBA), nSjaj = Math.round(n * UDIO_SJAJA), nIspuna = n - nObrub - nSjaj;
 
-      // ispuna: niz R2 preko natpisa; ostaju samo mjesta barem 2 px unutar
-      // slova. Svjetlo po nagibu zamućenih slova (greben je sredina poteza)
-      const Z = zamuci(A, w, h, 6);
-      const G = 1.32471795724474602596, g1 = 1 / G, g2 = 1 / (G * G);
-      let i = nObrub;
-      for (let t = 0; i < nObrub + nIspuna && t < nIspuna * 80; t++) {
-        const x = PAD + ((0.5 + t * g1) % 1) * (desno - lijevo), y = PAD + ((0.5 + t * g2) % 1) * visina;
-        if (!puno(x, y) || !puno(x - 2, y) || !puno(x + 2, y) || !puno(x, y - 2) || !puno(x, y + 2)) continue;
-        const xi = Math.round(x), yi = Math.round(y);
-        const gx = Z[yi * w + xi - 1] - Z[yi * w + xi + 1], gy = Z[(yi - 1) * w + xi] - Z[(yi + 1) * w + xi];
-        const g = Math.hypot(gx, gy);
-        upisi(i++, x, y, slovoNa(x), ISPUNA, (dno - y) / visina + (rnd() - 0.5) * 0.08, g > 0 ? (gx * L[0] + gy * L[1]) / (g + 0.03) : 0);
-      }
-      // sjaj: od nasumičnih mjesta na obrubu prema van, sve rjeđe što je dalje
-      for (let t = 0; i < n && t < n * 20; t++) {
-        const q = Math.floor(rnd() * nObrub), pt = petlje[r.linija[q]], s = naPetlji(pt, r.udio[q] * pt.duljina);
-        const v = prema(s[0], s[1], s);
-        const d = 1.5 - 5 * Math.log(1 - 0.97 * rnd()), b = (rnd() - 0.5) * 4;
-        const x = s[0] + v[0] * d + s[2] * b, y = s[1] + v[1] * d + s[3] * b;
-        if (puno(x, y)) continue;
-        upisi(i++, x, y, pt.slovo, SJAJ, (dno - y) / visina, v[2]);
-      }
-      for (; i < n; i++) poz.copyWithin(4 * i, 4 * (i % nObrub), 4 * (i % nObrub) + 4);   // (ako bi nešto ostalo)
-      return { poz: poz, pola: visina / 2 * k, slova: slova.length, sredine: sredine };
+        // obrub: jednoliko po svim petljama
+        const r = poLinijama(petlje.map(function (pt) { return pt.duljina; }), nObrub);
+        for (let i = 0; i < nObrub; i++) {
+          const pt = petlje[r.linija[i]], t = naPetlji(pt, r.udio[i] * pt.duljina);
+          upisi(i, t[0], t[1], pt.slovo, OBRUB, r.udio[i], prema(t[0], t[1], t)[2]);
+        }
+        // iskra je točkica obruba najbliža uglu
+        iskre.forEach(function (u) {
+          const ux = (u.x - cx0) * k, uy = (cy0 - u.y) * k;
+          let naj = -1, min = Infinity;
+          for (let i = 0; i < nObrub; i++) {
+            const dx = poz[4 * i] - ux, dy = poz[4 * i + 1] - uy;
+            if (dx * dx + dy * dy < min) { min = dx * dx + dy * dy; naj = i; }
+          }
+          if (naj >= 0 && Math.floor((poz[4 * naj + 3] % 8) / 2) === OBRUB) poz[4 * naj + 3] += (ISKRA - OBRUB) * 2;
+        });
+
+        // ispuna: niz R2 preko natpisa; ostaju samo mjesta barem 2 px unutar
+        // slova. Svjetlo po nagibu zamućenih slova (greben je sredina poteza)
+        // (zamuti se upola manja slika: za nagib je dovoljno, a četiri puta je brže)
+        const w2 = w >> 1, h2 = h >> 1, A2 = new Uint8Array(w2 * h2);
+        for (let y = 0; y < h2; y++) {
+          for (let x = 0; x < w2; x++) {
+            const o = 2 * (y * w + x);
+            A2[y * w2 + x] = (A[o] + A[o + 1] + A[o + w] + A[o + w + 1]) >> 2;
+          }
+        }
+        const Z = zamuci(A2, w2, h2, 3);
+        const G = 1.32471795724474602596, g1 = 1 / G, g2 = 1 / (G * G);
+        let i = nObrub;
+        for (let t = 0; i < nObrub + nIspuna && t < nIspuna * 80; t++) {
+          const x = PAD + ((0.5 + t * g1) % 1) * (desno - lijevo), y = PAD + ((0.5 + t * g2) % 1) * visina;
+          if (!puno(x, y) || !puno(x - 2, y) || !puno(x + 2, y) || !puno(x, y - 2) || !puno(x, y + 2)) continue;
+          const xi = Math.round((x - 0.5) / 2), yi = Math.round((y - 0.5) / 2);   // piksel upola manje slike
+          const gx = (Z[yi * w2 + xi - 1] - Z[yi * w2 + xi + 1]) / 2, gy = (Z[(yi - 1) * w2 + xi] - Z[(yi + 1) * w2 + xi]) / 2;
+          const g = Math.hypot(gx, gy);
+          upisi(i++, x, y, slovoNa(x), ISPUNA, (dno - y) / visina + (rnd() - 0.5) * 0.08, g > 0 ? (gx * L[0] + gy * L[1]) / (g + 0.03) : 0);
+        }
+        // sjaj: od nasumičnih mjesta na obrubu prema van, sve rjeđe što je dalje
+        for (let t = 0; i < n && t < n * 20; t++) {
+          const q = Math.floor(rnd() * nObrub), pt = petlje[r.linija[q]], s = naPetlji(pt, r.udio[q] * pt.duljina);
+          const v = prema(s[0], s[1], s);
+          const d = 1.5 - 5 * Math.log(1 - 0.97 * rnd()), b = (rnd() - 0.5) * 4;
+          const x = s[0] + v[0] * d + s[2] * b, y = s[1] + v[1] * d + s[3] * b;
+          if (puno(x, y)) continue;
+          upisi(i++, x, y, pt.slovo, SJAJ, (dno - y) / visina, v[2]);
+        }
+        for (; i < n; i++) poz.copyWithin(4 * i, 4 * (i % nObrub), 4 * (i % nObrub) + 4);   // (ako bi nešto ostalo)
+        return { poz: poz, pola: visina / 2 * k, slova: slova.length, sredine: sredine };
+      };
     }
 
     // ── Spajanje: koja točkica objekta postaje koja točkica flakona, bočice i
@@ -997,8 +1011,12 @@
         : Promise.resolve();
       const o = { n: Math.max(2000, Math.round(+(MOBITEL ? P.tocakaMobitel : P.tocaka) || 16000)), rnd: slucajno(20251) };
       OBLICI = font.then(pauza).then(function () {
+        o.slozi = natpis(o.n, o.rnd);                // slova i njihov rub; točkice u idućem koraku
+        return pauza();
+      }).then(function () {
         o.kug = kugla(o.n);
-        o.nat = natpis(o.n, o.rnd) || rezervniNatpis(o.kug.poz, o.n);
+        o.nat = (o.slozi && o.slozi()) || rezervniNatpis(o.kug.poz, o.n);
+        o.slozi = null;
         return pauza();
       }).then(function () {
         o.boc = bocica(o.n);
@@ -1225,13 +1243,13 @@
         float v = clamp(aTxt.y / (2.0 * uTxt.z) + 0.5, 0.0, 1.0);    // 0 dno slova, 1 vrh
         // boja (samo ton): pri dnu toplo zlato, na "horizontu" tamnija
         // bakrena roza, iznad rose-gold, a pri vrhu puder
-        vec3 metal = mix(mix(uGold, uRose, 0.3), uRose * vec3(0.9, 0.74, 0.78), smoothstep(0.1, 0.42, v));
+        vec3 metal = mix(mix(uGold, uRose, 0.3), uRose * vec3(0.95, 0.84, 0.86), smoothstep(0.1, 0.42, v));
         metal = mix(metal, uRose, smoothstep(0.42, 0.64, v));
         metal = mix(metal, mix(uPowder, uRose, 0.2), smoothstep(0.64, 1.0, v));
         // jačina: horizont je tamniji, a strana okrenuta svjetlu jača
         float hz = (v - 0.42) / 0.12;
         float rub = step(0.5, tVrsta) * step(tVrsta, 2.5);           // obrub i iskre
-        float jak = (1.0 - 0.35 * exp(-hz * hz) + 0.35 * smoothstep(0.68, 1.0, v)) * (1.0 + mix(0.45, 0.35, rub) * aTxt.z) * (1.0 + 0.06 * sin(uTime * 1.3));
+        float jak = (1.0 - 0.2 * exp(-hz * hz) + 0.35 * smoothstep(0.68, 1.0, v)) * (1.0 + mix(0.45, 0.35, rub) * aTxt.z) * (1.0 + 0.06 * sin(uTime * 1.3));
         // dijagonalni odsjaj: boja prema sjaju, jačina gore
         float ds = (aTxt.x + 0.5 * aTxt.y - uSweep.x) / 0.11;
         float odsjaj = exp(-ds * ds) * mix(0.6, 1.0, rub) * (0.85 + 0.3 * aTxt.z);
@@ -1249,7 +1267,7 @@
 
       // jačina točkica natpisa: obrub najjači, ispuna tamnija, meki sjaj slab i diše
       float jacinaNatpisa() {
-        float j = tVrsta < 0.5 ? 0.3 : tVrsta < 2.5 ? 0.95 : 0.1 * (1.0 + 0.4 * sin(uTime * 1.3));
+        float j = tVrsta < 0.5 ? 0.42 : tVrsta < 2.5 ? 0.95 : 0.1 * (1.0 + 0.4 * sin(uTime * 1.3));
         return j * tJak * (1.0 + 2.5 * tIskra);
       }
 
