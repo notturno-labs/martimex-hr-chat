@@ -126,7 +126,7 @@
       objekt: 3.4,            // živi AI objekt
       flakon: 4.4,            // flakon po uzoru na Xerjoff 1861 (Naxos): nastane malo okrenut ulijevo i jednoliko se okreće
       bocica: 3.2,            // bočica parfema
-      natpis: 5,              // natpis MARTIMEX miruje (preko njega jednom prijeđe meki sjaj)
+      natpis: 5,              // natpis MARTIMEX miruje (preko njega polako prijeđe meki sjaj)
       prijelaz: 2.4           // svaki prijelaz iz oblika u oblik
     },
     ponavljaj: true,          // false → animacija stane na natpisu MARTIMEX
@@ -201,7 +201,7 @@
     //  OBLICI — tri oblika od istog broja točkica, izračunata unaprijed
     //
     //  Točkice se u svakom obliku slažu u linije (prstenove oko objekta i
-    //  bočice, niti u slovima i po njihovu rubu), a po linijama su gušće
+    //  bočice, vodoravne niti u slovima), a po linijama su gušće
     //  nego što su linije razmaknute: zato oblik izgleda kao da je satkan od
     //  tankih niti. Mjere su u "svjetskim jedinicama" (objekt ima polumjer 0,8).
     // ═══════════════════════════════════════════════════════════════════
@@ -835,6 +835,8 @@
           }
         });
 
+        if (!niti.length && !rubovi.length) return null;              // (npr. samo razmaci)
+
         // točkice: po nitima nasumično, po rubovima jednoliko
         const duljine = niti.map(function (d) { return d.x1 - d.x0; })
           .concat(rubovi.map(function (r) { return (r.d1 - r.d0) * GUSTOCA_OBRUBA; }));
@@ -1226,7 +1228,7 @@
           cA = mix(cA, uPowder, e1);
           lA = mix(lA, 0.0, e1);
           bA = mix(bA, 1.0, e1);
-          aA = mix(aA, uAlpha.w, e1);                                 // izmaglica nije jača od slova
+          aA = mix(aA, uAlpha.w * 0.7, e1);                           // izmaglica je slabija od slova (gušća je od niti s razmacima)
         }
 
         // napredak točkice: prema natpisu i iz njega po slovima (kn), inače u valu
@@ -1245,18 +1247,21 @@
         if (uProg > 0.0) {
           vec3 g;
           snoise(p * 1.4 + vec3(0.0, -uTime * 0.3, uTime * 0.17), g);
+          float uLetu = 0.3;                                         // točkice u letu su malo jače
           if (uSeg < 1.5) {
             p += (g * 0.03 + cross(g, vec3(0.0, 1.0, 0.0)) * 0.05) * luk;
             p.xz = okreni(p.xz, luk * (0.6 + 0.5 * aRnd.w));
             p.y += 0.05 * luk;
           } else if (uSeg < 2.5) {
             // u natpis: iz bočice dimni vrtlog, izmaglica lagano plovi, a
-            // točkice u slovo uđu kratkim lukom prema nama
+            // točkice u slovo uđu kratkim, plitkim lukom prema nama; u letu
+            // su tek malo jače od niti u koje sjedaju (bez svijetlih pramenova)
             float m = sin(PI * e1) * (1.0 - k);
             p += (g * 0.04 + cross(g, vec3(0.0, 1.0, 0.0)) * 0.05) * m + g * 0.03 * e1 * (1.0 - k);
             p.xz = okreni(p.xz, m * (0.35 + 0.4 * aRnd.w));
-            p.z += 0.15 * luk;
-            alpha *= 1.0 + 0.3 * m;
+            p.z += 0.06 * luk;
+            alpha *= 1.0 + 0.1 * m;
+            uLetu = 0.1;
           } else {
             // iz natpisa: slovo se rasprši u dim koji se diže, pa se
             // točkice u vrtlogu slože u objekt
@@ -1265,7 +1270,7 @@
             p.xz = okreni(p.xz, luk * (0.6 + 0.5 * aRnd.w));
             p.y += 0.05 * luk;
           }
-          alpha *= 1.0 + 0.3 * luk;
+          alpha *= 1.0 + uLetu * luk;
         }
 
         // pojava: točkice doplove iz izmaglice u vrtlogu
