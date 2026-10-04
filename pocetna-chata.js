@@ -33,7 +33,7 @@
   //   - raspored (prema dizajnu "Početni ekran – stil K"): gore zaglavlje
   //     MARTIMEX i gumb za zatvaranje; ispod njega okvir animacije (450 px,
   //     animacija u prostoru 345 × 393 px poravnatom na dno, iza nje meki
-  //     zlatni sjaj; animacija je 15 % veća, vidi velicinaAnimacije);
+  //     zlatni sjaj; animacija je 9 % veća, vidi velicinaAnimacije);
   //     zatim tekst koji stoji cijelo vrijeme: naslov u dva
   //     reda ("Vaš osobni" bjelokost, "AI beauty savjetnik" rose-gold),
   //     tanka statična crta i kratki opis
@@ -138,8 +138,8 @@
     nagibPremaMisu: true,     // na računalu se objekt lagano nagne prema mišu
 
     // Veličina animacije: 1 = prema dizajnu (oblici ispune prostor 345 × 393 px),
-    // 1.15 = 15 % veća (oblici malo izađu iz tog prostora, što se ne vidi)
-    velicinaAnimacije: 1.15,
+    // 1.09 = 9 % veća (oblici malo izađu iz tog prostora, što se ne vidi)
+    velicinaAnimacije: 1.09,
 
     // Kad se prikazuje početni ekran:
     // true  → pri prvom otvaranju chata nakon svakog učitavanja stranice, i
