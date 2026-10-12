@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v20)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v21)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -12,18 +12,27 @@
   //   oldPrice → precrtana stara cijena i postotak popusta
   //   badge    → mala oznaka iznad marke, npr. "Novo"
   //
-  //  Raspored kartice:
-  //   ┌────────────────────────────┐
-  //   │ ┌───────┐   MARKA          │
-  //   │ │ SLIKA │   Naziv          │
-  //   │ │       │   Eau de Parfum  │
-  //   │ │       │   ──             │
-  //   │ └───────┘   CIJENA         │
-  //   │ ────────────────────────── │
+  //  Raspored kartice (postavka "raspored" ispod):
+  //
+  //   'okomito' (zadano)                'vodoravno'
+  //   ┌────────────────────────────┐    ┌────────────────────────────┐
+  //   │          ┌───────┐         │    │ ┌───────┐   MARKA          │
+  //   │          │       │         │    │ │ SLIKA │   Naziv          │
+  //   │          │ SLIKA │         │    │ │       │   Eau de Parfum  │
+  //   │          │       │         │    │ │       │   ──             │
+  //   │          └───────┘         │    │ └───────┘   CIJENA         │
+  //   │ ────────────────────────── │    │ ────────────────────────── │
+  //   │    MARKA                   │    │    Opis artikla, malo      │
+  //   │    Naziv                   │    │    uži od kartice          │
+  //   │    Eau de Parfum           │    │     [ Pogledaj proizvod ]  │
+  //   │    ──                      │    └────────────────────────────┘
+  //   │    CIJENA                  │
   //   │    Opis artikla, malo      │
   //   │    uži od kartice          │
   //   │     [ Pogledaj proizvod ]  │
   //   └────────────────────────────┘
+  //   Okomito: u gornjoj polovici je samo bočica, centrirana i veća (s istom
+  //   aurom, sjenom i plutanjem), a sav tekst je ispod crte, poravnat s opisom.
   //   Na proizvod vodi samo gumb, i to u istom prozoru (bez novih kartica).
   //
   //  Marka i naziv složeni su kao natpis na etiketi bočice:
@@ -61,11 +70,13 @@
   //   - opis je poravnat obostrano (kao u knjizi): tekst uvijek jednako
   //     popuni lijevu i desnu stranu, a duge riječi se po potrebi dijele
   //     po hrvatskim pravilima, da među riječima ne ostanu rupe
-  //   - opis je uvučen od rubova kartice, a marka i naziv gore ne smiju ići
-  //     desnije od opisa: tekst cijele kartice ima isti desni rub (--mx-uvlaka)
+  //   - opis je uvučen od rubova kartice, a marka i naziv ne smiju ići
+  //     desnije od opisa: tekst cijele kartice ima isti desni rub (--mx-uvlaka);
+  //     u okomitom rasporedu marka, naziv i cijena imaju i isti lijevi rub kao opis
   //   - gumb je mala pilula sa sitnim razmaknutim velikim slovima; na hover
   //     se lagano podigne, a preko njega jednom prijeđe odsjaj svjetla
-  //   - tanka linija koja se prema krajevima gubi odvaja gornji dio od opisa
+  //   - tanka linija koja se prema krajevima gubi odvaja gornji dio od donjeg
+  //     (okomito: bočicu od teksta; vodoravno: bočicu i naziv od opisa)
   //
   //  Mjere: okomito jedan ritam od 20 px (gornji i donji rub, razmaci između
   //  dijelova), lijevo i desno 16 px od ruba kartice; opis je s obje strane
@@ -101,6 +112,11 @@
     fontNaziva: '"MX Cormorant", "Cormorant Garamond", Garamond, Georgia, "Times New Roman", serif',
 
     tekstGumba: 'Pogledaj proizvod',
+
+    // Raspored kartice (vidi crteže na vrhu):
+    //  'okomito'   → gore samo bočica, centrirana; dolje marka, naziv, cijena, opis i gumb
+    //  'vodoravno' → bočica lijevo, marka / naziv / cijena desno od nje, opis ispod
+    raspored: 'okomito',
 
     // false → proizvod se otvara u istom prozoru; true → u novoj kartici preglednika
     novaKartica: false,
@@ -146,8 +162,11 @@
     })();
 
     // Prostor slike (širina, visina u CSS px); slika zauzima 90 % visine.
-    // Iste brojke koriste i CSS i obrada fotografije.
-    const VITRINA = [92, 132];
+    // Iste brojke koriste i CSS i obrada fotografije. U okomitom rasporedu
+    // bočica je sama u gornjoj polovici, pa je prostor veći (istih omjera).
+    const OKOMITO = P.raspored !== 'vodoravno';
+    const VITRINA = OKOMITO ? [140, 200] : [92, 132];
+    const PLUTANJE = OKOMITO ? 10 : 7;   // koliko se bočica digne dok pluta (px), razmjerno prostoru
     const VISINA_SLIKE = 0.9;
     // Kadar obrađene bočice (udio visine/širine prostora slike): bočica stoji
     // na "podlozi" na 90 % visine, najviše do 3 % od vrha, najviše 84 % širine.
@@ -247,6 +266,8 @@
         gap: 14px;
         min-width: 0;
       }
+      /* okomiti raspored: gore je samo bočica, centrirana */
+      .mx-kartica--okomita .mx-vrh { justify-content: center; }
 
       /* prostor slike: bez kutije, prozirna podloga
          Važno: bočica i aura su u istom omotu (.mx-lebdi) i plutaju zajedno.
@@ -370,7 +391,7 @@
         color: var(--mx-ikona);
         opacity: .55;
       }
-      .mx-prazno svg { width: 40px; height: 54px; }
+      .mx-prazno svg { width: ${Math.round(VITRINA[0] * 0.43)}px; height: ${Math.round(VITRINA[0] * 0.59)}px; }
 
       /* oznaka (npr. "Novo"): mala pilula iznad marke, nikad preko bočice */
       .mx-oznaka {
@@ -398,6 +419,13 @@
         width: 100%;
         min-width: 0;
         text-align: left;
+      }
+      /* okomiti raspored: ispod crte, s istim lijevim i desnim rubom kao opis */
+      .mx-kartica--okomita .mx-glava {
+        flex: none;
+        width: auto;
+        margin: 17px var(--mx-uvlaka) 0;   /* + prazan prostor iznad slova ≈ 20 px vidljivog razmaka od crte */
+        padding-right: 0;
       }
       .mx-marka,
       .mx-naziv { text-wrap: balance; }   /* višeredni tekst lomi se u retke podjednake duljine */
@@ -495,6 +523,7 @@
           ${prozirna(B.roza, .75)} 75%,
           ${prozirna(B.roza, 0)} 100%);
       }
+      .mx-kartica--okomita .mx-crta { margin-top: 12px; }   /* ispod sjene veće bočice je 8 px praznog */
 
       /* opis: s obje strane uvučen (--mx-uvlaka), pa je skupljen prema sredini kartice.
          Poravnat obostrano, s dijeljenjem riječi, da nema rupa među riječima. */
@@ -511,6 +540,7 @@
         color: var(--mx-dim);
         overflow-wrap: break-word;
       }
+      .mx-kartica--okomita .mx-opis { margin-top: 14px; }   /* opis odmah ispod cijene */
 
       /* razmak iznad gumba */
       .mx-razmak { display: block; flex: 1 0 20px; }
@@ -594,7 +624,7 @@
       /* transform se pomiče i za dijelove piksela, pa je pokret gladak */
       @keyframes mx-plutanje {
         0%, 100% { transform: translate3d(0, 0, 0); }
-        50%      { transform: translate3d(0, -7px, 0); }
+        50%      { transform: translate3d(0, -${PLUTANJE}px, 0); }
       }
       @keyframes mx-plutanje-sjena {
         0%, 100% { transform: scale(1); opacity: 1; }
@@ -698,11 +728,11 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '20');
+      stil.setAttribute('data-mx-kartice', '21');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '20') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '21') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
@@ -939,6 +969,13 @@
       return e;
     }
 
+    // tanka linija između gornjeg i donjeg dijela kartice
+    function crta() {
+      const c = el('div', 'mx-crta');
+      c.setAttribute('aria-hidden', 'true');
+      return c;
+    }
+
     function prazanIzlog(nisa) {
       nisa.classList.add('mx-bez-slike');
       const p = el('span', 'mx-prazno');
@@ -1149,7 +1186,7 @@
     // istaknuta = true: jedini proizvod u poruci (ista kartica, smije biti šira)
     function izgradiKarticu(k, i, istaknuta) {
       const link = sigurniLink(k.url);
-      const kartica = el('div', istaknuta ? 'mx-kartica mx-kartica--istaknuta' : 'mx-kartica');
+      const kartica = el('div', 'mx-kartica' + (OKOMITO ? ' mx-kartica--okomita' : '') + (istaknuta ? ' mx-kartica--istaknuta' : ''));
       kartica.style.setProperty('--mx-i', String(i));
       pratiVidljivost(kartica);
       const vrh = el('div', 'mx-vrh');
@@ -1211,15 +1248,21 @@
         }
         glava.appendChild(cijene);
       }
-      vrh.appendChild(glava);
-      kartica.appendChild(vrh);
 
       // LINIJA + OPIS
+      // okomito: bočica / crta / marka, naziv, cijena / opis
+      // vodoravno: bočica i marka, naziv, cijena / crta / opis
       const opis = skrati(k.opis, P.opisZnakova);
+      if (OKOMITO) {
+        kartica.appendChild(vrh);
+        kartica.appendChild(crta());
+        kartica.appendChild(glava);
+      } else {
+        vrh.appendChild(glava);
+        kartica.appendChild(vrh);
+        if (opis) kartica.appendChild(crta());
+      }
       if (opis) {
-        const crta = el('div', 'mx-crta');
-        crta.setAttribute('aria-hidden', 'true');
-        kartica.appendChild(crta);
         const p = el('p', 'mx-opis', mekeCrtice(opis));
         p.lang = 'hr';                  // dijeljenje riječi po hrvatskim pravilima
         kartica.appendChild(p);
