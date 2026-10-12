@@ -8,6 +8,11 @@ ostalih oblika se prilagodi broju (`gustoca`), pa izgledaju kao prije, samo fini
 bočica ide zadnja, u stankama preglednika (koraci do ~20 ms); ako se chat otvori prije nego su
 gotove, krug ide bez njih, a uključe se od sljedećeg kruga. Ispod je izvorni sažetak.
 
+**Kasnije:** obična bočica (treći oblik) je izbačena, a između flakona i Penhaligon's bočica
+dodani su logotipi parfemskih kuća (vidi `../marke/README.md`). Krug je sada objekt → flakon →
+logotipi → (nastanak) pet Penhaligon's bočica → natpis MARTIMEX. Logotipi i bočice uključe se čim
+su spremni, ako je to prije kraja mirovanja flakona, a inače od sljedećeg kruga.
+
 ## Što postoji
 - `penhaligons/shared.js`: `PEN.bocica(id, n)` vraća `{ poz, nor, vrsta }` za n točkica.
   - Mjere su u pikselima fotografije: y = 0 je dno bočice, x udesno, z prema gledatelju (prema etiketi).
