@@ -1,13 +1,13 @@
 # Penhaligon's Portraits — 3D bočice od točkica
 
 Bočice iz kolekcije Penhaligon's Portraits složene su od točkica u nitima, u istom stilu kao
-Xerjoff flakon u animaciji. **U animaciji su** (`pocetna-chata.js`): između bočice i natpisa
-MARTIMEX bočica se rastopi u izmaglicu, iz koje nastane svih pet u nizu (staklo se puni odozdo,
-etiketa se otisne odozgo, zlatna glava izraste iz ovratnika); bočice se polako okreću, pa se
-rastope u dim iz kojeg nastane natpis. `pocetna-chata.js` sam učita `shared.js` i pet glava iz
-ove mape (tek kad su ostali oblici gotovi) i gradi ih u malim koracima (`PEN.bocicaKoraci`);
-ako se ne učitaju, ciklus je kao prije. Uključuju se i podešavaju u `MX_POCETNA_POSTAVKE`
-(`penhaligon`, `trajanje.nastanak`, `trajanje.penhaligon`).
+Xerjoff flakon u animaciji. **U animaciji su** (`pocetna-chata.js`): između logotipa parfemskih
+kuća (vidi `../marke/`) i natpisa MARTIMEX logotipi se rastope u izmaglicu, iz koje nastane svih
+pet u nizu (staklo se puni odozdo, etiketa se otisne odozgo, zlatna glava izraste iz ovratnika);
+bočice se polako okreću, pa se rastope u dim iz kojeg nastane natpis. `pocetna-chata.js` sam
+učita `shared.js` i pet glava iz ove mape (tek kad su ostali oblici gotovi) i gradi ih u malim
+koracima (`PEN.bocicaKoraci`); ako se ne učitaju, krug je bez njih. Uključuju se i podešavaju u
+`MX_POCETNA_POSTAVKE` (`penhaligon`, `trajanje.nastanak`, `trajanje.penhaligon`).
 
 - `shared.js`: zajedničko tijelo bočice (izmjereno s fotografije), zlatni ovratnik, etiketa s
   natpisom i rezanje SDF-a glave u vodoravne niti (`PEN.bocica(id, n)` vraća `{ poz, nor, vrsta }`;
