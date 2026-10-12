@@ -36,7 +36,18 @@ koracima (`PEN.bocicaKoraci`); ako se ne učitaju, krug je bez njih. Uključuju 
   pet bočica 1500 × 2000 px, koja nije u repozitoriju)
 - `skica.py <id>`: složi list sa skicom (fotografija, model sprijeda, glava izbliza, prava veličina)
 
-U animaciji (vidi `pocetna-chata.js`, odjeljak PENHALIGON'S PORTRAITS): bočice su u nizu manje
-(0,73 veličine flakona, razmak osi 0,475), točkice se dijele po površini bočica, a svaka točkica
-ima jedan atribut `aPen` (mjesto uz os svoje bočice i kod: vrsta, redni broj bočice i normala u
-jednom broju), u vlastitom spremniku koji se doda kad su bočice gotove.
+U animaciji (vidi `pocetna-chata.js`, odjeljak PENHALIGON'S PORTRAITS):
+- bočice stoje u rasporedu V (`PEN_RASPORED`): u sredini sprijeda Lord George (0,95 veličine
+  flakona), do njega Mr Sam i Duchess Rose (0,84), a vanjske Lady Blanche i Changing Constance
+  (0,76) najdalje; sve su malo okrenute prema sredini. Glave se mogu okrenuti i same
+  (`PEN_GLAVA`): pantera i lisica u tri četvrtine, bik tako da se vide rogovi i njuška, a
+  gazela postrance (zakrivljeni rogovi), jer se tako životinja najbolje prepozna
+- bočice imaju više točkica od ostalih oblika (`tocakaBocica`: 120 000 na računalu, 64 000 na
+  mobitelu), podijeljenih po površini bočica na ekranu. Dio (koliko ima svaki oblik) je u
+  glavnom spremniku, s atributom `aPen` (mjesto u bočici i kod: vrsta, redni broj bočice i
+  normala u jednom broju), i u bočice dolazi iz izmaglice. Ostatak je u gustom sloju, koji se
+  crta istim programom samo dok su bočice na ekranu: pojavi se na mjestu kad onamo sjednu
+  točkice glavnog sloja i nestane kad se one rastope
+- glave se režu u vodoravne niti gotovo istog razmaka kao niti stakla (`gustocaGlave: 0.85`),
+  pa su od niti kao čep flakona. Etiketa ima rjeđe retke i manje točkica (`redEtikete`,
+  `tezinaEtikete`), da bude miran dio bočice, a ne blještava bijela ploha

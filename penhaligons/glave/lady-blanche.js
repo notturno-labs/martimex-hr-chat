@@ -244,7 +244,7 @@
 
   PEN.glave['lady-blanche'] = {
     ime: 'Lady Blanche', podnaslov: 'The Revenge of', grb: 'pantera',
-    staklo: ['#5e4114', '#b0a46a'],
+    staklo: ['#6a3612', '#c79458'],   // konjak (jantar), da se razlikuje od Lord Georgea
     okvir: { x: 92, yMin: 330, yMax: 511, z: 104 },
     sdf: function (x, y, z) {
       // vrat iz ovratnika: eliptičan presjek koji se prema gore stanjuje sprijeda-straga
