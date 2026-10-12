@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════
-//  Penhaligon's Portraits — zajednička podloga za skice (nije još u
-//  pocetna-chata.js). Bočica se slaže od točkica u nitima, kao Xerjoff
+//  Penhaligon's Portraits — zajednička podloga za animaciju (pocetna-chata.js
+//  je učita iz mape penhaligons/) i za skice (preview.html). Bočica se slaže od točkica u nitima, kao Xerjoff
 //  flakon: tijelo u prstenovima, etiketa u gustim vodoravnim nitima, a
 //  zlatni ovratnik i glava životinje u vodoravnim rezovima SDF-a.
 //
@@ -288,7 +288,7 @@
     const M = GUSTOCA_MASKE, W = 2 * ETIKETA.x * M, H = (ETIKETA.y1 - ETIKETA.y0) * M;
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
-    const ctx = c.getContext('2d');
+    const ctx = c.getContext('2d', { willReadFrequently: true });   // slika se čita odmah (getImageData)
     ctx.scale(M, M);
     crtajEtiketu(ctx, g);
     const d = ctx.getImageData(0, 0, W, H).data;
@@ -386,7 +386,8 @@
   // ── Cijela bočica: n točaka { poz, nor, vrsta } u pikselima fotografije
   //    opcije: { omjer: 2.3 (gustoća na niti / razmak niti), gustocaGlave: 0.6
   //    (razmak rezova glave prema razmaku prstenova), h: 1.2 (mreža rezova, px),
-  //    redEtikete: 1 (razmak redaka etikete, px), tezinaEtikete: 1.6 }
+  //    redEtikete: 1 (razmak redaka etikete, px), tezinaEtikete: 1.6,
+  //    korak: razmak niti (px); ako je zadan, površina bočice se ne mjeri }
   //    PEN.bocicaKoraci je generator: radi u malim koracima (yield nakon
   //    svakog reza glave i svakih nekoliko stotina točkica), da animacija
   //    može gradnju rasporediti po stankama preglednika; PEN.bocica sve
@@ -465,16 +466,19 @@
       }
       return L;
     }
-    let korak = 8, L = yield* linije(korak, true);
-    // površina: tijelo (gruba procjena) + glava (rezovi s grubim korakom)
-    let pov = L.reduce(function (z, l) { return z + l.duljina; }, 0) * korak;
-    for (let y = O.y0 + 0.5; y < ok.yMax; y += 6) {
-      const d = yield* rezKoraci(gore, y, -ok.x, ok.x, -ok.z, ok.z, 3);
-      for (let q = 0; q < d.length; q += 4) pov += Math.hypot(d[q + 2] - d[q], d[q + 3] - d[q + 1]) * 6;
+    let korak = opcije.korak;
+    if (!korak) {
+      // površina: tijelo (gruba procjena) + glava (rezovi s grubim korakom)
+      korak = 8;
+      const Lg = yield* linije(korak, true);
+      let pov = Lg.reduce(function (z, l) { return z + l.duljina; }, 0) * korak;
+      for (let y = O.y0 + 0.5; y < ok.yMax; y += 6) {
+        const d = yield* rezKoraci(gore, y, -ok.x, ok.x, -ok.z, ok.z, 3);
+        for (let q = 0; q < d.length; q += 4) pov += Math.hypot(d[q + 2] - d[q], d[q + 3] - d[q + 1]) * 6;
+      }
+      korak = Math.sqrt(pov * OMJER / n);
     }
-    korak = Math.sqrt(pov * OMJER / n);
-    const sve = yield* linije(korak), Le = [];
-    L = [];
+    const sve = yield* linije(korak), Le = [], L = [];
     sve.forEach(function (l) { (l.etiketa ? Le : L).push(l); });
     // etiketa dobiva točkice prema težini svojih niti, ali ih slaže pravilno:
     // svaki odsječak papira ima točkicu na oba kraja (rub tiska je oštar, a

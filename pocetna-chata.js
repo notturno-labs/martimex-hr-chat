@@ -1033,7 +1033,11 @@
     const PEN_MJ = 1.76 / 684 * PEN_MJERILO;   // piksel fotografije → svjetska jedinica (bočica s jelenom, 684 px, bila bi visoka kao flakon)
     const PEN_RAZMAK = 0.475;            // razmak osi susjednih bočica (svjetske jedinice)
     const PEN_SREDINA = 347;             // visina na bočici (px fotografije) koja dođe u sredinu prostora
-    const PEN_POVRSINA = [23.1, 22.9, 25.3, 22.1, 23.3];   // površine bočica (jelen je najveći): po njima se dijele točkice
+    // razmak niti svake bočice uz 26 000 točkica (izmjeren u PEN.bocica); kvadrat
+    // je razmjeran površini bočice (jelen je najveći): po njemu se dijele
+    // točkice, a gradnja ne mora sama mjeriti površinu
+    const PEN_KORAK = [4.806, 4.785, 5.033, 4.705, 4.830];
+    const PEN_POVRSINA = PEN_KORAK.map(function (k) { return k * k; });
 
     function ucitajSkriptu(src) {
       return new Promise(function (gotovo) {
@@ -1112,8 +1116,8 @@
         const m = b === PEN_IDS.length - 1 ? n - od : Math.round(n * PEN_POVRSINA[b] / ukupno);
         // mreža rezova glave prema gustoći (kad je točkica malo, dovoljna je grublja);
         // retci etikete 1,6 px: etiketa je u nizu široka tridesetak piksela
-        const korak = 4.8 * Math.sqrt(26000 / Math.max(500, m));
-        const r = yield* M.bocicaKoraci(PEN_IDS[b], m, { h: Math.max(1.2, korak * 0.28), redEtikete: 1.6 });
+        const korak = PEN_KORAK[b] * Math.sqrt(26000 / Math.max(500, m));
+        const r = yield* M.bocicaKoraci(PEN_IDS[b], m, { korak: korak, h: Math.max(1.2, korak * 0.28), redEtikete: 1.6 });
         for (let i = 0; i < m; i++) {
           const j = od + i;
           poz[3 * j] = r.poz[3 * i] * PEN_MJ;
@@ -1144,8 +1148,9 @@
     }
 
     // Generator se izvršava u stankama preglednika: koraci dok ima vremena
-    // (najviše 8 ms zaredom), pa stanka; tako ni dok se animacija vrti ne zapne
-    function izvrsiPostupno(gen) {
+    // (najviše 8 ms zaredom), pa stanka; tako ni dok se animacija vrti ne zapne.
+    // prekid() = true: posao se prekine (vrati se null)
+    function izvrsiPostupno(gen, prekid) {
       const cekaj = window.requestIdleCallback
         ? function (f) { window.requestIdleCallback(f, { timeout: 250 }); }
         : function (f) { setTimeout(f, 16); };
@@ -1154,6 +1159,7 @@
           const kraj = performance.now() + 8;
           try {
             for (;;) {
+              if (prekid && prekid()) { gotovo(null); return; }
               const r = gen.next();
               if (r.done) { gotovo(r.value); return; }
               if (performance.now() > kraj || (rok && rok.timeRemaining && !rok.didTimeout && rok.timeRemaining() < 1)) break;
@@ -1165,13 +1171,16 @@
       });
     }
 
-    // Penhaligon bočice za zadane oblike (jednom); null ako nisu dostupne
-    let PEN_OBLIK = null;
+    // Penhaligon bočice za zadane oblike (jednom); null ako nisu dostupne.
+    // Kad se početni ekran ukloni (ukloni), gradnja se prekine (PEN_PREKID)
+    let PEN_OBLIK = null, PEN_PREKID = null;
     function pripremiPenhaligon(oblici) {
       if (PEN_OBLIK) return PEN_OBLIK;
+      const prekid = PEN_PREKID = { da: false };
       PEN_OBLIK = ucitajPenhaligon().then(function (ok) {
-        if (!ok) return null;
-        return izvrsiPostupno(penhaligonKoraci(oblici.n, oblici.redX)).then(function (podaci) {
+        if (!ok || prekid.da) return null;
+        return izvrsiPostupno(penhaligonKoraci(oblici.n, oblici.redX), function () { return prekid.da; }).then(function (podaci) {
+          if (!podaci) return null;
           const gore = new Float32Array(15), dolje = new Float32Array(15);
           PEN_IDS.forEach(function (id, i) {
             const st = window.PEN.glave[id].staklo || ['#888888', '#cccccc'];
@@ -1192,7 +1201,9 @@
     //  SHADERI — program za grafičku karticu
     //
     //  Svaka točkica zna svoja četiri mjesta (objekt, flakon, bočica,
-    //  natpis). Shader u svakoj sličici izračuna gdje je sada: oblik objekta
+    //  natpis), a kad su Penhaligon bočice izračunate, iz drugog spremnika i
+    //  peto (aPen: mjesto u jednoj od pet bočica; vrsta, bočica i normala
+    //  spakirani su u aPen.w). Shader u svakoj sličici izračuna gdje je sada: oblik objekta
     //  gužva simplex šumom, prijelaz radi u valu (svaka točkica kreće s malim
     //  zakašnjenjem) uz vrtlog i dimni šum, a svjetlo (sjena, odsjaj, rub)
     //  daje metalni izgled. Točkice se zbrajaju (aditivno), pa su gušća
@@ -1544,7 +1555,7 @@
           lit = mix(lA, lB, e1);
           back = mix(bA, bB, e1);
           alpha = mix(mix(aA, aB * 0.45, e1), aB, e2);
-          float b = (k2 - 0.93) / 0.07;
+          float b = (k2 - 0.82) / 0.07;                              // do k2 = 1 se posve ugasi
           col *= 1.0 + exp(-b * b) * (pVrsta > 2.5 ? 0.25 : (pVrsta > 1.5 ? 1.6 : 0.8));
           k = e2;
           papir *= e2;
@@ -1671,8 +1682,9 @@
       'uBezPen', 'uPenKut', 'uAlphaPen', 'uPenGore', 'uPenDolje'];
     const ATRIBUTI = [['aSph', 3, 0], ['aBot', 3, 3], ['aBotN', 3, 6], ['aTxt', 3, 9], ['aRnd', 4, 12], ['aFla', 4, 16], ['aFlaN', 3, 20]];
     // jačina točkica (objekt, flakon, bočica, natpis) uz 26 000 točkica na
-    // računalu i 16 000 na mobitelu (uz više točkica jačina se razmjerno
-    // smanji, vidi velicina); natpis je najgušći pa ima najslabije točkice
+    // računalu i 16 000 na mobitelu; uz više točkica prva tri se smanje s
+    // gustoca^-0,65 (vidi nacrtaj), a natpis prema broju točkica na piksel
+    // (vidi velicina); natpis je najgušći pa ima najslabije točkice
     const JACINA = [0.9, 0.7, 0.8, 0.18];
     const JACINA_PEN = 0.75;       // Penhaligon bočice uz 26 000 točkica po bočici u punoj veličini (S = 175)
 
@@ -1769,7 +1781,7 @@
           if (f.oblik === 'natpis') {
             // meki sjaj polako prijeđe preko natpisa slijeva nadesno (natpis
             // je od -1,125 do 1,125); bez ponavljanja svakih 6 s
-            const ct = P.ponavljaj ? tau : (c - POCETAK_NATPISA) % 6;
+            const ct = P.ponavljaj ? tau : (t - pojava - POCETAK_NATPISA) % 6;
             st.sjaj = lerp(-1.7, 1.7, (ct - 0.5) / 2.6);
             st.podnaslov = true;
           }
@@ -1803,7 +1815,7 @@
       const tijekBez = napraviTijek(false), tijekPen = P.penhaligon ? napraviTijek(true) : null;
       const POD = boja01(B.podloga);
       let gl = null, program = null, spremnik = null, U = {}, n = 0, pola = 0.12, slova = 1, povecanje = 1, jacinaSlova = JACINA[3];
-      let spremnikPen = null, penSpreman = false, penPodaci = null, jacinaPen = JACINA_PEN, gustoca = 1;
+      let spremnikPen = null, penSpreman = false, penPodaci = null, penTrazen = false, jacinaPen = JACINA_PEN, gustoca = 1;
       // krug koji je u tijeku: Penhaligon bočice uključe se tek od kruga koji
       // počne kad su pripremljene (krug se ne mijenja usred prikaza)
       let krugOd = 0, krugTijek = tijekBez, krugZadnje = -1;
@@ -1886,11 +1898,19 @@
         return true;
       }
 
+      // Penhaligon bočice se računaju zadnje, postupno u stankama preglednika
+      // (jednom; ne uz "Smanji pokrete", jer se tada ne prikazuju)
+      function trebaPen() {
+        if (!tijekPen || penTrazen || MIRNO.matches || !OBLICI) return;
+        penTrazen = true;
+        OBLICI.then(pripremiPenhaligon).then(function (pp) { if (pp && !unisteno) dovrsiPen(pp); });
+      }
+
       // Penhaligon bočice: vlastiti spremnik (atribut aPen), dodaje se kad su
       // izračunate; do tada je aPen isključen i krug ide bez njih
       function dovrsiPen(pp) {
         penPodaci = pp;
-        if (!gl || gl.isContextLost() || !spremnik) return;
+        if (!gl || gl.isContextLost() || !spremnik || spremnikPen) return;
         const mjesto = gl.getAttribLocation(program, 'aPen');
         if (mjesto < 0) return;
         spremnikPen = gl.createBuffer();
@@ -1916,10 +1936,7 @@
               velicina();
               nacrtaj(0);                               // prvo crtanje unaprijed, a ne tek pri otvaranju
               spremno = true;
-              // Penhaligon bočice se računaju zadnje, postupno u stankama preglednika
-              if (tijekPen && !penPodaci) {
-                pripremiPenhaligon(oblici).then(function (pp) { if (pp && !unisteno) dovrsiPen(pp); });
-              }
+              trebaPen();
               return true;
             });
           });
@@ -2051,6 +2068,7 @@
         stani();
         spremno = false;
         priprema = null;
+        spremnik = null; spremnikPen = null; penSpreman = false;   // spremnici izgubljenog konteksta više ne vrijede
       });
       platno.addEventListener('webglcontextrestored', function () {
         if (unisteno) return;
@@ -2063,6 +2081,7 @@
         // svako otvaranje: animacija ispočetka
         ispocetka: function () {
           HITNO = true;
+          trebaPen();
           stani();
           vrijeme = 0; izlazOd = -1; izlazGotov = null; podnaslov = null; krugZadnje = -1;
           return pripremi().then(function (ok) { if (ok && dogadaji.otvoreno()) pokreni(); return ok; });
@@ -2725,7 +2744,8 @@
       pocetna.unisti();
       pocetna = null;
       OBLICI = null;                                  // oblici više ne trebaju (oslobodi memoriju)
-      PEN_OBLIK = null;
+      if (PEN_PREKID) PEN_PREKID.da = true;           // gradnja Penhaligon bočica (ako još traje) staje
+      PEN_OBLIK = null; PEN_PREKID = null;
       if (prozor) iskljuciIspod(prozor, false);
     }
 
