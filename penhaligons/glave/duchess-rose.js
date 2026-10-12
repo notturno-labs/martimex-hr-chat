@@ -297,7 +297,7 @@ PEN.glave['duchess-rose'] = (function () {
   }
 
   return {
-    ime: 'Duchess Rose', podnaslov: 'The Coveted',
+    ime: 'Duchess Rose', podnaslov: 'The Coveted', grb: 'lisica',
     staklo: ['#5b2b2e', '#c07a70'],
     okvir: { x: 74, yMin: 330, yMax: 531, z: 74 },
     _glava: glava,

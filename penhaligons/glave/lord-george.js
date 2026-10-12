@@ -404,7 +404,7 @@
   }
 
   PEN.glave['lord-george'] = {
-    ime: 'Lord George', podnaslov: 'The Tragedy of',
+    ime: 'Lord George', podnaslov: 'The Tragedy of', grb: 'jelen',
     staklo: ['#675932', '#a8a46b'],
     okvir: OK,
     _R: R, _uSvijet: uSvijet, _GRANE: GRANE, _PO: PO, _glava: glava,

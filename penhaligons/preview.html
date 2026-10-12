@@ -1,5 +1,9 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}
+/* pisma etikete: ista kao u animaciji (mapa fonts/) */
+@font-face{font-family:"MX Cormorant";src:url("../fonts/cormorant-garamond-latin.woff2") format("woff2");font-weight:500 700;font-style:normal}
+@font-face{font-family:"MX Jost";src:url("../fonts/jost-latin.woff2") format("woff2");font-weight:300 600;font-style:normal}
+</style></head>
 <body>
 <canvas id="c"></canvas>
 <script src="shared.js"></script>
@@ -11,7 +15,8 @@
 //   kut=0,-35,90,180              okret svake bočice (stupnjevi; + = okret ulijevo, kao u animaciji)
 //   w=460&h=700&S=175             veličina platna i px po svjetskoj jedinici (u animaciji S ≈ 175)
 //   razmak=0                      vodoravni razmak između bočica (px platna); 0 = jedna bočica po kutu
-//   mod=tocke | silueta           silueta: pravokutni pogled sprijeda, 1 px platna = 1 px fotografije
+//   mod=tocke | silueta | etiketa silueta: pravokutni pogled sprijeda, 1 px platna = 1 px fotografije;
+//                                 etiketa: ravan crtež etikete (ids[0]) preko cijelog platna
 const Q = new URLSearchParams(location.search);
 const ids = (Q.get('ids') || 'proba').split(',');
 const N = +(Q.get('n') || 26000);
@@ -29,9 +34,17 @@ function ucitaj(src) { return new Promise((ok, ne) => { const s = document.creat
 
 (async function () {
   try {
-    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    if (document.fonts && document.fonts.load) await Promise.all(PEN.FONTOVI_ETIKETE.map(f => document.fonts.load(f, 'PORTRAITS')));
     for (const id of ids) await ucitaj('glave/' + id + '.js');
     const c = document.getElementById('c');
+    if (MOD === 'etiketa') {
+      c.width = W; c.height = H;
+      const x = c.getContext('2d'), E = PEN.ETIKETA;
+      x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
+      x.scale(W / (2 * E.x), H / (E.y1 - E.y0));
+      PEN.crtajEtiketu(x, PEN.glave[ids[0]]);
+      window.__info = []; window.__gotovo = true; return;
+    }
     const dpr = 1;
     c.width = W * dpr; c.height = H * dpr; c.style.width = W + 'px'; c.style.height = H + 'px';
     const gl = c.getContext('webgl', { antialias: true, premultipliedAlpha: false });
@@ -51,18 +64,18 @@ function ucitaj(src) { return new Promise((ok, ne) => { const s = document.creat
         }
         float persp = CAM / (CAM - q.z);
         gl_Position = vec4(q.x * uPx.x * persp + uCenter.x, q.y * uPx.y * persp + uCenter.y, 0.0, 1.0);
-        float iskra = step(0.993, aRnd);
+        float iskra = aVrsta > 2.5 ? 0.0 : step(0.993, aRnd);   // etiketa je papir: bez iskrica
         gl_PointSize = uSize * persp * (1.0 + iskra * 0.7);
         vec3 c; float lit, back, jak = 1.0;
         if (aVrsta < 0.5) {                     // obojeno staklo s tekućinom (tamnije gore)
           vec3 t = mix(uBottom, uTop, smoothstep(64.0, 320.0, aPos.y));
           c = mix(uSilver, t, 0.82) * 1.12; lit = 0.75; back = 0.45;
-        } else if (aVrsta < 1.5) {              // prozirno debelo dno
-          c = uSilver; lit = 0.75; back = 0.45; jak = 0.8;
+        } else if (aVrsta < 1.5) {              // prozirno debelo dno: bistro staklo, malo obojeno tekućinom iznad
+          c = mix(uSilver, uBottom, 0.3); lit = 0.75; back = 0.45; jak = 0.7;
         } else if (aVrsta < 2.5) {              // zlato (ovratnik i glava)
           c = uGold * 1.05; lit = 1.0; back = 0.28;
         } else {                                // etiketa
-          c = uPowder * 1.05; lit = 0.35; back = 0.45;
+          c = uPowder * 1.05; lit = 0.35; back = 0.45; jak = 0.8;
         }
         vec3 L = normalize(vec3(-0.5, 0.62, 0.6));
         vec3 Hh = normalize(L + vec3(0.0, 0.0, 1.0));
@@ -73,6 +86,11 @@ function ucitaj(src) { return new Promise((ok, ne) => { const s = document.creat
         float svjetlo = 0.08 + 0.7 * dif + 1.5 * spe + 0.6 * rub + 0.28 * nebo;
         float lice = mix(back, 1.0, smoothstep(-0.2, 0.25, nq.z));
         float dubina = mix(1.0, clamp(0.62 + 0.42 * q.z, 0.25, 1.15), lit);
+        // etiketa gledana ukoso: točkice se na zaslonu zbiju (gustoća raste kao
+        // 1 / |nz|) i zbroje u bijelu crtu, a papir ukoso ne smije zasvijetliti;
+        // jačina se zato množi s |nz| (sprijeda je to gotovo 1); poleđina
+        // etikete vidi se kroz tekućinu, pa je još tamnija
+        if (aVrsta > 2.5) jak *= clamp(abs(nq.z) * 1.1, 0.1, 1.0) * (nq.z < 0.0 ? 0.6 : 1.0);
         vCol = vec4(c * mix(1.0, svjetlo, lit) * lice, uAlpha * jak * dubina);
       }`;
     const FS = `precision mediump float; varying vec4 vCol; uniform highp float uSil;
@@ -99,7 +117,7 @@ function ucitaj(src) { return new Promise((ok, ne) => { const s = document.creat
     for (const cr of crtanja) {
       const t0 = performance.now();
       const b = cache[cr.id] || (cache[cr.id] = PEN.bocica(cr.id, N, {}));
-      info.push({ id: cr.id, ms: Math.round(performance.now() - t0), korak: b.korak, linija: b.linija });
+      info.push({ id: cr.id, ms: Math.round(performance.now() - t0), korak: b.korak, linija: b.linija, broj: b.broj });
       const g = PEN.glave[cr.id];
       const st = g.staklo || ['#888888', '#cccccc'];
       gl.uniform3fv(U('uTop'), zasiti(rgb(st[0]), 1.15)); gl.uniform3fv(U('uBottom'), zasiti(rgb(st[1]), 1.15));

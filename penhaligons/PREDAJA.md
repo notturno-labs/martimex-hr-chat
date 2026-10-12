@@ -11,6 +11,15 @@ a klijent ih je vidio. Sljedeći korak je ubacivanje u animaciju početnog ekran
     računaju vidi se u shaderu u `penhaligons/preview.html`, koji je preslika osvjetljenja iz
     `pocetna-chata.js`: isti izrazi za dif/spe/rub/nebo/lice/dubina, a zlato je kao na flakonu.
 - `penhaligons/glave/*.js`: pet glava (pantera, bik, jelen, lisica, gazela) kao SDF.
+- Dorada prije animacije (klijent je tražio): dno bez izbočine (ravni bokovi, zaobljen rub),
+  prozirno dno tamnije i malo obojeno tekućinom, granica tekućine kao jedna nit, nova etiketa
+  po uzoru na original (vidi README.md). U shader animacije treba prenijeti i ovo iz
+  `preview.html`:
+  - etiketa (vrsta 3) nema iskrica (`iskra`), jačina 0,8, a jačina se množi s |nz| (×0,6 kad je
+    etiketa okrenuta od nas), da papir gledan ukoso ne zasvijetli kao bijela crta;
+  - prozirno dno (vrsta 1): boja `mix(srebro, donja boja stakla, 0.3)`, jačina 0,7.
+  - Etiketa se crta pismima MX Cormorant i MX Jost: prije `PEN.bocica()` pričekati
+    `document.fonts.load()` za `PEN.FONTOVI_ETIKETE` (kao što se čeka pismo natpisa).
 - Pretvorba u svjetske jedinice animacije, isto kao flakon (visina 1,76):
   `K = 1.76 / 684`, `x_svijet = x_px * K`, `y_svijet = (y_px - 342) * K`, `z_svijet = z_px * K`.
   Bočica s jelenom visoka je 684 px. Ostale su niže, a dna im se poravnaju.

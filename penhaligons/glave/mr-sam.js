@@ -357,7 +357,7 @@ PEN.glave['mr-sam'] = (function () {
 
   return {
     _lok: lok, _glavaW: glavaW, _vrat: vrat,
-    ime: 'Mr Sam', podnaslov: 'The Blazing',
+    ime: 'Mr Sam', podnaslov: 'The Blazing', grb: 'bik',
     staklo: ['#44617f', '#8aa3bc'],
     okvir: { x: 144, yMin: 330, yMax: 497, z: 94 },
     sdf: sdf

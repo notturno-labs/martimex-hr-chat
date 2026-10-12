@@ -383,7 +383,7 @@ PEN.glave['changing-constance'] = (function () {
   }
 
   return {
-    ime: 'Constance', podnaslov: 'Changing',
+    ime: 'Constance', podnaslov: 'Changing', grb: 'gazela',
     staklo: ['#7a3f2d', '#bd9a84'],
     okvir: { x: 99, yMin: 330, yMax: 612, z: 86 },
     sdf: sdf

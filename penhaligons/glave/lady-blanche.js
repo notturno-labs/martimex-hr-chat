@@ -243,7 +243,7 @@
   const BEZ_PRECACA = !!PEN._lbBezPrecaca;
 
   PEN.glave['lady-blanche'] = {
-    ime: 'Lady Blanche', podnaslov: 'The Revenge of',
+    ime: 'Lady Blanche', podnaslov: 'The Revenge of', grb: 'pantera',
     staklo: ['#5e4114', '#b0a46a'],
     okvir: { x: 92, yMin: 330, yMax: 511, z: 104 },
     sdf: function (x, y, z) {
