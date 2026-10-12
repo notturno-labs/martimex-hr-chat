@@ -3,6 +3,10 @@
 // y gore, z naprijed prema njušci, ishodište u sredini lubanje), pa okrenuta udesno
 // (pogled udesno-dolje) i postavljena na dugi vrat iz ovratnika. Rogovlje i uši su
 // zadani izravno u px fotografije (x, y s fotografije, dubina z iz okvira rogovlja).
+// Rogovlje: vitke cijevi (Catmull-Rom niz zaobljenih stožaca) koje se sužavaju prema vrhu;
+// središnje linije i polumjeri izmjereni na uvećanoj fotografiji (grane ~r 9 pri dnu, parošci
+// r 6 -> 4), dubina: grane idu gore, van i malo natrag, parošci naprijed prema licu, tako da
+// je rog razgranat i s boka. Na dnu svakog roga kvrgava ruža (vijenac).
 (function () {
   const S = PEN.sdf, D2R = Math.PI / 180;
   const sqrt = Math.sqrt, abs = Math.abs, min = Math.min, max = Math.max;
@@ -94,11 +98,11 @@
     [6, 24.5, -41, 19.5, 22, 14.5, 2.6],
     [16, 21, -39.5, 21, 22.5, 13.5, 3],
     [28, 15, -38, 21, 21, 12.5, 3.1],
-    [40, 8.5, -37, 17.5, 18, 11.5, 3],
-    [51, 2, -36.5, 13, 14.5, 10.5, 2.7],
-    [60, -4, -36.5, 10, 12, 9.5, 2.5],
-    [66.5, -9, -35.5, 9, 10.5, 8.5, 2.4],
-    [71, -13, -30, 6, 7, 6, 2]
+    [40, 8.5, -37, 16, 17, 11.5, 3],
+    [51, 2, -36.5, 11.5, 13.5, 10.5, 2.7],
+    [60, -4, -36.5, 10.5, 12.5, 10, 2.5],
+    [66.5, -9, -34, 9.5, 11.2, 9, 2.4],
+    [71, -13, -30, 7, 8, 7, 2]
   ];
   const PZ0 = -34, PZ1 = 71, TAB = [];
   (function () {
@@ -128,10 +132,10 @@
   }
   // oči, obrve, suzne jamice, nosnice, usta
   const OKO = (function () { // središte oka (lokalno)
-    const nn = [0.82, 0.12, 0.56], l = len3(nn[0], nn[1], nn[2]), n = nn.map(function (t) { return t / l; });
-    let u = [-n[2], 0.18, n[0]]; const ul = len3(u[0], u[1], u[2]); u = u.map(function (t) { return t / ul; });
+    const nn = [0.85, 0.3, 0.42], l = len3(nn[0], nn[1], nn[2]), n = nn.map(function (t) { return t / l; });
+    let u = [-n[2], 0.15, n[0]]; const ul = len3(u[0], u[1], u[2]); u = u.map(function (t) { return t / ul; });
     const v = [n[1] * u[2] - n[2] * u[1], n[2] * u[0] - n[0] * u[2], n[0] * u[1] - n[1] * u[0]];
-    return { c: [16.2, 14, 17], n: n, u: u, v: v[1] < 0 ? v.map(function (t) { return -t; }) : v };
+    return { c: [19.6, 17.6, 22.5], n: n, u: u, v: v[1] < 0 ? v.map(function (t) { return -t; }) : v };
   })();
   function glava(x, y, z) {
     const ax = abs(x);
@@ -140,39 +144,49 @@
     d = smin(d, el(ax, y, z, 0, 13, -7, 20, 13, 18), 7);
     d = smin(d, el(ax, y, z, 13.5, -22, -7, 8, 15, 17), 7);
     // nadočni luk i očna izbočina
-    d = smin(d, kap(ax, y, z, 13, 22, 3, 20.5, 19, 18, 4), 5);
-    d = smin(d, el(ax, y, z, 18, 14, 15, 7, 9, 9.5), 4);
+    d = smin(d, kap(ax, y, z, 14, 25.5, 4, 20.5, 23.5, 22, 3.3), 5);
+    d = smin(d, el(ax, y, z, 17.5, 17, 16, 6, 8, 9.5), 4);
     // jagodična kost (zigomatični luk) ispod oka
-    d = smin(d, kap(ax, y, z, 19.5, 8.5, 12, 17, 5.5, 31, 3.2), 5);
+    d = smin(d, kap(ax, y, z, 19.2, 11.5, 13, 16.8, 9.5, 33, 3.1), 5);
     // facijalni greben od oka prema naprijed
     d = smin(d, kap(ax, y, z, 17.5, 5, 15, 15, -8, 40, 1.2), 5);
+    // nosni jastučić (vrh njuške)
+    d = smin(d, el(ax, y, z, 0, -16.5, 67.5, 7.5, 6.5, 4.6), 3);
     // brada
-    d = smin(d, el(ax, y, z, 0, -35.5, 59, 7, 4.5, 9), 3);
+    d = smin(d, el(ax, y, z, 0, -34.5, 61, 7, 4, 8.5), 3);
+    // donja usna
+    d = smin(d, kap(ax, y, z, 0, -30.8, 70.2, 5.5, -30.2, 65.5, 2.7), 2);
     // oko: bademasta duplja (kapci su njezin rub) i jabučica u njoj
     {
       const E = OKO, px = ax - E.c[0], py = y - E.c[1], pz = z - E.c[2];
-      if (px * px + py * py + pz * pz < 200) {
+      if (px * px + py * py + pz * pz < 260) {
         const n = px * E.n[0] + py * E.n[1] + pz * E.n[2], u = px * E.u[0] + py * E.u[1] + pz * E.u[2], v = px * E.v[0] + py * E.v[1] + pz * E.v[2];
         const d0 = d;
-        const badem = el(u, v, n, 0.4, 0, 2.2, 6.8, 3.6, 3.4);
-        d = smax(d, -max(badem, -(d0 + 2.6)), 0.9);
-        d = smin(d, el(u, v, n, 0, -0.2, -1.6, 5.2, 4.2, 4.3), 0.8);
+        // duplja (badem), jabučica, kapci kao prsten oko badema (gornji deblji)
+        const badem = el(u, v, n, 0.3, 0, 1.6, 7.6, 4.2, 4.4);
+        d = smax(d, -max(badem, -(d0 + 3.2)), 1.0);
+        d = smin(d, el(u, v, n, 0, -0.1, -2.4, 5.8, 4.6, 4.9), 0.6);
+        const eu = (u - 0.3) / 7.4, ev = v / 4.0, er = sqrt(eu * eu + ev * ev), e2 = (er - 1) * 4.0;
+        const kapak = sqrt(e2 * e2 + (n - 1.0) * (n - 1.0)) - (1.0 + 0.6 * sat(v / 3));
+        d = smin(d, kapak, 0.9);
       }
     }
     // suzna jamica (preorbitalna žlijezda) ispred oka
-    if (ax > 8 && z > 18 && z < 42 && y < 14 && y > -6) {
+    if (ax > 10 && z > 24 && z < 44 && y < 20 && y > 2) {
       const d0 = d;
-      d = smax(d, -max(kap(ax, y, z, 16, 7.5, 25, 13.5, 2, 33, 2.6), -(d0 + 0.7)), 2.5);
+      d = smax(d, -max(kap(ax, y, z, 18.6, 14, 31, 16, 8.5, 38, 2.2), -(d0 + 1.0)), 2.2);
     }
     // nosnice i usna pukotina
     if (z > 40) {
       const d0 = d;
-      if (z > 57) {
+      if (z > 55) {
         // nosnica kao zarez: od prednjeg ruba nosa unatrag i dolje
-        const dn = min(kap(ax, y, z, 3.8, -13.5, 71.5, 7.2, -16.5, 68.5, 1.5), kap(ax, y, z, 7.2, -16.5, 68.5, 7.6, -20.5, 66, 1.1));
-        d = smax(d, -max(dn, -(d0 + 2.4)), 0.8);
+        // nosno krilce (rub nosnice) pa ovalna nosnica koja gleda prema van i naprijed
+        d = smin(d, kap(ax, y, z, 8.2, -14.6, 67.2, 10.8, -20.2, 61.3, 2.8) + 0.6, 2.4);
+        const dn = min(kap(ax, y, z, 9.4, -15.2, 67.6, 11.9, -20.0, 61.6, 1.7), kap(ax, y, z, 7.2, -14, 69.5, 9.4, -15.2, 67.6, 1.0));
+        d = smax(d, -max(dn, -(d0 + 3.0)), 0.7);
       }
-      if (y < -23 && y > -36) d = smax(d, -max(kap(ax, y, z, 11.5, -31, 43, 7.5, -29.5, 70, 0.9), -(d0 + 1.2)), 0.6);
+      if (y < -21 && y > -34) d = smax(d, -max(min(kap(ax, y, z, 12.5, -28.4, 42, 10.8, -27, 60, 0.9), kap(ax, y, z, 10.8, -27, 60, 4, -25.6, 69.5, 0.8)), -(d0 + 1.4)), 0.6);
     }
     return d;
   }
@@ -185,19 +199,19 @@
   const XC = (ROZ_L[0] + ROZ_D[0]) / 2, ZC = (ROZ_L[2] + ROZ_D[2]) / 2;
   // grane: točke [x, y, r] s fotografije; dubina: v = v0 + kv·s + kv2·s² (s = duljina luka od početka grane)
   const RG = PZ.rg || [
-    { n: 'L-beam', v0: 0, kv: -0.3, kv2: 0, p: [[-14, 513, 9.2], [-15.5, 528.5, 8.8], [-24.7, 534.5, 8.7], [-36.4, 546.1, 8.2], [-39.5, 559.5, 8.1], [-44.6, 572.1, 7.5], [-50.5, 582.5, 7]] },
-    { n: 'L-brow', par: 'L-beam', kv: 1.3, p: [[-17, 541.5, 5.6], [-18.4, 545.1, 5.2], [-17.5, 548.5, 4]] },
-    { n: 'L-bez', par: 'L-beam', kv: 0.65, p: [[-25.5, 552, 5.6], [-41.2, 553.8, 5.3], [-51.2, 560.2, 5.2], [-61, 567.5, 4.7]] },
-    { n: 'L-T1', par: 'L-beam', kv: -0.15, p: [[-58.5, 572.5, 6.2], [-71.9, 570.8, 6.2], [-78.7, 581.6, 6], [-88.7, 592.8, 5.7], [-92, 609, 4.8], [-93.5, 621.9, 4.8], [-95, 635.5, 3.4]] },
-    { n: 'L-T2', par: 'L-beam', kv: 0.5, p: [[-64, 581.5, 5.6], [-58.9, 594.3, 5.2], [-59.4, 612.4, 5.2], [-58.5, 628, 4.7]] },
-    { n: 'L-T3', par: 'L-beam', kv: -0.2, kv2: 0.006, p: [[-46, 584.5, 6.9], [-47.2, 607, 6.8], [-37.9, 625.3, 6.3], [-35, 647.5, 5.8], [-31.5, 666, 4.8]] },
-    { n: 'L-T4', par: 'L-T3', kv: 0.6, p: [[-35.5, 599, 5.5], [-29.7, 612, 5.5], [-19.2, 617.7, 5.2], [-10, 628, 4.7]] },
-    { n: 'R-beam', v0: 0, kv: -0.25, kv2: 0.0012, p: [[24, 512.5, 9.4], [27, 527, 9.4], [31.8, 537.9, 9.4], [39.6, 554.1, 9.4], [51.7, 562.6, 9.3], [57.5, 571.8, 9.2], [59.1, 581.5, 9.2], [73.3, 582.1, 9.2], [89.9, 591.1, 9.2], [105.3, 598.3, 9.1], [119.3, 604.1, 8.7], [134, 614.6, 7.8], [144.9, 627.2, 7], [144.9, 642.5, 5.3], [145.2, 663.2, 5.3], [143.5, 684.5, 4.2]] },
-    { n: 'R-hook', par: 'R-beam', kv: 0.9, p: [[39.5, 546, 5.8], [49.7, 545, 5.7], [60.2, 546.7, 5.5], [69.7, 545.6, 5.2], [74.1, 552.5, 5], [78, 557, 4.3]] },
-    { n: 'R-T', par: 'R-beam', kv: 0.35, p: [[42.5, 574.5, 6.6], [42.6, 593.8, 6.5], [29.6, 605.8, 6.2], [27.9, 622.5, 5.8], [29.1, 635.3, 5.5], [26.5, 637, 4]] },
-    { n: 'R-C2', par: 'R-beam', kv: -0.5, p: [[100, 604, 5.8], [116.1, 619.5, 5.8], [116.6, 637.2, 5.3], [117, 654, 4.8]] },
+    { n: 'L-beam', v0: 0, kv: -0.3, kv2: 0, p: [[-12, 510.5, 10.2], [-18, 525.5, 9.9], [-26.5, 538, 9], [-36.5, 548, 8.5], [-44.5, 559.5, 8.3], [-48.5, 573, 7.8], [-53.5, 585.5, 7.1]] },
+    { n: 'L-brow', par: 'L-beam', kv: 0.9, kv2: -0.008, p: [[-14, 540, 5.6], [-16, 547, 5.3], [-26, 556.5, 5], [-37, 563.5, 4.7], [-46.5, 569.5, 4.1]] },
+    { n: 'L-T1', par: 'L-beam', kv: -0.15, p: [[-56.5, 565, 6.3], [-70, 572, 6.3], [-81, 582.5, 6.2], [-89, 593.5, 5.8], [-92.2, 607.5, 5.3], [-93.8, 621.5, 4.6], [-95, 635.5, 3.4]] },
+    { n: 'L-T2', par: 'L-beam', kv: 0.5, p: [[-62.5, 580, 5.6], [-59.5, 595, 5.2], [-58.3, 611, 5.2], [-58, 627, 4.8]] },
+    { n: 'L-T3', par: 'L-beam', kv: -0.2, kv2: 0.006, p: [[-46, 581.5, 7], [-46, 603, 7], [-39.5, 622, 6.5], [-35, 643, 6], [-31, 665.5, 5]] },
+    { n: 'L-T4', par: 'L-T3', kv: 0.6, p: [[-35.5, 600, 5.7], [-27.5, 610, 5.7], [-19, 618.5, 5.3], [-10, 628.5, 4.8]] },
+    { n: 'R-beam', v0: 0, kv: -0.25, kv2: 0.0012, p: [[22.5, 511.5, 9.6], [27.5, 528, 9], [32, 543, 8], [39, 555.5, 6.6], [44.5, 565.5, 6.6], [50.5, 574.5, 7.4], [59.5, 581.5, 8.2], [74.3, 584, 8.2], [88.4, 590, 8.4], [104.3, 597.5, 8.6], [120.3, 604.5, 8.4], [134, 614.1, 7.6], [143, 627.2, 7], [145, 644, 5.6], [145.2, 664.2, 5.3], [143.5, 684.5, 4.2]] },
+    { n: 'R-hook', par: 'R-beam', kv: 0.9, p: [[40.5, 544.5, 5.8], [50, 545.5, 5.8], [59, 545.5, 5.7], [67.5, 546.5, 5.3], [73, 550.5, 5], [78, 556, 4.5]] },
+    { n: 'R-T', par: 'R-beam', kv: 0.35, p: [[46, 579, 6.7], [38.5, 594, 6.7], [31, 607, 6.2], [27.5, 620, 5.8], [27.2, 632, 5.3], [25.8, 639, 3.7]] },
+    { n: 'R-C2', par: 'R-beam', kv: 0.1, p: [[111.5, 609.5, 5.8], [116.5, 623.5, 5.5], [116.5, 638.5, 5.2], [117.8, 653.5, 4.7]] },
     { n: 'R-C3', par: 'R-beam', kv: 0.9, p: [[136, 617, 5.8], [126.4, 627.4, 5.2], [117, 638, 4.5]] }
   ];
+  let PO = null;               // točke grana u px (za ruže i za alate)
   const GRANE = (function () {
     const po = {};
     RG.forEach(function (g) {
@@ -225,7 +239,7 @@
       const Z = n[0] === 'L' ? ROZ_L : ROZ_D, P = po[n];
       P.unshift({ x: Z[0], y: Z[1] - 4, z: Z[2], r: 8.8, v: 0 });
     });
-    PEN._lgPo = po;
+    PO = po;
     const out = [];
     RG.forEach(function (g) { out.push(cijev(po[g.n].map(function (q) { return [q.x, q.y, q.z, q.r]; }), 3)); });
     return out;
@@ -286,7 +300,7 @@
     const b = [a[1] * n[2] - a[2] * n[1], a[2] * n[0] - a[0] * n[2], a[0] * n[1] - a[1] * n[0]];
     return { B: B, a: a, n: n, b: b, L: L, w: w, t: t, sm: sm || 0.4, c: [(B[0] + T[0]) / 2, (B[1] + T[1]) / 2, (B[2] + T[2]) / 2] };
   }
-  const UHO_L = uhoDef(uSvijet([-19, 4, -28]), [-70, 509, 22], [0.45, -0.1, 1], 17, 4.4, 0.55);
+  const UHO_L = uhoDef(uSvijet([-19, 3, -27]), [-70, 507, 22], [0.45, -0.1, 1], 19.5, 4.4, 0.6);
   const UHO_D = uhoDef([31, 495, -25], [85, 533, -22], [-0.3, 0.1, 1], 15, 4.2, 0.6);
   function uho(x, y, z, U) {
     const px = x - U.B[0], py = y - U.B[1], pz = z - U.B[2];
@@ -296,16 +310,16 @@
     const L = U.L, u = s / L;
     // list: najšire na 40 %, šiljast vrh
     const sm = U.sm, w = U.w * sqrt(max(0, sat(u / sm * 0.64 + 0.25))) * (1 - 0.75 * sat((u - sm) / (1 - sm)) * sat((u - sm) / (1 - sm))) + 0.6;
-    const hh = h + 0.06 * q * q / U.w;                           // zakrivljenost (čaška)
+    const hh = h - 0.14 * q * q / U.w;                           // zakrivljenost: rubovi savijeni prema udubini (čaška)
     const vanj = el(q, s, hh, 0, L * 0.47, 0, w, L * 0.53, U.t);
-    const unu = el(q, s, hh, 0, L * 0.55, U.t * 0.9, w * 0.7, L * 0.42, U.t * 1.05);
-    return smax(vanj, -unu, 1.5);
+    const unu = el(q, s, hh, 0, L * 0.56, U.t * 0.8, w * 0.76, L * 0.42, U.t * 1.05);
+    return smax(vanj, -unu, 1.2);
   }
 
   // ── vrat: [y, središte x, središte z, poluos poprijeko, poluos naprijed-natrag, okret (°)];
   //    pri ovratniku okrugao, prema glavi bočno stisnut i okrenut kao glava
-  const VRAT = [[328, -1, 0, 55, 55, 0], [360, -1, 0, 53.5, 54, 10], [390, -1.5, -1, 50, 52, 25], [420, -4, -5, 45, 50, 40],
-    [450, -5, -11, 38, 45, 45], [475, -10, -16, 30, 34, 45], [495, -14, -24, 20, 22, 45], [510, -17, -30, 8, 10, 45]];
+  const VRAT = [[328, 0, 0, 55, 55, 0], [360, 0, 0, 53.5, 54, 10], [390, -0.5, -1, 50, 52, 25], [420, -3, -5, 45, 50, 40],
+    [450, -4.5, -11, 38, 45, 45], [475, -10, -16, 30, 34, 45], [495, -14, -24, 20, 22, 45], [510, -17, -30, 8, 10, 45]];
   // kosi vrh vrata: sprijeda (ispod brade) nisko, straga (zatiljak) visoko
   const KV = 1.36, KN = 1 / sqrt(1 + KV * KV);
   const VY0 = 328, VY1 = 510, VT = [];
@@ -336,9 +350,26 @@
   // ── ubrzanje rezova: rezač zove sdf tisućama puta s istim y; nakon 64 takva poziva za taj y
   //    izračuna se gruba mreža (6 px) pa se točke daleko od plohe (> 14 px) odmah vrate s donjom
   //    granicom udaljenosti (d(c) - 2 · polovica dijagonale ćelije), sve blizu plohe računa se točno
-  const OK = { x: 154, yMin: 330, yMax: 690, z: 105 };
+  const OK = { x: 154, yMin: 330, yMax: 694, z: 105 };
   const CEL = 6, GNX = Math.ceil(2 * OK.x / CEL), GNZ = Math.ceil(2 * OK.z / CEL);
   let gY = NaN, gN = 0, mreza = null;
+  // ruža (vijenac) na dnu svakog roga: kvrgavi prsten oko grane malo iznad lubanje
+  const RUZE = ['L-beam', 'R-beam'].map(function (n) {
+    const P = PO[n], A = P[1], B = P[2], t = 0.35;
+    const c = [A.x + (B.x - A.x) * t, A.y + (B.y - A.y) * t, A.z + (B.z - A.z) * t];
+    let a = [B.x - A.x, B.y - A.y, B.z - A.z]; const l = len3(a[0], a[1], a[2]); a = a.map(function (v) { return v / l; });
+    let e1 = [a[1], -a[0], 0]; const l1 = len3(e1[0], e1[1], e1[2]); e1 = e1.map(function (v) { return v / l1; });
+    const e2 = [a[1] * e1[2] - a[2] * e1[1], a[2] * e1[0] - a[0] * e1[2], a[0] * e1[1] - a[1] * e1[0]];
+    return { c: c, a: a, e1: e1, e2: e2, R: A.r + (B.r - A.r) * t + 0.2, r: 2.3 };
+  });
+  function ruza(x, y, z, U) {
+    const px = x - U.c[0], py = y - U.c[1], pz = z - U.c[2];
+    const h = px * U.a[0] + py * U.a[1] + pz * U.a[2];
+    const u = px * U.e1[0] + py * U.e1[1] + pz * U.e1[2], v = px * U.e2[0] + py * U.e2[1] + pz * U.e2[2];
+    const rad = sqrt(u * u + v * v), th = Math.atan2(v, u);
+    const rr = U.r * (1 + 0.28 * Math.sin(9 * th) * Math.cos(2.3 * h));
+    return sqrt((rad - U.R) * (rad - U.R) + h * h) - rr;
+  }
   function puna(x, y, z) {
     const dbr = kutijaD(x, y, z, RG_B);
     if (y > 550) return dbr < 3 ? rogovlje(x, y, z) : dbr;      // iznad glave: samo rogovlje
@@ -350,7 +381,7 @@
     let d = dn;
     const ob = (len3(qx, (qy + 6) / 1.1, (qz - 20) / 1.3) - 44) * SC;
     // spoj s vratom: straga širok, ispod čeljusti uzak (vidi se brazda čeljusti)
-    if (ob < 28) d = smin(d, glava(qx, qy, qz) * SC, 15 - 11 * sat((qz + 10) / 30));
+    if (ob < 28) d = smin(d, glava(qx, qy, qz) * SC, 15 - 12.5 * sat((qz + 12) / 26));
     else d = min(d, ob);
     if (BEZ) return d;
     // uši
@@ -360,6 +391,10 @@
     }
     // rogovlje
     if (dbr < 3) { const da = rogovlje(x, y, z); if (da < MY) d = smin(d, da, 3); else d = min(d, da); } else d = min(d, dbr);
+    for (let i = 0; i < 2; i++) {
+      const U = RUZE[i], db = len3(x - U.c[0], y - U.c[1], z - U.c[2]) - U.R - 5;
+      if (db < 2) d = smin(d, ruza(x, y, z, U), 1.6);
+    }
     return d;
   }
   function graditiMrezu(y) {
@@ -372,7 +407,7 @@
     ime: 'Lord George', podnaslov: 'The Tragedy of',
     staklo: ['#675932', '#a8a46b'],
     okvir: OK,
-    _R: R, _uSvijet: uSvijet, _GRANE: GRANE,
+    _R: R, _uSvijet: uSvijet, _GRANE: GRANE, _PO: PO, _glava: glava,
     sdf: function (x, y, z) {
       if (y !== gY) { gY = y; gN = 0; mreza = null; }
       else if (mreza === null && ++gN > 64) mreza = graditiMrezu(y);

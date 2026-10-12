@@ -9,7 +9,7 @@ Xerjoff flakon u animaciji.
 - `glave/<id>.js`: zlatna glava životinje kao SDF (mjere u pikselima fotografije, y = 0 je dno
   bočice, glava počinje na vrhu ovratnika, y = 341)
   - `lady-blanche.js`: pantera, `mr-sam.js`: bik, `duchess-rose.js`: lisica,
-    `lord-george.js`: jelen (dorađuje se), `changing-constance.js`: gazela (u izradi)
+    `lord-george.js`: jelen, `changing-constance.js`: gazela (svih pet je gotovo)
 - `preview.html` + `render.js`: prikaz istim svjetlom i bojama kao u animaciji
   (`NODE_PATH=$(npm root -g) node render.js "ids=mr-sam&kut=0,-35,90,180&w=1400&h=700&S=330" izlaz.png`)
 - `usporedi.py <id>`: obris glave sprijeda prema fotografiji (treba `ref/foto.jpg`, fotografija
