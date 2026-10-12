@@ -1,11 +1,19 @@
-# Penhaligon's Portraits — 3D bočice od točkica (skice)
+# Penhaligon's Portraits — 3D bočice od točkica
 
-Radna verzija, **još nije u animaciji** (`pocetna-chata.js` je ne učitava, a loader.js je ne dohvaća).
 Bočice iz kolekcije Penhaligon's Portraits složene su od točkica u nitima, u istom stilu kao
-Xerjoff flakon u animaciji.
+Xerjoff flakon u animaciji. **U animaciji su** (`pocetna-chata.js`): između bočice i natpisa
+MARTIMEX bočica se rastopi u izmaglicu, iz koje nastane svih pet u nizu (staklo se puni odozdo,
+etiketa se otisne odozgo, zlatna glava izraste iz ovratnika); bočice se polako okreću, pa se
+rastope u dim iz kojeg nastane natpis. `pocetna-chata.js` sam učita `shared.js` i pet glava iz
+ove mape (tek kad su ostali oblici gotovi) i gradi ih u malim koracima (`PEN.bocicaKoraci`);
+ako se ne učitaju, ciklus je kao prije. Uključuju se i podešavaju u `MX_POCETNA_POSTAVKE`
+(`penhaligon`, `trajanje.nastanak`, `trajanje.penhaligon`).
 
 - `shared.js`: zajedničko tijelo bočice (izmjereno s fotografije), zlatni ovratnik, etiketa s
-  natpisom i rezanje SDF-a glave u vodoravne niti (`PEN.bocica(id, n)` vraća `{ poz, nor, vrsta }`)
+  natpisom i rezanje SDF-a glave u vodoravne niti (`PEN.bocica(id, n)` vraća `{ poz, nor, vrsta }`;
+  `PEN.bocicaKoraci` je isto kao generator, u koracima od nekoliko milisekundi)
+  - rez glave (`rez`, `rezKoraci`) računa finu mrežu samo uz površinu (gruba mreža 4 × 4);
+    dužine su iste kao s punom mrežom (`rez(..., true)`), a računa se 1,5–2,5 puta manje
   - tijelo: ravni bokovi koji se prema dnu jednoliko lagano sužavaju, ravno dno sa zaobljenim
     rubom (12 px), bez izbočine; debelo prozirno dno do y = 64, a granica tekućine je jedna nit
     po unutarnjem rubu (dno tekućine)
@@ -28,5 +36,7 @@ Xerjoff flakon u animaciji.
   pet bočica 1500 × 2000 px, koja nije u repozitoriju)
 - `skica.py <id>`: složi list sa skicom (fotografija, model sprijeda, glava izbliza, prava veličina)
 
-Za ubacivanje u animaciju: oblik iz `PEN.bocica()` treba prenijeti u `pocetna-chata.js` kao novi
-oblik u ciklusu (novi atributi u spremniku, uz pakiranje jer WebGL1 jamči samo 8 atributa).
+U animaciji (vidi `pocetna-chata.js`, odjeljak PENHALIGON'S PORTRAITS): bočice su u nizu manje
+(0,73 veličine flakona, razmak osi 0,475), točkice se dijele po površini bočica, a svaka točkica
+ima jedan atribut `aPen` (mjesto uz os svoje bočice i kod: vrsta, redni broj bočice i normala u
+jednom broju), u vlastitom spremniku koji se doda kad su bočice gotove.

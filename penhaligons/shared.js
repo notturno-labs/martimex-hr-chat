@@ -299,33 +299,70 @@
   }
 
   // ── Marching squares po vodoravnom rezu SDF-a: dužine [x1, z1, x2, z2, ...]
+  //    Fina mreža (korak h) računa se samo uz površinu: najprije gruba mreža
+  //    (GRUBO × GRUBO finih ćelija), a fino se računaju samo grube ćelije kojima
+  //    površina prolazi ili je blizu (|f| u nekom kutu manji od dvije grube
+  //    ćelije; SDF glava je približna udaljenost, pa uz rezervu). Dužine su
+  //    iste kao s punom finom mrežom, a računa se nekoliko puta manje.
   const RUBOVI = { 1: [[3, 0]], 2: [[0, 1]], 3: [[3, 1]], 4: [[1, 2]], 5: [[3, 0], [1, 2]], 6: [[0, 2]], 7: [[3, 2]],
     8: [[2, 3]], 9: [[0, 2]], 10: [[0, 1], [2, 3]], 11: [[1, 2]], 12: [[3, 1]], 13: [[0, 1]], 14: [[3, 0]] };
-  function rez(f, y, X0, X1, Z0, Z1, h) {
+  const GRUBO = 4;
+  // rezKoraci je generator (yield nakon svakog retka grube mreže, da gradnja
+  // u animaciji ide u vrlo malim koracima); rez sve napravi odjednom
+  function rez(f, y, X0, X1, Z0, Z1, h, puno) {
+    const it = rezKoraci(f, y, X0, X1, Z0, Z1, h, puno);
+    let r = it.next();
+    while (!r.done) r = it.next();
+    return r.value;
+  }
+  function* rezKoraci(f, y, X0, X1, Z0, Z1, h, puno) {
     const nx = Math.ceil((X1 - X0) / h), nz = Math.ceil((Z1 - Z0) / h);
-    const v = new Float32Array((nx + 1) * (nz + 1));
-    for (let i = 0; i <= nx; i++) for (let j = 0; j <= nz; j++) v[i * (nz + 1) + j] = f(X0 + i * h, y, Z0 + j * h);
+    const v = new Float32Array((nx + 1) * (nz + 1)).fill(NaN);
+    function vr(i, j) {
+      const k = i * (nz + 1) + j;
+      let w = v[k];
+      if (w !== w) { w = f(X0 + i * h, y, Z0 + j * h); v[k] = w; }
+      return w;
+    }
     const out = [];
-    for (let i = 0; i < nx; i++) {
-      for (let j = 0; j < nz; j++) {
-        const a = v[i * (nz + 1) + j], b = v[(i + 1) * (nz + 1) + j], c = v[(i + 1) * (nz + 1) + j + 1], d = v[i * (nz + 1) + j + 1];
-        const idx = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0);
-        if (idx === 0 || idx === 15) continue;
-        const x0 = X0 + i * h, z0 = Z0 + j * h;
-        const tocka = function (e) {
-          let px, pz, qx, qz, vp, vq;
-          if (e === 0) { px = x0; pz = z0; qx = x0 + h; qz = z0; vp = a; vq = b; }
-          else if (e === 1) { px = x0 + h; pz = z0; qx = x0 + h; qz = z0 + h; vp = b; vq = c; }
-          else if (e === 2) { px = x0; pz = z0 + h; qx = x0 + h; qz = z0 + h; vp = d; vq = c; }
-          else { px = x0; pz = z0; qx = x0; qz = z0 + h; vp = a; vq = d; }
-          const t = vp / (vp - vq);
-          return [px + (qx - px) * t, pz + (qz - pz) * t];
-        };
-        RUBOVI[idx].forEach(function (par) {
-          const A = tocka(par[0]), B = tocka(par[1]);
-          out.push(A[0], A[1], B[0], B[1]);
-        });
+    function celija(i, j) {
+      const a = vr(i, j), b = vr(i + 1, j), c = vr(i + 1, j + 1), d = vr(i, j + 1);
+      const idx = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0);
+      if (idx === 0 || idx === 15) return;
+      const x0 = X0 + i * h, z0 = Z0 + j * h;
+      const tocka = function (e) {
+        let px, pz, qx, qz, vp, vq;
+        if (e === 0) { px = x0; pz = z0; qx = x0 + h; qz = z0; vp = a; vq = b; }
+        else if (e === 1) { px = x0 + h; pz = z0; qx = x0 + h; qz = z0 + h; vp = b; vq = c; }
+        else if (e === 2) { px = x0; pz = z0 + h; qx = x0 + h; qz = z0 + h; vp = d; vq = c; }
+        else { px = x0; pz = z0; qx = x0; qz = z0 + h; vp = a; vq = d; }
+        const t = vp / (vp - vq);
+        return [px + (qx - px) * t, pz + (qz - pz) * t];
+      };
+      RUBOVI[idx].forEach(function (par) {
+        const A = tocka(par[0]), B = tocka(par[1]);
+        out.push(A[0], A[1], B[0], B[1]);
+      });
+    }
+    if (puno) {                                   // puna fina mreža (za provjeru)
+      for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) celija(i, j);
+      return out;
+    }
+    yield;
+    const cx = Math.ceil(nx / GRUBO), cz = Math.ceil(nz / GRUBO), blizu = 2 * GRUBO * h;
+    const g = new Float32Array((cx + 1) * (cz + 1));
+    for (let I = 0; I <= cx; I++) {
+      for (let J = 0; J <= cz; J++) g[I * (cz + 1) + J] = vr(Math.min(I * GRUBO, nx), Math.min(J * GRUBO, nz));
+      if (I % 6 === 5) yield;
+    }
+    for (let I = 0; I < cx; I++) {
+      for (let J = 0; J < cz; J++) {
+        const a = g[I * (cz + 1) + J], b = g[(I + 1) * (cz + 1) + J], c = g[(I + 1) * (cz + 1) + J + 1], d = g[I * (cz + 1) + J + 1];
+        if (Math.min(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d)) > blizu && (a < 0) === (b < 0) && (b < 0) === (c < 0) && (c < 0) === (d < 0)) continue;
+        const i1 = Math.min(nx, (I + 1) * GRUBO), j1 = Math.min(nz, (J + 1) * GRUBO);
+        for (let i = I * GRUBO; i < i1; i++) for (let j = J * GRUBO; j < j1; j++) celija(i, j);
       }
+      yield;
     }
     return out;
   }
@@ -348,8 +385,19 @@
 
   // ── Cijela bočica: n točaka { poz, nor, vrsta } u pikselima fotografije
   //    opcije: { omjer: 2.3 (gustoća na niti / razmak niti), gustocaGlave: 0.6
-  //    (razmak rezova glave prema razmaku prstenova), h: 1.2 (mreža rezova, px) }
+  //    (razmak rezova glave prema razmaku prstenova), h: 1.2 (mreža rezova, px),
+  //    redEtikete: 1 (razmak redaka etikete, px), tezinaEtikete: 1.6 }
+  //    PEN.bocicaKoraci je generator: radi u malim koracima (yield nakon
+  //    svakog reza glave i svakih nekoliko stotina točkica), da animacija
+  //    može gradnju rasporediti po stankama preglednika; PEN.bocica sve
+  //    napravi odjednom (za pregled)
   PEN.bocica = function (id, n, opcije) {
+    const it = PEN.bocicaKoraci(id, n, opcije);
+    let r = it.next();
+    while (!r.done) r = it.next();
+    return r.value;
+  };
+  PEN.bocicaKoraci = function* (id, n, opcije) {
     const g = PEN.glave[id];
     opcije = opcije || {};
     const OMJER = opcije.omjer || 2.3, GG = opcije.gustocaGlave || 0.6, H = opcije.h || 1.2;
@@ -369,7 +417,8 @@
       uk += d;
     }
     const lab = maskaEtikete(g), E = ETIKETA;
-    function linije(korak, grubo) {
+    yield;
+    function* linije(korak, grubo) {
       const L = [];
       const k = Math.max(8, Math.round(uk / korak)), kk = uk / k;
       for (let i = 0; i < k; i++) {
@@ -392,11 +441,12 @@
       L.push({ prsten: true, tekucina: true, r: rDna, y: DNO_TEKUCINE, f0: 0, nr: 0.6, ny: 0.8, duljina: rDna * 2 * Math.PI, tezina: rDna * 2 * Math.PI * DNO_TEKUCINE_TEZINA });
       // ovratnik i glava: vodoravni rezovi
       for (let y = O.y0 + 0.5; y < ok.yMax; y += korak * GG) {
-        const d = rez(gore, y, -ok.x, ok.x, -ok.z, ok.z, H);
+        const d = yield* rezKoraci(gore, y, -ok.x, ok.x, -ok.z, ok.z, H);
         for (let q = 0; q < d.length; q += 4) {
           const len = Math.hypot(d[q + 2] - d[q], d[q + 3] - d[q + 1]);
           if (len > 1e-6) L.push({ a: [d[q], d[q + 1]], b: [d[q + 2], d[q + 3]], y: y, duljina: len, tezina: len });
         }
+        yield;
       }
       // etiketa: guste vodoravne niti po bijelim dijelovima (redak po pikselu
       // fotografije, na polovicama piksela, da tanke crte crteža uvijek pogode redak)
@@ -415,15 +465,15 @@
       }
       return L;
     }
-    let korak = 8, L = linije(korak, true);
+    let korak = 8, L = yield* linije(korak, true);
     // površina: tijelo (gruba procjena) + glava (rezovi s grubim korakom)
     let pov = L.reduce(function (z, l) { return z + l.duljina; }, 0) * korak;
     for (let y = O.y0 + 0.5; y < ok.yMax; y += 6) {
-      const d = rez(gore, y, -ok.x, ok.x, -ok.z, ok.z, 3);
+      const d = yield* rezKoraci(gore, y, -ok.x, ok.x, -ok.z, ok.z, 3);
       for (let q = 0; q < d.length; q += 4) pov += Math.hypot(d[q + 2] - d[q], d[q + 3] - d[q + 1]) * 6;
     }
     korak = Math.sqrt(pov * OMJER / n);
-    const sve = linije(korak), Le = [];
+    const sve = yield* linije(korak), Le = [];
     L = [];
     sve.forEach(function (l) { (l.etiketa ? Le : L).push(l); });
     // etiketa dobiva točkice prema težini svojih niti, ali ih slaže pravilno:
@@ -448,6 +498,7 @@
     const e = 0.4;
     let odsjecak = 0, uOdsjecku = 0;
     for (let i = 0; i < n; i++) {
+      if (i % 250 === 249) yield;
       let l, ud;
       if (i < nO) { l = L[r.linija[i]]; ud = r.udio[i]; }
       else {

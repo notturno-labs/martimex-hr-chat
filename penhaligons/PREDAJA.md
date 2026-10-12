@@ -1,7 +1,12 @@
 # Predaja: ubacivanje Penhaligon's bočica u animaciju
 
-Ovo je sažetak za novi razgovor koji nastavlja posao. Modeli su gotovi kao skice (vidi README.md),
-a klijent ih je vidio. Sljedeći korak je ubacivanje u animaciju početnog ekrana (`pocetna-chata.js`).
+**Stanje: ubačeno.** Klijent je između pokusnih animacija izabrao „nastanak” (bočice nastaju iz
+izmaglice, svih pet u nizu), i to je sada dio ciklusa u `pocetna-chata.js`: objekt → flakon →
+bočica → (nastanak) pet Penhaligon's bočica → natpis MARTIMEX. Broj točkica povećan je na
+56 000 (računalo) i 32 000 (mobitel), da bočice u nizu budu dovoljno guste; jačina točkica
+ostalih oblika se prilagodi broju (`gustoca`), pa izgledaju kao prije, samo finije. Priprema
+bočica ide zadnja, u stankama preglednika (koraci do ~20 ms); ako se chat otvori prije nego su
+gotove, krug ide bez njih, a uključe se od sljedećeg kruga. Ispod je izvorni sažetak.
 
 ## Što postoji
 - `penhaligons/shared.js`: `PEN.bocica(id, n)` vraća `{ poz, nor, vrsta }` za n točkica.
