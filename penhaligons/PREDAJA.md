@@ -13,6 +13,13 @@ dodani su logotipi parfemskih kuća (vidi `../marke/README.md`). Krug je sada ob
 logotipi → (nastanak) pet Penhaligon's bočica → natpis MARTIMEX. Logotipi i bočice uključe se čim
 su spremni, ako je to prije kraja mirovanja flakona, a inače od sljedećeg kruga.
 
+**Zatim (prerada bočica):** klijentu se nisu svidjele bočice u ravnom nizu, sitne i od grubih
+točkica. Sada stoje u rasporedu V (najveća u sredini), imaju oko dvostruko više točkica (gusti
+sloj, koji se crta samo dok su bočice na ekranu), glave su okrenute tako da se životinja
+prepozna, a etikete su prigušene. Nastaju jedna po jedna iz izmaglice, a rastapaju se u dva
+koraka: nad svakom bočicom se digne zlatni dim, koji zatim otplovi u slova natpisa. Raspored je
+izabran usporedbom četiri varijante (vidi `README.md` i `PEN_RASPORED` u `pocetna-chata.js`).
+
 ## Što postoji
 - `penhaligons/shared.js`: `PEN.bocica(id, n)` vraća `{ poz, nor, vrsta }` za n točkica.
   - Mjere su u pikselima fotografije: y = 0 je dno bočice, x udesno, z prema gledatelju (prema etiketi).
