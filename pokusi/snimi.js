@@ -8,6 +8,7 @@
 //   - cekaj: što mora biti pripremljeno prije nego vrijeme krene (window.__mxPokus)
 //   - slika: umjesto videa samo slike u tim trenucima (izlaz je tada mapa)
 //   - stranica: koja se stranica snima (npr. kap/kap.html; parametri su tada za nju)
+//   - skok=1: za slike animacija odmah skoči na trenutak (samo stvarno/, window.__mxSkok)
 // Treba ffmpeg i Playwright (Chromium sa SwiftShaderom; nikad "playwright install").
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
@@ -64,7 +65,7 @@ const fs = require('fs');
   console.log('pripremljeno za', ((Date.now() - t0) / 1000).toFixed(1), 's');
 
   const dt = 1000 / fps;
-  const ukupno = Math.round(do_ * fps);
+  const ukupno = slike.length ? Math.ceil((Math.max.apply(null, slike) + 0.05) * fps) : Math.round(do_ * fps);
   let ff = null;
   if (!slike.length) {
     ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'png', '-i', '-',
@@ -75,6 +76,18 @@ const fs = require('fs');
 
   let sljedecaSlika = 0;
   const pocetak = Date.now();
+  // slike bez koraka (skok=1): animacija sama skoči na trenutak (window.__mxSkok)
+  if (slike.length && A.skok) {
+    for (const t of slike) {
+      await p.evaluate(x => window.__mxSkok(x), t);
+      const ime = path.join(izlaz, 't' + t.toFixed(2).replace('.', '_') + '.png');
+      fs.writeFileSync(ime, await p.screenshot({ type: 'png' }));
+      console.log('slika', ime);
+    }
+    await b.close();
+    console.log('gotovo:', izlaz);
+    return;
+  }
   for (let i = 0; i <= ukupno; i++) {
     await p.evaluate(d => window.__korak(d), i === 0 ? 0 : dt);
     const t = i / fps;

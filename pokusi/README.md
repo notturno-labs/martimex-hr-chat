@@ -61,13 +61,60 @@ Druga ideja: zlatna kap padne u tamnu površinu poput zrcala, a iz tekućine nas
   ostatak kruga ide dalje kao sada) ili samostalna animacija drugdje na webshopu (npr. naslovnica).
   Trajanja i izgled su u `POSTAVKE` i konstantama na vrhu odjeljka POVRŠINA, KAP I FLAKON.
 
+## Stvarno — pravi 3D umjesto točkica (`stvarno/`)
+
+Isti početni ekran i isti krug (objekt → flakon → logotipi → Penhaligon's bočice → natpis
+MARTIMEX), ali svaki oblik je pravi 3D predmet, osvijetljen kao u fotografskom studiju (tamna
+soba sa svjetlosnim pločama, koje se zrcale u staklu i zlatu; iza predmeta je na zidu topla
+svjetlosna mrlja, koja se lomi kroz staklo i obasja tekućinu).
+
+- Predmeti:
+  - AI objekt: kugla od tekućeg kroma s duginim odsjajem, kojoj se površina stalno valovito
+    gužva (isti šum kao u točkicama)
+  - Xerjoff flakon: fasetirano staklo koje lomi svjetlo (isti profil i presjek kao u točkicama),
+    medena tekućina, debelo prozirno dno, polirani zlatni prsten i čep sa šiljkom, zlatna pločica
+    s izdignutim znakom X i dvostrukim okvirom (polirano na brušenoj podlozi)
+  - logotipi: tanka metalna folija boje pudera s reljefnim rubom, preko koje prijeđe odsjaj
+  - Penhaligon's bočice: staklo s tekućinom svoje boje, papirnata etiketa (isti crtež kao u
+    točkicama, omotana oko bočice), zlatni ovratnik i zlatna glava životinje
+  - natpis MARTIMEX: puna slova od poliranog metala boje pudera (Cormorant Garamond 700)
+- Prijelazi su isti kao u točkicama, ali predmet se rastapa s užarenim zlatnim rubom (po visini,
+  uz malo šuma), s ruba se odvaja zlatna prašina koja otplovi do sljedećeg predmeta i nestane na
+  njegovu rubu, a novi predmet nastaje od tog ruba: flakon odozdo (čep zadnji), logotipi jedan po
+  jedan slijeva nadesno, bočice od sredine prema van (staklo odozdo, etiketa odozgo, glava iz
+  ovratnika), slova jedno po jedno (malo prebace pa sjednu, kratko zasvijetle). Iz bočica se
+  prašina najprije digne kao dim, a pri „Početak” sve odleti prema van i gore.
+- Datoteke:
+  - `stvarno/pocetna-chata-stvarno.js`: izgrađena skripta (uključuje three.js 0.186, oko 650 KB);
+    ne mijenja se ručno
+  - `stvarno/modeli.js`: zlatne glave (mreže), obrisi slova i mjere flakona (oko 1,6 MB); ne
+    mijenja se ručno
+  - `stvarno/izvor/`: izvor i alati
+    - `animacija3d.js`: 3D prikaz, materijali i prijelazi
+    - `sastavi-ulaz.py`: iz `pocetna-chata.js` složi `ulaz.js` (postavke, vremenski tijek, stil,
+      početni ekran i veza s Voiceflowom ostaju isti; točkice se izbace)
+    - `izradi-modele.mjs`: izradi `modeli.js` iz postojećih izvora: glave iz SDF modela u
+      `penhaligons/glave/` (surface nets na mreži od 1,25 px, točke spuštene na plohu, mreža
+      pojednostavljena na oko 22 000 trokuta, normale iz SDF-a), slova iz
+      `fonts/cormorant-garamond-latin.woff2`, flakon iz `pocetna-chata.js`
+    - gradnja: `npm install`, zatim `npm run modeli` (oko 3 min; treba Python s fonttools i
+      brotli) i `npm run izgradi`
+- Treba WebGL2; bez njega je, kao i inače, natpis MARTIMEX slovima. „Smanji pokrete”: miran 3D
+  natpis.
+- Prije ubacivanja u pravi chat još treba: provjeriti brzinu na pravim mobitelima (staklo s lomom
+  svjetla i sjaj su zahtjevniji od točkica; na mobitelu je već slabija kvaliteta loma i manje
+  prašine), odlučiti učitava li se three.js s GitHuba (sada je u skripti) i ukloniti oznake za
+  snimanje (`window.__mxPokus`, `window.__mxSkok`).
+
 ## Pregled i snimanje
 
 - `proba.html` glumi Voiceflowov prozor chata, pa se početni ekran vidi kao u pravom chatu:
-  `proba.html?skripta=saturn/pocetna-chata-saturn.js` (ili `?skripta=../pocetna-chata.js` za
-  sadašnju animaciju). „Kap esencije” se otvara izravno: `kap/kap.html`.
+  `proba.html?skripta=saturn/pocetna-chata-saturn.js`, `proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
+  (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije” se otvara izravno:
+  `kap/kap.html`.
 - Kad je ova mapa na grani `main`, vidi se i na GitHub Pages:
   `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=saturn/pocetna-chata-saturn.js`
+  , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
   i `https://notturno-labs.github.io/martimex-hr-chat/pokusi/kap/kap.html`.
 - `snimi.js` snima video sličicu po sličicu (vrijeme animacije teče točno 1/fps po sličici, pa je
   video gladak i na sporom računalu). Treba ffmpeg i Playwright (Chromium sa SwiftShaderom,
@@ -76,5 +123,8 @@ Druga ideja: zlatna kap padne u tamnu površinu poput zrcala, a iz tekućine nas
     saturn.mp4 od=0 do=22 w=460 h=920 dpr=2 cekaj=marke,pen,prsten`
   - Kap: `NODE_PATH=$(npm root -g) node snimi.js "x=1" kap.mp4 stranica=kap/kap.html do=15
     w=460 h=920 dpr=2 cekaj=kap`
-  - `slika=8,14` umjesto videa spremi slike u tim trenucima (izlaz je tada mapa)
+  - Stvarno: `NODE_PATH=$(npm root -g) node snimi.js "skripta=stvarno/pocetna-chata-stvarno.js"
+    stvarno.mp4 do=45 w=460 h=920 dpr=2 cekaj=stvarno`
+  - `slika=8,14` umjesto videa spremi slike u tim trenucima (izlaz je tada mapa); uz `skok=1`
+    (samo stvarno/) animacija odmah skoči na te trenutke
 - Videi nisu u repozitoriju (veliki su); poslani su klijentu zasebno.
