@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v26)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v27)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -32,8 +32,9 @@
   //     jednako velik kao marka
   //   - vrsta mirisa ("Eau de Parfum", "Extrait de Parfum"...) odvaja se s
   //     kraja naziva u zaseban redak, istim slovima kao marka (velika,
-  //     razmaknuta), ali sitnijim, tanjim i sivim, pa je diskretna; kad se taj
-  //     redak prelomi, točka između dijelova ne ostaje visjeti
+  //     razmaknuta), ali sitnijim, tanjim i sivim, pa je diskretna; uobičajena
+  //     vrsta s volumenom (EAU DE PARFUM · 100 ML) stane u jedan redak, a dulja
+  //     se prelomi tako da točka između dijelova ne ostaje visjeti
   //   - kratka roza crtica odvaja naziv od cijene, a cijena je diskretna
   //
   //  Fontovi (Jost za tekst, Cormorant Garamond za naziv) nalaze se u mapi
@@ -434,6 +435,8 @@
       .mx-marka + .mx-naziv { margin-top: 4px; }
       /* vrsta mirisa (Eau de Parfum · 100 ml...): ista slova kao marka (Jost, velika,
          razmaknuta), ali sitnija, tanja i siva, pa je diskretna kao i prije.
+         Veličina i razmak slova su takvi da "EAU DE PARFUM · 100 ML" (≈110 px)
+         stane u jedan redak na mobitelu, pokraj bočice.
          Dijelovi su zasebni komadići s točkom ispred sebe. Redak je pomaknut
          ulijevo za širinu točke i taj dio je odrezan (clip-path), pa se točka
          ispred prvog komadića u svakom retku ne vidi: kad se redak prelomi,
@@ -442,27 +445,27 @@
         display: flex;
         flex-wrap: wrap;
         margin-top: 4px;
-        margin-left: -1.2em;
-        clip-path: inset(0 0 0 1.2em);
-        font-size: 9.5px;
+        margin-left: -1em;
+        clip-path: inset(0 0 0 1em);
+        font-size: 8px;
         line-height: 1.5;
         font-weight: 400;
-        letter-spacing: .18em;
+        letter-spacing: .12em;
         text-transform: uppercase;
         color: var(--mx-dim);
       }
       .mx-vrsta > span {
         position: relative;
         min-width: 0;                 /* predug dio (Extrait de Parfum) lomi se unutar sebe */
-        padding-left: 1.2em;          /* mjesto za točku */
+        padding-left: 1em;            /* mjesto za točku: razmak oko nje je kao razmak među riječima */
       }
       .mx-vrsta > span::before {
         content: "\u00b7";
         content: "\u00b7" / "";       /* čitač zaslona točku preskače (gdje preglednik to zna) */
         position: absolute;
         top: 0;
-        left: -.09em;                 /* pola razmaka slova iza prethodnog dijela: točka je u sredini */
-        width: 1.2em;
+        left: -.06em;                 /* pola razmaka slova iza prethodnog dijela: točka je u sredini */
+        width: 1em;
         text-align: center;
         letter-spacing: 0;
       }
@@ -717,11 +720,11 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '26');
+      stil.setAttribute('data-mx-kartice', '27');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '26') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '27') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
