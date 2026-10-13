@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v21)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v22)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -10,29 +10,35 @@
   //   { cards: [{ title, price, description, url, imageUrl }] }
   //  Neobavezna polja (prikažu se samo ako postoje):
   //   oldPrice → precrtana stara cijena i postotak popusta
-  //   badge    → mala oznaka iznad marke, npr. "Novo"
+  //   badge    → mala oznaka, npr. "Novo" (okomito odmah iza marke,
+  //              vodoravno iznad nje)
   //
   //  Raspored kartice (postavka "raspored" ispod):
   //
   //   'okomito' (zadano)                'vodoravno'
   //   ┌────────────────────────────┐    ┌────────────────────────────┐
   //   │          ┌───────┐         │    │ ┌───────┐   MARKA          │
-  //   │          │       │         │    │ │ SLIKA │   Naziv          │
-  //   │          │ SLIKA │         │    │ │       │   Eau de Parfum  │
-  //   │          │       │         │    │ │       │   ──             │
-  //   │          └───────┘         │    │ └───────┘   CIJENA         │
-  //   │ ────────────────────────── │    │ ────────────────────────── │
-  //   │    MARKA                   │    │    Opis artikla, malo      │
-  //   │    Naziv                   │    │    uži od kartice          │
-  //   │    Eau de Parfum           │    │     [ Pogledaj proizvod ]  │
-  //   │    ──                      │    └────────────────────────────┘
-  //   │    CIJENA                  │
-  //   │    Opis artikla, malo      │
-  //   │    uži od kartice          │
-  //   │     [ Pogledaj proizvod ]  │
+  //   │          │ SLIKA │         │    │ │ SLIKA │   Naziv          │
+  //   │          └───────┘         │    │ │       │   Eau de Parfum  │
+  //   │ ────────────────────────── │    │ │       │   ──             │
+  //   │  MARKA (Novo)              │    │ └───────┘   CIJENA         │
+  //   │  Naziv                     │    │ ────────────────────────── │
+  //   │  Eau de Parfum     CIJENA  │    │    Opis artikla, malo      │
+  //   │              stara  −18 %  │    │    uži od kartice          │
+  //   │  Opis artikla, iste širine │    │     [ Pogledaj proizvod ]  │
+  //   │  kao tekst iznad njega     │    └────────────────────────────┘
+  //   │   [ Pogledaj proizvod ]    │
   //   └────────────────────────────┘
-  //   Okomito: u gornjoj polovici je samo bočica, centrirana i veća (s istom
-  //   aurom, sjenom i plutanjem), a sav tekst je ispod crte, poravnat s opisom.
+  //   Okomito: na vrhu je samo bočica, centrirana i veća (s istom aurom,
+  //   sjenom, plutanjem i pojavom iz izmaglice), u niskom prostoru s malo
+  //   praznine oko sebe. Ispod crte je tekst u dva stupca, kao na etiketi:
+  //   lijevo marka (s oznakom odmah iza nje), naziv i vrsta, a uz desni rub
+  //   samo cijena, u zadnjem retku vrste (bez vrste u zadnjem retku naziva),
+  //   kao u cjeniku. Stara cijena i popust su odmah ispod cijene. Cijena
+  //   napisana riječima ("na upit", "od 49 €") ima svoj redak ispod vrste, da
+  //   ne suzi naziv. Tako kartica ostaje niska i u poruci s više preporuka.
+  //   Kratak opis (do 90 znakova, otprilike dva retka) poravnat je lijevo, bez
+  //   dijeljenja riječi, jer bi obostrano poravnat prvi redak imao rupe.
   //   Na proizvod vodi samo gumb, i to u istom prozoru (bez novih kartica).
   //
   //  Marka i naziv složeni su kao natpis na etiketi bočice:
@@ -40,7 +46,8 @@
   //   - naziv je glavni redak, u otmjenom serifnom fontu (Cormorant Garamond)
   //   - vrsta mirisa ("Eau de Parfum", "Extrait de Parfum"...) odvaja se s
   //     kraja naziva u zaseban, tiši redak, pa se naziv manje lomi
-  //   - kratka roza crtica odvaja naziv od cijene, a cijena je sitna i diskretna
+  //   - cijena je sitna i diskretna; okomito stoji desno u retku vrste, a
+  //     vodoravno je od naziva odvaja kratka roza crtica
   //
   //  Fontovi (Jost za tekst, Cormorant Garamond za naziv) nalaze se u mapi
   //  fonts/ ovog repozitorija, pa kartica izgleda jednako na iPhoneu,
@@ -72,17 +79,21 @@
   //     po hrvatskim pravilima, da među riječima ne ostanu rupe
   //   - opis je uvučen od rubova kartice, a marka i naziv ne smiju ići
   //     desnije od opisa: tekst cijele kartice ima isti desni rub (--mx-uvlaka);
-  //     u okomitom rasporedu marka, naziv i cijena imaju i isti lijevi rub kao opis
+  //     u okomitom rasporedu sav tekst ima i isti lijevi rub kao opis, a uvlaka
+  //     je manja (8 px), jer nema slike s kojom bi se tekst poravnavao
   //   - gumb je mala pilula sa sitnim razmaknutim velikim slovima; na hover
   //     se lagano podigne, a preko njega jednom prijeđe odsjaj svjetla
   //   - tanka linija koja se prema krajevima gubi odvaja gornji dio od donjeg
   //     (okomito: bočicu od teksta; vodoravno: bočicu i naziv od opisa)
   //
-  //  Mjere: okomito jedan ritam od 20 px (gornji i donji rub, razmaci između
-  //  dijelova), lijevo i desno 16 px od ruba kartice; opis je s obje strane
-  //  uvučen još malo. Svaka bočica se automatski "izreže" iz fotografije
-  //  i postavi u kadar jednako (ista podloga, ista najveća visina), bez obzira
-  //  na to koliko bijelog prostora ima originalna fotografija.
+  //  Mjere: vodoravni raspored ima jedan ritam od 20 px (gornji i donji rub,
+  //  razmaci između dijelova), lijevo i desno 16 px od ruba kartice; opis je
+  //  s obje strane uvučen još malo. Okomiti raspored je zbijeniji: prostor
+  //  bočice 128 × 160 px, oko 14 px vidljivog razmaka između dijelova, a sav
+  //  tekst je 14 + 8 px (uvlaka) od ruba kartice. Svaka bočica se automatski
+  //  "izreže" iz fotografije i postavi u kadar jednako (ista podloga, ista
+  //  najveća visina), bez obzira na to koliko bijelog prostora ima
+  //  originalna fotografija.
   //
   //  Pojava: kad Marti pošalje preporuke, preko kartica prođe blaga
   //  ružičasta izmaglica sa sitnim kapljicama (kao sprej parfema) i
@@ -163,10 +174,13 @@
 
     // Prostor slike (širina, visina u CSS px); slika zauzima 90 % visine.
     // Iste brojke koriste i CSS i obrada fotografije. U okomitom rasporedu
-    // bočica je sama u gornjoj polovici, pa je prostor veći (istih omjera).
+    // bočica je sama na vrhu kartice, pa je prostor veći, ali nizak i malo
+    // širi: bočica je i dalje glavna, a kartica ne raste u visinu.
     const OKOMITO = P.raspored !== 'vodoravno';
-    const VITRINA = OKOMITO ? [140, 200] : [92, 132];
-    const PLUTANJE = OKOMITO ? 10 : 7;   // koliko se bočica digne dok pluta (px), razmjerno prostoru
+    const VITRINA = OKOMITO ? [128, 160] : [92, 132];
+    const PLUTANJE = OKOMITO ? 8 : 7;    // koliko se bočica digne dok pluta (px), razmjerno visini prostora
+    // Okomito: opis do ovoliko znakova (otprilike dva retka) je "kratak"
+    const KRATAK_OPIS = 90;
     const VISINA_SLIKE = 0.9;
     // Kadar obrađene bočice (udio visine/širine prostora slike): bočica stoji
     // na "podlozi" na 90 % visine, najviše do 3 % od vrha, najviše 84 % širine.
@@ -247,6 +261,12 @@
         color: inherit;
         box-shadow: 0 1px 1px rgba(60, 30, 25, .04), 0 14px 26px -22px rgba(110, 55, 45, .5);
         transition: border-color .4s var(--mx-meko);
+      }
+      /* okomiti raspored: sav tekst je u jednom stupcu, pa je dovoljna manja
+         uvlaka; uži rubovi = širi redci opisa = manje redaka i niža kartica */
+      .mx-kartica--okomita {
+        --mx-uvlaka: 8px;
+        padding: 15px 14px 16px;      /* gore: obrađena bočica i kad se digne ostaje ~6 px od unutarnjeg ruba */
       }
       /* dvostruki rub, kao na etiketi parfemske bočice */
       .mx-kartica::before {
@@ -381,6 +401,14 @@
         object-position: 50% 50%;
         mix-blend-mode: normal;
       }
+      /* okomito: fotografija koju nije moguće obraditi (slika s druge domene) počinje
+         odmah na vrhu prostora; 3 px niže, da i kad se digne ne dodirne unutarnji rub */
+      .mx-kartica--okomita .mx-ucitano:not(.mx-prozirno):not(.mx-foto) .mx-boca { top: calc(1% + 3px); }
+      /* okomito: uokvirena fotografija je malo manja od prostora (dolje 10 px,
+         sa strane po 5 px), da ne dodiruje crtu ispod sebe; bočice ondje imaju sjenu */
+      .mx-kartica--okomita .mx-foto { clip-path: inset(0 5px 10px round 12px); }
+      .mx-kartica--okomita .mx-foto .mx-boca,
+      .mx-kartica--okomita .mx-foto.mx-ucitano .mx-boca { height: calc(100% - 10px); }
 
       .mx-prazno {
         position: absolute;
@@ -420,12 +448,51 @@
         min-width: 0;
         text-align: left;
       }
-      /* okomiti raspored: ispod crte, s istim lijevim i desnim rubom kao opis */
+      /* okomiti raspored: ispod crte, s istim lijevim i desnim rubom kao opis.
+         Dva stupca, kao na etiketi: lijevo marka / naziv / vrsta, a uz desni rub
+         samo cijena (u retku vrste); stara cijena i popust su u retku ispod,
+         desno. Marka (s oznakom) i naziv idu preko cijele širine.
+         Tako oznaka i cijena nemaju svoje zasebne retke. */
       .mx-kartica--okomita .mx-glava {
         flex: none;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: 10px;
+        align-items: baseline;        /* vrsta i cijena na istoj crti pisma */
+        justify-items: start;
         width: auto;
-        margin: 17px var(--mx-uvlaka) 0;   /* + prazan prostor iznad slova ≈ 20 px vidljivog razmaka od crte */
+        margin: 11px var(--mx-uvlaka) 0;   /* + prazan prostor iznad slova ≈ 14 px vidljivog razmaka od crte */
         padding-right: 0;
+      }
+      .mx-kartica--okomita .mx-natpis,
+      .mx-kartica--okomita .mx-naziv { grid-column: 1 / -1; }
+      /* redak marke: oznaka stoji odmah iza marke (desni stupac ostaje samo za cijenu);
+         uz dugu marku oznaka prijeđe u sljedeći redak */
+      .mx-kartica--okomita .mx-natpis {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 8px;
+        max-width: 100%;
+      }
+      /* u kodu je oznaka ispred marke (čitač zaslona kaže "Novo, Xerjoff"), a prikazuje se iza nje */
+      .mx-kartica--okomita .mx-natpis > .mx-oznaka {
+        order: 1;
+        max-width: 100%;
+        margin: -2px 0;               /* pilula ne povisi redak marke */
+        white-space: normal;          /* duga oznaka se prelomi, a ne izađe iz kartice */
+      }
+      .mx-kartica--okomita .mx-natpis > .mx-oznaka:only-child { margin: 0; }       /* proizvod bez marke */
+      .mx-kartica--okomita .mx-natpis + .mx-naziv { margin-top: 4px; }
+      .mx-kartica--okomita .mx-vrsta {
+        grid-column: 1;
+        align-self: last baseline;    /* vrsta u više redaka: cijena je uz njezin zadnji redak */
+      }
+      .mx-kartica--okomita .mx-vrsta:last-child { grid-column: 1 / -1; }   /* bez cijene: cijela širina */
+      /* proizvod bez vrste: cijena je desno u (zadnjem) retku naziva, a ne sama u svom retku */
+      .mx-kartica--okomita .mx-glava--cijena-uz-naziv .mx-naziv {
+        grid-column: 1;
+        align-self: last baseline;
       }
       .mx-marka,
       .mx-naziv { text-wrap: balance; }   /* višeredni tekst lomi se u retke podjednake duljine */
@@ -479,6 +546,36 @@
       }
       .mx-glava > .mx-cijene:first-child { margin-top: 0; }
       .mx-glava > .mx-cijene:first-child::before { display: none; }
+      /* okomito: cijena je desno, u retku vrste; stara cijena i popust u retku
+         ispod nje (preko cijele širine), pa široki popust ne sužava marku i vrstu.
+         Roza crtica više ne treba: cijenu od naziva odvaja već sam stupac. */
+      .mx-kartica--okomita .mx-cijene { display: contents; }
+      .mx-kartica--okomita .mx-cijene::before { display: none; }
+      .mx-kartica--okomita .mx-cijena {
+        grid-column: 2;
+        justify-self: end;
+        align-self: end;              /* stariji preglednici: uz dno retka */
+        align-self: last baseline;    /* na crti pisma zadnjeg retka vrste (ili naziva), pa je popust odmah ispod */
+        margin-top: 4px;
+      }
+      .mx-kartica--okomita .mx-popust-red {
+        grid-column: 1 / -1;
+        justify-self: end;
+        margin-top: 3px;
+      }
+      /* cijena napisana riječima ("na upit", "od 49 €"): svoj redak ispod vrste,
+         lijevo, i smije se prelomiti; inače bi suzila naziv i vrstu do nečitljivosti */
+      .mx-kartica--okomita .mx-glava--cijena-ispod .mx-vrsta,
+      .mx-kartica--okomita .mx-glava--cijena-ispod .mx-cijena,
+      .mx-kartica--okomita .mx-glava--cijena-ispod .mx-popust-red {
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
+      .mx-kartica--okomita .mx-glava--cijena-ispod .mx-cijena {
+        align-self: auto;
+        margin-top: 6px;
+        white-space: normal;
+      }
       /* cijena: diskretna, ne privlači pogled više od naziva */
       .mx-cijena {
         display: block;
@@ -523,7 +620,7 @@
           ${prozirna(B.roza, .75)} 75%,
           ${prozirna(B.roza, 0)} 100%);
       }
-      .mx-kartica--okomita .mx-crta { margin-top: 12px; }   /* ispod sjene veće bočice je 8 px praznog */
+      .mx-kartica--okomita .mx-crta { margin-top: 6px; }   /* ispod sjene veće bočice je još 6 px praznog */
 
       /* opis: s obje strane uvučen (--mx-uvlaka), pa je skupljen prema sredini kartice.
          Poravnat obostrano, s dijeljenjem riječi, da nema rupa među riječima. */
@@ -540,10 +637,18 @@
         color: var(--mx-dim);
         overflow-wrap: break-word;
       }
-      .mx-kartica--okomita .mx-opis { margin-top: 14px; }   /* opis odmah ispod cijene */
+      .mx-kartica--okomita .mx-opis { margin-top: 9px; }   /* opis odmah ispod cijene: ≈ 13 px vidljivog razmaka */
+      /* kratak opis (do 90 znakova): poravnat lijevo i bez dijeljenja riječi, jer bi
+         se obostrano poravnat prvi redak razvukao s velikim rupama među riječima */
+      .mx-kartica--okomita .mx-opis--kratak {
+        text-align: left;
+        -webkit-hyphens: manual;
+        hyphens: manual;
+      }
 
       /* razmak iznad gumba */
       .mx-razmak { display: block; flex: 1 0 20px; }
+      .mx-kartica--okomita .mx-razmak { flex-basis: 14px; }
 
       /* gumb: mala tamno siva pilula, sitna razmaknuta velika slova */
       .mx-gumb {
@@ -575,6 +680,7 @@
         box-shadow: 0 1px 2px rgba(0, 0, 0, .1);
         transition: transform .35s var(--mx-glatko), box-shadow .35s var(--mx-glatko);
       }
+      .mx-kartica--okomita .mx-gumb { margin-bottom: 0; }   /* vidljivo ~17 px do ruba kartice */
       .mx-gumb > span { position: relative; z-index: 1; }   /* tekst ostaje iznad odsjaja */
       /* odsjaj svjetla: tanka svijetla pruga koja na hover jednom prijeđe preko gumba */
       .mx-gumb::after {
@@ -728,11 +834,11 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '21');
+      stil.setAttribute('data-mx-kartice', '22');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '21') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '22') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
@@ -1224,9 +1330,12 @@
 
       // MARKA, NAZIV, CIJENA
       const glava = el('div', 'mx-glava');
-      if (k.oznaka) glava.appendChild(el('span', 'mx-oznaka', k.oznaka));
       const d = razdvojiNaziv(k.naziv);
-      if (d.marka) glava.appendChild(el('span', 'mx-marka', d.marka));
+      // okomito su oznaka i marka u istom retku (.mx-natpis); vodoravno je oznaka iznad marke
+      const natpis = OKOMITO ? el('div', 'mx-natpis') : glava;
+      if (k.oznaka) natpis.appendChild(el('span', 'mx-oznaka', k.oznaka));
+      if (d.marka) natpis.appendChild(el('span', 'mx-marka', d.marka));
+      if (natpis !== glava && natpis.firstChild) glava.appendChild(natpis);
       if (d.naziv) glava.appendChild(el('div', 'mx-naziv', d.naziv));
       if (d.vrsta) glava.appendChild(el('span', 'mx-vrsta', d.vrsta));
 
@@ -1247,6 +1356,10 @@
           cijene.appendChild(red);
         }
         glava.appendChild(cijene);
+        // okomito: brojčana cijena je u desnom stupcu (uz vrstu, a bez vrste uz naziv);
+        // cijena napisana riječima ima svoj redak, da ne suzi naziv i vrstu
+        if (OKOMITO && brojCijene(k.cijena) === null) glava.classList.add('mx-glava--cijena-ispod');
+        else if (OKOMITO && d.naziv && !d.vrsta) glava.classList.add('mx-glava--cijena-uz-naziv');
       }
 
       // LINIJA + OPIS
@@ -1263,7 +1376,8 @@
         if (opis) kartica.appendChild(crta());
       }
       if (opis) {
-        const p = el('p', 'mx-opis', mekeCrtice(opis));
+        const kratak = OKOMITO && opis.length <= KRATAK_OPIS;   // kratak opis se ne dijeli ni ne poravnava obostrano
+        const p = el('p', kratak ? 'mx-opis mx-opis--kratak' : 'mx-opis', kratak ? opis : mekeCrtice(opis));
         p.lang = 'hr';                  // dijeljenje riječi po hrvatskim pravilima
         kartica.appendChild(p);
       }
