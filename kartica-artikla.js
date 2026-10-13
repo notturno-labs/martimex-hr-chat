@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v25)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v26)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -28,11 +28,12 @@
   //
   //  Marka i naziv složeni su kao natpis na etiketi bočice:
   //   - marka sitnim, razmaknutim velikim slovima (XERJOFF)
-  //   - naziv je u otmjenom serifnom fontu (Cormorant Garamond), jednako
-  //     visokih slova kao marka
+  //   - naziv je u otmjenom serifnom fontu (Cormorant Garamond) i na oko je
+  //     jednako velik kao marka
   //   - vrsta mirisa ("Eau de Parfum", "Extrait de Parfum"...) odvaja se s
-  //     kraja naziva u zaseban redak, istim slovima kao marka, ali sivo;
-  //     kad se taj redak prelomi, točka između dijelova ne ostaje visjeti
+  //     kraja naziva u zaseban redak, istim slovima kao marka (velika,
+  //     razmaknuta), ali sitnijim, tanjim i sivim, pa je diskretna; kad se taj
+  //     redak prelomi, točka između dijelova ne ostaje visjeti
   //   - kratka roza crtica odvaja naziv od cijene, a cijena je diskretna
   //
   //  Fontovi (Jost za tekst, Cormorant Garamond za naziv) nalaze se u mapi
@@ -415,15 +416,15 @@
         color: var(--mx-tinta);
         overflow-wrap: break-word;
       }
-      /* naziv: u serifnom fontu, jednako visokih slova kao marka. Cormorant ima
-         manja slova od Josta (velika slova .63 em prema .70 em), pa je za istu
-         visinu slova veličina 10,5 × .70 / .63 ≈ 11,7 px */
+      /* naziv: u serifnom fontu, na oko jednako velik kao marka. Marka je sva u
+         velikim slovima, a naziv je većinom u malima, i to u Cormorantu, koji ima
+         sitna mala slova (.39 em); da izgleda jednako velik, font mu je veći */
       .mx-naziv {
         max-width: 100%;
         margin: 0;
         font-family: var(--mx-font-naziv);
-        font-size: 11.7px;
-        line-height: 1.25;            /* isti razmak redaka kao marka (~14,7 px) */
+        font-size: 15px;
+        line-height: 1.18;
         font-weight: 600;
         letter-spacing: .002em;
         font-variant-numeric: lining-nums;   /* brojke u nazivu (npr. 540) iste visine kao slova */
@@ -431,7 +432,8 @@
         overflow-wrap: break-word;
       }
       .mx-marka + .mx-naziv { margin-top: 4px; }
-      /* vrsta mirisa (Eau de Parfum · 100 ml...): ista slova kao marka, ali siva.
+      /* vrsta mirisa (Eau de Parfum · 100 ml...): ista slova kao marka (Jost, velika,
+         razmaknuta), ali sitnija, tanja i siva, pa je diskretna kao i prije.
          Dijelovi su zasebni komadići s točkom ispred sebe. Redak je pomaknut
          ulijevo za širinu točke i taj dio je odrezan (clip-path), pa se točka
          ispred prvog komadića u svakom retku ne vidi: kad se redak prelomi,
@@ -442,9 +444,9 @@
         margin-top: 4px;
         margin-left: -1.2em;
         clip-path: inset(0 0 0 1.2em);
-        font-size: 10.5px;
-        line-height: 1.4;
-        font-weight: 600;
+        font-size: 9.5px;
+        line-height: 1.5;
+        font-weight: 400;
         letter-spacing: .18em;
         text-transform: uppercase;
         color: var(--mx-dim);
@@ -715,11 +717,11 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '25');
+      stil.setAttribute('data-mx-kartice', '26');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '25') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '26') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
