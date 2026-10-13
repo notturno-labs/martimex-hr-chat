@@ -841,13 +841,14 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
 
   // n točaka po površini dijelova oblika (razmjerno površini u svijetu);
   // za svaku: dio, mjesto u dijelu, mjesto u okviru (za prašinu) i indeks dijela za uDio
-  function uzorci(oblik, n, rnd) {
+  // (logotipi: samo stranica koja se tada vidi)
+  function uzorci(oblik, n, rnd, stranica) {
     const ime = oblik.ime;
     const out = [];
     const v3 = new THREE.Vector3();
     if (ime === 'marke') {
       // logotipi: po pikselima slike razmjerno svjetlini
-      const D = oblik.dijelovi, mk = oblik.piks, sir = oblik.sir;
+      const D = oblik.dijelovi.filter(function (m) { return stranica === undefined || m.userData.stranica === stranica; }), mk = oblik.piks, sir = oblik.sir;
       const tez = D.map(function (m) {
         const l = m.userData.logo; let z = 0;
         for (let y = l[4]; y < l[4] + l[6]; y += 2) for (let x = l[3]; x < l[3] + l[5]; x += 2) z += mk[(y * sir + x) * 4] / 255;
@@ -979,11 +980,11 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
         const s = new THREE.Vector3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize().multiplyScalar(1.5 + 1.3 * rnd());
         A.push({ okvir: s, dio: -1 }); tA.push(0.25 * rnd());
       }
-    } else { A = uzorci(oblici[od], n, rnd); tA = vremena(od, 'odlazi', do_, A); }
+    } else { A = uzorci(oblici[od], n, rnd, od === 'marke' ? oblici.marke.stranice.length - 1 : undefined); tA = vremena(od, 'odlazi', do_, A); }
     if (do_ === 'izlaz') {
       Bs = A;
       tB = tA.map(function (t) { return Math.min(1, t + 0.35 + 0.2 * rnd()); });
-    } else { Bs = uzorci(oblici[do_], n, rnd); tB = vremena(do_, 'dolazi', od, Bs); }
+    } else { Bs = uzorci(oblici[do_], n, rnd, do_ === 'marke' ? 0 : undefined); tB = vremena(do_, 'dolazi', od, Bs); }
     // prva koja ode stigne prva
     const iA = tA.map(function (_, i) { return i; }).sort(function (a, b) { return tA[a] - tA[b]; });
     const iB = tB.map(function (_, i) { return i; }).sort(function (a, b) { return tB[a] - tB[b]; });
