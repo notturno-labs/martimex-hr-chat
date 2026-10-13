@@ -206,10 +206,10 @@ function rastopljiv(mat, opcije) {
       vs = vs.replace('#include <beginnormal_vertex>', `
         vec3 mxD = normalize(position);
         vec3 mxG1, mxG2;
-        float mxN1 = snoise(mxD * 1.15 + vec3(0.0, uT * 0.19, uT * 0.11), mxG1);
-        float mxN2 = snoise(mxD * 2.5 + vec3(uT * 0.23, -uT * 0.09, 0.0) + mxG1 * 0.08, mxG2);
-        float mxDisp = mxN1 * 0.15 + mxN2 * 0.045;
-        vec3 mxGrad = mxG1 * (1.15 * 0.15) + mxG2 * (2.5 * 0.045);
+        float mxN1 = snoise(mxD * 0.85 + vec3(0.0, uT * 0.16, uT * 0.1), mxG1);
+        float mxN2 = snoise(mxD * 1.9 + vec3(uT * 0.2, -uT * 0.08, 0.0) + mxG1 * 0.06, mxG2);
+        float mxDisp = mxN1 * 0.085 + mxN2 * 0.018;
+        vec3 mxGrad = mxG1 * (0.85 * 0.085) + mxG2 * (1.9 * 0.018);
         vec3 mxTg = mxGrad - dot(mxGrad, mxD) * mxD;
         vec3 objectNormal = normalize(mxD - mxTg / (1.0 + mxDisp));
         vec3 mxPoz = mxD * 0.8 * (1.0 + mxDisp) * (1.0 + 0.02 * sin(uT * 1.3));
@@ -220,7 +220,9 @@ function rastopljiv(mat, opcije) {
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', '#include <common>\n' + RAZ_FS_GLAVA)
       .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' + RAZ_FS_ODBACI)
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n' + RAZ_FS_SJAJ);
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n' + RAZ_FS_SJAJ)
+      .replace('#include <transmission_fragment>', THREE.ShaderChunk.transmission_fragment.replace('material.thickness = thickness;',
+        'material.thickness = thickness * mix(2.4, 0.75, pow(abs(dot(normalize(normal), normalize(vViewPosition))), 0.7));'));
   };
   mat.customProgramCacheKey = function () { return 'mx-raz' + (opcije.kugla ? '-kugla' : ''); };
   return mat;
@@ -317,7 +319,7 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
   // ekranu oko 0,58 puta manja): [x, y, rx, ry, jačina]
   const MRLJA = {
     objekt: [0, 0.1, 1.5, 1.5, 0.05], flakon: [0, -0.15, 0.95, 1.35, 0.55], marke: [0, 0, 2.6, 1.6, 0.04],
-    pen: [0, -0.35, 2.9, 1.05, 0.5], natpis: [0, 0, 2.6, 0.9, 0.05]
+    pen: [0, -0.35, 2.7, 0.95, 0.36], natpis: [0, 0, 2.6, 0.9, 0.05]
   };
 
   // ─────────────────────────────────────────────────────────────────────
@@ -407,8 +409,8 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
   function napraviObjekt() {
     const g = new THREE.IcosahedronGeometry(1, MOBITEL ? 40 : 64);
     const mat = rastopljiv(new THREE.MeshPhysicalMaterial({
-      color: linearno(0.93, 0.9, 0.97), metalness: 1, roughness: 0.14, iridescence: 0.7, iridescenceIOR: 1.5,
-      iridescenceThicknessRange: [180, 620], envMapIntensity: 1.5, clearcoat: 1, clearcoatRoughness: 0.05
+      color: linearno(0.92, 0.9, 0.95), metalness: 1, roughness: 0.1, iridescence: 0.45, iridescenceIOR: 1.4,
+      iridescenceThicknessRange: [300, 520], envMapIntensity: 0.85, clearcoat: 0, clearcoatRoughness: 0.1
     }), { kugla: true });
     const mesh = new THREE.Mesh(g, mat);
     postaviOs(mesh, new THREE.Vector3(0, 1, 0), -0.85, 0.85, 0.45, 3.5);
@@ -1042,7 +1044,7 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
         sceneGL.environmentIntensity = 1.0;
         zid = pozadina();
         sceneGL.add(zid);
-        const kljuc = new THREE.DirectionalLight(0xfff4e8, 1.4);
+        const kljuc = new THREE.DirectionalLight(0xfff4e8, 0.9);
         kljuc.position.set(-0.5, 0.62, 0.6);
         sceneGL.add(kljuc);
         kamera = new THREE.PerspectiveCamera(40, 1, 0.1, 30);
@@ -1066,7 +1068,7 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
 
         composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: MOBITEL ? 2 : 4 }));
         composer.addPass(new RenderPass(sceneGL, kamera));
-        bloom = new UnrealBloomPass(new THREE.Vector2(2, 2), 0.3, 0.35, 2.4);
+        bloom = new UnrealBloomPass(new THREE.Vector2(2, 2), 0.22, 0.35, 2.4);
         composer.addPass(bloom);
         composer.addPass(new OutputPass());
 
