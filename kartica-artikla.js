@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v24)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v25)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -28,10 +28,12 @@
   //
   //  Marka i naziv složeni su kao natpis na etiketi bočice:
   //   - marka sitnim, razmaknutim velikim slovima (XERJOFF)
-  //   - naziv je glavni redak, u otmjenom serifnom fontu (Cormorant Garamond)
+  //   - naziv je u otmjenom serifnom fontu (Cormorant Garamond), jednako
+  //     visokih slova kao marka
   //   - vrsta mirisa ("Eau de Parfum", "Extrait de Parfum"...) odvaja se s
-  //     kraja naziva u zaseban, tiši redak, pa se naziv manje lomi
-  //   - kratka roza crtica odvaja naziv od cijene, a cijena je sitna i diskretna
+  //     kraja naziva u zaseban redak, istim slovima kao marka, ali sivo;
+  //     kad se taj redak prelomi, točka između dijelova ne ostaje visjeti
+  //   - kratka roza crtica odvaja naziv od cijene, a cijena je diskretna
   //
   //  Fontovi (Jost za tekst, Cormorant Garamond za naziv) nalaze se u mapi
   //  fonts/ ovog repozitorija, pa kartica izgleda jednako na iPhoneu,
@@ -413,13 +415,15 @@
         color: var(--mx-tinta);
         overflow-wrap: break-word;
       }
-      /* naziv: glavni redak kartice, u serifnom fontu */
+      /* naziv: u serifnom fontu, jednako visokih slova kao marka. Cormorant ima
+         manja slova od Josta (velika slova .63 em prema .70 em), pa je za istu
+         visinu slova veličina 10,5 × .70 / .63 ≈ 11,7 px */
       .mx-naziv {
         max-width: 100%;
         margin: 0;
         font-family: var(--mx-font-naziv);
-        font-size: 18px;
-        line-height: 1.14;
+        font-size: 11.7px;
+        line-height: 1.25;            /* isti razmak redaka kao marka (~14,7 px) */
         font-weight: 600;
         letter-spacing: .002em;
         font-variant-numeric: lining-nums;   /* brojke u nazivu (npr. 540) iste visine kao slova */
@@ -427,13 +431,38 @@
         overflow-wrap: break-word;
       }
       .mx-marka + .mx-naziv { margin-top: 4px; }
-      /* vrsta mirisa (Eau de Parfum...): tiši redak ispod naziva */
+      /* vrsta mirisa (Eau de Parfum · 100 ml...): ista slova kao marka, ali siva.
+         Dijelovi su zasebni komadići s točkom ispred sebe. Redak je pomaknut
+         ulijevo za širinu točke i taj dio je odrezan (clip-path), pa se točka
+         ispred prvog komadića u svakom retku ne vidi: kad se redak prelomi,
+         točka ne visi ni na kraju ni na početku retka */
       .mx-vrsta {
+        display: flex;
+        flex-wrap: wrap;
         margin-top: 4px;
-        font-size: 12px;
+        margin-left: -1.2em;
+        clip-path: inset(0 0 0 1.2em);
+        font-size: 10.5px;
         line-height: 1.4;
-        letter-spacing: .01em;
+        font-weight: 600;
+        letter-spacing: .18em;
+        text-transform: uppercase;
         color: var(--mx-dim);
+      }
+      .mx-vrsta > span {
+        position: relative;
+        min-width: 0;                 /* predug dio (Extrait de Parfum) lomi se unutar sebe */
+        padding-left: 1.2em;          /* mjesto za točku */
+      }
+      .mx-vrsta > span::before {
+        content: "\u00b7";
+        content: "\u00b7" / "";       /* čitač zaslona točku preskače (gdje preglednik to zna) */
+        position: absolute;
+        top: 0;
+        left: -.09em;                 /* pola razmaka slova iza prethodnog dijela: točka je u sredini */
+        width: 1.2em;
+        text-align: center;
+        letter-spacing: 0;
       }
       .mx-cijene {
         display: flex;
@@ -452,7 +481,7 @@
       }
       .mx-glava > .mx-cijene:first-child { margin-top: 0; }
       .mx-glava > .mx-cijene:first-child::before { display: none; }
-      /* cijena: diskretna, ne privlači pogled više od naziva */
+      /* cijena: diskretna, tanka slova i prigušena boja */
       .mx-cijena {
         display: block;
         font-size: 12.5px;
@@ -686,11 +715,11 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '24');
+      stil.setAttribute('data-mx-kartice', '25');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '24') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '25') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
@@ -1179,7 +1208,16 @@
       const d = razdvojiNaziv(k.naziv);
       if (d.marka) glava.appendChild(el('span', 'mx-marka', d.marka));
       if (d.naziv) glava.appendChild(el('div', 'mx-naziv', d.naziv));
-      if (d.vrsta) glava.appendChild(el('span', 'mx-vrsta', d.vrsta));
+      if (d.vrsta) {
+        // svaki dio vrste (Eau de Parfum, 100 ml, Tester) je zaseban komadić; točke
+        // između njih crta CSS, a razmaci između komadića su tu za čitače zaslona
+        const vrsta = el('span', 'mx-vrsta');
+        d.vrsta.split(' \u00b7 ').forEach(function (dio, j) {
+          if (j) vrsta.appendChild(document.createTextNode(' '));
+          vrsta.appendChild(el('span', '', dio));
+        });
+        glava.appendChild(vrsta);
+      }
 
       const nCijena = brojIz(k.cijena);
       const nStara = brojIz(k.stara);
