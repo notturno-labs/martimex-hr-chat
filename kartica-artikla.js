@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v23)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v24)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -63,7 +63,7 @@
   //     po hrvatskim pravilima, da među riječima ne ostanu rupe
   //   - opis je uvučen od rubova kartice, a marka i naziv gore ne smiju ići
   //     desnije od opisa: tekst cijele kartice ima isti desni rub (--mx-uvlaka)
-  //   - gumb je prozirna pilula (239 × 44 px) s tankim tamnim obrubom i
+  //   - gumb je mala prozirna pilula s tankim tamnim obrubom i sitnim
   //     razmaknutim velikim slovima; kad je miš iznad njega (a na mobitelu samo
   //     dok je prst na njemu) ispuni se tamnom bojom, a tekst postane bijel
   //   - tanka linija koja se prema krajevima gubi odvaja gornji dio od opisa
@@ -524,17 +524,16 @@
         justify-content: center;
         align-self: center;
         flex: none;
-        width: 239px;
         max-width: 100%;
-        height: 44px;
+        min-height: 34px;
         margin-bottom: 4px;           /* uz donji rub kartice: vidljivo ~24 px do ruba */
-        padding: 0 0 0 .22em;         /* lijevo = razmak slova, da tekst bude optički centriran */
+        padding: 0 22px 0 calc(22px + .22em);   /* lijevo + razmak slova, da tekst bude optički centriran */
         border: 1px solid ${B.gumb};
         border-radius: 999px;
         background-color: transparent;
         color: ${B.gumb};
         font-family: var(--mx-font);
-        font-size: 12.5px;
+        font-size: 10.5px;
         line-height: 1;
         font-weight: 500;
         letter-spacing: .22em;
@@ -687,11 +686,11 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '23');
+      stil.setAttribute('data-mx-kartice', '24');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '23') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '24') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
