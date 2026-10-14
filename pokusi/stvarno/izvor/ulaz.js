@@ -147,10 +147,10 @@ import { napraviAnimaciju3D } from './animacija3d.js';
     // Trajanje dijelova animacije u sekundama
     trajanje: {
       pojava: 1.6,            // točkice se iz izmaglice skupe u AI objekt
-      objekt: 3.4,            // živi AI objekt
+      objekt: 3.4,            // živi AI objekt (POKUS: izbačen, vidi objekt: false)
       flakon: 4.4,            // flakon po uzoru na Xerjoff 1861 (Naxos): nastane malo okrenut ulijevo i jednoliko se okreće
       nastanakMarki: 3.6,     // flakon se rastopi u izmaglicu, a iz nje se slože logotipi (logotip po logotip)
-      marke: 9,               // logotipi: prva četiri reda, pomak zida prema gore, zadnja četiri reda
+      marke: 6.5,             // logotipi (POKUS: svih 24 u jednom kadru, bez pomicanja zida)
       nastanak: 4.6,          // logotipi se rastope u izmaglicu, a iz nje nastane pet Penhaligon's bočica
       penhaligon: 4.4,        // pet Penhaligon's bočica stoji i polako se okreće
       rastapanjeBocica: 3.4,  // bočice se (odozgo) rastope u dim, a iz njega nastane natpis MARTIMEX
@@ -158,6 +158,10 @@ import { napraviAnimaciju3D } from './animacija3d.js';
       prijelaz: 2.4           // svaki ostali prijelaz iz oblika u oblik
     },
     ponavljaj: true,          // false → animacija stane na natpisu MARTIMEX
+
+    // POKUS: krug bez AI objekta (flakon nastaje pri otvaranju, a natpis se na
+    // kraju kruga pretopi natrag u flakon); true → s objektom, kao prije
+    objekt: false,
 
     // Logotipi parfemskih kuća (marke/marke.js) između flakona i Penhaligon's
     // bočica (false → krug bez njih)
@@ -303,7 +307,8 @@ import { napraviAnimaciju3D } from './animacija3d.js';
         ['marke', sekunde(T.marke, 9, 1)],
         ['pen', sekunde(T.penhaligon, 4.4, 0.5)],
         ['natpis', sekunde(T.natpis, 5, 0.5)]
-      ].filter(function (o) { return (imaMarke || o[0] !== 'marke') && (imaPen || o[0] !== 'pen'); });
+      ].filter(function (o) { return (imaMarke || o[0] !== 'marke') && (imaPen || o[0] !== 'pen') && (P.objekt !== false || o[0] !== 'objekt'); });
+      const PRVI = KRUG[0][0];   // (POKUS) prvi oblik u krugu: nastaje pri pojavi, a u njega se pretopi zadnji
       // prijelaz iz oblika u oblik: u Penhaligon bočice nastanak, u logotipe
       // slaganje logotip po logotip, iz bočica u natpis rastapanje bočica
       function prijelazU(oblik, sljedeci) { return sljedeci === 'pen' ? DN : sljedeci === 'marke' ? DM : oblik === 'pen' ? DR : D; }
@@ -349,11 +354,11 @@ import { napraviAnimaciju3D } from './animacija3d.js';
       // t: vrijeme od otvaranja (za njihanje objekta), c: vrijeme u krugu
       // (od kraja pojave); c < 0: pojava
       function stanje(t, c) {
-        const st = { od: OBLIK.objekt, do: OBLIK.objekt, prog: 0, uvod: 1, A: null, B: null, odsjaj: 99, sjaj: 99, podnaslov: false, penKut: 0, stranica: 0 };
+        const st = { od: OBLIK[PRVI], do: OBLIK[PRVI], prog: 0, uvod: 1, A: null, B: null, odsjaj: 99, sjaj: 99, podnaslov: false, penKut: 0, stranica: 0 };
         const nagibO = 0.3 + 0.07 * Math.sin(t * 0.47), njihanjeO = 0.1 * Math.sin(t * 0.29);
         if (c < 0) {
           st.uvod = t / pojava;
-          st.A = st.B = [wO * (D / 2 + t - pojava), nagibO, njihanjeO];
+          st.A = st.B = PRVI === 'flakon' ? [kutFlakona(t - pojava - POCETAK_FLAKONA), NAGIB, 0] : [wO * (D / 2 + t - pojava), nagibO, njihanjeO];
           return st;
         }
         let f = faze[faze.length - 1];
@@ -393,7 +398,9 @@ import { napraviAnimaciju3D } from './animacija3d.js';
           st.podnaslov = st.prog > 0.8;
         }
         // natpis se rastapa, a objekt se iz mirovanja pokrene
-        if (f.oblik === 'natpis') st.B = [kutObjekta(c - L), nagibO * e, njihanjeO * e];
+        if (f.oblik === 'natpis' && f.u === 'objekt') st.B = [kutObjekta(c - L), nagibO * e, njihanjeO * e];
+        // (POKUS) zadnji oblik se pretapa u flakon s početka sljedećeg kruga: okret kao na početku kruga
+        if (f.u === 'flakon' && PRVI === 'flakon' && f.od + f.d > L - 1e-6) st.B = [kutFlakona(c - L - POCETAK_FLAKONA), NAGIB, 0];
         return st;
       }
       return { stanje: stanje, pojava: pojava, L: L, natpisOd: POCETAK_NATPISA, imaMarke: imaMarke, zajednicko: ZAJEDNICKO, krajMarki: KRAJ_MARKI };

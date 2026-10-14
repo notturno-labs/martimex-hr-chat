@@ -43,7 +43,8 @@ const PEN_RASPORED = [
   [0.52, 0.00, 0.84, 0.15],
   [1.00, -0.26, 0.76, 0.28]
 ];
-const MAR_REDOVA = 4, MAR_RUB = 0.12;
+const MAR_REDOVA = 99, MAR_RUB = 0.12;   // (svi redovi logotipa na jednoj stranici: cijeli zid u jednom kadru)
+const MAR_RUB_OKVIRA = 0.05;          // razmak zida logotipa od ruba okvira animacije (svjetske jedinice)
 const RUB = 0.05;                 // širina užarenog ruba pri rastapanju (udio)
 
 function sat(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
@@ -252,12 +253,13 @@ function vrijednost(mesh, p, obrni, rnd) {
 export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
   const P = O.P, B = O.B, OBLIK = O.OBLIK, MIRNO = O.MIRNO, MOBITEL = O.MOBITEL;
   const IME_OBLIKA = ['objekt', 'flakon', 'marke', 'pen', 'natpis'];
+  const PRVI = P.objekt === false ? 'flakon' : 'objekt';   // nastaje pri pojavi, a u njega se pretopi natpis
 
   let renderer = null, composer = null, bloom = null, sceneGL = null, kamera = null;
   let spremno = false, unisteno = false, priprema = null, vrti = false, raf = 0;
   let vrijeme = 0, zadnje = 0, izlazOd = -1, izlazGotov = null;
   const izlazTrajanje = 1.1;
-  let W = 1, H = 1, dpr = 1, S = 160, sx = 0, sy = 0, povecanje = 1, pasMar = 1.1, skalaMar = 1;
+  let W = 1, H = 1, dpr = 1, S = 160, sx = 0, sy = 0, povecanje = 1, pasMar = 1.1, skalaMar = 1, sredinaMar = 0;
   let misX = 0, misY = 0, nagibX = 0, nagibY = 0;
   let podnaslov = null;
   const oblici = {};              // objekt, flakon, marke, pen, natpis: { grupa, dijelovi[], uzorci }
@@ -1005,7 +1007,7 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
   function ucitajModele() {
     const v = '?v=' + Math.floor(Date.now() / 60000);
     const modeli = window.MX_MODELI_3D ? Promise.resolve(true) : O.ucitajSkriptu(O.BAZA_POKUSA + 'modeli.js' + v);
-    const marke = window.MX_MARKE ? Promise.resolve(true) : O.ucitajSkriptu(O.BAZA + 'marke/marke.js' + v);
+    const marke = window.MX_MARKE_STVARNO ? Promise.resolve(true) : O.ucitajSkriptu(O.BAZA_POKUSA + 'marke.js' + v);   // (svoji logotipi, vidi izvor/izradi-marke.py)
     const pen = (window.PEN && window.PEN.crtajEtiketu ? Promise.resolve(true) : O.ucitajSkriptu(O.BAZA + 'penhaligons/shared.js' + v)).then(function () {
       return Promise.all(PEN_IDS.map(function (id) { return window.PEN && window.PEN.glave && window.PEN.glave[id] ? true : O.ucitajSkriptu(O.BAZA + 'penhaligons/glave/' + id + '.js' + v); }));
     }).then(function () {
@@ -1016,7 +1018,7 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
       ]) : null;
     });
     const slika = marke.then(function () {
-      const M = window.MX_MARKE;
+      const M = window.MX_MARKE_STVARNO;
       if (!M || !M.slika) return null;
       const s = new Image();
       s.src = M.slika;
@@ -1051,15 +1053,15 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
         kamera = new THREE.PerspectiveCamera(40, 1, 0.1, 30);
         kamera.position.set(0, 0, CAM);
 
-        oblici.objekt = napraviObjekt();
+        if (PRVI === 'objekt') oblici.objekt = napraviObjekt();
         oblici.flakon = napraviFlakon(MOD.flakon);
         oblici.natpis = napraviNatpis(MOD.natpis);
         if (window.PEN && window.PEN.crtajEtiketu && PEN_IDS.every(function (id) { return window.PEN.glave && window.PEN.glave[id]; })) {
           try { oblici.pen = napraviPen(MOD.penhaligon, MOD); imaPen = true; }
           catch (e) { console.warn('[Martimex] Stvarno: bez Penhaligon bočica', e); }
         }
-        if (u.slika && window.MX_MARKE) {
-          try { oblici.marke = napraviMarke(window.MX_MARKE, u.slika); imaMarke = true; marPodaci = oblici.marke; }
+        if (u.slika && window.MX_MARKE_STVARNO) {
+          try { oblici.marke = napraviMarke(window.MX_MARKE_STVARNO, u.slika); imaMarke = true; marPodaci = oblici.marke; }
           catch (e) { console.warn('[Martimex] Stvarno: bez logotipa', e); }
         }
         Object.keys(oblici).forEach(function (k) { oblici[k].ime = k; oblici[k].grupa.visible = false; sceneGL.add(oblici[k].grupa); });
@@ -1076,7 +1078,8 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
         tijek = napraviTijekZa();
         velicina();
         // prašina za sve prijelaze unaprijed (nekoliko desetaka ms svaki)
-        const parovi = [['uvod', 'objekt'], ['objekt', 'flakon'], ['natpis', 'objekt']];
+        const parovi = [['uvod', PRVI], ['natpis', PRVI]];
+        if (PRVI === 'objekt') parovi.push(['objekt', 'flakon']);
         if (imaMarke) parovi.push(['flakon', 'marke'], [imaPen ? 'marke' : 'marke', imaPen ? 'pen' : 'natpis']);
         if (imaPen) parovi.push([imaMarke ? 'marke' : 'flakon', 'pen'], ['pen', 'natpis']);
         if (!imaMarke && !imaPen) parovi.push(['flakon', 'natpis']);
@@ -1122,8 +1125,15 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
     povecanje = Math.max(0.3, Math.min(1, slobodno / (O.SIRINA_NATPISA * S * (P.nagibPremaMisu && O.MIS ? 1.04 : 1))));
     pasMar = sh / 2 / S;
     if (marPodaci) {
+      // zid logotipa stane u cijeli okvir animacije (od zaglavlja do dna
+      // okvira, ne samo u prostor oblika); sredina zida je u sredini okvira
+      const okv = scena.parentElement || scena;
+      let oy2 = 0;
+      for (let e = okv; e && e !== platno.offsetParent; e = e.offsetParent) oy2 += e.offsetTop;
+      const gore = (sy - oy2) / S, dolje = (oy2 + okv.offsetHeight - sy) / S;
+      sredinaMar = (gore - dolje) / 2;
       const najvisa = Math.max.apply(null, marPodaci.stranice.map(function (s) { return s.pola; }));
-      skalaMar = Math.max(0.3, Math.min(povecanje, (pasMar - MAR_RUB) / Math.max(0.01, najvisa)));
+      skalaMar = Math.max(0.3, Math.min(povecanje, ((gore + dolje) / 2 - MAR_RUB_OKVIRA) / Math.max(0.01, najvisa)));
     }
     // kamera: na ravnini z = 0 jedna jedinica je S px, a ishodište je u sredini prostora animacije
     kamera.fov = 2 * Math.atan(H / (2 * S * CAM)) * 180 / Math.PI;
@@ -1145,7 +1155,7 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
     if (ime === 'flakon') g.matrix.multiply(T0.makeTranslation(0, 0.018 * Math.sin(t * 0.8), 0));
     else if (ime === 'marke') {
       const str = marPodaci.stranice, j = Math.max(0, Math.min(str.length - 1, Math.floor(st.stranica)));
-      const pomak = -lerp(str[j].sredina, str[Math.min(str.length - 1, j + 1)].sredina, st.stranica - j);
+      const pomak = -lerp(str[j].sredina, str[Math.min(str.length - 1, j + 1)].sredina, st.stranica - j) + sredinaMar / skalaMar;
       g.matrix.multiply(T0.makeScale(skalaMar, skalaMar, skalaMar));
       ob.zid.position.y = pomak;
       ob.zid.updateMatrix();
@@ -1233,8 +1243,8 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
     let par = null, prog = st.prog;
     if (st.uvod < 1) {
       const u = sat(st.uvod);
-      postaviRaz('objekt', 'dolazi', 'uvod', u);
-      par = prijelazPrasine('uvod', 'objekt'); prog = u;
+      postaviRaz(PRVI, 'dolazi', 'uvod', u);
+      par = prijelazPrasine('uvod', PRVI); prog = u;
     } else if (prijelaz) {
       postaviRaz(od, 'odlazi', do_, st.prog);
       postaviRaz(do_, 'dolazi', od, st.prog);
@@ -1246,7 +1256,9 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
       const Hm = pasMar;
       oblici.marke.dijelovi.forEach(function (m) {
         const u = m.material.userData.u;
-        u.uOkvir.value.set(-Hm + MAR_RUB * 0.4, Hm - MAR_RUB * 0.4, MAR_RUB * 0.8, MAR_RUB * 0.6);
+        // (jedna stranica: zid se ne pomiče, pa se ništa ne odrezuje)
+        if (marPodaci.stranice.length > 1) u.uOkvir.value.set(-Hm + MAR_RUB * 0.4, Hm - MAR_RUB * 0.4, MAR_RUB * 0.8, MAR_RUB * 0.6);
+        else u.uOkvir.value.set(-99, 99, 0, 1e-4);
         u.uSjajOs.value.set(1, 0.45, 0);
         u.uSjaj.value.set(st.sjaj, 0.3, 0.55);
       });
