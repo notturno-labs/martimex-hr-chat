@@ -44,7 +44,7 @@ const PEN_RASPORED = [
   [1.00, -0.26, 0.76, 0.28]
 ];
 const MAR_REDOVA = 99, MAR_RUB = 0.12;   // (svi redovi logotipa na jednoj stranici: cijeli zid u jednom kadru)
-const MAR_RUB_OKVIRA = 0.05;          // razmak zida logotipa od ruba okvira animacije (svjetske jedinice)
+const MAR_RUB_OKVIRA = 0.03;          // dodatni razmak zida logotipa od zaglavlja i naslova (svjetske jedinice)
 const RUB = 0.05;                 // širina užarenog ruba pri rastapanju (udio)
 
 function sat(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
@@ -607,7 +607,7 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
     const c2 = document.createElement('canvas');
     c2.width = sir; c2.height = vis;
     const x2 = c2.getContext('2d');
-    x2.filter = 'blur(2.2px)';
+    x2.filter = 'blur(1.2px)';
     x2.drawImage(c, 0, 0);
     const izbocina = new THREE.CanvasTexture(c2);
     [maska, izbocina].forEach(function (t) { t.anisotropy = 4; });
@@ -628,9 +628,9 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
       const g = new THREE.PlaneGeometry(l[5] * k, l[6] * k);
       const uv = g.attributes.uv;
       for (let q = 0; q < uv.count; q++) uv.setXY(q, (l[3] + uv.getX(q) * l[5]) / sir, 1 - (l[4] + (1 - uv.getY(q)) * l[6]) / vis);
-      const mat = puder(0.32);
+      const mat = puder(0.38);
       mat.alphaMap = maska; mat.transparent = true; mat.depthWrite = false;
-      mat.bumpMap = izbocina; mat.bumpScale = 2.2;
+      mat.bumpMap = izbocina; mat.bumpScale = 0.9;
       mat.side = THREE.DoubleSide;
       const mesh = new THREE.Mesh(g, mat);
       mesh.position.set((l[3] + l[5] / 2 - cx) * k, -(l[4] + l[6] / 2 - Y0) * k, 0);
@@ -1125,15 +1125,20 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
     povecanje = Math.max(0.3, Math.min(1, slobodno / (O.SIRINA_NATPISA * S * (P.nagibPremaMisu && O.MIS ? 1.04 : 1))));
     pasMar = sh / 2 / S;
     if (marPodaci) {
-      // zid logotipa stane u cijeli okvir animacije (od zaglavlja do dna
-      // okvira, ne samo u prostor oblika); sredina zida je u sredini okvira
-      const okv = scena.parentElement || scena;
-      let oy2 = 0;
-      for (let e = okv; e && e !== platno.offsetParent; e = e.offsetParent) oy2 += e.offsetTop;
-      const gore = (sy - oy2) / S, dolje = (oy2 + okv.offsetHeight - sy) / S;
+      // zid logotipa stane između zaglavlja i naslova ispod okvira (malo
+      // zađe u njihove prazne rubove, ne samo u prostor oblika); sredina zida
+      // je na pola tog prostora. Nagib prema mišu zid u perspektivi malo
+      // poveća, pa je za njega pričuva (kao 1,04 za natpis)
+      const okv = scena.parentElement || scena, kor = okv.parentElement;
+      const vrh = kor && kor.querySelector('.mx-p-vrh'), naslov = kor && kor.querySelector('.mx-p-tekst > :first-child');
+      function odozgo(e) { let y = 0; for (; e && e !== platno.offsetParent; e = e.offsetParent) y += e.offsetTop; return y; }
+      const yVrh = vrh ? odozgo(vrh) + vrh.offsetHeight - 8 : odozgo(okv);
+      const yDno = naslov ? odozgo(naslov) - 10 : odozgo(okv) + okv.offsetHeight;
+      const gore = (sy - yVrh) / S, dolje = (yDno - sy) / S;
       sredinaMar = (gore - dolje) / 2;
       const najvisa = Math.max.apply(null, marPodaci.stranice.map(function (s) { return s.pola; }));
-      skalaMar = Math.max(0.3, Math.min(povecanje, ((gore + dolje) / 2 - MAR_RUB_OKVIRA) / Math.max(0.01, najvisa)));
+      const nagibMar = P.nagibPremaMisu && O.MIS ? 1.06 : 1;
+      skalaMar = Math.max(0.3, Math.min(povecanje, ((gore + dolje) / 2 - MAR_RUB_OKVIRA) / (Math.max(0.01, najvisa) * nagibMar)));
     }
     // kamera: na ravnini z = 0 jedna jedinica je S px, a ishodište je u sredini prostora animacije
     kamera.fov = 2 * Math.atan(H / (2 * S * CAM)) * 180 / Math.PI;
@@ -1281,8 +1286,9 @@ export function napraviAnimaciju3D(platno, scena, dogadaji, O) {
     // svjetlo na zidu iza predmeta prati oblik
     {
       const a = MRLJA[od], b = MRLJA[do_], e = prijelaz ? glatko(st.prog) : 0, u = zid.material.uniforms;
+      const uvodK = st.uvod < 1 ? glatko(st.uvod) : 1;     // pri pojavi raste s prvim oblikom (kao u natpis → flakon)
       u.uMrlja.value.set(lerp(a[0], b[0], e), lerp(a[1], b[1], e), lerp(a[2], b[2], e), lerp(a[3], b[3], e));
-      u.uJak.value = lerp(a[4], b[4], e) * (1 - izlaz);
+      u.uJak.value = lerp(MRLJA.natpis[4], lerp(a[4], b[4], e), uvodK) * (1 - izlaz);
     }
 
     // "Početak": sve se rastopi u zlatnu prašinu koja odleti prema van i gore

@@ -63,14 +63,21 @@ Druga ideja: zlatna kap padne u tamnu površinu poput zrcala, a iz tekućine nas
 
 ## Stvarno — pravi 3D umjesto točkica (`stvarno/`)
 
-Isti početni ekran i isti krug (objekt → flakon → logotipi → Penhaligon's bočice → natpis
-MARTIMEX), ali svaki oblik je pravi 3D predmet, osvijetljen kao u fotografskom studiju (tamna
+Isti početni ekran i gotovo isti krug, ali svaki oblik je pravi 3D predmet, osvijetljen kao u fotografskom studiju (tamna
 soba sa svjetlosnim pločama, koje se zrcale u staklu i zlatu; iza predmeta je na zidu topla
 svjetlosna mrlja, koja se lomi kroz staklo i obasja tekućinu).
 
+- Krug (na zahtjev klijenta): flakon → logotipi → Penhaligon's bočice → natpis MARTIMEX → flakon.
+  AI objekt je izbačen (postavka `objekt: false`; s `true` se vraća kao prije): pri otvaranju
+  chata flakon nastaje iz zlatne izmaglice, a natpis se na kraju kruga pretopi natrag u flakon,
+  koji se okreće bez skoka i kroz početak sljedećeg kruga.
+- Logotipi su s klijentove slike `stvarno/izvor/marke-izvor.webp` (24 logotipa, 4 stupca × 6
+  redova): `stvarno/izvor/izradi-marke.py` (isti postupak kao `marke/izradi.py`) izrađuje
+  `stvarno/marke.js` (`window.MX_MARKE_STVARNO`); prava animacija i dalje koristi `marke/`.
+  Svih 24 je u jednom kadru, bez pomicanja zida: zid stane između zaglavlja i naslova ispod
+  okvira animacije (uz pričuvu za nagib prema mišu) i vidi se 6,5 s (`trajanje.marke`).
 - Predmeti:
-  - AI objekt: kugla od tekućeg kroma s duginim odsjajem, kojoj se površina stalno valovito
-    gužva (isti šum kao u točkicama)
+  - (AI objekt, ako se uključi: kugla od tekuće žive koja se polako valovito gužva)
   - Xerjoff flakon: fasetirano staklo koje lomi svjetlo (isti profil i presjek kao u točkicama),
     medena tekućina, debelo prozirno dno, polirani zlatni prsten i čep sa šiljkom, zlatna pločica
     s izdignutim znakom X i dvostrukim okvirom (polirano na brušenoj podlozi)
