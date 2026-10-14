@@ -301,11 +301,22 @@
 
       /* aura iz same fotografije: ista slika bočice, jako zamućena i malo veća, iza
          bočice. Zato je uvijek u bojama i tonovima artikla, a ne treba čitati piksele,
-         pa radi i kad je slika s druge domene. Dok je ona tu, roza oblak (.mx-aura) je
-         skriven; on ostaje za proizvod bez slike (i za postavku auraUBojiBocice: false) */
+         pa radi i kad je slika s druge domene. Okvir (.mx-aura-okvir) je točno prostor
+         slike, a maska je meki oval koji se prema rubovima ugasi: aura nikad ne izlazi
+         preko teksta, ruba kartice ni crte, a dno ne prekriva sjenu. Dok je ona tu, roza
+         oblak (.mx-aura) je skriven; on ostaje za proizvod bez slike (i za postavku
+         auraUBojiBocice: false) */
+      .mx-aura-okvir {
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        z-index: 0;
+        overflow: hidden;
+        -webkit-mask-image: radial-gradient(closest-side at 50% var(--mx-sredina, 46%), #000 70%, transparent 100%);
+                mask-image: radial-gradient(closest-side at 50% var(--mx-sredina, 46%), #000 70%, transparent 100%);
+        pointer-events: none;
+      }
       .mx-aura-slika {
         position: absolute;
-        z-index: 0;
         left: 0;
         top: 1%;
         width: 100%;
@@ -315,15 +326,29 @@
         margin: 0;
         object-fit: contain;
         object-position: 50% 55%;
-        transform: scale(1.25);
-        filter: blur(12px) saturate(1.6) brightness(1.12);
-        opacity: .55;
+        transform: scale(1.2);
+        filter: blur(10px) saturate(1.5) brightness(1.1);
+        opacity: .6;
         pointer-events: none;
         user-select: none;
         -webkit-user-drag: none;
       }
-      .mx-aura-tamna .mx-aura-slika { opacity: .3; }   /* tamna bočica: mekani dim, a ne mrlja */
       .mx-aura-iz-slike .mx-aura { display: none; }
+      /* tamna bočica (crna, tamnosmeđa): mekani dim, a ne mrlja */
+      .mx-aura-tamna .mx-aura-okvir { opacity: .55; }
+      /* slika koju nije moguće obraditi (druga domena): bočica se stapa (multiply) s
+         onim iza sebe, pa je aura iza sredine bočice skoro ugašena, da ne mijenja boje
+         samog proizvoda; a malo je i blijeđa, jer se ne zna je li bočica tamna */
+      .mx-aura-iz-slike:not(.mx-prozirno) .mx-aura-okvir {
+        -webkit-mask-image: radial-gradient(closest-side at 50% 46%, rgba(0, 0, 0, .12) 35%, #000 66%, transparent 100%);
+                mask-image: radial-gradient(closest-side at 50% 46%, rgba(0, 0, 0, .12) 35%, #000 66%, transparent 100%);
+        opacity: .85;
+      }
+      /* bez podrške za masku: radije stara roza aura nego obojeni pravokutnik */
+      @supports not ((mask-image: none) or (-webkit-mask-image: none)) {
+        .mx-aura-okvir { display: none; }
+        .mx-aura-iz-slike .mx-aura { display: block; }
+      }
 
       /* meka sjena ispod bočice: bočica kao da lebdi */
       .mx-sjena {
@@ -340,7 +365,8 @@
       }
       .mx-bez-slike .mx-sjena { display: none; }
 
-      .mx-boca {
+      .mx-boca,
+      .mx-aura-podloga {
         position: absolute;
         z-index: 1;
         left: 0;
@@ -358,12 +384,20 @@
         user-select: none;
         -webkit-user-drag: none;
       }
-      .mx-ucitano .mx-boca { top: 1%; }
+      .mx-ucitano .mx-boca,
+      .mx-ucitano .mx-aura-podloga { top: 1%; }
+      /* bijela silueta iste bočice između aure i obrađene bočice: kroz poluprozirne
+         dijelove stakla, etikete i čepa vidi se bijelo, kao i dosad, a ne aura, pa su
+         boje bočice nepromijenjene; aura se vidi samo oko bočice */
+      .mx-aura-podloga { display: none; filter: brightness(0) invert(1); mix-blend-mode: normal; }
+      .mx-prozirno .mx-aura-podloga { display: block; }
 
       /* obrađena fotografija: bočica je već smještena u kadar (prava prozirnost),
          slika pokriva cijeli prostor, a sjena i aura prate stvarnu bočicu */
-      .mx-prozirno .mx-boca { top: 8px; height: 100%; mix-blend-mode: normal; }
-      .mx-prozirno.mx-ucitano .mx-boca { top: 0; }
+      .mx-prozirno .mx-boca,
+      .mx-prozirno .mx-aura-podloga { top: 8px; height: 100%; mix-blend-mode: normal; }
+      .mx-prozirno.mx-ucitano .mx-boca,
+      .mx-prozirno.mx-ucitano .mx-aura-podloga { top: 0; }
       .mx-prozirno .mx-sjena {
         left: var(--mx-sjena-x, 23%);
         right: var(--mx-sjena-x, 23%);
@@ -383,7 +417,7 @@
         overflow: hidden;
       }
       .mx-foto .mx-aura,
-      .mx-foto .mx-aura-slika,
+      .mx-foto .mx-aura-okvir,
       .mx-foto .mx-sjena { display: none; }
       .mx-foto .mx-boca,
       .mx-foto.mx-ucitano .mx-boca {
@@ -1140,8 +1174,8 @@
         img.addEventListener('load', kraj, { once: true });
         nisa.classList.add('mx-prozirno');
         img.src = url;
-        const aura = nisa.querySelector('.mx-aura-slika');   // aura je ista, obrađena slika
-        if (aura) aura.src = url;
+        // aura i bijela podloga ispod bočice: ista, obrađena slika
+        nisa.querySelectorAll('.mx-aura-slika, .mx-aura-podloga').forEach(function (a) { a.src = url; });
       };
       try {
         if (platno.toBlob) platno.toBlob(function (blob) { zamijeni(blob ? URL.createObjectURL(blob) : ''); }, 'image/png');
@@ -1221,15 +1255,22 @@
       lebdi.appendChild(el('span', 'mx-aura'));
       nisa.appendChild(lebdi);
       if (k.slika) {
-        // aura iz same fotografije: zamućena kopija iza bočice (.mx-aura-slika)
-        const aura = P.auraUBojiBocice ? el('img', 'mx-aura-slika') : null;
+        // aura iz same fotografije: zamućena kopija iza bočice (.mx-aura-slika u
+        // .mx-aura-okvir), a ispod obrađene bočice bijela silueta (.mx-aura-podloga)
+        const ukras = function (klasa) {
+          const u = el('img', klasa);
+          u.alt = '';
+          u.decoding = 'async';
+          u.draggable = false;
+          u.setAttribute('aria-hidden', 'true');
+          return u;
+        };
+        const aura = P.auraUBojiBocice ? ukras('mx-aura-slika') : null;
+        const okvir = aura ? el('span', 'mx-aura-okvir') : null;
         if (aura) {
-          aura.alt = '';
-          aura.decoding = 'async';
-          aura.draggable = false;
-          aura.setAttribute('aria-hidden', 'true');
-          aura.src = k.slika;
-          lebdi.appendChild(aura);
+          okvir.appendChild(aura);
+          lebdi.appendChild(okvir);
+          lebdi.appendChild(ukras('mx-aura-podloga'));   // src dobije tek obrađena slika
           nisa.classList.add('mx-aura-iz-slike');
         }
         const img = el('img', 'mx-boca');
@@ -1247,10 +1288,14 @@
         img.addEventListener('load', gotovo, { once: true });
         img.addEventListener('error', function () {
           img.remove();
-          if (aura) { aura.remove(); nisa.classList.remove('mx-aura-iz-slike'); }   // bez slike: roza aura oko ikone
+          if (aura) {                                     // bez slike: roza aura oko ikone
+            lebdi.querySelectorAll('.mx-aura-okvir, .mx-aura-podloga').forEach(function (u) { u.remove(); });
+            nisa.classList.remove('mx-aura-iz-slike');
+          }
           prazanIzlog(nisa);
         }, { once: true });
         img.src = k.slika;
+        if (aura) aura.src = k.slika;   // tek nakon bočice: zajedničko preuzimanje ostaje visokog prioriteta
         lebdi.appendChild(img);
         if (img.complete) gotovo();
       } else {
