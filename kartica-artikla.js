@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v29)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v30)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -709,15 +709,15 @@
         align-self: center;
         flex: none;
         max-width: 100%;
-        min-height: 34px;
+        min-height: 30px;
         margin-bottom: 4px;           /* uz donji rub kartice: vidljivo ~24 px do ruba */
-        padding: 0 22px 0 calc(22px + .22em);   /* lijevo + razmak slova, da tekst bude optički centriran */
+        padding: 0 18px 0 calc(18px + .22em);   /* lijevo + razmak slova, da tekst bude optički centriran */
         border: 1px solid ${B.gumb};
         border-radius: 999px;
         background-color: transparent;
         color: ${B.gumb};
         font-family: var(--mx-font);
-        font-size: 10.5px;
+        font-size: 9.5px;
         line-height: 1;
         font-weight: 500;
         letter-spacing: .22em;
@@ -870,11 +870,11 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '29');
+      stil.setAttribute('data-mx-kartice', '30');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '29') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '30') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
