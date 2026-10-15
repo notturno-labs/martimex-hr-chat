@@ -327,7 +327,7 @@
       .mx-aura-slika {
         position: absolute;
         left: 0;
-        top: 1%;
+        top: calc(1% + 8px);          /* kao bočica: pri pojavi se diže zajedno s njom */
         width: 100%;
         height: ${VISINA_SLIKE * 100}%;
         max-width: none;
@@ -351,11 +351,13 @@
       /* jako zasićeno staklo (crveno, tirkizno): sjaj uz rub malo blaži, da ne bude neon */
       .mx-aura-zasicena .mx-aura-sjaj { opacity: .9; }
       .mx-aura-iz-slike .mx-aura { display: none; }
+      .mx-aura-slika { transition: top .9s var(--mx-glatko); }
+      .mx-ucitano .mx-aura-slika { top: 1%; }
       /* tamna bočica (crna, tamnosmeđa): sjaj je podignut još više prema bijeloj i
          blago zagrijan (sepia), pa oko crne bočice stoji mekan, topao, svilen odsjaj,
          a ne siva mrlja */
-      .mx-aura-tamna .mx-aura-slika { filter: blur(13px) invert(1) brightness(.28) invert(1) sepia(.55) saturate(1.7); opacity: .7; }
-      .mx-aura-tamna .mx-aura-sjaj { filter: blur(3.5px) invert(1) brightness(.3) invert(1) sepia(.5) saturate(1.5); }
+      .mx-aura-tamna .mx-aura-slika { filter: blur(13px) invert(1) brightness(.28) invert(1) sepia(.55) saturate(1.7); }
+      .mx-aura-tamna .mx-aura-sjaj { filter: blur(3.5px) invert(1) brightness(.3) invert(1) sepia(.5) saturate(1.5); opacity: 1; }
       /* svijetla bočica (prozirno staklo, bijela, krem): njezina obrađena slika je
          gotovo prozirna, pa bi sjaj iz same slike bio jedva vidljiv. Zato se oko
          siluete doda biserni sjaj u prevladavajućoj boji bočice (--mx-sjaj iz
@@ -369,8 +371,8 @@
                 drop-shadow(0 0 7px var(--mx-sjaj, rgba(226, 195, 186, .8)));
       }
       .mx-aura-svijetla .mx-aura-okvir {
-        -webkit-mask-image: radial-gradient(closest-side at 50% var(--mx-sredina, 46%), rgba(0, 0, 0, .15) var(--mx-rupa, 24%), #000 var(--mx-rupa-kraj, 56%), transparent 100%);
-                mask-image: radial-gradient(closest-side at 50% var(--mx-sredina, 46%), rgba(0, 0, 0, .15) var(--mx-rupa, 24%), #000 var(--mx-rupa-kraj, 56%), transparent 100%);
+        -webkit-mask-image: radial-gradient(closest-side at 50% var(--mx-sredina, 46%), rgba(0, 0, 0, .15) var(--mx-rupa, 24%), #000 var(--mx-rupa-kraj, 56%), rgba(0, 0, 0, .45) var(--mx-rupa-sred, 78%), transparent 100%);
+                mask-image: radial-gradient(closest-side at 50% var(--mx-sredina, 46%), rgba(0, 0, 0, .15) var(--mx-rupa, 24%), #000 var(--mx-rupa-kraj, 56%), rgba(0, 0, 0, .45) var(--mx-rupa-sred, 78%), transparent 100%);
       }
       /* svjetlosna kupka: meko svjetlo u boji bočice koje počinje tik uz rub stakla i
          gasi se prema rubu prostora, ispod obje kopije; daje svijetloj bočici oreol
@@ -382,12 +384,7 @@
         background: radial-gradient(closest-side at 50% var(--mx-sredina, 46%), var(--mx-sjaj, transparent) var(--mx-rupa, 24%), var(--mx-sjaj-2, transparent) var(--mx-rupa-kraj, 56%), transparent 100%);
         pointer-events: none;
       }
-      .mx-aura-svijetla .mx-aura-kupka { display: block; }
-      /* prozirno staklo je u obrađenoj slici gotovo prozirno, pa se bijela silueta
-         ispod svijetle bočice podeblja još dvaput: sjaj se kroz staklo vidi tek malo */
-      .mx-aura-svijetla .mx-aura-podloga {
-        filter: brightness(0) invert(1) drop-shadow(0 0 0 #fff) drop-shadow(0 0 0 #fff) drop-shadow(0 0 0 #fff) drop-shadow(0 0 0 #fff);
-      }
+      .mx-prozirno.mx-aura-svijetla .mx-aura-kupka { display: block; }   /* samo kad je slika stvarno obrađena */
       /* slika koju nije moguće obraditi (druga domena): fotografija ima bijelu
          pozadinu, a bijela "podignuta" ostaje bijela, pa je na bijeloj kartici
          nevidljiva; sjaj uz rub se stapa s oreolom kao "darken" (bijelo je neutralno,
@@ -398,11 +395,11 @@
         -webkit-mask-image: radial-gradient(50% 44% at 50% 48%, rgba(0, 0, 0, .12) 22%, #000 50%, transparent 100%);
                 mask-image: radial-gradient(50% 44% at 50% 48%, rgba(0, 0, 0, .12) 22%, #000 50%, transparent 100%);
       }
-      /* bez piksela se ne zna je li bočica tamna: oreol je zato svjetliji i blago topao
-         (sepia), pa siva izmaglica oko crne bočice postane šampanjska, a obojenim
-         bočicama nijansa ostaje; malo manje uvećan, da tamna fotografija nema traka */
-      .mx-aura-iz-slike:not(.mx-prozirno) .mx-aura-slika { transform: scale(1.24); filter: blur(13px) invert(1) brightness(.34) invert(1) sepia(.3) saturate(2.2); }
-      .mx-aura-iz-slike:not(.mx-prozirno) .mx-aura-sjaj { transform: scale(1.08); filter: blur(3.5px) invert(1) brightness(.44) invert(1) sepia(.15) saturate(1.75); mix-blend-mode: darken; }
+      /* bez piksela se ne zna je li bočica tamna, pa je oreol malo svjetliji (crna
+         dobije mekanu svijetlosivu izmaglicu) i malo manje uvećan, da tamna fotografija
+         nema traka; nijansa obojenih bočica ostaje točno njihova */
+      .mx-aura-iz-slike:not(.mx-prozirno) .mx-aura-slika { transform: scale(1.24); filter: blur(13px) invert(1) brightness(.34) invert(1) saturate(2.2); }
+      .mx-aura-iz-slike:not(.mx-prozirno) .mx-aura-sjaj { transform: scale(1.08); filter: blur(3.5px) invert(1) brightness(.44) invert(1) saturate(1.75); mix-blend-mode: darken; }
       /* bez podrške za masku: radije stara roza aura nego obojeni pravokutnik */
       @supports not ((mask-image: none) or (-webkit-mask-image: none)) {
         .mx-aura-okvir { display: none; }
@@ -464,14 +461,16 @@
       }
       .mx-ucitano .mx-boca,
       .mx-ucitano .mx-aura-podloga { top: 1%; }
-      /* bijela silueta iste bočice između aure i obrađene bočice: kroz poluprozirne
+      /* bijela silueta bočice između aure i obrađene bočice: kroz poluprozirne
          dijelove stakla, etikete i čepa vidi se bijelo, kao i dosad, a ne aura, pa su
-         boje bočice nepromijenjene; aura se vidi samo oko bočice. Obrada fotografije
-         svaku svjetliju boju "odvoji" od bijele kao poluprozirnu (zlatna etiketa je
-         prozirna oko trećine), pa se silueta dvaput "podebljava" bijelom sjenom bez
-         zamućenja (drop-shadow 0 0 0): prozirnost siluete padne na par postotaka */
-      .mx-aura-podloga { display: none; filter: brightness(0) invert(1) drop-shadow(0 0 0 #fff) drop-shadow(0 0 0 #fff); mix-blend-mode: normal; }
-      .mx-prozirno .mx-aura-podloga { display: block; }
+         boje bočice točno kao na fotografiji; aura se vidi samo oko bočice. Siluetu
+         pravi obrada fotografije (bijela slika, unutrašnjost bočice ispunjena po
+         recima, pa su i bijele etikete i prozirno staklo pokriveni) */
+      .mx-aura-podloga { visibility: hidden; mix-blend-mode: normal; }   /* uvijek u toku, da se diže zajedno s bočicom */
+      .mx-prozirno .mx-aura-podloga { visibility: visible; }
+      /* rezerva kad silueta nije napravljena: ista obrađena slika pobijeljena filterom */
+      .mx-podloga-iz-slike .mx-aura-podloga { filter: brightness(0) invert(1) drop-shadow(0 0 0 #fff) drop-shadow(0 0 0 #fff) drop-shadow(0 0 0 #fff); }
+      .mx-podloga-iz-slike.mx-aura-svijetla .mx-aura-podloga { filter: brightness(0) invert(1) drop-shadow(0 0 0 #fff) drop-shadow(0 0 0 #fff) drop-shadow(0 0 0 #fff) drop-shadow(0 0 0 #fff) drop-shadow(0 0 0 #fff); }
 
       /* obrađena fotografija: bočica je već smještena u kadar (prava prozirnost),
          slika pokriva cijeli prostor, a sjena i aura prate stvarnu bočicu */
@@ -493,7 +492,6 @@
         top: 8px;                                            /* diže zajedno s njom pri pojavi */
         height: 100%;
         transform-origin: 50% var(--mx-sredina, 46%);        /* uvećanje oko sredine same bočice */
-        transition: top .9s var(--mx-glatko);
       }
       .mx-prozirno.mx-ucitano .mx-aura-slika { top: 0; }
 
@@ -860,7 +858,7 @@
       @media (prefers-reduced-motion: reduce) {
         .mx-maglica { display: none; }
         .mx-pojava .mx-kartica { animation: mx-samo-prozirnost .35s linear backwards; animation-delay: 0s; }
-        .mx-kartica, .mx-kartica::before, .mx-nisa, .mx-boca, .mx-aura, .mx-aura-slika, .mx-sjena { transition-duration: .01s !important; }
+        .mx-kartica, .mx-kartica::before, .mx-nisa, .mx-boca, .mx-aura, .mx-aura-slika, .mx-aura-podloga, .mx-sjena { transition-duration: .01s !important; }
         .mx-gumb { transition: none; }
         .mx-lebdi, .mx-sjena { animation: none !important; }
       }
@@ -1259,20 +1257,61 @@
       // pola širine bočice, u postotcima polumjera ovalne maske (pola širine prostora):
       // od tuda se računa "rupa" u masci svijetle bočice, da sjaj počne odmah uz staklo
       const rub = bw * k / cw * 100;
+      const rubKraj = Math.min(68, rub * 1.15 + 6);           // do tu je sjaj pun, dalje se gasi preko bar trećine polumjera
       nisa.style.setProperty('--mx-rupa', (rub * 0.8).toFixed(1) + '%');
-      nisa.style.setProperty('--mx-rupa-kraj', Math.min(92, rub * 1.15 + 6).toFixed(1) + '%');
+      nisa.style.setProperty('--mx-rupa-kraj', rubKraj.toFixed(1) + '%');
+      nisa.style.setProperty('--mx-rupa-sred', ((rubKraj + 100) / 2).toFixed(1) + '%');
 
-      const zamijeni = function (url) {
+      // bijela silueta bočice za podlogu ispod nje: unutrašnjost bočice ispunjena po
+      // recima (od prvog do zadnjeg piksela koji nije pozadina; i gotovo prozirno
+      // staklo se računa), pa su i bijela etiketa i prozirno staklo pokriveni bijelim,
+      // a rub zadržava mekoću obrađene slike
+      let silueta = null;
+      try {
+        const sp = platno.getContext('2d').getImageData(0, 0, cw, ch).data;
+        silueta = document.createElement('canvas');
+        silueta.width = cw;
+        silueta.height = ch;
+        const sg = silueta.getContext('2d');
+        const so = sg.createImageData(cw, ch), o = so.data;
+        for (let y = 0; y < ch; y++) {
+          let x0 = -1, x1 = -1;
+          for (let x = 0; x < cw; x++) if (sp[(y * cw + x) * 4 + 3] > 8) { if (x0 < 0) x0 = x; x1 = x; }
+          for (let x = 0; x < cw; x++) {
+            const i = (y * cw + x) * 4;
+            o[i] = 255; o[i + 1] = 255; o[i + 2] = 255;
+            o[i + 3] = (x0 >= 0 && x >= x0 && x <= x1) ? 255 : sp[i + 3];
+          }
+        }
+        sg.putImageData(so, 0, 0);
+      } catch (e) { silueta = null; }
+
+      // obrađena slika ide u bočicu i auru, silueta u podlogu; kad silueta nije
+      // uspjela, podloga je ista slika pobijeljena filterom (klasa mx-podloga-iz-slike)
+      const zamijeni = function (url, urlSilueta) {
         if (!url) { kraj(); return; }
         img.addEventListener('load', kraj, { once: true });
         nisa.classList.add('mx-prozirno');
+        if (!urlSilueta) nisa.classList.add('mx-podloga-iz-slike');
+        void nisa.offsetWidth;        // stil se preračuna sad, da pojava (dizanje s 8 px) krene za sve dijelove jednako
         img.src = url;
-        // aura i bijela podloga ispod bočice: ista, obrađena slika
-        nisa.querySelectorAll('.mx-aura-slika, .mx-aura-podloga').forEach(function (a) { a.src = url; });
+        nisa.querySelectorAll('.mx-aura-slika').forEach(function (a) { a.src = url; });
+        nisa.querySelectorAll('.mx-aura-podloga').forEach(function (a) { a.src = urlSilueta || url; });
+      };
+      const urlovi = {};
+      const spremi = function (kljuc, url) {
+        urlovi[kljuc] = url;
+        if ('boca' in urlovi && 'silueta' in urlovi) zamijeni(urlovi.boca, urlovi.silueta);
       };
       try {
-        if (platno.toBlob) platno.toBlob(function (blob) { zamijeni(blob ? URL.createObjectURL(blob) : ''); }, 'image/png');
-        else zamijeni(platno.toDataURL('image/png'));
+        if (platno.toBlob) {
+          platno.toBlob(function (blob) { spremi('boca', blob ? URL.createObjectURL(blob) : ''); }, 'image/png');
+          if (silueta) silueta.toBlob(function (blob) { spremi('silueta', blob ? URL.createObjectURL(blob) : ''); }, 'image/png');
+          else spremi('silueta', '');
+        } else {
+          spremi('silueta', silueta ? silueta.toDataURL('image/png') : '');
+          spremi('boca', platno.toDataURL('image/png'));
+        }
       } catch (e) { kraj(); }
     }
 
@@ -1318,8 +1357,9 @@
         nisa.classList.add('mx-aura-svijetla');                //  (siva ili bijela → topao neutralan ton)
         const siva = c.s < 0.15;
         const ton = (siva ? 22 : Math.round(c.h)) + ', ' + (siva ? 22 : Math.round(Math.min(36, Math.max(24, c.s * 100)))) + '%';
-        nisa.style.setProperty('--mx-sjaj', 'hsla(' + ton + ', 78%, 1)');
-        nisa.style.setProperty('--mx-sjaj-2', 'hsla(' + ton + ', 84%, .45)');   // kupka: blijeđi nastavak sjaja
+        const svj = Math.min(92, Math.max(80, Math.round(svjetlina / n / 255 * 100) + 2));   // sjaj nije tamniji od stakla
+        nisa.style.setProperty('--mx-sjaj', 'hsla(' + ton + ', ' + svj + '%, 1)');
+        nisa.style.setProperty('--mx-sjaj-2', 'hsla(' + ton + ', ' + Math.min(95, svj + 5) + '%, .4)');   // kupka: blijeđi nastavak sjaja
       }
       if (c.s > 0.6) {                                         // jako zasićeno staklo: sjaj uz rub blaži, da ne bude neon
         nisa.classList.add('mx-aura-zasicena');
