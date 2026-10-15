@@ -23,8 +23,8 @@
   //     (platno, stol i pozadina uzimaju boju točno s fotografije, pa su na
   //     njima i sjene). Prizor nastaje predmet po predmet (najprije flakon),
   //     polako se njiše da se vidi dubina, niz flakon prelazi sunčev odsjaj,
-  //     med teče, prašina lebdi u zraci sunca; ima gusti sloj točkica kao
-  //     Penhaligon's bočice (modul naxos/naxos.js, vidi naxos/README.md)
+  //     med teče; ima gusti sloj točkica kao Penhaligon's bočice, samo gušći
+  //     (modul naxos/naxos.js, vidi naxos/README.md)
   //   - prizor se (odozgo) rastopi u izmaglicu, a iz nje se slože logotipi
   //     parfemskih kuća, točno kao na slici u mapi marke/ (24 logotipa u tri
   //     stupca: Chanel, Hermès, Guerlain ... Lancôme, Estée Lauder), od
@@ -192,8 +192,8 @@
     tocakaBocicaMobitel: 64000,   // mobitel i tablet
     // Prizor Naxos ima najviše točkica (velik je: cijeli stol s predmetima i
     // pozadinom), isto podijeljenih na glavni i gusti sloj
-    tocakaNaxos: 200000,      // računalo
-    tocakaNaxosMobitel: 110000,   // mobitel i tablet
+    tocakaNaxos: 420000,      // računalo
+    tocakaNaxosMobitel: 170000,   // mobitel i tablet
 
     nagibPremaMisu: true,     // na računalu se objekt lagano nagne prema mišu
 
@@ -1352,9 +1352,9 @@
     //  prizoru i kod: normala, vrsta i skupina u jednom broju) i aNaxB (boja
     //  s fotografije i tvar: svjetlo, stražnja strana, jačina u jednom
     //  broju). Kao Penhaligon bočice, prizor ima više točkica od ostalih
-    //  oblika (P.tocakaNaxos): dio (n) je u glavnom spremniku i u prizor
-    //  dolazi iz izmaglice, a ostatak je u gustom sloju koji se crta samo
-    //  dok je prizor na ekranu (uSloj = 2). Prizor se u shaderu smanji,
+    //  oblika (P.tocakaNaxos, dvostruko gušće niti od ostalih): dio (n) je u
+    //  glavnom spremniku i u prizor dolazi iz izmaglice, a ostatak je u
+    //  gustom sloju koji se crta samo dok je prizor na ekranu (uSloj = 2). Prizor se u shaderu smanji,
     //  podigne i nagne (KOMP, POMAK, NAGIB iz modula) i gleda iz veće
     //  daljine (uCam) nego ostali oblici, pa pada točno na fotografiju.
     // ═══════════════════════════════════════════════════════════════════
@@ -1425,7 +1425,7 @@
         }
         if (p % 8 === 7) yield;
       }
-      return { podaci: out, gusti: gusti.subarray(0, 12 * g), brojGustih: g, ukupno: n + g, korak: r.korak, mlaz: r.mlaz, prasina: r.prasina };
+      return { podaci: out, gusti: gusti.subarray(0, 12 * g), brojGustih: g, ukupno: n + g, korak: r.korak, mlaz: r.mlaz };
     }
 
     // Prizor za zadane oblike (jednom); null ako nije dostupan.
@@ -1490,7 +1490,6 @@
       uniform float uAlphaPen; // jačina točkica Penhaligon bočica
       uniform float uAlphaNax; // jačina točkica prizora Naxos
       uniform vec4 uNaxA;      // prizor Naxos: smanjenje (KOMP), podizanje (POMAK), vrh i duljina mlaza meda
-      uniform vec4 uNaxB;      // prizor Naxos: dno i visina prašine u zraku
       uniform float uCam;      // udaljenost kamere (prizor Naxos se gleda iz veće daljine, kao fotografija)
       uniform vec3 uPenGore[5];    // boja stakla svake Penhaligon bočice pri vrhu tekućine
       uniform vec3 uPenDolje[5];   // ... i pri dnu
@@ -1740,8 +1739,8 @@
       bool je(float o, float broj) { return abs(o - broj) < 0.5; }
 
       // Prizor Naxos: podaci točkice iz koda aNax.w (vidi naxos/naxos.js)
-      float xVrsta = 0.0;      // vrsta: 0 obično, 1 flakon, 2 zlato, 3 platno i stol, 4 pozadina, 5 prašina, 6 med, 7 staklenka, 8 pločica, 9 mlaz meda
-      float xSkupina = 0.0;    // skupina (redoslijed nastanka: 0 flakon, 1 platno i stol, 2 pozadina, 3 staklenka ... 12 prašina)
+      float xVrsta = 0.0;      // vrsta: 0 obično, 1 flakon, 2 zlato, 3 platno i stol, 4 pozadina, 6 med, 7 staklenka, 8 pločica, 9 mlaz meda
+      float xSkupina = 0.0;    // skupina (redoslijed nastanka: 0 flakon, 1 platno i stol, 2 pozadina, 3 staklenka ... 11 cvjetovi); za pozadinu veličina točkice
       void naxPodaci() {
         float w = aNax.w + 0.5;
         float qx = floor(w / 65536.0);
@@ -1752,10 +1751,9 @@
         xSkupina = kg - xVrsta * 16.0;
       }
       // Prizor s fotografije: flakon na platnu sa sastojcima mirisa, svaka
-      // točkica svoje boje i tvari. Mlaz meda teče, prašina lebdi i svjetluca,
-      // niz flakon prelazi sunčev odsjaj, a pozadina (kameni zid, maslina) je
-      // zalijepljena za ekran: ne okreće se s prizorom, pa predmeti pred njom
-      // pokazuju dubinu
+      // točkica svoje boje i tvari. Mlaz meda teče, niz flakon prelazi sunčev
+      // odsjaj, a pozadina (kameni zid, maslina) je zalijepljena za ekran: ne
+      // okreće se s prizorom, pa predmeti pred njom pokazuju dubinu
       void naxos(out vec3 p, out vec3 n, out vec3 c, out float lit, out float back, out float jak) {
         float t = uTime;
         float w = aNax.w + 0.5;
@@ -1772,18 +1770,11 @@
         jak = (o2 - b1 * 256.0) / 255.0 * 4.0;
         c = aNaxB.xyz;
         p = aNax.xyz;
-        bool pozadina = je(xVrsta, 4.0), prasina = je(xVrsta, 5.0), mlaz = je(xVrsta, 9.0);
+        bool pozadina = je(xVrsta, 4.0), mlaz = je(xVrsta, 9.0);
         bool flakon = je(xVrsta, 1.0) || je(xVrsta, 2.0) || je(xVrsta, 8.0);
         if (mlaz) {                                                       // med teče: točkice putuju niz mlaz
           float h = fract((uNaxA.z - p.y) / max(uNaxA.w, 0.01) + t * 0.45);
           p.y = uNaxA.z - h * uNaxA.w;
-        }
-        if (prasina) {                                                    // prašina polako tone, njiše se i svjetluca u zraci sunca
-          float h = fract(aRnd.z + t * 0.006 * (0.4 + aRnd.y));
-          p.y = uNaxB.x + uNaxB.y * (1.0 - h);
-          p.x += 0.06 * sin(t * 0.23 + aRnd.x * 6.28);
-          p.z += 0.04 * sin(t * 0.19 + aRnd.w * 6.28);
-          jak *= 0.55 + 0.45 * sin(t * (0.6 + aRnd.w) + aRnd.x * 20.0);
         }
         if (flakon) {                                                     // sunčev odsjaj niz flakon (kao na ostalim bočicama)
           float dv = (p.y - uSweep.y) / 0.06;
@@ -1800,8 +1791,8 @@
       }
       // Nastanak prizora: redoslijed točkice (0 prva .. 1 zadnja) po skupini
       // (najprije flakon, pa platno i stol, pozadina, staklenka, žlica, limuni,
-      // cimet, vanilija, tonka, lavanda, duhan, cvjetovi, prašina), a u predmetu
-      // odozdo prema gore. Vraća napredak točkice (0..1) za slučajni broj r
+      // cimet, vanilija, tonka, lavanda, duhan, cvjetovi), a u predmetu odozdo
+      // prema gore. Vraća napredak točkice (0..1) za slučajni broj r
       float nastanakNaxosa(float r) {
         float vis = clamp((aNax.y + 0.9) / 2.6, 0.0, 1.0);
         float d = (0.055 * xSkupina + 0.12 * vis + 0.06 * r) * 0.8;
@@ -2127,7 +2118,7 @@
     const UNIFORME = ['uTime', 'uOd', 'uDo', 'uProg', 'uIntro', 'uExit', 'uRotA', 'uRotB', 'uPx', 'uCenter', 'uSize',
       'uSweep', 'uAlpha', 'uTxt', 'uSilver', 'uPowder', 'uGold', 'uSredina',
       'uMar', 'uPenKut', 'uAlphaPen', 'uPenGore', 'uPenDolje', 'uPenMjesto', 'uPenGlava', 'uSloj',
-      'uAlphaNax', 'uNaxA', 'uNaxB', 'uCam'];
+      'uAlphaNax', 'uNaxA', 'uCam'];
     const ATRIBUTI = [['aSph', 3, 0], ['aTxt', 3, 3], ['aRnd', 4, 6], ['aFla', 4, 10], ['aFlaN', 3, 14]];
     // jačina točkica (objekt, flakon, natpis) uz 26 000 točkica na računalu i
     // 16 000 na mobitelu; uz više točkica prva dva se smanje s gustoca^-0,65
@@ -2396,7 +2387,6 @@
         gl.uniform1f(U.uCam, CAM_ZADANO);
         gl.uniform1f(U.uAlphaNax, 0);
         gl.uniform4f(U.uNaxA, 1, 0, 0, 1);
-        gl.uniform4f(U.uNaxB, 0, 1, 0, 0);
         gl.disable(gl.DEPTH_TEST);
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE);           // točkice se zbrajaju (svjetlo)
@@ -2488,7 +2478,6 @@
         }
         const M = window.MX_NAXOS;
         gl.uniform4f(U.uNaxA, M.KOMP, M.POMAK, nn.mlaz.vrh, nn.mlaz.duljina);
-        gl.uniform4f(U.uNaxB, nn.prasina.dno, nn.prasina.visina, 0, 0);
         naxSpreman = true;
         velicina();                                   // jačina točkica prema njihovu broju
       }

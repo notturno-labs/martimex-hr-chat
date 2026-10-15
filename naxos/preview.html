@@ -16,6 +16,7 @@
 //   nagib=          nagib pogleda (rad; zadano kao u animaciji, NAX.NAGIB)
 //   w=460&h=700     veličina platna; S=175 px po jedinici prostora animacije
 //   foto=0.5        ispod točkica prikaži fotografiju (prozirnost), za provjeru poklapanja
+//   udio=0.75       udio boje s fotografije u boji predmeta (0 = samo opisane boje, 1 = samo fotografija)
 //   t=7             vrijeme (s) za treptaj i mlaz
 const Q = new URLSearchParams(location.search);
 const N = +(Q.get('n') || 200000);
@@ -23,6 +24,7 @@ const KUT = (+(Q.get('kut') || 0)) * Math.PI / 180;
 const W = +(Q.get('w') || 460), H = +(Q.get('h') || 700), Ssv = +(Q.get('S') || 175);
 const FOTO = +(Q.get('foto') || 0);
 const TT = +(Q.get('t') || 7);
+const UDIO = Q.get('udio') === null ? 0.75 : +Q.get('udio');
 const NAX = window.MX_NAXOS, FL = window.MX_POCETNA_FLAKON;
 const NAGIB = Q.get('nagib') ? +Q.get('nagib') : NAX.NAGIB;
 
@@ -49,7 +51,7 @@ function ucitajFont() { return document.fonts && document.fonts.load ? document.
     } else foto.style.display = 'none';
 
     const t0 = performance.now();
-    const gen = NAX.gradiKoraci({ n: N, flakon: FL.gradi, sirinaFlakona: FL.sirina, vrhCepa: FL.vrhCepa, OMJER: FL.OMJER });
+    const gen = NAX.gradiKoraci({ n: N, flakon: FL.gradi, sirinaFlakona: FL.sirina, vrhCepa: FL.vrhCepa, OMJER: FL.OMJER, foto: UDIO });
     let r = gen.next();
     while (!r.done) r = gen.next();
     const R = r.value;
@@ -61,7 +63,6 @@ function ucitajFont() { return document.fonts && document.fonts.load ? document.
       attribute vec4 aNax; attribute vec4 aNaxB; attribute vec4 aRnd;
       uniform mat3 uRot; uniform vec2 uPx; uniform vec2 uCenter; uniform float uSize, uAlpha, uTime, uCam;
       uniform vec4 uNaxA;   // KOMP, POMAK, mlaz vrh, mlaz duljina
-      uniform vec4 uNaxB;   // prašina dno, visina
       varying vec4 vCol;
       vec3 oktaedar(vec2 e) {
         vec3 v = vec3(e, 1.0 - abs(e.x) - abs(e.y));
@@ -81,13 +82,8 @@ function ucitajFont() { return document.fonts && document.fonts.load ? document.
         vec3 col = aNaxB.xyz;
         float t = uTime;
         vec3 p = aNax.xyz;
-        bool pozadina = abs(vrsta - 4.0) < 0.5, prasina = abs(vrsta - 5.0) < 0.5, mlaz = abs(vrsta - 9.0) < 0.5, tkanina = abs(vrsta - 3.0) < 0.5;
+        bool pozadina = abs(vrsta - 4.0) < 0.5, mlaz = abs(vrsta - 9.0) < 0.5, tkanina = abs(vrsta - 3.0) < 0.5;
         if (mlaz) { float h = fract((uNaxA.z - p.y) / uNaxA.w + t * 0.45); p.y = uNaxA.z - h * uNaxA.w; }
-        if (prasina) {
-          float h = fract(aRnd.z + t * 0.006 * (0.4 + aRnd.y));
-          p.y = uNaxB.x + uNaxB.y * (1.0 - h);
-          p.x += 0.06 * sin(t * 0.23 + aRnd.x * 6.28); p.z += 0.04 * sin(t * 0.19 + aRnd.w * 6.28);
-        }
         p = p * uNaxA.x + vec3(0.0, uNaxA.y, 0.0);
         mat3 R = uRot;
         if (pozadina) { mat3 Rt = mat3(R[0][0], R[1][0], R[2][0], R[0][1], R[1][1], R[2][1], R[0][2], R[1][2], R[2][2]); p = Rt * p; n = Rt * n; }
@@ -145,7 +141,6 @@ function ucitajFont() { return document.fonts && document.fonts.load ? document.
     gl.uniform1f(U('uTime'), TT);
     gl.uniform1f(U('uCam'), NAX.CAM);
     gl.uniform4f(U('uNaxA'), NAX.KOMP, NAX.POMAK, R.mlaz.vrh, R.mlaz.duljina);
-    gl.uniform4f(U('uNaxB'), R.prasina.dno, R.prasina.visina, 0, 0);
     // jačina kao u animaciji: 0,7 uz razmak niti 0,01728 na zaslonu (26 000 točkica flakona), gustoća^-0,65
     const gustoca = Math.pow(0.01728 / (R.korak * NAX.KOMP * Ssv / 175), 2);
     const jacina = 0.7 * Math.min(2, Math.max(0.25, Math.pow(gustoca, -0.65)));
