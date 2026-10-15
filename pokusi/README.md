@@ -106,16 +106,53 @@ svjetlosna mrlja, koja se lomi kroz staklo i obasja tekućinu).
   prašine), odlučiti učitava li se three.js s GitHuba (sada je u skripti) i ukloniti oznake za
   snimanje (`window.__mxPokus`, `window.__mxSkok`).
 
+## Naxos — mrtva priroda od točkica (`naxos/`)
+
+Prizor s fotografije Xerjoff 1861 Naxos (`naxos/izvor.webp`), iscrtan u istom stilu kao
+`pocetna-chata.js`: flakon stoji na jantarnom bloku na drvenom stolu, a oko njega su sastojci
+mirisa. Sve je od točkica u tankim vodoravnim nitima, s istim svjetlom, iskrama i treptajem i
+istom gustoćom niti na zaslonu kao flakon u animaciji, ali svaki predmet ima boje s fotografije.
+
+- `naxos/naxos.html` + `naxos/naxos.js`: samostalna stranica s rasporedom početnog ekrana (CSS je
+  prepisan iz `pocetna-chata.js`); ne treba Voiceflow ni martimex.hr. Flakon je prepisan iz
+  `pocetna-chata.js` (bjelokosno mutno staklo s medenom tekućinom, čep, prsten i pločica od
+  ružičastog zlata, kao na fotografiji).
+- Predmeti: saće sa šesterokutnim stanicama na tanjuru, tri štapića cimeta (smotana kora, brazda,
+  spirala na krajevima), bergamot s peteljkom i listom, buket lavande u kamenoj vazi vezan uzicom,
+  prerezani limun (kora, bijeli rub, kriške), zdjela meda s drvenom žlicom, dva cvijeta jasmina,
+  tri mahune vanilije, četiri zrna tonke, list duhana, brašno prosuto po stolu i prašina koja
+  lebdi u sunčevu svjetlu; stol su drvene daske u sunčevoj mrlji, koja prema rubu utone u tamu.
+- Kako se gradi (odjeljak GRADNJA PRIZORA u `naxos.js`): tijela koja se vrte oko osi iz profila
+  (`prsteni`: zdjela, tanjur, limun, vaza), cijevi duž krivulja (`cijev`: stabljike i cvjetovi
+  lavande, cimet, vanilija, žlica, uzica), plahte (`plahta`: list duhana, list bergamota, stol) i
+  SDF rezan u vodoravne niti (`rezSDF`: saće, jantarni blok, bergamot, jasmin, tonka); vodoravne
+  plohe (vrh bloka, latice, stanice saća) režu se i okomito, pa su i one od niti. Ispod predmeta
+  stol i tanjur nemaju točkica (`ZAKLON`), da se kroz predmete ne vidi podloga. Položaji su
+  izmjereni s fotografije (1 px ≈ 0,0035 jedinice, kamera gleda odozgo pod oko 26°) i stisnuti
+  po širini, da prizor stane u uski prozor chata.
+- Što se vidi: prizor se složi iz izmaglice (predmet po predmet, odozdo prema gore, oko 3,4 s),
+  zatim miruje: polako se njiše oko okomite osi (da se vidi dubina), na računalu se nagne prema
+  mišu, točkice trepere, niz flakon svakih 9 s prijeđe sunčev odsjaj, a prašina polako tone.
+  „Smanji pokrete”: miran prizor, bez pojave i njihanja.
+- Postavke su u `POSTAVKE` na vrhu `naxos.js`: boje predmeta (s fotografije), broj točkica
+  (`tocaka` 200 000 na računalu, `tocakaMobitel` 110 000; razmak niti se bira tako da prizor
+  ima toliko točkica, a jačina točkica se tome prilagodi kao u `pocetna-chata.js`), trajanje
+  pojave, njihanje i nagib prema mišu. Veličina i nagib prizora su u konstantama `KOMP`, `POMAK`,
+  `NAGIB` i `CAM` (odjeljak PRIZOR).
+- Gradnja traje oko 1,5 s na računalu (grubi i točni prolaz brojanja, pa gradnja), u malim
+  koracima, pa se prizor pokaže kad je gotov. Konzola ispiše broj točkica i razmak niti.
+
 ## Pregled i snimanje
 
 - `proba.html` glumi Voiceflowov prozor chata, pa se početni ekran vidi kao u pravom chatu:
   `proba.html?skripta=saturn/pocetna-chata-saturn.js`, `proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
-  (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije” se otvara izravno:
-  `kap/kap.html`.
+  (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije” i „Naxos” se otvaraju
+  izravno: `kap/kap.html`, `naxos/naxos.html`.
 - Kad je ova mapa na grani `main`, vidi se i na GitHub Pages:
   `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=saturn/pocetna-chata-saturn.js`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
-  i `https://notturno-labs.github.io/martimex-hr-chat/pokusi/kap/kap.html`.
+  , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/kap/kap.html`
+  i `https://notturno-labs.github.io/martimex-hr-chat/pokusi/naxos/naxos.html`.
 - `snimi.js` snima video sličicu po sličicu (vrijeme animacije teče točno 1/fps po sličici, pa je
   video gladak i na sporom računalu). Treba ffmpeg i Playwright (Chromium sa SwiftShaderom,
   nikad `playwright install`). Iz mape `pokusi/`:
@@ -125,6 +162,8 @@ svjetlosna mrlja, koja se lomi kroz staklo i obasja tekućinu).
     w=460 h=920 dpr=2 cekaj=kap`
   - Stvarno: `NODE_PATH=$(npm root -g) node snimi.js "skripta=stvarno/pocetna-chata-stvarno.js"
     stvarno.mp4 do=45 w=460 h=920 dpr=2 cekaj=stvarno`
+  - Naxos: `NODE_PATH=$(npm root -g) node snimi.js "x=1" naxos.mp4 stranica=naxos/naxos.html do=14
+    w=460 h=920 dpr=2 cekaj=naxos`
   - `slika=8,14` umjesto videa spremi slike u tim trenucima (izlaz je tada mapa); uz `skok=1`
     (samo stvarno/) animacija odmah skoči na te trenutke
 - Videi nisu u repozitoriju (veliki su); poslani su klijentu zasebno.
