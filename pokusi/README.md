@@ -108,39 +108,44 @@ svjetlosna mrlja, koja se lomi kroz staklo i obasja tekućinu).
 
 ## Naxos — mrtva priroda od točkica (`naxos/`)
 
-Prizor s fotografije Xerjoff 1861 Naxos (`naxos/izvor.webp`), iscrtan u istom stilu kao
-`pocetna-chata.js`: flakon stoji na jantarnom bloku na drvenom stolu, a oko njega su sastojci
-mirisa. Sve je od točkica u tankim vodoravnim nitima, s istim svjetlom, iskrama i treptajem i
-istom gustoćom niti na zaslonu kao flakon u animaciji, ali svaki predmet ima boje s fotografije.
+Prizor s fotografije Xerjoff 1861 Naxos (`naxos/izvor.webp`), gledan sprijeda kao na njoj i iscrtan
+u istom stilu kao `pocetna-chata.js`: flakon stoji na jantarnom bloku na drvenom stolu obasjanom
+suncem s prozora, a oko njega su sastojci mirisa. Sve je od točkica u tankim vodoravnim nitima, s
+istim iskrama i treptajem i istom gustoćom niti na zaslonu kao flakon u animaciji, ali svaki predmet
+ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
 
-- `naxos/naxos.html` + `naxos/naxos.js`: samostalna stranica s rasporedom početnog ekrana (CSS je
-  prepisan iz `pocetna-chata.js`); ne treba Voiceflow ni martimex.hr. Flakon je prepisan iz
-  `pocetna-chata.js` (bjelokosno mutno staklo s medenom tekućinom, čep, prsten i pločica od
-  ružičastog zlata, kao na fotografiji).
-- Predmeti: saće sa šesterokutnim stanicama na tanjuru, tri štapića cimeta (smotana kora, brazda,
-  spirala na krajevima), bergamot s peteljkom i listom, buket lavande u kamenoj vazi vezan uzicom,
-  prerezani limun (kora, bijeli rub, kriške), zdjela meda s drvenom žlicom, dva cvijeta jasmina,
-  tri mahune vanilije, četiri zrna tonke, list duhana, brašno prosuto po stolu i prašina koja
-  lebdi u sunčevu svjetlu; stol su drvene daske u sunčevoj mrlji, koja prema rubu utone u tamu.
-- Kako se gradi (odjeljak GRADNJA PRIZORA u `naxos.js`): tijela koja se vrte oko osi iz profila
-  (`prsteni`: zdjela, tanjur, limun, vaza), cijevi duž krivulja (`cijev`: stabljike i cvjetovi
-  lavande, cimet, vanilija, žlica, uzica), plahte (`plahta`: list duhana, list bergamota, stol) i
-  SDF rezan u vodoravne niti (`rezSDF`: saće, jantarni blok, bergamot, jasmin, tonka); vodoravne
-  plohe (vrh bloka, latice, stanice saća) režu se i okomito, pa su i one od niti. Ispod predmeta
-  stol i tanjur nemaju točkica (`ZAKLON`), da se kroz predmete ne vidi podloga. Položaji su
-  izmjereni s fotografije (1 px ≈ 0,0035 jedinice, kamera gleda odozgo pod oko 26°) i stisnuti
-  po širini, da prizor stane u uski prozor chata.
-- Što se vidi: prizor se složi iz izmaglice (predmet po predmet, odozdo prema gore, oko 3,4 s),
-  zatim miruje: polako se njiše oko okomite osi (da se vidi dubina), na računalu se nagne prema
-  mišu, točkice trepere, niz flakon svakih 9 s prijeđe sunčev odsjaj, a prašina polako tone.
-  „Smanji pokrete”: miran prizor, bez pojave i njihanja.
-- Postavke su u `POSTAVKE` na vrhu `naxos.js`: boje predmeta (s fotografije), broj točkica
-  (`tocaka` 200 000 na računalu, `tocakaMobitel` 110 000; razmak niti se bira tako da prizor
-  ima toliko točkica, a jačina točkica se tome prilagodi kao u `pocetna-chata.js`), trajanje
-  pojave, njihanje i nagib prema mišu. Veličina i nagib prizora su u konstantama `KOMP`, `POMAK`,
-  `NAGIB` i `CAM` (odjeljak PRIZOR).
-- Gradnja traje oko 1,5 s na računalu (grubi i točni prolaz brojanja, pa gradnja), u malim
-  koracima, pa se prizor pokaže kad je gotov. Konzola ispiše broj točkica i razmak niti.
+- `naxos/naxos.html` + `naxos/naxos.js` (motor) + `naxos/predmeti/*.js` (jedan predmet po datoteci):
+  samostalna stranica s rasporedom početnog ekrana (CSS je prepisan iz `pocetna-chata.js`); ne treba
+  Voiceflow ni martimex.hr. Flakon je prepisan iz `pocetna-chata.js` (bjelokosno mutno staklo s
+  medenom tekućinom, čep, prsten i pločica od ružičastog zlata, kao na fotografiji). Tehnički opis
+  motora i API za predmete je u `naxos/README.md`.
+- Predmeti: saće sa šesterokutnim stanicama na tanjuru, tri štapića cimeta, bergamot s peteljkom i
+  listom, buket lavande u kamenoj vazi vezan uzicom, prerezani limun, zdjela meda s drvenom žlicom,
+  dva cvijeta jasmina, tri mahune vanilije, četiri zrna tonke, list duhana, brašno prosuto po stolu,
+  prašina koja lebdi u sunčevu svjetlu, drveni stol sa sjenama predmeta i zid s prozorom iza.
+- Neprozirnost: prije crtanja točkica upiše se dubina prednjih ploha (svaka točkica kao malo veći
+  neprozirni krug), pa se vide samo točkice prednjih ploha, a što je iza predmeta zaklonjeno je;
+  flakon tako izgleda pun, zdjela pokazuje samo prednju stranu i unutrašnjost (postavka `neprozirno`).
+- Svjetlo kao na fotografiji: sunce s prozora straga lijevo (topli odsjaj, svijetli rub na strani
+  sunca, meke sjene na stolu pomaknute od prozora i kontaktne sjene uz predmete) i meko svjetlo
+  sprijeda. Kamera gleda sprijeda, malo odozgo (oko 19°), gotovo bez perspektive, kao nacrt;
+  položaji su izmjereni s fotografije (1 px ≈ 0,0035 jedinice) i stisnuti po širini, da prizor
+  stane u uski prozor chata (`pogled` u postavkama: nagib, udaljenost kamere, veličina, pomak, njihanje).
+- Kako se gradi: tijela koja se vrte oko osi iz profila (`prsteni`), cijevi duž krivulja (`cijev`),
+  plahte (`plahta`) i SDF rezan u vodoravne niti (`rezSDF`); vodoravne plohe režu se i okomito, pa su
+  i one od niti. Ispod predmeta stol i tanjur nemaju točkica (tlocrti predmeta).
+- Što se vidi: prizor se složi iz izmaglice (predmet po predmet, flakon zadnji, oko 3,4 s), zatim
+  miruje: tek se malo njiše, na računalu se nagne prema mišu, točkice trepere, niz flakon svakih 9 s
+  prijeđe sunčev odsjaj, a prašina polako tone. „Smanji pokrete”: miran prizor.
+- Postavke su u `POSTAVKE` na vrhu `naxos.js`: boje predmeta, broj točkica (`tocaka` 240 000 na
+  računalu, `tocakaMobitel` 130 000; razmak niti se bira tako da prizor ima toliko točkica, a jačina
+  točkica se tome prilagodi), pojava, pogled, neprozirnost, sjene, pozadina, nagib prema mišu.
+- Pregled pojedinog predmeta: `naxos/naxos.html?samo=limun` (više: `samo=limun,zdjela`; `stol=1`
+  doda stol i pozadinu), `zoom=2.5` (uvećano, u sredini), `kut=35` (okret prizora u stupnjevima),
+  `nagib=19`. `naxos/snimka.js` snimi sliku: `NODE_PATH=$(npm root -g) node snimka.js
+  "samo=limun&zoom=2&stol=1" limun.png t=9` (iz mape `naxos/`).
+- Gradnja traje oko 2 s na računalu (grubi i točni prolaz brojanja, pa gradnja), u malim koracima,
+  pa se prizor pokaže kad je gotov. Konzola ispiše broj točkica i razmak niti.
 
 ## Pregled i snimanje
 
