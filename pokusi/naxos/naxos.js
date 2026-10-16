@@ -999,8 +999,9 @@
       }
       // pojava: točkice doplove iz izmaglice iznad prizora, u vrtlogu,
       // predmet po predmet (aT), i zasvijetle kad sjednu na mjesto
+      float ki = 1.0;
       if (uIntro < 1.0) {
-        float ki = clamp((uIntro - 0.7 * aT - 0.03 * aRnd.y) / 0.3, 0.0, 1.0);
+        ki = clamp((uIntro - 0.7 * aT - 0.03 * aRnd.y) / 0.3, 0.0, 1.0);
         float e = 1.0 - pow(1.0 - ki, 3.0);
         vec3 izvor = p + normalize(vec3(aRnd.z, aRnd.w, aRnd.x) - 0.5 + 0.001) * (0.25 + 0.5 * aRnd.y) + vec3(0.0, 0.5, 0.0);
         izvor.xz = okreni(izvor.xz, (1.0 - e) * 0.7);
@@ -1022,7 +1023,7 @@
         // predprolaz: svaka točkica (osim prašine i brašna) je neprozirni krug
         // koji upisuje dubinu malo iza sebe, pa točkice iste plohe prolaze, a
         // one iza plohe ne
-        bool bez = prasina || brasno || alpha < 0.02;
+        bool bez = prasina || brasno || alpha < 0.02 || ki < 0.92;   // točkice koje još lete (izmaglica) ne zaklanjaju
         gl_PointSize = bez ? 0.0 : uSplat * persp;
         if (bez) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
         vCol = vec4(0.0);
