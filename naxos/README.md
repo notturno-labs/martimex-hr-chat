@@ -63,8 +63,12 @@ raspršenih točkica, samo predmeti, stol i pozadina.
 - **Zaklon**: točkice se zbrajaju bez dubine, pa što je iz kamere skriveno iza drugog predmeta
   (platno pod flakonom, pozadina iza limuna, limun iza polovice ...) nema točkica. Zakloni su
   jednostavna tijela (`zaklon`: flakon kao tijelo vrtnje, staklenka kao valjak do površine meda,
-  limuni kao elipsoidi, žlica i cimet kao kapsule, humak, tonka, cvjetovi), a točkica se provjeri
-  zrakom prema kameri (sphere tracing); vlastiti predmet se preskače.
+  limuni kao elipsoidi, žlica, cimet, vanilija i lavanda kao kapsule, humak, tonka, cvjetovi), a
+  točkica se provjeri zrakom prema kameri (sphere tracing, `doZaklona`); vlastiti predmet se
+  preskače. Pozadina ima meki rub zaklona (jačina pada 0,07 jedinice od ruba predmeta), pa se
+  pri njihanju prizora uz predmete ne otvaraju crne pruge. Neprozirni predmeti (limuni, cimet,
+  tonka, med, glava žlice, humak duhana) nemaju točkica na strani okrenutoj od kamere
+  (`odKamere`), pa se kroz njih ne vidi stražnja strana.
 - **Boje**: svaka točkica predmeta projicira se na fotografiju (`naSliku`) i uzme boju s tog
   mjesta (`fotoBoja`), stopljenu s bojom iz opisa predmeta (`BOJE`, sunce `osunceno`) u udjelu
   `FOTO_UDIO` (0,75; `preview.html?udio=`). Pretamni uzorak (točkica na rubu predmeta pada na
@@ -83,8 +87,9 @@ raspršenih točkica, samo predmeti, stol i pozadina.
 
 ## U animaciji (vidi `pocetna-chata.js`, odjeljak NAXOS)
 
-- Prizor ima najviše točkica (`tocakaNaxos`: 420 000 na računalu, 170 000 na mobitelu; niti su
-  mu zato oko dvostruko gušće nego kod ostalih oblika). Dio
+- Prizor ima najviše točkica (`tocakaNaxos`: 420 000 na računalu, 230 000 na mobitelu; niti su
+  mu zato oko dvostruko gušće nego kod ostalih oblika; platno i stol imaju rjeđe redove, jer se
+  gledaju ukoso, pa više točkica ode na predmete). Dio
   (koliko ima svaki oblik) je u glavnom spremniku, s atributima `aNax` i `aNaxB`, i u prizor
   dolazi iz izmaglice (nastanak kao kod Penhaligon's bočica: najprije flakon, pa platno i stol,
   pozadina, staklenka ... svaki predmet odozdo). Ostatak je u gustom sloju (`uSloj = 2`), koji se
@@ -92,8 +97,11 @@ raspršenih točkica, samo predmeti, stol i pozadina.
   kad se one rastope.
 - U pojasevima po visini na ekranu točkice dobiju ista mjesta kao slova natpisa, logotipi i
   bočice (`redX`), pa je prijelaz u logotipe kratak.
-- Prizor se njiše ±0,07 rad oko okomite osi (`NAX_NJIHANJE`), prema mišu se nagne upola manje
+- Prizor se njiše ±0,04 rad oko okomite osi (`NAX_NJIHANJE`), prema mišu se nagne upola manje
   (`NAX_MIS`); niz flakon svakih 4,5 s prijeđe sunčev odsjaj; mlaz meda teče.
+- Jačina točkica pada s gustoćom strmije nego kod ostalih oblika (gustoća^-0,8, `jacinaNax`),
+  a platno i stol, koji se gledaju ukoso pa im se točkice na zaslonu zbiju, shader dodatno
+  priguši; tako svijetle plohe ne izgore u bijelo.
 
 ## Pregled
 

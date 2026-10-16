@@ -60,12 +60,12 @@
     flakonLijevo: '#e4cfb7', flakonDesno: '#f8ecdc', flakonDno: '#dccdbe',            // bijelo mutno staklo: topla lijeva strana (odsjaj meda), svijetla desna
     zlato: '#cf9a46', zlatoSvjetlo: '#e8bd6a', zlatoTamno: '#8a5f2a', zlatoSjaj: '#f6dc98',   // čep i prsten
     vrhCepa: '#e8dec0', vrhCepaRub: '#f4ecd4',                                           // prozirni blijedožuti šiljak čepa
-    plocica: '#dcb46c', plocicaOkvir: '#e9cd93', znakX: '#f0cf86', slova: '#c7a068',     // pločica, okvir, znak X, natpis NAXOS
+    plocica: '#e2b25e', plocicaOkvir: '#ecd08f', znakX: '#f0cf86', slova: '#c7a068',     // pločica, okvir, znak X, natpis NAXOS
     staklenka: '#efdcb5', navoj: '#f6e6c4',                                              // staklo i navoji staklenke
-    med: '#f07a10', medTamno: '#9a6414', medPovrsina: '#eeab40', medSjaj: '#fbd27a',      // med u staklenki
+    med: '#f58a18', medTamno: '#a86a16', medPovrsina: '#f0b048', medSjaj: '#fbd27a',      // med u staklenki
     mlaz: '#e9a23a', mlazSjaj: '#fbe0a0',                                                // mlaz meda sa žlice
     zlicaDrvo: '#cfa374', zlicaTamno: '#8a5f3c', zlicaGlava: '#a86b3a', zlicaGlavaTamno: '#4a2a18', zlicaMed: '#c7781e',
-    limun: '#f0b422', limunSvjetlo: '#f8cc4a', limunSjena: '#cf8a0a',
+    limun: '#f0a818', limunSvjetlo: '#f6bc30', limunSjena: '#cf8206',
     limunMeso: '#c9922c', limunMesoSvjetlo: '#dfae48', limunOpna: '#f8ecc0', limunBijelo: '#f4e3b0', limunKora: '#e8c23a',
     list: '#4a5812', listSvjetlo: '#8a9a3a', listZila: '#a0b060', listTamno: '#303a0c', peteljka: '#9a7a40',
     cimet: '#a0602c', cimetSvjetlo: '#c58a4e', cimetTamno: '#6a3410', cimetKraj: '#b8743c',
@@ -239,13 +239,16 @@
   // Boja predmeta: boja s mjesta fotografije na koje se točkica projicira,
   // stopljena s bojom iz opisa predmeta (proc) u udjelu k. Pretamni uzorak
   // (točkica na rubu predmeta pada na tamnu pozadinu, ili je geometrija malo
-  // šira od predmeta na fotografiji) se ne uzima: tada ostaje opisana boja
+  // šira od predmeta na fotografiji) i presvijetli uzorak (tanki predmet na
+  // zamućenoj kopiji uzme boju platna pod sobom) se ne uzimaju: tada ostaje
+  // opisana boja
   let FOTO_UDIO = 0.75;
   function fotoBoja(T, proc, k) {
     if (!FOTO || !(k > 0)) return proc;
     const s = fotoNa([T.x, T.y, T.z], proc);
     const ls = 0.3 * s[0] + 0.59 * s[1] + 0.11 * s[2], lp = 0.3 * proc[0] + 0.59 * proc[1] + 0.11 * proc[2];
-    const w = sat(ls / Math.max(0.02, 0.5 * lp));
+    let w = sat(ls / Math.max(0.02, 0.5 * lp));
+    w *= sat((1.7 * lp - ls) / Math.max(0.05, 0.4 * lp));        // ni presvijetli (platno pod tankim predmetom: lavanda, vanilija)
     return mijesaj(proc, s, k * w);
   }
 
@@ -265,27 +268,38 @@
   // ═════════════════════════════════════════════════════════════════════
   const ZAKLONI = [];
   function zaklon(id, c, R, sdf) { ZAKLONI.push({ id: id, c: c, R: R, sdf: sdf }); }
-  function zaklonjen(T) {
+  // najmanja udaljenost zrake (od točkice prema kameri) do zaklona: 0 =
+  // zaklonjeno, Infinity = zraka ne prolazi ni blizu; uz meko > 0 zraka se
+  // prati i mimo zaklona do te udaljenosti (meki rub)
+  function doZaklona(T, meko) {
     const px = T.x, py = T.y, pz = T.z;
     let dx = KAMERA[0] - px, dy = KAMERA[1] - py, dz = KAMERA[2] - pz;
     const L = Math.hypot(dx, dy, dz) || 1;
     dx /= L; dy /= L; dz /= L;
+    let min = Infinity;
     for (let i = 0; i < ZAKLONI.length; i++) {
       const Z = ZAKLONI[i];
       if (Z.id === T.objekt) continue;
-      // obuhvatna kugla: siječe li je zraka
-      const ox = Z.c[0] - px, oy = Z.c[1] - py, oz = Z.c[2] - pz;
-      const b = ox * dx + oy * dy + oz * dz, c2 = ox * ox + oy * oy + oz * oz - Z.R * Z.R;
+      // obuhvatna kugla (proširena za meki rub): siječe li je zraka
+      const ox = Z.c[0] - px, oy = Z.c[1] - py, oz = Z.c[2] - pz, R = Z.R + (meko || 0);
+      const b = ox * dx + oy * dy + oz * dz, c2 = ox * ox + oy * oy + oz * oz - R * R;
       if (c2 > 0 && (b < 0 || b * b < c2)) continue;
       let t = 0.004;
-      const tMax = Math.min(L, b + Z.R + 0.01);
+      const tMax = Math.min(L, b + R + 0.01);
       for (let k = 0; k < 64 && t < tMax; k++) {
         const d = Z.sdf(px + dx * t, py + dy * t, pz + dz * t);
-        if (d < 0.0025) return true;
+        if (d < 0.0025) return 0;
+        if (d < min) min = d;
         t += Math.max(d, 0.004);
       }
     }
-    return false;
+    return min;
+  }
+  function zaklonjen(T) { return doZaklona(T, 0) <= 0; }
+  // ploha okrenuta od kamere (neprozirni predmeti je nemaju; mala rezerva za njihanje)
+  function odKamere(T) {
+    const dx = KAMERA[0] - T.x, dy = KAMERA[1] - T.y, dz = KAMERA[2] - T.z, l = Math.hypot(dx, dy, dz) || 1;
+    return (T.nx * dx + T.ny * dy + T.nz * dz) / l < -0.15;
   }
 
   // ═════════════════════════════════════════════════════════════════════
@@ -314,11 +328,14 @@
   }
   Skupljac.prototype.primi = function () {
     if (this.broji === 2) { if ((this.brojac++) % UZORAK) return; }
-    // zaklon: za pozadinu (mjesto u prostoru pogleda) se provjeri svjetsko mjesto
+    // zaklon: za pozadinu (mjesto u prostoru pogleda) se provjeri svjetsko
+    // mjesto, s mekim rubom (jačina pada prema rubu zaklona), da se pri
+    // njihanju prizora uz predmete ne otvore crne pruge
     if (T.pogled) {
       const p = izPogleda([T.x, T.y, T.z]);
-      const t2 = { x: p[0], y: p[1], z: p[2], objekt: T.objekt };
-      if (zaklonjen(t2)) return;
+      const d = doZaklona({ x: p[0], y: p[1], z: p[2], objekt: T.objekt }, 0.07);
+      if (d <= 0) return;
+      T.jak *= korakG(0, 0.07, d);
     } else if (zaklonjen(T)) return;
     if (this.broji) { this.n += this.broji === 2 ? UZORAK : 1; return; }
     if (!this.dio || this.poz >= this.dio.length) { this.dio = new Float32Array(VEL * 8192); this.dijelovi.push(this.dio); this.poz = 0; }
@@ -536,12 +553,12 @@
   //    (niti po okomitim i kosim plohama) i okomiti rezovi (niti po vodoravnim
   //    plohama). o: boja(T), h, osi ('y', 'z', 'yz'), tezina, bezDna
   function* rezSDF(S, sdf, ok, o) {
-    const h = o.h || S.korak * 0.45, e = h * 0.5, tez = o.tezina || 1, osi = o.osi || 'yz';
+    const h = o.h || S.korak * 0.45, e = h * 0.5, tez = o.tezina || 1, osi = o.osi || 'yz', kr = S.korak * (o.razmak || 1);
     function normala(x, y, z) {
       return norm3([sdf(x + e, y, z) - sdf(x - e, y, z), sdf(x, y + e, z) - sdf(x, y - e, z), sdf(x, y, z + e) - sdf(x, y, z - e)]);
     }
     if (osi.indexOf('y') >= 0) {
-      const k = Math.max(1, Math.round((ok[3] - ok[2]) / S.korak)), kk = (ok[3] - ok[2]) / k;
+      const k = Math.max(1, Math.round((ok[3] - ok[2]) / kr)), kk = (ok[3] - ok[2]) / k;
       for (let i = 0; i < k; i++) {
         const y = ok[2] + (i + 0.5) * kk;
         const d = rez2(function (u, v) { return sdf(u, y, v); }, ok[0], ok[1], ok[4], ok[5], h), segs = [];
@@ -558,7 +575,7 @@
       }
     }
     if (osi.indexOf('z') >= 0) {
-      const k = Math.max(1, Math.round((ok[5] - ok[4]) / S.korak)), kk = (ok[5] - ok[4]) / k;
+      const k = Math.max(1, Math.round((ok[5] - ok[4]) / kr)), kk = (ok[5] - ok[4]) / k;
       for (let i = 0; i < k; i++) {
         const z = ok[4] + (i + 0.5) * kk;
         const d = rez2(function (u, v) { return sdf(u, v, z); }, ok[0], ok[1], ok[2], ok[3], h), segs = [];
@@ -627,19 +644,19 @@
   // ═════════════════════════════════════════════════════════════════════
   // mjesta izmjerena na fotografiji (pikseli); vidi README
   const MJ = {
-    staklenka: { dno: [232, 700], r: 0.315 },                        // prednji rub dna staklenke
-    zlica: { glava: [218, 338], smjer: [-0.78, 0.60, 0.2], mlaz: 236 },   // sredina glave, smjer drške, x mlaza
-    limun1: { dno: [727, 662], r: [0.43, 0.38, 0.39] },
-    polovica: { dno: [805, 702], r: 0.38, lice: [-0.2, 0.3, 0.93] },
-    limun2: { dno: [925, 662], r: [0.40, 0.36, 0.36] },
+    staklenka: { dno: [232, 700], r: 0.38, vrh: 0.70, med: 0.41 },   // prednji rub dna staklenke, polumjer, visina usne i površine meda
+    zlica: { glava: [218, 338], smjer: [0.78, -0.60, -0.2], mlaz: [238, 500], R: 0.19, pola: 0.31 },   // sredina glave, smjer od drške prema vrhu glave, piksel mlaza, polumjer i pola duljine glave
+    limun1: { dno: [727, 645], r: [0.43, 0.40, 0.39] },
+    polovica: { dno: [790, 708], r: 0.35, lice: [-0.2, 0.3, 0.93] },
+    limun2: { dno: [915, 648], r: [0.36, 0.35, 0.36] },
     listA: { od: [790, 462], do: [618, 492] }, listB: { od: [800, 452], do: [866, 406] }, listC: { od: [905, 655], do: [1012, 696] },
     cimet: [[[604, 731], [772, 752], 1], [[742, 736], [872, 752], 1], [[658, 672], [864, 712], 2.7]],   // [od, do, visina u polumjerima]
     vanilija: [[[562, 762], [1000, 718]], [[588, 805], [905, 738]], [[700, 790], [985, 752]]],
-    tonka: [[298, 804, 0.0, 0.24, 0.11], [352, 793, -0.45, 0.2, 0.1], [328, 836, 0.5, 0.17, 0.1], [402, 833, 0.25, 0.25, 0.12], [455, 851, 0.35, 0.22, 0.11]],
+    tonka: [[298, 804, 0.0, 0.28, 0.14], [352, 793, -0.45, 0.26, 0.13], [372, 830, 0.5, 0.17, 0.12], [440, 812, 0.25, 0.36, 0.15], [445, 846, 0.35, 0.30, 0.13]],
     lavanda: [[[648, 838], [805, 793], [985, 790]], [[758, 848], [895, 820], [1015, 812]], [[862, 808], [962, 790], [1024, 785]]],
-    duhan: { sredina: [140, 745], r: [0.62, 0.42, 0.5] },
-    cvjetovi: { sredina: [355, 715], list1: [[380, 697], [288, 638]], list2: [[395, 690], [350, 628]],
-      cvijet: [[372, 688, 0.14, [0.2, 0.5, 0.84], 0.13], [318, 736, 0.06, [-0.3, 0.45, 0.84], 0.14], [368, 748, 0.08, [0.0, 0.5, 0.86], 0.15], [420, 735, 0.07, [0.5, 0.4, 0.77], 0.12]],
+    duhan: { sredina: [118, 748], r: [0.68, 0.44, 0.5] },
+    cvjetovi: { sredina: [355, 715], list1: [[380, 697], [262, 640]], list2: [[395, 690], [350, 628]],
+      cvijet: [[372, 688, 0.14, [0.2, 0.5, 0.84], 0.15], [318, 736, 0.06, [-0.3, 0.45, 0.84], 0.16], [368, 748, 0.08, [0.0, 0.5, 0.86], 0.17], [420, 735, 0.07, [0.5, 0.4, 0.77], 0.14]],
       pupoljci: [[300, 700], [296, 762], [405, 702]] },
     platno: { lijevo: 130, porub: [[130, 795], [1024, 872]] },
     stol: { rub: [[0, 896], [1024, 848]] },
@@ -672,7 +689,7 @@
             let col = mijesaj(C.flakonLijevo, C.flakonDesno, sat(0.5 + 0.6 * T.nx + 0.2 * T.ny));
             col = mijesaj(col, C.flakonDno, 0.6 * (1 - korakG(-0.86, -0.55, y)));
             if (m === 4) col = puta(col, 1.3);
-            tvar(col, 0.45, 0.3, m === 4 ? 1.9 : 1.4, V.FLAKON, SK.flakon, 1);
+            tvar(col, 0.3, 0.5, m === 4 ? 2.4 : 2.1, V.FLAKON, SK.flakon, 1);
           } else if (m === 1) {
             if (y > h0 + 0.002) {
               const col = mijesaj(C.vrhCepa, C.vrhCepaRub, Math.pow(1 - Math.abs(T.nz), 1.5));
@@ -682,9 +699,9 @@
               const a = Math.atan2(x, z);
               let col = mijesaj(C.zlatoTamno, C.zlatoSvjetlo, sat(0.5 - 0.6 * Math.sin(a - 0.35)));
               col = mijesaj(col, C.zlatoSjaj, Math.exp(-a * a / 0.03) * 0.8 + 0.25 * Math.exp(-(a - 1.0) * (a - 1.0) / 0.05));
-              tvar(col, 0.9, 0.28, 1.0, V.ZLATO, SK.flakon, 1);
+              tvar(col, 0.5, 0.6, 2.4, V.ZLATO, SK.flakon, 1);
             }
-          } else if (m === 2) tvar(mijesaj(C.plocica, C.plocicaOkvir, 0.2 + 0.3 * pjega(x, y, z, 30)), 0.35, 0.28, 1.8, V.PLOCICA, SK.flakon, 1);
+          } else if (m === 2) tvar(mijesaj(C.plocica, C.plocicaOkvir, 0.2 + 0.3 * pjega(x, y, z, 30)), 0.35, 0.28, 2.6, V.PLOCICA, SK.flakon, 1);
           else tvar(C.znakX, 0.35, 0.28, 0.85, V.PLOCICA, SK.flakon, 1);
           S.primi();
         }
@@ -711,9 +728,10 @@
       const prof = [[-0.86, 0.17], [-0.80, 0.25], [-0.52, 0.335], [-0.03, 0.395], [0.15, 0.37], [0.27, 0.30], [0.33, 0.22], [0.31, 0.16], [0.65, 0.16], [0.9, 0.0]];
       zaklon(1, [0, 0.0, 0], 1.0, function (x, y, z) {
         let r = 0;
+        const vrh = prof[prof.length - 1][0];
         if (y < prof[0][0]) return Math.hypot(Math.max(Math.hypot(x, z) - prof[0][1], 0), prof[0][0] - y);
+        if (y > vrh) return Math.hypot(Math.hypot(x, z), y - vrh);          // iznad šiljka: udaljenost do vrha (ne do ravnine)
         for (let i = 0; i < prof.length - 1; i++) if (y >= prof[i][0] && y <= prof[i + 1][0]) { r = lerp(prof[i][1], prof[i + 1][1], (y - prof[i][0]) / (prof[i + 1][0] - prof[i][0] || 1)); break; }
-        if (y > prof[prof.length - 1][0]) return y - prof[prof.length - 1][0];
         return Math.hypot(x, z) - r;
       });
     }
@@ -724,7 +742,7 @@
     //    valićima gdje pada mlaz, kapi meda niz grlo
     const STK = (function () {
       const d = izSlike(MJ.staklenka.dno[0], MJ.staklenka.dno[1], STOL), r = MJ.staklenka.r;
-      return { x: d[0], z: d[2] - r, r: r, med: 0.355, vrh: 0.61 };
+      return { x: d[0], z: d[2] - r, r: r, med: MJ.staklenka.med, vrh: MJ.staklenka.vrh };
     })();
     {
       const r = STK.r, rn = r * 0.86;
@@ -748,22 +766,23 @@
       });
       yield;
       // med: unutrašnji valjak do površine, pa površina s valićima oko mlaza
-      const xm = izSlike(MJ.zlica.mlaz, 760, STOL)[0];                      // x mlaza
+      const xm = izSlikeZ(MJ.zlica.mlaz[0], MJ.zlica.mlaz[1], STK.z)[0];     // x mlaza (na dubini staklenke)
       yield* prsteni(S, [[0.02, r * 0.93, 0], [STK.med - 0.02, r * 0.93, 0], [STK.med, r * 0.9, 1], [STK.med + 0.004, r * 0.6, 1], [STK.med + 0.006, 0.08, 1], [STK.med + 0.012, 0.02, 1], [STK.med + 0.012, 0, 1]], {
         pomak: [STK.x, STOL, STK.z],
         tezina: function (y, rr, ny, m) { return m ? 0.8 : 1; },
         boja: function (T, y, rr, a, ny, m) {
           if (m) {
             const dr = Math.hypot(T.x - xm, T.z - STK.z);
-            let col = mijesaj(C.medPovrsina, C.medSjaj, 0.3 + 0.4 * sat(0.5 + 0.5 * Math.cos(a - 2.3)));
-            col = mijesaj(col, C.medSjaj, 0.6 * Math.exp(-dr * dr / 0.004) + 0.3 * Math.pow(0.5 + 0.5 * Math.cos(dr * 90), 4) * korakG(0.16, 0.03, dr));
-            return tvar(col, 0.7, 0.6, 1.0, V.MED, SK.staklenka, 2);
+            let col = mijesaj(C.medPovrsina, C.medSjaj, 0.15 + 0.25 * sat(0.5 + 0.5 * Math.cos(a - 2.3)));
+            col = mijesaj(col, C.medSjaj, 0.5 * Math.exp(-dr * dr / 0.004) + 0.25 * Math.pow(0.5 + 0.5 * Math.cos(dr * 90), 4) * korakG(0.16, 0.03, dr));
+            return tvar(col, 0.7, 0.3, 0.8, V.MED, SK.staklenka, 2);
           }
+          if (odKamere(T)) return false;                                      // med je neproziran: bez stražnje stijenke
           const sja = sat(0.5 + 0.5 * Math.cos(a - 2.3));                    // sunce prolazi kroz med slijeva naprijed
-          let col = mijesaj(C.medTamno, C.med, 0.15 + 0.85 * sja);
-          col = mijesaj(col, C.medSjaj, 0.35 * Math.exp(-(y - STK.med + 0.03) * (y - STK.med + 0.03) / 0.002) * sja);
-          col = puta(col, 0.85 + 0.3 * pjega(T.x, T.y, T.z, 14));
-          return tvar(col, 0.75, 0.6, 1.25, V.MED, SK.staklenka, 2);
+          let col = mijesaj(C.medTamno, C.med, 0.1 + 0.7 * sja);
+          col = mijesaj(col, C.medSjaj, 0.12 * Math.exp(-(y - STK.med + 0.03) * (y - STK.med + 0.03) / 0.002) * sja);
+          col = puta(col, 0.93 + 0.14 * pjega(T.x, T.y, T.z, 14));
+          return tvar(col, 0.75, 0.12, 1.7, V.MED, SK.staklenka, 2);
         }
       });
       // kapi meda niz unutrašnjost grla i vanjsku stijenku (sprijeda lijevo)
@@ -783,9 +802,9 @@
     //    odozdo, drška ukoso gore lijevo izvan kadra; s dna glave curi mlaz
     //    meda u staklenku (u shaderu teče)
     const ZL = (function () {
-      const g = izSlikeZ(MJ.zlica.glava[0], MJ.zlica.glava[1], STK.z), d = norm3(MJ.zlica.smjer);
-      const xm = izSlike(MJ.zlica.mlaz, 760, STOL)[0];
-      return { c: g, d: d, R: 0.17, pola: 0.27, mlazX: xm, mlazVrh: g[1] - 0.165, mlazDno: STOL + STK.med + 0.004 };
+      const g = izSlikeZ(MJ.zlica.glava[0], MJ.zlica.glava[1], STK.z), d = norm3(MJ.zlica.smjer);   // d: od drške prema oblom vrhu glave (dolje desno)
+      const xm = izSlikeZ(MJ.zlica.mlaz[0], MJ.zlica.mlaz[1], STK.z)[0];
+      return { c: g, d: d, R: MJ.zlica.R, pola: MJ.zlica.pola, mlazX: xm, mlazVrh: g[1] - 0.23, mlazDno: STOL + STK.med + 0.004 };
     })();
     {
       const c = ZL.c, d = ZL.d, R = ZL.R, H = ZL.pola;
@@ -799,13 +818,14 @@
       yield* cijev(S, function (t) { const s = lerp(-H, H, t); return [c[0] + d[0] * s, c[1] + d[1] * s, c[2] + d[2] * s]; }, {
         r: function (t) { return Math.max(0.004, polumjer(2 * t - 1)); }, gusto: 0.9,
         boja: function (T, t, a, rr) {
-          const dolje = sat(-T.ny * 1.3), svj = osunceno(T), g = (t * 5) % 1, brazda = korakG(0.35, 0.5, Math.abs(g - 0.5) * 2) * 0.0 + (1 - korakG(0.86, 1, rr / R));
-          let col = mijesaj(C.zlicaGlavaTamno, C.zlicaGlava, 0.3 + 0.7 * svj);
-          col = mijesaj(col, C.zlicaGlavaTamno, 0.5 * brazda);
+          if (odKamere(T)) return false;                                      // neprozirno drvo
+          const dolje = sat(-T.ny * 1.3), svj = osunceno(T), brazda = 1 - korakG(0.86, 1, rr / R);
+          let col = mijesaj(C.zlicaGlavaTamno, C.zlicaGlava, 0.5 + 0.5 * svj);
+          col = mijesaj(col, C.zlicaGlavaTamno, 0.25 * brazda);
           col = puta(col, 0.85 + 0.3 * pjega(t * 9, a * 0.6, 1, 1));
           col = mijesaj(col, C.zlicaMed, 0.75 * dolje);                        // ulivena medom
           col = mijesaj(col, C.mlazSjaj, 0.35 * dolje * Math.pow(Math.max(0, T.nz), 3));
-          return tvar(col, 0.8, 0.4, 1.0, V.OBICNO, SK.zlica, 3);
+          return tvar(col, 0.7, 0.4, 1.9, V.OBICNO, SK.zlica, 3);
         }
       });
       // drška: ravan štap od glave prema gore lijevo (izvan kadra se utopi)
@@ -822,10 +842,10 @@
       // mlaz meda: s dna glave okomito u staklenku; gore širi (sloj meda koji se odvaja), dolje tanka nit
       const vrh = [ZL.mlazX, ZL.mlazVrh, STK.z], dno = [ZL.mlazX, ZL.mlazDno, STK.z];
       yield* cijev(S, function (t) { return [vrh[0] + 0.004 * Math.sin(t * 7), lerp(vrh[1], dno[1], t), vrh[2]]; }, {
-        r: function (t, a) { return 0.009 + 0.03 * Math.pow(1 - t, 2.2) * (1 + 0.25 * Math.cos(2 * a)); }, gusto: 0.8,
+        r: function (t, a) { return 0.014 + 0.03 * Math.pow(1 - t, 2.2) * (1 + 0.25 * Math.cos(2 * a)); }, gusto: 0.8,
         boja: function (T, t, a) {
           const col = mijesaj(C.mlaz, C.mlazSjaj, 0.25 + 0.5 * Math.pow(1 - Math.abs(T.nz - 0.6), 2));
-          return tvar(col, 0.5, 0.75, 1.1, V.MLAZ, SK.zlica, 3);
+          return tvar(col, 0.5, 0.75, 1.6, V.MLAZ, SK.zlica, 3);
         }
       });
       // kapi koje vise s dna glave
@@ -837,7 +857,8 @@
           boja: function (T) { return tvar(mijesaj(C.mlaz, C.mlazSjaj, 0.3), 0.5, 0.7, 1.0, V.MED, SK.zlica, 3); }
         });
       }
-      zaklon(3, c, H + R, function (x, y, z) { return sdKapsula(x, y, z, [c[0] - d[0] * H * 0.75, c[1] - d[1] * H * 0.75, c[2] - d[2] * H * 0.75], [c[0] + d[0] * H * 0.75, c[1] + d[1] * H * 0.75, c[2] + d[2] * H * 0.75], R * 0.96); });
+      const HZ = Math.max(0.02, H - R * 0.96);                                // kapsula zaklona završava točno na krajevima glave
+      zaklon(3, c, H + R, function (x, y, z) { return sdKapsula(x, y, z, [c[0] - d[0] * HZ, c[1] - d[1] * HZ, c[2] - d[2] * HZ], [c[0] + d[0] * HZ, c[1] + d[1] * HZ, c[2] + d[2] * HZ], R * 0.96); });
       zaklon(3, [(A[0] + Bq[0]) / 2, (A[1] + Bq[1]) / 2, (A[2] + Bq[2]) / 2], Math.hypot(A[0] - Bq[0], A[1] - Bq[1], A[2] - Bq[2]) / 2 + 0.05, function (x, y, z) { return sdKapsula(x, y, z, A, Bq, 0.04); });
     }
     yield;
@@ -855,13 +876,14 @@
         return sdElipsoid(p[0], p[1], p[2], rx, R[1], R[2]) - brad - kv;
       };
       yield* rezSDF(S, sdf, [c[0] - R[0] - 0.08, c[0] + R[0] + 0.08, c[1] - R[1] - 0.02, c[1] + R[1] + 0.05, c[2] - R[2] - 0.05, c[2] + R[2] + 0.05], {
-        osi: 'y',
+        osi: 'y', razmak: 0.5,
         boja: function (T) {
+          if (odKamere(T)) return false;                                      // neprozirno voće
           const svj = osunceno(T);
           let col = mijesaj(C.limunSjena, C.limun, 0.4 + 0.6 * svj);
           col = mijesaj(col, C.limunSvjetlo, 0.6 * Math.pow(svj, 3));
           col = puta(col, 0.9 + 0.2 * pjega(T.x, T.y, T.z, 90));
-          return tvar(col, 0.7, 0.1, 0.9, V.OBICNO, skupina, id);
+          return tvar(col, 0.7, 0.0, 0.75, V.OBICNO, skupina, id);
         }
       });
       zaklon(id, c, Math.max(R[0], R[1], R[2]) + 0.02, function (x, y, z) { const p = lok(x, y, z); return sdElipsoid(p[0], p[1], p[2], R[0], R[1], R[2]); });
@@ -879,9 +901,10 @@
       for (let k = 10; k >= 0; k--) { const f = (k + 0.3) / 10.3 * Math.PI / 2; prof.push([-R * Math.sin(f), R * Math.cos(f), 0]); }
       prof.push([0, R, 1], [0, R * 0.985, 2], [0, 0, 2]);
       yield* prsteni(S, prof, {
-        M: M, pomak: c, tezina: function (y, r, ny, m) { return m === 2 ? 0.75 : 1; },
+        M: M, pomak: c, tezina: function (y, r, ny, m) { return 1; },
         boja: function (T, y, r, a, ny, m) {
           let col;
+          if (m !== 2 && odKamere(T)) return false;                           // kora straga se ne vidi
           if (m === 2) {
             const rr = r / R, seg = 10, ka = (a * seg / (2 * Math.PI) + 0.3) % 1, opna = Math.min(ka, 1 - ka) * 2 * Math.PI * rr * R / seg;
             let jak = 1.1;
@@ -893,7 +916,7 @@
           const svj = osunceno(T);
           col = mijesaj(C.limunSjena, C.limun, 0.4 + 0.6 * svj);
           col = mijesaj(col, C.limunSvjetlo, m === 1 ? 0.4 : 0.5 * Math.pow(svj, 3));
-          return tvar(puta(col, 0.9 + 0.2 * pjega(T.x, T.y, T.z, 90)), 0.7, 0.1, 0.9, V.OBICNO, SK.limuni, 5);
+          return tvar(puta(col, 0.9 + 0.2 * pjega(T.x, T.y, T.z, 90)), 0.7, 0.0, 0.9, V.OBICNO, SK.limuni, 5);
         }
       });
       // opne među kriškama kao radijalne niti po prerezu, i bijeli rub
@@ -953,7 +976,7 @@
     // ── 5. štapići cimeta: tri smotana štapića (po duljini brazda smotka,
     //    spirala kore na krajevima), dva na platnu i jedan preko njih
     for (let i = 0; i < MJ.cimet.length; i++) {
-      const k = MJ.cimet[i], r0 = 0.07, y = STOL + r0 * k[2];
+      const k = MJ.cimet[i], r0 = 0.095, y = STOL + r0 * k[2];
       const A = izSlike(k[0][0], k[0][1], y), Bq = izSlike(k[1][0], k[1][1], y);
       const f0 = [0.9, 2.6, -0.7][i];
       const put = function (t) { return [lerp(A[0], Bq[0], t), y, lerp(A[2], Bq[2], t)]; };
@@ -964,6 +987,7 @@
       yield* cijev(S, put, {
         r: polumjer, gusto: 1.0,
         boja: function (T, t, a, r) {
+          if (odKamere(T)) return false;                                      // neprozirna kora
           const brazda = korakG(r0 * 0.97, r0 * 0.86, r), svj = osunceno(T);
           let col = mijesaj(C.cimet, C.cimetSvjetlo, 0.2 + 0.6 * svj + 0.25 * pjega(t * 7 + i, a * 0.5, i, 1.0));
           col = mijesaj(col, C.cimetTamno, brazda);
@@ -993,11 +1017,12 @@
     for (let i = 0; i < MJ.vanilija.length; i++) {
       const k = MJ.vanilija[i], y = STOL + 0.016, A = izSlike(k[0][0], k[0][1], y), Bq = izSlike(k[1][0], k[1][1], y);
       const Cq = [(A[0] + Bq[0]) / 2 + (i - 1) * 0.04, y, (A[2] + Bq[2]) / 2 + [0.06, -0.05, 0.04][i]];
-      yield* cijev(S, function (t) {
+      const put = function (t) {
         const p = kvadratna(A, Cq, Bq, t), kuka = Math.exp(-t * t / 0.004);          // uvijeni kraj se diže i savija natrag
-        return [p[0] + 0.03 * kuka, p[1] + 0.045 * kuka * (1 - t), p[2] + 0.02 * Math.sin(t * 11)];
-      }, {
-        r: function (t, a) { return 0.019 * (1 - 0.45 * Math.pow(t, 6)) * (1 + 0.12 * Math.cos(3 * a + t * 50)) * (0.6 + 0.4 * korakG(0, 0.03, t)); }, spljosti: 0.6, gusto: 1.2,
+        return [p[0] + 0.045 * kuka, p[1] + 0.06 * kuka * (1 - t), p[2] + 0.02 * Math.sin(t * 11)];
+      };
+      yield* cijev(S, put, {
+        r: function (t, a) { return 0.032 * (1 - 0.45 * Math.pow(t, 6)) * (1 + 0.12 * Math.cos(3 * a + t * 50)) * (0.6 + 0.4 * korakG(0, 0.03, t)); }, spljosti: 0.6, gusto: 1.2,
         boja: function (T, t, a) {
           const svj = osunceno(T);
           let col = mijesaj(C.vanilija, C.vanilijaSvjetlo, 0.2 + 0.5 * svj + 0.3 * pjega(t * 40 + i, a * 0.8, i, 1));
@@ -1005,6 +1030,11 @@
           return tvar(col, 0.9, 0.4, 1.0, V.OBICNO, SK.vanilija, 20 + i);
         }
       });
+      // zaklon: tri kapsule duž svinute mahune (platno pod njom nema točkica)
+      for (let q = 0; q < 3; q++) {
+        const a = put(q / 3), b = put((q + 1) / 3), sr = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
+        zaklon(20 + i, sr, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 2 + 0.04, function (x, y2, z) { return sdKapsula(x, y2, z, a, b, 0.026); });
+      }
     }
     yield;
 
@@ -1013,18 +1043,19 @@
       const k = MJ.tonka[i], c = izSlike(k[0], k[1], STOL + 0.04), lok = uLokalno(matrica(k[2]), c), L = k[3] / 2, W = k[4] / 2;
       const sdf = function (x, y, z) {
         const p = lok(x, y, z);
-        return sdElipsoid(p[0], p[1], p[2], L, 0.042, W) - 0.005 * sum(p[0] * 60 + i, p[1] * 60, p[2] * 60) - 0.004 * Math.abs(Math.sin(p[0] * 70 + 2 * sum(p[0] * 15, p[1] * 15, p[2] * 15)));
+        return sdElipsoid(p[0], p[1], p[2], L, 0.06, W) - 0.005 * sum(p[0] * 60 + i, p[1] * 60, p[2] * 60) - 0.004 * Math.abs(Math.sin(p[0] * 70 + 2 * sum(p[0] * 15, p[1] * 15, p[2] * 15)));
       };
-      yield* rezSDF(S, sdf, [c[0] - L - 0.02, c[0] + L + 0.02, c[1] - 0.05, c[1] + 0.06, c[2] - L - 0.02, c[2] + L + 0.02], {
+      yield* rezSDF(S, sdf, [c[0] - L - 0.02, c[0] + L + 0.02, c[1] - 0.07, c[1] + 0.08, c[2] - L - 0.02, c[2] + L + 0.02], {
         h: S.korak * 0.3, bezDna: true,
         boja: function (T) {
+          if (odKamere(T)) return false;
           const svj = osunceno(T), rub = Math.pow(1 - Math.abs(T.nz), 1.5);
           let col = mijesaj(C.tonka, C.tonkaSvjetlo, 0.3 + 0.6 * pjega(T.x, T.y, T.z, 40) * (0.4 + 0.6 * svj));
-          col = mijesaj(col, C.tonkaRub, 0.7 * rub * (0.3 + 0.7 * svj));
-          return tvar(col, 1.0, 0.25, 1.1, V.OBICNO, SK.tonka, 30 + i);
+          col = mijesaj(col, C.tonkaRub, 0.3 * rub * (0.3 + 0.7 * svj));
+          return tvar(col, 1.0, 0.25, 0.9, V.OBICNO, SK.tonka, 30 + i);
         }
       });
-      zaklon(30 + i, c, L + 0.02, function (x, y, z) { const p = lok(x, y, z); return sdElipsoid(p[0], p[1], p[2], L, 0.042, W); });
+      zaklon(30 + i, c, L + 0.02, function (x, y, z) { const p = lok(x, y, z); return sdElipsoid(p[0], p[1], p[2], L, 0.06, W); });
     }
     yield;
 
@@ -1037,16 +1068,17 @@
       yield* cijev(S, function (t) { return [lerp(H0[0], H1[0], t), y + 0.01 * Math.sin(t * 5 + i), lerp(H0[2], H1[2], t)]; }, {
         r: function (t, a) {
           const cvj = Math.abs(Math.cos(Math.PI * t * nCv)), tanak = 1 - 0.5 * korakG(0, 0.12, 1 - t) * 0;
-          return (0.012 + 0.04 * (0.4 + 0.6 * cvj) * (0.7 + 0.3 * korakG(0, 0.2, t))) * (1 + 0.2 * Math.cos(2 * a + f0 + t * 9)) * tanak;
+          return (0.012 + 0.055 * (0.4 + 0.6 * cvj) * (0.7 + 0.3 * korakG(0, 0.2, t))) * (1 + 0.2 * Math.cos(2 * a + f0 + t * 9)) * tanak;
         }, spljosti: 0.75, gusto: 0.85,
         boja: function (T, t, a, r) {
           const cvj = Math.abs(Math.cos(Math.PI * t * nCv)), svj = osunceno(T);
           let col = mijesaj(C.lavandaTamno, C.lavanda, 0.3 + 0.7 * svj);
           col = mijesaj(col, C.lavandaSvjetlo, 0.5 * cvj * svj + 0.2 * pjega(t * 30, a * 1.5, i, 1));
           if (cvj < 0.25) col = mijesaj(col, C.caska, 0.5);
-          return tvar(col, 0.75, 0.45, 1.25, V.OBICNO, SK.lavanda, 40 + i);
+          return tvar(col, 0.75, 0.2, 0.8, V.OBICNO, SK.lavanda, 40 + i);
         }
       });
+      zaklon(40 + i, [(H0[0] + H1[0]) / 2, y, (H0[2] + H1[2]) / 2], Math.hypot(H1[0] - H0[0], H1[2] - H0[2]) / 2 + 0.05, function (x, y2, z) { return sdKapsula(x, y2, z, [H0[0], y, H0[2]], [H1[0], y, H1[2]], 0.03); });
       yield* cijev(S, function (t) { return [lerp(H1[0], S1[0], t), y - 0.012 + 0.008 * Math.sin(t * 4), lerp(H1[2], S1[2], t)]; }, {
         r: function () { return 0.011; },
         boja: function (T, t) { return tvar(mijesaj(C.stabljika, C.caska, 0.3 * pjega(t * 20, i, 1, 1)), 0.7, 0.4, 0.9, V.OBICNO, SK.lavanda, 40 + i); }
@@ -1055,7 +1087,7 @@
     }
     // raspršeni cvjetići lavande po platnu
     for (let i = 0; i < 16; i++) {
-      const px = i < 9 ? 545 + rnd() * 120 : 690 + rnd() * 230, py = i < 9 ? 845 + rnd() * 45 : 805 + rnd() * 70;
+      const px = i < 9 ? 545 + rnd() * 120 : 690 + rnd() * 230, py = Math.min(i < 9 ? 845 + rnd() * 45 : 805 + rnd() * 70, 896 - 48 * px / 1024 - 10);   // ne preko ruba stola
       const c = izSlike(px, py, STOL + 0.012), kut = rnd() * Math.PI, lok = uLokalno(matrica(kut), c);
       yield* rezSDF(S, function (x, y, z) { const p = lok(x, y, z); return sdElipsoid(p[0], p[1], p[2], 0.022, 0.011, 0.012); },
         [c[0] - 0.03, c[0] + 0.03, c[1] - 0.015, c[1] + 0.015, c[2] - 0.03, c[2] + 0.03], {
@@ -1070,46 +1102,48 @@
     const DUH = (function () { const c = izSlike(MJ.duhan.sredina[0], MJ.duhan.sredina[1], STOL); return { c: [c[0], STOL + 0.02, c[2]], R: MJ.duhan.r }; })();
     {
       const c = DUH.c, R = DUH.R;
+      const ry = function (x) { return R[1] * (1 - 0.4 * sat((x - c[0]) / R[0])); };   // vrh lijevo, humak pada udesno
       const sdf = function (x, y, z) {
         const kv = 0.06 * sum(x * 4, y * 4, z * 4) + 0.025 * sum(x * 11 + 3, y * 11, z * 11) + 0.01 * sum(x * 30, y * 30, z * 30);
-        return sdElipsoid(x - c[0], y - c[1], z - c[2], R[0], R[1], R[2]) - kv;
+        return sdElipsoid(x - c[0], y - c[1], z - c[2], R[0], ry(x), R[2]) - kv;
       };
       yield* rezSDF(S, sdf, [c[0] - R[0] - 0.1, c[0] + R[0] + 0.1, STOL + 0.005, c[1] + R[1] + 0.1, c[2] - R[2] - 0.1, c[2] + R[2] + 0.1], {
-        osi: 'y', tezina: 0.8,
+        osi: 'yz', tezina: 0.6,
         boja: function (T) {
+          if (odKamere(T)) return false;
           const svj = osunceno(T);
-          let col = mijesaj(C.duhanCrno, C.duhan, 0.1 + 0.6 * svj * svj);
+          let col = mijesaj(C.duhanTamno, C.duhan, 0.3 + 0.6 * svj);
           col = mijesaj(col, C.duhanSvjetlo, 0.3 * Math.pow(svj, 3) * pjega(T.x, T.y, T.z, 25));
-          col = puta(col, 0.75 + 0.4 * pjega(T.x, T.y, T.z, 60));
-          return tvar(col, 0.55, 0.35, 0.55, V.OBICNO, SK.duhan, 7);
+          col = puta(col, 0.95 + 0.4 * pjega(T.x, T.y, T.z, 60));
+          return tvar(col, 0.5, 0.35, 1.1, V.OBICNO, SK.duhan, 7);
         }
       });
       yield;
       // trake: uvijeni komadi lista po površini humka
-      for (let i = 0; i < 26; i++) {
+      for (let i = 0; i < 50; i++) {
         const a = rnd() * 2 * Math.PI, rr = Math.sqrt(rnd()) * 0.95;
         const px0 = c[0] + R[0] * rr * Math.cos(a), pz0 = c[2] + R[2] * rr * Math.sin(a);
         // visina humka na tom mjestu (pretraga po y)
         let yh = STOL;
         for (let y = c[1] + R[1] + 0.1; y > STOL; y -= 0.01) if (sdf(px0, y, pz0) < 0) { yh = y; break; }
         const kut = rnd() * Math.PI, d = [Math.cos(kut), 0, Math.sin(kut)], e = [-d[2], 0, d[0]];
-        const L = 0.18 + 0.3 * rnd(), W = 0.025 + 0.035 * rnd(), uvoj = 0.04 + 0.08 * rnd(), nag = (rnd() - 0.5) * 0.4, s0 = rnd() * 7;
+        const L = 0.12 + 0.2 * rnd(), W = 0.025 + 0.035 * rnd(), uvoj = 0.015 + 0.03 * rnd(), nag = (rnd() - 0.5) * 0.2, s0 = rnd() * 7;
         yield* plahta(S, function (u, v) {
           const s = 2 * v - 1, uu = 2 * u - 1;
           const y = yh + 0.01 + uvoj * (s * s * 0.6 + uu * uu * 0.4) + nag * uu * L + 0.012 * Math.sin(uu * 9 + s0);
           return [px0 + d[0] * L * uu + e[0] * W * s, y, pz0 + d[2] * L * uu + e[2] * W * s];
         }, {
-          gore: true, razmak: 0.8,
+          gore: true, razmak: 1.2,
           boja: function (T, u, v) {
             const svj = osunceno(T);
             let col = mijesaj(C.duhanTamno, C.duhanSvjetlo, 0.1 + 0.6 * svj * (0.5 + 0.5 * pjega(u * 5 + s0, v * 3, i, 1)));
             if (Math.abs(((v * 5) % 1) - 0.5) < 0.07) col = mijesaj(col, C.duhanTamno, 0.4);
-            return tvar(col, 0.6, 0.35, 0.55, V.OBICNO, SK.duhan, 7);
+            return tvar(col, 0.35, 0.35, 0.45, V.OBICNO, SK.duhan, 7);
           }
         });
         if (i % 11 === 10) yield;
       }
-      zaklon(7, c, Math.max(R[0], R[2]) + 0.05, function (x, y, z) { return sdElipsoid(x - c[0], y - c[1], z - c[2], R[0] * 0.98, R[1] * 0.95, R[2] * 0.98); });
+      zaklon(7, c, Math.max(R[0], R[2]) + 0.05, function (x, y, z) { return sdElipsoid(x - c[0], y - c[1], z - c[2], R[0] * 0.98, ry(x) * 0.95, R[2] * 0.98); });
     }
     yield;
 
@@ -1132,12 +1166,12 @@
             const r = 0.03 + u * (Rl - 0.03), dig = 0.012 * sv * sv + 0.07 * u * u;
             return [c[0] + dl[0] * r + e[0] * w * sv + up[0] * dig, c[1] + dl[1] * r + e[1] * w * sv + up[1] * dig, c[2] + dl[2] * r + e[2] * w * sv + up[2] * dig];
           }, {
-            gore: true, razmak: 0.5,                                                      // latice su uske: gušće niti, da budu pune
+            gore: true, razmak: 1.0,
             boja: function (T, u, v) {
               const svj = osunceno(T);
               let col = mijesaj(C.laticaSjena, C.latica, 0.4 + 0.6 * svj);
               col = mijesaj(col, C.prasnici, 0.25 * (1 - korakG(0.05, 0.3, u)));           // uz sredinu žućkasto
-              return tvar(col, 0.4, 0.55, 1.0, V.OBICNO, SK.cvjetovi, 50);
+              return tvar(col, 0.3, 0.55, 1.3, V.OBICNO, SK.cvjetovi, 50);
             }
           });
         }
@@ -1183,14 +1217,14 @@
         const x = lerp(X0, X1, u), z = lerp(ZD, Math.min(PL.porub(x), PL.rub(x)), v);
         return [x, sjeme(x, z), z];
       }, {
-        gore: true, poprijeko: 0.45, tezina: 0.9,
+        gore: true, poprijeko: 0.3, tezina: 0.9, razmak: 1.6,            // vodoravna ploha gledana pod ~18°: redovi se na zaslonu zbiju, pa su rjeđi
         boja: function (T, u, v) {
           const x = T.x, z = T.z;
           if (z > PL.porub(x) - 0.01 || (x < PL.lijevo && z > -0.75)) return false;           // izvan platna
           const col = fotoNa([x, T.y, z], [0.85, 0.75, 0.6]);
-          const jak = 0.9 * (1 - korakG(-2.4, ZD + 0.05, z)) * (1 - korakG(2.0, 2.5, Math.abs(x)));
+          const jak = 1.6 * (1 - korakG(-2.4, ZD + 0.05, z)) * (1 - korakG(2.0, 2.5, Math.abs(x)));
           if (jak < 0.03) return false;
-          return tvar(puta(col, 1.05), 0.3, 0.6, jak, V.TKANINA, SK.stol, 0);
+          return tvar(col, 0.3, 0.6, jak, V.TKANINA, SK.stol, 0);
         }
       });
       yield;
@@ -1200,7 +1234,7 @@
         r: function (t, an) { return 0.026 * (1 + 0.1 * Math.cos(an)); }, spljosti: 0.8,
         boja: function (T, t) {
           const col = mijesaj(fotoNa([T.x, T.y, T.z], C.porub), C.porub, 0.45 + 0.4 * sat(T.ny));
-          return tvar(col, 0.45, 0.5, 1.0 * (1 - korakG(2.0, 2.5, Math.abs(T.x))), V.TKANINA, SK.stol, 0);
+          return tvar(col, 0.45, 0.5, 0.8 * (1 - korakG(2.0, 2.5, Math.abs(T.x))), V.TKANINA, SK.stol, 0);
         }
       });
       // lijevi rub platna (kratki zavinuti rub ispred duhana)
@@ -1231,7 +1265,7 @@
         const x = lerp(X0, X1, u), z0 = x < PL.lijevo ? -0.75 : PL.porub(x), z = lerp(Math.min(z0, PL.rub(x)), PL.rub(x), v);
         return [x, STOL - 0.012 + 0.003 * sum(x * 3, z * 25, 2), z];
       }, {
-        gore: true, tezina: 0.8, razmak: 1.1,
+        gore: true, tezina: 0.8, razmak: 2.2,
         boja: function (T, u, v) {
           const x = T.x, z = T.z;
           if (z < -0.75 && x < PL.lijevo) return false;
@@ -1276,7 +1310,7 @@
       };
       const jacina = function (px, py) {
         const sx = (px - KAM_PX0) * KAM_K, sy = KAM_SY0 + (KAM_PY0 - py) * KAM_K;
-        return (1 - korakG(0.72, 1.0, Math.abs(sx))) * (1 - korakG(0.62, 1.1, sy)) * korakG(MJ.obzor + 25, MJ.obzor - 40, py);
+        return (1 - korakG(1.05, 1.3, Math.abs(sx))) * (1 - korakG(0.95, 1.22, sy)) * korakG(MJ.obzor + 25, MJ.obzor - 40, py);
       };
       const zapis = function (T, px, py, jak, vrsta, velicina) {
         const q = uPogledu(px, py);
@@ -1286,31 +1320,23 @@
         T.pogled = true;
         return true;
       };
-      // redovi niti preko cijele pozadine (razmak 6 px fotografije, malo više
-      // od razmaka niti u prizoru: pozadina je izvan oštrine), u boji
-      // fotografije: lijevo kameni zid (kamen po kamen malo drukčije
-      // svjetline, fuge tamnije), desno maslina, tegle i nebo, a svjetlije
-      // mrlje (bokeh) su jače i krupnije točkice
-      const XZID = 440;
-      for (let py = 6; py < MJ.obzor + 20; py += 6) {
-        const red = Math.floor(py / 72), pom = (red & 1) ? 75 : 0;
+      // redovi niti preko cijele pozadine (razmak 5 px fotografije, malo više
+      // od razmaka niti u prizoru: pozadina je izvan oštrine), široki kao
+      // stol (izvan fotografije se nastavlja rubna boja), u boji fotografije:
+      // lijevo kameni zid, desno maslina, tegle i nebo; svjetlije mrlje
+      // (osunčani kamen, bokeh masline) su jače i krupnije točkice
+      const PX0 = -120, PX1 = 1144;
+      for (let py = 5; py < MJ.obzor + 20; py += 5) {
+        const red = Math.floor(py / 5);
         S.nit(function (u, T) {
-          const px = u * 1024;
+          const px = PX0 + u * (PX1 - PX0);
           const col = foto(px, py), svj = 0.3 * col[0] + 0.59 * col[1] + 0.11 * col[2];
-          let jak = jacina(px, py) * 0.62 * (0.7 + 0.6 * pjega(px * 0.05, py * 0.05, red, 1));
-          let vel = 2;
-          if (px < XZID) {
-            const kamen = Math.floor((px + pom) / 150), fuga = Math.abs(((py / 72) % 1) - 0.5) > 0.46 || Math.abs((((px + pom) / 150) % 1) - 0.5) > 0.47;
-            jak *= (0.75 + 0.5 * hash3(kamen, red, 1)) * (fuga ? 0.5 : 1);
-          } else {
-            const bokeh = korakG(0.5, 0.8, svj);
-            jak *= 0.9 + 0.8 * bokeh;
-            vel = Math.min(15, Math.round(2 + 9 * bokeh));
-          }
+          const bokeh = korakG(0.45, 0.8, svj);
+          const jak = jacina(px, py) * 1.2 * (0.85 + 0.3 * pjega(px * 0.05, py * 0.05, red, 1)) * (0.9 + 0.2 * hash3(Math.floor(px / 40), red, 1)) * (0.9 + 0.5 * bokeh);
           if (jak < 0.02) return false;
-          return zapis(T, px, py, jak, V.POZADINA, vel);
-        }, 1024 * KAM_K * sk / KOMP, 0.9, false);
-        if (py % 60 === 0) yield;
+          return zapis(T, px, py, jak, V.POZADINA, Math.min(10, Math.round(3 + 6 * bokeh)));
+        }, (PX1 - PX0) * KAM_K * sk / KOMP, 0.9, false);
+        if (py % 50 === 0) yield;
       }
     }
 

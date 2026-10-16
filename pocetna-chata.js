@@ -193,7 +193,7 @@
     // Prizor Naxos ima najviše točkica (velik je: cijeli stol s predmetima i
     // pozadinom), isto podijeljenih na glavni i gusti sloj
     tocakaNaxos: 420000,      // računalo
-    tocakaNaxosMobitel: 170000,   // mobitel i tablet
+    tocakaNaxosMobitel: 230000,   // mobitel i tablet
 
     nagibPremaMisu: true,     // na računalu se objekt lagano nagne prema mišu
 
@@ -1359,7 +1359,7 @@
     //  daljine (uCam) nego ostali oblici, pa pada točno na fotografiju.
     // ═══════════════════════════════════════════════════════════════════
     const CAM_ZADANO = 4.2;        // udaljenost kamere za ostale oblike
-    const NAX_NJIHANJE = 0.07;     // prizor se njiše oko okomite osi (rad), da se vidi dubina
+    const NAX_NJIHANJE = 0.04;     // prizor se njiše oko okomite osi (rad), da se vidi dubina (malo: pozadina stoji)
     const NAX_MIS = 0.5;           // nagib prema mišu je za prizor upola manji (pozadina stoji)
 
     // Modul (jednom); null ako ga nema
@@ -1795,7 +1795,8 @@
       // prema gore. Vraća napredak točkice (0..1) za slučajni broj r
       float nastanakNaxosa(float r) {
         float vis = clamp((aNax.y + 0.9) / 2.6, 0.0, 1.0);
-        float d = (0.055 * xSkupina + 0.12 * vis + 0.06 * r) * 0.8;
+        float sk = je(xVrsta, 4.0) ? 2.0 : xSkupina;                        // (pozadini polje skupine nosi veličinu točkice)
+        float d = (0.055 * sk + 0.12 * vis + 0.06 * r) * 0.8;
         return clamp((clamp((uProg - 0.3) / 0.7, 0.0, 1.0) * 1.3 - d) / 0.3, 0.0, 1.0);
       }
 
@@ -2100,6 +2101,8 @@
         // 1 / |nz|), a papir ukoso ne smije zasvijetliti kao bijela crta;
         // poleđina se vidi kroz tekućinu, pa je još tamnija
         treptaj *= mix(1.0, clamp(abs(nq.z) * 1.1, 0.1, 1.0) * (nq.z < 0.0 ? 0.6 : 1.0), papir);
+        // platno i stol prizora Naxos gledani ukoso: točkice se na zaslonu zbiju, pa se priguše (kao papir)
+        if (uPrizoru > 0.5 && je(xVrsta, 3.0)) treptaj *= clamp(abs(nq.z) * 3.0, 0.65, 1.0);
         vCol = vec4(col * mix(1.0, svjetlo, lit) * lice, alpha * treptaj * dubina);
       }
     `;
@@ -2593,9 +2596,11 @@
         // prizor Naxos: jačina prema razmaku niti na zaslonu (mjera je flakon s
         // 26 000 točkica: razmak 0,01728 jedinice uz S = 175; uz gušće niti
         // slabije, s gustoća^-0,65 kao ostali oblici)
+        // (strmije nego kod ostalih oblika, -0,8: niti su gušće od piksela, pa bi
+        // se svijetle plohe inače zbrojile u bijelo)
         if (naxPodaci && window.MX_NAXOS) {
           const gustocaNax = Math.pow(0.01728 / (naxPodaci.korak * window.MX_NAXOS.KOMP * povecanje * S / 175), 2);
-          jacinaNax = JACINA_NAX * Math.min(2, Math.max(0.25, Math.pow(gustocaNax, -0.65)));
+          jacinaNax = JACINA_NAX * Math.min(2, Math.max(0.2, Math.pow(gustocaNax, -0.8)));
         }
         pasMar = sh / 2 / S;
         mjereMarki();

@@ -103,6 +103,7 @@ function ucitajFont() { return document.fonts && document.fonts.load ? document.
         float dubina = mix(1.0, clamp(0.78 + 0.25 * q.z, 0.45, 1.1), lit);
         float treptaj = 0.84 + 0.16 * sin(t * (1.5 + 2.0 * aRnd.w) + aRnd.y * 40.0);
         treptaj = mix(treptaj, 1.0 + 1.1 * max(0.0, sin(t * 2.1 + aRnd.x * 50.0)), iskra);
+        if (tkanina) treptaj *= clamp(abs(nq.z) * 3.0, 0.65, 1.0);   // platno i stol gledani ukoso (kao u pocetna-chata.js)
         vCol = vec4(col * mix(1.0, svjetlo, lit) * lice, uAlpha * jak * treptaj * dubina);
       }`;
     const FS = `precision mediump float; varying vec4 vCol; void main() { vec2 d = gl_PointCoord * 2.0 - 1.0; float r = dot(d, d); if (r > 1.0) discard; gl_FragColor = vec4(vCol.rgb, vCol.a * (1.0 - 0.6 * r)); }`;
@@ -141,9 +142,9 @@ function ucitajFont() { return document.fonts && document.fonts.load ? document.
     gl.uniform1f(U('uTime'), TT);
     gl.uniform1f(U('uCam'), NAX.CAM);
     gl.uniform4f(U('uNaxA'), NAX.KOMP, NAX.POMAK, R.mlaz.vrh, R.mlaz.duljina);
-    // jačina kao u animaciji: 0,7 uz razmak niti 0,01728 na zaslonu (26 000 točkica flakona), gustoća^-0,65
+    // jačina kao u animaciji: 0,7 uz razmak niti 0,01728 na zaslonu (26 000 točkica flakona), gustoća^-0,8 (kao jacinaNax u pocetna-chata.js)
     const gustoca = Math.pow(0.01728 / (R.korak * NAX.KOMP * Ssv / 175), 2);
-    const jacina = 0.7 * Math.min(2, Math.max(0.25, Math.pow(gustoca, -0.65)));
+    const jacina = 0.7 * Math.min(2, Math.max(0.2, Math.pow(gustoca, -0.8)));
     gl.uniform1f(U('uAlpha'), +(Q.get('alpha') || jacina));
     gl.drawArrays(gl.POINTS, 0, n);
     window.__info = { n: R.n, korak: R.korak, jacina: jacina };
