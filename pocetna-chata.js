@@ -3,7 +3,20 @@
   //  MARTIMEX — početni ekran chata s Marti (v3)
   //
   //  Kad se chat otvori, umjesto praznog Voiceflow prozora prikaže se
-  //  početni ekran na crnoj podlozi:
+  //  početni ekran na crnoj podlozi. Animacija na njemu bira se u
+  //  POSTAVKAMA (animacija):
+  //
+  //   'razlijetanje' (zadano): fotografija sastojaka mirisa (limun s
+  //     listovima, med, saće, kora limete, bijeli cvjetovi) izrezana u
+  //     ~40 komada. Komadi doplove iz tame i slože se u prizor, prizor
+  //     lebdi, zatim se komadi razlete uz prskanje kapi meda, u usporenoj
+  //     snimci lebde i prevrću se (bliži su mutni kao kod objektiva), pa se
+  //     vrate i ponovno slože; krug se ponavlja. Nakon "POČETAK" komadi
+  //     odlete prema van i nestanu. Modul razlijetanje/razlijetanje.js
+  //     (Canvas 2D; vidi razlijetanje/README.md). Ako se modul ne učita,
+  //     prikaže se animacija od točkica ('tocke')
+  //
+  //   'tocke': animacija od točkica:
   //
   //   - u sredini "živi" AI objekt od tisuća svjetlećih točkica složenih
   //     u tanke linije, kao metalna tkanina: polako se okreće,
@@ -165,7 +178,15 @@
       natpis: 5,              // natpis MARTIMEX miruje (preko njega polako prijeđe meki sjaj)
       prijelaz: 2.4           // svaki ostali prijelaz iz oblika u oblik
     },
-    ponavljaj: true,          // false → animacija stane na natpisu MARTIMEX
+    ponavljaj: true,          // false → animacija stane na natpisu MARTIMEX (razlijetanje: stane složeno nakon jednog kruga)
+
+    // Koja animacija je na početnom ekranu:
+    // 'razlijetanje' → fotografija sastojaka mirisa (limun, med, saće, cvjetovi):
+    //                  komadi se slože, razlete i ponovno slože (modul
+    //                  razlijetanje/razlijetanje.js, vidi razlijetanje/README.md)
+    // 'tocke'        → animacija od točkica: objekt, flakon, prizor Naxos,
+    //                  logotipi, Penhaligon's bočice i natpis MARTIMEX
+    animacija: 'razlijetanje',
 
     // Logotipi parfemskih kuća (marke/marke.js) između flakona i Penhaligon's
     // bočica (false → krug bez njih)
@@ -2787,6 +2808,49 @@
 
 
     // ═══════════════════════════════════════════════════════════════════
+    //  RAZLIJETANJE — fotografija sastojaka koja se razleti i ponovno složi
+    //  (modul razlijetanje/razlijetanje.js; postavka animacija:
+    //  'razlijetanje'). Ima isti oblik kao napraviAnimaciju. Modul se učita
+    //  pri pripremi; ako se ne učita, početni ekran ima animaciju od točkica
+    // ═══════════════════════════════════════════════════════════════════
+    let RAZ_MODUL = null;
+    function ucitajRazlijetanje() {
+      if (RAZ_MODUL) return RAZ_MODUL;
+      const v = '?v=' + Math.floor(Date.now() / 60000);
+      RAZ_MODUL = (window.MX_RAZLIJETANJE ? Promise.resolve(true) : ucitajSkriptu(BAZA + 'razlijetanje/razlijetanje.js' + v))
+        .then(function () { return window.MX_RAZLIJETANJE && window.MX_RAZLIJETANJE.napravi ? window.MX_RAZLIJETANJE : null; });
+      return RAZ_MODUL;
+    }
+
+    function napraviRazlijetanje(platno, scena, dogadaji) {
+      let pravi = null, unisteno = false, priprema = null, misX = 0, misY = 0;
+      function pripremi() {
+        if (priprema) return priprema;
+        priprema = ucitajRazlijetanje().then(function (M) {
+          if (unisteno) return false;
+          if (M) pravi = M.napravi(platno, scena, dogadaji, { mirno: MIRNO, ponavljaj: P.ponavljaj, velicina: VELICINA });
+          else {
+            console.warn('[Martimex] Modul razlijetanje.js nije učitan – početni ekran s animacijom od točkica');
+            pravi = napraviAnimaciju(platno, scena, dogadaji);
+          }
+          pravi.mis(misX, misY);
+          return pravi.pripremi();
+        });
+        return priprema;
+      }
+      return {
+        pripremi: pripremi,
+        velicina: function () { if (pravi) pravi.velicina(); },
+        ispocetka: function () { return pripremi().then(function () { return pravi ? pravi.ispocetka() : false; }); },
+        stani: function () { if (pravi) pravi.stani(); },
+        mis: function (x, y) { misX = x; misY = y; if (pravi) pravi.mis(x, y); },
+        izlaz: function (gotovo) { if (pravi) pravi.izlaz(gotovo); else gotovo(); },
+        unisti: function () { unisteno = true; if (pravi) pravi.unisti(); }
+      };
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════
     //  STIL — ide u shadow root chata
     // ═══════════════════════════════════════════════════════════════════
     const CSS = `
@@ -3246,7 +3310,7 @@
       korijen.appendChild(dno);
 
       let otvoreno = false, izlazi = false;
-      const anim = napraviAnimaciju(platno, prostor, {
+      const anim = (P.animacija === 'razlijetanje' ? napraviRazlijetanje : napraviAnimaciju)(platno, prostor, {
         bezAnimacije: function () { korijen.classList.add('mx-p-bez-gl'); },
         podnaslov: function (da) { korijen.classList.toggle('mx-p-podnaslov-da', da); },
         mjere: function (ispod) { korijen.style.setProperty('--mx-p-ispod', ispod + 'px'); },
