@@ -7,7 +7,9 @@ svaka točkica u boji s fotografije: preslika fotografije u 3D. **U animaciji je
 i logotipa: flakon se rastopi u izmaglicu, iz nje nastane prizor
 (predmet po predmet, najprije flakon), prizor miruje i polako se njiše, pa se odozgo rastopi u
 dim iz kojeg se slože logotipi. `pocetna-chata.js` sam učita `naxos.js` iz ove mape (tek kad su
-ostali oblici gotovi) i gradi prizor u malim koracima; ako se ne učita, krug je bez njega.
+ostali oblici gotovi) i gradi prizor u malim koracima, prije logotipa i Penhaligon's bočica; ako
+se ne učita, ako se fotografija u njemu ne dekodira ili grafička kartica nema devet vertex
+atributa, krug je bez njega.
 Uključuje se i podešava u `MX_POCETNA_POSTAVKE` (`naxos`, `trajanje.nastanakNaxosa`,
 `trajanje.naxos`, `trajanje.rastapanjeNaxosa`, `tocakaNaxos`, `tocakaNaxosMobitel`).
 
@@ -82,8 +84,9 @@ raspršenih točkica, samo predmeti, stol i pozadina.
   skupina 4 bita), boja (rgb) i kod tvari (svjetlo, stražnja strana, jačina; po 8 bitova).
   Vrste (`VRSTE`): obično, flakon, zlato, platno i stol (bez iskri), pozadina (zalijepljena za
   ekran, bez iskri, svjetlije mrlje krupnije), med, staklenka, pločica, mlaz (teče). Skupine
-  (`SKUPINE`) su redoslijed nastanka: flakon, platno i stol, pozadina, staklenka, žlica, limuni,
-  cimet, vanilija, tonka, lavanda, duhan, cvjetovi.
+  (`SKUPINE`) su redoslijed nastanka: flakon, staklenka, žlica, limuni, cimet, vanilija, tonka,
+  lavanda, duhan, cvjetovi, a platno, stol i pozadina nastaju zadnji (u njima su rupe gdje ih
+  predmeti zaklanjaju, pa dolaze kad su predmeti već na mjestu).
 
 ## U animaciji (vidi `pocetna-chata.js`, odjeljak NAXOS)
 
@@ -91,8 +94,8 @@ raspršenih točkica, samo predmeti, stol i pozadina.
   mu zato oko dvostruko gušće nego kod ostalih oblika; platno i stol imaju rjeđe redove, jer se
   gledaju ukoso, pa više točkica ode na predmete). Dio
   (koliko ima svaki oblik) je u glavnom spremniku, s atributima `aNax` i `aNaxB`, i u prizor
-  dolazi iz izmaglice (nastanak kao kod Penhaligon's bočica: najprije flakon, pa platno i stol,
-  pozadina, staklenka ... svaki predmet odozdo). Ostatak je u gustom sloju (`uSloj = 2`), koji se
+  dolazi iz izmaglice (nastanak kao kod Penhaligon's bočica: najprije flakon, pa staklenka,
+  žlica, limuni ... svaki predmet odozdo, a platno, stol i pozadina na kraju). Ostatak je u gustom sloju (`uSloj = 2`), koji se
   crta samo dok je prizor na ekranu: pojavi se kad onamo sjednu točkice glavnog sloja i nestane
   kad se one rastope.
 - U pojasevima po visini na ekranu točkice dobiju ista mjesta kao slova natpisa, logotipi i

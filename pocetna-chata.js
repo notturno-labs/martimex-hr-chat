@@ -154,7 +154,7 @@
       pojava: 1.6,            // točkice se iz izmaglice skupe u AI objekt
       objekt: 3.4,            // živi AI objekt
       flakon: 4.4,            // flakon po uzoru na Xerjoff 1861 (Naxos): nastane malo okrenut ulijevo i jednoliko se okreće
-      nastanakNaxosa: 4.4,    // flakon se rastopi u izmaglicu, a iz nje nastane prizor Naxos (predmet po predmet)
+      nastanakNaxosa: 5.5,    // flakon se rastopi u izmaglicu, a iz nje nastane prizor Naxos (predmet po predmet)
       naxos: 8,               // prizor Naxos stoji i polako se njiše (niz flakon prelazi sunčev odsjaj, med teče)
       rastapanjeNaxosa: 3.4,  // prizor se (odozgo) rastopi u dim, a iz njega se slože logotipi
       nastanakMarki: 3.6,     // flakon (ili prizor) se rastopi u izmaglicu, a iz nje se slože logotipi (logotip po logotip)
@@ -1300,7 +1300,9 @@
         : function (f) { setTimeout(f, 16); };
       return new Promise(function (gotovo, greska) {
         function dio(rok) {
-          const kraj = performance.now() + 8;
+          // koliko smije trajati: 8 ms, ili koliko preglednik javi da stanka traje (do 24 ms)
+          const budzet = rok && rok.timeRemaining && !rok.didTimeout ? Math.max(8, Math.min(24, rok.timeRemaining() - 1)) : 8;
+          const kraj = performance.now() + budzet;
           try {
             for (;;) {
               if (prekid && prekid()) { gotovo(null); return; }
@@ -1359,6 +1361,7 @@
     //  daljine (uCam) nego ostali oblici, pa pada točno na fotografiju.
     // ═══════════════════════════════════════════════════════════════════
     const CAM_ZADANO = 4.2;        // udaljenost kamere za ostale oblike
+    let NAX_MOGUC = true;          // false: grafička kartica nema 9 vertex atributa (WebGL 1 jamči 8), pa je krug bez prizora
     const NAX_NJIHANJE = 0.04;     // prizor se njiše oko okomite osi (rad), da se vidi dubina (malo: pozadina stoji)
     const NAX_MIS = 0.5;           // nagib prema mišu je za prizor upola manji (pozadina stoji)
 
@@ -1374,7 +1377,10 @@
         const font = document.fonts && document.fonts.load
           ? Promise.race([document.fonts.load('600 100px ' + P.fontNatpisa, 'NAXOS').catch(function () {}), new Promise(function (r) { setTimeout(r, 2500); })])
           : Promise.resolve();
-        return font.then(function () { return M.pripremi(); }).then(function () { return M; });
+        return font.then(function () { return M.pripremi(); }).then(function (ok) {
+          if (ok === false) { console.warn('[Martimex] Početni ekran bez prizora Naxos: fotografija u modulu se nije učitala'); return null; }
+          return M;
+        });
       }).catch(function () { return null; });
       return NAX_MODUL;
     }
@@ -1742,11 +1748,11 @@
       float xVrsta = 0.0;      // vrsta: 0 obično, 1 flakon, 2 zlato, 3 platno i stol, 4 pozadina, 6 med, 7 staklenka, 8 pločica, 9 mlaz meda
       float xSkupina = 0.0;    // skupina (redoslijed nastanka: 0 flakon, 1 platno i stol, 2 pozadina, 3 staklenka ... 11 cvjetovi); za pozadinu veličina točkice
       void naxPodaci() {
-        float w = aNax.w + 0.5;
+        float w = aNax.w;                        // (cijeli broj < 2^24, u float32 točan)
         float qx = floor(w / 65536.0);
         float ost = w - qx * 65536.0;
         float qy = floor(ost / 256.0);
-        float kg = ost - qy * 256.0;
+        float kg = floor(ost - qy * 256.0 + 0.5);
         xVrsta = floor(kg / 16.0);
         xSkupina = kg - xVrsta * 16.0;
       }
@@ -1756,18 +1762,18 @@
       // okreće se s prizorom, pa predmeti pred njom pokazuju dubinu
       void naxos(out vec3 p, out vec3 n, out vec3 c, out float lit, out float back, out float jak) {
         float t = uTime;
-        float w = aNax.w + 0.5;
+        float w = aNax.w;
         float qx = floor(w / 65536.0);
         float ost = w - qx * 65536.0;
         float qy = floor(ost / 256.0);
         n = oktaedar(vec2(qx, qy) / 127.5 - 1.0);
-        float w2 = aNaxB.w + 0.5;
+        float w2 = aNaxB.w;
         float l1 = floor(w2 / 65536.0);
         float o2 = w2 - l1 * 65536.0;
         float b1 = floor(o2 / 256.0);
         lit = l1 / 255.0;
         back = b1 / 255.0;
-        jak = (o2 - b1 * 256.0) / 255.0 * 4.0;
+        jak = floor(o2 - b1 * 256.0 + 0.5) / 255.0 * 4.0;
         c = aNaxB.xyz;
         p = aNax.xyz;
         bool pozadina = je(xVrsta, 4.0), mlaz = je(xVrsta, 9.0);
@@ -1780,7 +1786,8 @@
           float dv = (p.y - uSweep.y) / 0.06;
           c += vec3(0.5, 0.42, 0.25) * exp(-dv * dv);
         }
-        p = (p * uNaxA.x + vec3(0.0, uNaxA.y, 0.0)) * uTxt.x;
+        p = p * uNaxA.x + vec3(0.0, uNaxA.y, 0.0);
+        if (pozadina) p.xy *= uTxt.x; else p *= uTxt.x;      // (pozadini dubina ostaje, da i na uskom prozoru padne točno iza predmeta)
         if (pozadina) {
           // zalijepljeno za ekran: obrne se okret koji main() poslije primijeni
           mat3 R = je(uDo, 5.0) ? uRotB : uRotA;
@@ -1790,14 +1797,15 @@
         }
       }
       // Nastanak prizora: redoslijed točkice (0 prva .. 1 zadnja) po skupini
-      // (najprije flakon, pa platno i stol, pozadina, staklenka, žlica, limuni,
-      // cimet, vanilija, tonka, lavanda, duhan, cvjetovi), a u predmetu odozdo
+      // (najprije flakon, pa staklenka, žlica, limuni, cimet, vanilija, tonka,
+      // lavanda, duhan, cvjetovi, zatim platno i stol i na kraju pozadina, jer
+      // u njima ima rupa gdje ih predmeti zaklanjaju), a u predmetu odozdo
       // prema gore. Vraća napredak točkice (0..1) za slučajni broj r
       float nastanakNaxosa(float r) {
         float vis = clamp((aNax.y + 0.9) / 2.6, 0.0, 1.0);
-        float sk = je(xVrsta, 4.0) ? 2.0 : xSkupina;                        // (pozadini polje skupine nosi veličinu točkice)
-        float d = (0.055 * sk + 0.12 * vis + 0.06 * r) * 0.8;
-        return clamp((clamp((uProg - 0.3) / 0.7, 0.0, 1.0) * 1.3 - d) / 0.3, 0.0, 1.0);
+        float sk = je(xVrsta, 4.0) ? 12.5 : (je(xVrsta, 3.0) ? 11.5 : xSkupina);   // (pozadini polje skupine nosi veličinu točkice)
+        float d = (0.13 * sk + 0.12 * vis + 0.06 * r) * 0.8;                 // skupine oko 0,2 s jedna za drugom
+        return clamp((clamp((uProg - 0.3) / 0.7, 0.0, 1.0) * 1.9 - d) / 0.3, 0.0, 1.0);
       }
 
       // Oblik po broju (vidi OBLIK u JS-u); a je jačina točkice
@@ -1880,12 +1888,15 @@
         float lit, back, alpha;
         // točkica je papir etikete Penhaligon bočice (nema iskri, a gledana ukoso se priguši)
         float papir = 0.0;
+        // koliko je točkica dio prizora Naxos (0..1; u nastanku raste, pri rastapanju pada, u mirovanju 1)
+        float wPrizor = 0.0;
         // koliko je točkica dio Penhaligon bočica (0..1, prati njezin napredak u
         // prijelazu): bočice imaju rjeđe iskre, a prag se mijenja postupno
         float wBocica = 0.0;
         if (uSloj > 0.5) {
           gustiSloj(p, n, col, lit, back, alpha);
           papir = uSloj > 1.5 ? 0.0 : step(2.5, pVrsta);
+          wPrizor = uSloj > 1.5 ? 1.0 : 0.0;
         } else {
           bool prijelaz = uProg > 0.0;
           bool uPrizor = je(uDo, 5.0);                                      // u prizor Naxos: isti nastanak kao bočice
@@ -1974,6 +1985,7 @@
             col *= 1.0 + exp(-b * b) * (uPrizor ? 0.5 : (pVrsta > 2.5 ? 0.1 : (pVrsta > 1.5 ? 1.6 : 0.8)));
             k = e2;
             wBocica = uPrizor ? 0.0 : e2;
+            wPrizor = uPrizor ? e2 : 0.0;
             papir *= e1;                                               // papir postane "papir" kad točkica krene
           } else {
             // u natpis (logotipe): točkica najprije odleti u izmaglicu oko svog
@@ -2016,6 +2028,7 @@
             alpha = mix(aA, aB, k);
             papir *= izBocica ? 1.0 - smoothstep(0.6, 1.0, max(e1, k)) : 0.0;
             if (izBocica) wBocica = 1.0 - max(e1, k);
+            if (je(uOd, 5.0)) wPrizor = je(uDo, 5.0) ? 1.0 : 1.0 - max(e1, k);
 
             // prijelaz: dimni vrtlog i lagano dizanje
             if (prijelaz) {
@@ -2080,10 +2093,9 @@
         if (max(uOd, uDo) > 1.5) alpha *= 1.0 - smoothstep(0.93, 1.0, abs(gl_Position.x));
         // iskre: na Penhaligon bočicama rjeđe (u gustom sloju gotovo nikako), da glave ne svjetlucaju kao šljokice;
         // u prizoru Naxos platno, stol i pozadina nemaju iskri, a svjetlije mrlje pozadine (bokeh) su veće točkice
-        float uPrizoru = (uSloj > 1.5 || (je(uOd, 5.0) && je(uDo, 5.0))) ? 1.0 : 0.0;
-        float mirno = uPrizoru * ((je(xVrsta, 3.0) || je(xVrsta, 4.0)) ? 1.0 : 0.0);
+        float mirno = wPrizor * ((je(xVrsta, 3.0) || je(xVrsta, 4.0)) ? 1.0 : 0.0);
         float iskra = step(uSloj > 0.5 ? 0.9985 : mix(0.993, 0.996, wBocica), aRnd.z) * (1.0 - papir) * (1.0 - mirno);
-        gl_PointSize = uSize * persp * (1.0 + iskra * 0.7) * (1.0 + 0.12 * xSkupina * uPrizoru * (je(xVrsta, 4.0) ? 1.0 : 0.0));
+        gl_PointSize = uSize * persp * (1.0 + iskra * 0.7) * (1.0 + 0.12 * xSkupina * wPrizor * (je(xVrsta, 4.0) ? 1.0 : 0.0));
 
         // svjetlo gore lijevo: sjena, odsjaj i svijetli rub
         vec3 L = normalize(vec3(-0.5, 0.62, 0.6));
@@ -2092,7 +2104,8 @@
         float spe = pow(max(dot(nq, H), 0.0), 26.0);
         float rub = pow(1.0 - abs(nq.z), 2.2);
         float nebo = smoothstep(-0.08, 0.3, nq.y);                   // odraz neba i tla, kao na kromu
-        float svjetlo = 0.08 + 0.7 * dif + 1.5 * spe + 0.6 * rub + 0.28 * nebo;
+        // (u prizoru Naxos svijetli rub je slabiji: predmeti su mat voće, drvo i tkanina, ne krom)
+        float svjetlo = 0.08 + 0.7 * dif + 1.5 * spe + mix(0.6, 0.2, wPrizor) * rub + 0.28 * nebo;
         float lice = mix(back, 1.0, smoothstep(-0.2, 0.25, nq.z));   // stražnja strana tamnija
         float dubina = mix(1.0, clamp(0.62 + 0.42 * q.z, 0.25, 1.15), lit);
         float treptaj = 0.84 + 0.16 * sin(uTime * (1.5 + 2.0 * aRnd.w) + aRnd.y * 40.0);
@@ -2101,8 +2114,10 @@
         // 1 / |nz|), a papir ukoso ne smije zasvijetliti kao bijela crta;
         // poleđina se vidi kroz tekućinu, pa je još tamnija
         treptaj *= mix(1.0, clamp(abs(nq.z) * 1.1, 0.1, 1.0) * (nq.z < 0.0 ? 0.6 : 1.0), papir);
-        // platno i stol prizora Naxos gledani ukoso: točkice se na zaslonu zbiju, pa se priguše (kao papir)
-        if (uPrizoru > 0.5 && je(xVrsta, 3.0)) treptaj *= clamp(abs(nq.z) * 3.0, 0.65, 1.0);
+        // platno i stol prizora Naxos gledani ukoso: točkice se na zaslonu zbiju, pa se priguše (kao papir);
+        // isto, blaže, neprozirni predmeti prizora uz obris (inače obris svijetli jače od lica)
+        if (je(xVrsta, 3.0)) treptaj *= mix(1.0, clamp(abs(nq.z) * 3.0, 0.65, 1.0), wPrizor);
+        if (je(xVrsta, 0.0) || je(xVrsta, 6.0)) treptaj *= mix(1.0, clamp(abs(nq.z) * 1.6, 0.4, 1.0), wPrizor);
         vCol = vec4(col * mix(1.0, svjetlo, lit) * lice, alpha * treptaj * dubina);
       }
     `;
@@ -2346,7 +2361,9 @@
         if (!gl) return false;
         usporedo = gl.getExtension('KHR_parallel_shader_compile');
         sh = [gl.createShader(gl.VERTEX_SHADER), gl.createShader(gl.FRAGMENT_SHADER)];
-        gl.shaderSource(sh[0], VS);
+        // prizor Naxos treba deveti atribut; gdje ih je samo 8, njegovi atributi postanu stalnice i krug ide bez njega
+        NAX_MOGUC = (gl.getParameter(gl.MAX_VERTEX_ATTRIBS) || 8) >= 9;
+        gl.shaderSource(sh[0], NAX_MOGUC ? VS : VS.replace('attribute vec4 aNax;', 'const vec4 aNax = vec4(0.0, 0.0, 0.0, 1.0);').replace('attribute vec4 aNaxB;', 'const vec4 aNaxB = vec4(0.0);'));
         gl.shaderSource(sh[1], FS);
         gl.compileShader(sh[0]);
         gl.compileShader(sh[1]);
@@ -2411,14 +2428,17 @@
         return true;
       }
 
-      // Logotipi i Penhaligon bočice se računaju zadnji, postupno u stankama
-      // preglednika (jednom; ne uz "Smanji pokrete", jer se tada ne prikazuju)
+      // Prizor Naxos, logotipi i Penhaligon bočice se računaju zadnji, postupno
+      // u stankama preglednika, jedan za drugim redom kojim dolaze u krugu (pa
+      // prizor, koji je prvi na redu, dobije sve stanke i stigne najprije);
+      // jednom; ne uz "Smanji pokrete", jer se tada ne prikazuju
       function trebaDodatke() {
         if (dodaciTrazeni || MIRNO.matches || !OBLICI) return;
         dodaciTrazeni = true;
-        if (P.marke) OBLICI.then(pripremiMarke).then(function (mm) { if (mm && !unisteno) dovrsiMarke(mm); });
-        if (P.penhaligon) OBLICI.then(pripremiPenhaligon).then(function (pp) { if (pp && !unisteno) dovrsiPen(pp); });
-        if (P.naxos) OBLICI.then(pripremiNaxos).then(function (nn) { if (nn && !unisteno) dovrsiNaxos(nn); });
+        let red = OBLICI;
+        if (P.naxos && NAX_MOGUC) red = red.then(function (o) { return pripremiNaxos(o).then(function (nn) { if (nn && !unisteno) dovrsiNaxos(nn); return o; }); });
+        if (P.marke) red = red.then(function (o) { return pripremiMarke(o).then(function (mm) { if (mm && !unisteno) dovrsiMarke(mm); return o; }); });
+        if (P.penhaligon) red.then(function (o) { return pripremiPenhaligon(o).then(function (pp) { if (pp && !unisteno) dovrsiPen(pp); }); });
       }
 
       // Logotipi: vlastiti spremnik (atribut aMar), dodaje se kad su
@@ -2594,10 +2614,9 @@
         const naPikselu = (penPodaci ? penPodaci.ukupno : n) / Math.max(1, povrsinaPen);
         jacinaPen = JACINA_PEN * Math.min(1.6, Math.max(0.25, 26000 / (175 * 175) / Math.max(1e-6, naPikselu)));
         // prizor Naxos: jačina prema razmaku niti na zaslonu (mjera je flakon s
-        // 26 000 točkica: razmak 0,01728 jedinice uz S = 175; uz gušće niti
-        // slabije, s gustoća^-0,65 kao ostali oblici)
-        // (strmije nego kod ostalih oblika, -0,8: niti su gušće od piksela, pa bi
-        // se svijetle plohe inače zbrojile u bijelo)
+        // 26 000 točkica: razmak 0,01728 jedinice uz S = 175); uz gušće niti
+        // slabije, strmije nego kod ostalih oblika (gustoća^-0,8 umjesto -0,65):
+        // niti su gušće od piksela, pa bi se svijetle plohe inače zbrojile u bijelo
         if (naxPodaci && window.MX_NAXOS) {
           const gustocaNax = Math.pow(0.01728 / (naxPodaci.korak * window.MX_NAXOS.KOMP * povecanje * S / 175), 2);
           jacinaNax = JACINA_NAX * Math.min(2, Math.max(0.2, Math.pow(gustocaNax, -0.8)));
