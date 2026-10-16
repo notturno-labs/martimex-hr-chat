@@ -17,8 +17,8 @@
   const H = BLOK.pola, HY = BLOK.visina, RK = 0.05, RE = 0.012;     // pola stranice, pola visine, zaobljenje uglova tlocrta i bridova
   const CS = Math.cos(BLOK.kut), SN = Math.sin(BLOK.kut);
   // boje s fotografije: masa, žile (dvije svjetline), rub koji žari; vrh od prednjeg kuta (tamno) preko sredine do odsjaja (blijedo)
-  const MASA = N.boja01('#7a2408'), ZILA = C.jantar, ZILA2 = C.jantarVrh, RUB = C.jantarRub;
-  const VRH_T = N.boja01('#5c1a06'), VRH_S = N.boja01('#a85a26'), VRH_B = N.boja01('#f0cf9c');
+  const MASA = N.boja01('#9a3610'), ZILA = C.jantar, ZILA2 = C.jantarVrh, RUB = C.jantarRub;
+  const VRH_T = N.boja01('#7e2c0c'), VRH_S = N.boja01('#c86c2c'), VRH_B = N.boja01('#f4d4a0');
 
   // tlocrt: kvadrat sa zaobljenim uglovima (vlastite koordinate), < 0 unutra
   function tlocrt(lx, lz) {
@@ -52,7 +52,7 @@
         col = mijesaj(col, ZILA2, 0.6 * zila * korakG(0.4, 0.95, f1));
         col = mijesaj(col, RUB, sat(0.6 * dno + 0.7 * vrh + 0.5 * kut));
         col = puta(col, 0.85 + 0.3 * pjega(T.x, T.y, T.z, 50));
-        return tvar(T, col, 0.7, 0.5, 1.15, V.OBICNO, 0.08 + 0.04 * (0.5 + 0.5 * ly));
+        return tvar(T, col, 0.7, 0.5, 1.3, V.OBICNO, 0.08 + 0.04 * (0.5 + 0.5 * ly));
       };
       N.rezSDF(S, sdf, [c[0] - H * 1.45, c[0] + H * 1.45, STOL_Y - 0.01, STOL_Y + 2 * HY + 0.01, c[2] - H * 1.45, c[2] + H * 1.45], { osi: 'y', boja: bojaBoka });
       yield;
@@ -84,7 +84,7 @@
           const sjena = korakG(0.46, 0.18, Math.hypot(T.x - 0.07, T.z - 0.06));
           col = puta(col, 1 - 0.55 * sjena); jak *= 1 - 0.3 * sjena;
         }
-        return tvar(T, col, 0.4, 0.5, jak, V.OBICNO, 0.09 + 0.04 * v);
+        return tvar(T, col, 0.45, 0.5, jak * 1.15, V.OBICNO, 0.09 + 0.04 * v);
       };
       N.plahta(S, vrhF, { razmak: 1.2, tezina: 0.8, gore: true, boja: bojaVrha });
       N.zaklonKutija(BLOK.x, BLOK.z, BLOK.kut, H, H, 2 * HY);

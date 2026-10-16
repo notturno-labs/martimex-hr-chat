@@ -1195,7 +1195,7 @@
       // pocetna-chata.js (0,7 uz 26 000 točkica, tj. razmak niti 0,0173; uz
       // više točkica slabije, s gustoća^-0,65); neprozirni prizor je jači, jer
       // se vide samo prednje plohe (točkice se ne zbrajaju kroz predmet)
-      const gustoca = Math.pow(0.01728 / (R.korak * KOMP0), 2);
+      const gustoca = Math.pow(0.01728 / (R.korak * KOMP0 * (SAMO.length ? ZOOM : 1)), 2);   // (u uvećanom pregledu točkice su rjeđe na zaslonu, pa jače: pregled je tada vjeran)
       jacina = 0.7 * Math.min(2, Math.max(0.25, Math.pow(gustoca, -0.65))) * (P.neprozirno ? 1.6 : 1);
       const kaoFlakon = Math.round(26000 * gustoca);
       if (SAMO.length && isFinite(R.min[0])) {

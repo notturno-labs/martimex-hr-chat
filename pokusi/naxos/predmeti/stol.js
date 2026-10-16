@@ -28,10 +28,20 @@
       });
       yield;
       // brašno: tri mrlje desno sprijeda
+      const GRUDE = [];
+      const rg = N.slucajno(31);
+      for (let i = 0; i < 26; i++) GRUDE.push([0.5 + 1.3 * rg(), 1.1 + 1.6 * rg(), 0.02 + 0.04 * rg()]);
       S.rasap(1700, function (T, r) {
-        const k = r(), cx = k < 0.6 ? 1.1 : k < 0.85 ? 0.75 : 1.5, cz = k < 0.6 ? 2.2 : k < 0.85 ? 1.4 : 1.6, R = k < 0.6 ? 0.8 : 0.4;
-        const rr = R * Math.sqrt(r()) * (0.5 + 0.7 * r()), a = r() * 2 * Math.PI;
-        T.x = cx + rr * Math.cos(a) * 1.25; T.z = cz + rr * Math.sin(a); T.y = STOL_Y + 0.004 + 0.012 * r();
+        const k = r();
+        if (k < 0.22) {                                                      // grudice: gušći mali skupovi
+          const g = GRUDE[Math.floor(r() * GRUDE.length)], rr = g[2] * Math.sqrt(r()), a = r() * 2 * Math.PI;
+          T.x = g[0] + rr * Math.cos(a); T.z = g[1] + rr * Math.sin(a); T.y = STOL_Y + 0.006 + 0.02 * r() * (1 - rr / g[2]);
+          T.nx = 0; T.ny = 1; T.nz = 0;
+          return tvar(T, C.brasno, 0.35, 0.7, 0.55 + 0.3 * r(), V.BRASNO, 0.6);
+        }
+        const cx = k < 0.7 ? 1.1 : k < 0.88 ? 0.75 : 1.5, cz = k < 0.7 ? 2.2 : k < 0.88 ? 1.4 : 1.6, R = k < 0.7 ? 0.85 : 0.4;
+        const rr = R * Math.sqrt(r()) * (0.4 + 0.8 * r()), a = r() * 2 * Math.PI;
+        T.x = cx + rr * Math.cos(a) * 1.25 + 0.06 * N.sum(cx * 3 + a, cz, 1); T.z = cz + rr * Math.sin(a); T.y = STOL_Y + 0.004 + 0.012 * r();
         T.nx = 0; T.ny = 1; T.nz = 0;
         return tvar(T, C.brasno, 0.3, 0.7, 0.25 + 0.4 * r(), V.BRASNO, 0.6);
       });

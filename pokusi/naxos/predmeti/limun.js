@@ -20,11 +20,16 @@
             const rr = r / R, seg = 9, ka = (a * seg / (2 * Math.PI)) % 1, opna = Math.min(ka, 1 - ka) * 2 * Math.PI * rr * R / seg;
             if (rr > 0.9) col = mijesaj(C.limunOpna, C.limunKora, korakG(0.93, 1, rr) * 0.6);
             else if (opna < 0.013 || rr < 0.06) col = C.limunOpna;
-            else col = mijesaj(C.limunMeso, C.limunOpna, 0.15 * pjega(a * 12, rr * 30, 1, 1) + 0.25 * korakG(0.78, 0.9, rr));
-            return tvar(T, puta(col, 0.95 + 0.15 * pjega(T.x, T.y, T.z, 60)), 0.55, 0.5, 1.3, V.OBICNO, 0.5);
+            else {
+              col = mijesaj(C.limunMeso, C.limunOpna, 0.15 * pjega(a * 12, rr * 30, 1, 1) + 0.25 * korakG(0.78, 0.9, rr));
+              const mj = pjega(a * 40, rr * 60, 2, 1);                                   // mjehurići soka: svjetlije i tamnije točkice
+              col = mijesaj(col, pjega(T.x, T.y, T.z, 140) > 0.9 ? [1, 0.98, 0.85] : C.limunMeso, mj > 0.6 ? 0.5 : 0);
+              col = puta(col, 0.9 + 0.2 * mj);
+            }
+            return tvar(T, puta(col, 1.05 + 0.15 * pjega(T.x, T.y, T.z, 60)), 0.5, 0.5, 1.6, V.OBICNO, 0.5);
           }
           col = mijesaj(C.limunKora, C.limunMeso, m === 1 ? 0.5 : 0.1 * pjega(T.x, T.y, T.z, 12));
-          return tvar(T, puta(col, 0.85 + 0.3 * pjega(T.x, T.y, T.z, 80)), 0.9, 0.4, 1.2, V.OBICNO, 0.5);
+          return tvar(T, puta(col, 0.95 + 0.3 * pjega(T.x, T.y, T.z, 80)), 0.85, 0.4, 1.35, V.OBICNO, 0.5);
         }
       });
       N.zaklonKrug(c[0], c[2], R, 0.54);

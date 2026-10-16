@@ -23,9 +23,9 @@
   const RAME = [0.97, 0.955, 0.91], KREM = [0.95, 0.90, 0.78], DNO_STAKLA = [0.92, 0.87, 0.78];
   const MED_L = [0.78, 0.55, 0.26], MED_D = [0.95, 0.86, 0.66], MED_UNUTRA = [0.84, 0.56, 0.20], MED_UNUTRA_D = [0.90, 0.72, 0.42];
   const SUNCE = [1, 0.93, 0.78], NIT_RAZINE = [0.98, 0.92, 0.76];
-  const BAKAR = [0.76, 0.48, 0.34], BAKAR_TAMNI = [0.52, 0.32, 0.23], BAKAR_SVIJETLI = [0.95, 0.70, 0.54];
-  const ZLATNI_ODSJAJ = [0.96, 0.68, 0.36], RUZICASTO = [0.93, 0.74, 0.64], VRH_CEPA = [0.86, 0.62, 0.50];
-  const PLOCICA_GORE = [0.84, 0.60, 0.45], PLOCICA_DOLJE = [0.70, 0.42, 0.25], OKVIR = [0.96, 0.92, 0.84], OKVIR_TAMNI = [0.42, 0.25, 0.16], ZNAK = [0.94, 0.82, 0.58];
+  const BAKAR = [0.94, 0.67, 0.50], BAKAR_TAMNI = [0.72, 0.47, 0.34], BAKAR_SVIJETLI = [1.0, 0.84, 0.68];
+  const ZLATNI_ODSJAJ = [1.0, 0.78, 0.46], RUZICASTO = [0.99, 0.83, 0.72], VRH_CEPA = [0.97, 0.76, 0.62];
+  const PLOCICA_GORE = [0.92, 0.66, 0.48], PLOCICA_DOLJE = [0.78, 0.48, 0.28], OKVIR = [0.96, 0.92, 0.84], OKVIR_TAMNI = [0.42, 0.25, 0.16], ZNAK = [0.94, 0.82, 0.58];
   const GRB = [0.66, 0.50, 0.26], ZELENA = [0.26, 0.52, 0.30], CRVENA = [0.74, 0.26, 0.20], NATPIS = [0.56, 0.44, 0.30];
 
   function gauss(x, w) { const t = x / w; return Math.exp(-t * t); }
@@ -83,7 +83,7 @@
     } else col = mijesaj(VRH_CEPA, RUZICASTO, 0.5 * (h - 599) / 96);                    // šiljak
     // odsjaji oko oboda: lijevo-sprijeda svjetlije (sunce), desno od sredine tamna pruga; brušena površina
     const k = 1 + 0.2 * Math.cos(a + 0.6) - 0.25 * gauss(a - 0.5, 0.3) + 0.06 * sum(a * 6, y * 250, 1);
-    return tvar(T, puta(col, k), 0.85, 0.3, 1, V.ZLATO_F, odgoda);
+    return tvar(T, puta(col, k), 0.9, 0.3, 1.3, V.ZLATO_F, odgoda);
   }
 
   // pločica (2): bakrena, gore svjetlija, odsjaj lijevo od sredine

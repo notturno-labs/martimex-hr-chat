@@ -1,9 +1,12 @@
 // Tanjur (lijevo straga) i na njemu dva komada saća: nepravilno odlomljene
-// ploče sa šesterokutnim stanicama urezanima odozgo i punima meda (svijetli
-// vosak na vrhu stijenki, zlatni odsjaj uz rub stanice, tamniji jantar u
-// dubini, poneka stanica zatvorena voštanim poklopcem); s bokova komada cure
-// kapi meda u lokvu na tanjuru. Donji komad leži na tanjuru, gornji je
-// zakrenut i nagnut prema nama, oslonjen na donji. Tanjur je krem keramika s
+// ploče (rub se lomi po stanicama) sa šesterokutnim stanicama urezanima
+// odozgo i punima meda: blijedi krem vosak na vrhu stijenki, u stanici med
+// koji sjaji (zlatan prema suncu, jantaran u sjeni, meniskus uz stijenke),
+// skupina stanica zatvorena voštanim poklopcima. Bokovi su prerezane
+// stanice obložene medom koji u okomitim rebrima curi prema dnu, nabrekne
+// uz dno i razlije se u lokvu na tanjuru; s uzdignutog ruba gornjeg komada
+// vise kapi. Donji komad leži na tanjuru, gornji je zakrenut, desnim krajem
+// oslonjen na donji i nagnut prema nama. Tanjur je krem keramika s
 // uzdignutim rubom i mekom sjenom komada
 (function () {
   'use strict';
@@ -13,10 +16,12 @@
   const TANJUR = N.TANJUR = { x: -1.1, z: -1.15, r: 0.64 };
   const VRH = STOL_Y + 0.02;                                   // ploha tanjura
 
-  // boje: vosak stijenki (vrh svijetao, u dubini tamniji), med (svijetao, srednji, duboki), sjena na tanjuru
-  const VOSAK = boja01('#f8dd96'), VOSAK_T = boja01('#e2b352');
-  const MED_S = boja01('#f8c548'), MED = boja01('#e39a22'), MED_T = C.saceTamno;
-  const TANJUR_B = boja01('#e2cba4'), TANJUR_SJENA = boja01('#a08868');
+  // boje: vosak (vrh stijenki blijed, u stanici zlatniji, poklopci), med
+  // (sunce kroz med, površina, srednji, u sjeni, najdublji jantar uz dno
+  // boka), tanjur i sjena na njemu
+  const VOSAK = boja01('#fbe6ac'), VOSAK_Z = boja01('#f6cf6e'), POKLOP = boja01('#f5dc9c');
+  const MED_SJAJ = boja01('#fff0b8'), MED_S = boja01('#fcc94a'), MED = boja01('#f2a52a'), MED_T = boja01('#d47a16'), MED_D = boja01('#a8500c');
+  const TANJUR_B = C.tanjur, TANJUR_SJENA = boja01('#a08a72');
 
   // ── stanica saća: udaljenost do ruba najbliže šesterokutne stanice (kao
   //    NAXOS.sace2D, vrh stanice uz os v), uz to pamti njezino središte
@@ -36,20 +41,18 @@
   }
 
   // ── komadi: c = [x, z] (y se računa tako da najniži vrh sjedne na tanjur),
-  //    h = pola stranica, kut (okret oko y), nagib (prema nama), valj (oko z),
-  //    kapi = kapi meda: p mjesto na boku (vlastite koordinate), n normala
-  //    boka, L1 duljina niz bok, L2 koliko visi ispod ruba, r polumjer
-  const R = 0.044, ZID = 0.009, DUB = 0.024, NR = 24;
+  //    h = pola stranica, kut (okret oko y), nagib (prema nama), valj (oko z);
+  //    poklop = [osnovni udio zatvorenih stanica, dodatak, granica po PX − 0,6 PZ
+  //    (lijevo-sprijeda od nje su stanice uglavnom zatvorene)]; kapi = kapi
+  //    meda koje vise s prednjeg donjeg ruba: px mjesto duž ruba, r polumjer
+  const R = 0.042, RI = R * 0.8660254, W2 = 2 * RI, ZID = 0.01, DUB = 0.012, NR = 24, NABREK = 0.016;
   const KOMADI = [
-    { c: [-0.95, -1.0], h: [0.36, 0.1, 0.2], kut: 0.08, nagib: 0, valj: 0, od: 0.45, sjeme: 11,
-      kapi: [{ p: [-0.14, 0.09, 0.2], n: [0, 0, 1], L1: 0.18, L2: 0, r: 0.013 }, { p: [0.06, 0.09, 0.2], n: [0, 0, 1], L1: 0.19, L2: 0, r: 0.016 },
-        { p: [0.24, 0.09, 0.2], n: [0, 0, 1], L1: 0.17, L2: 0, r: 0.012 }, { p: [0.36, 0.09, 0.05], n: [1, 0, 0], L1: 0.18, L2: 0, r: 0.014 }] },
-    { c: [-1.25, -1.1], h: [0.36, 0.1, 0.16], kut: -0.25, nagib: 0.45, valj: 0.3, od: 0.48, sjeme: 23,
-      kapi: [{ p: [-0.08, 0.08, 0.16], n: [0, 0, 1], L1: 0.16, L2: 0.07, r: 0.015 }, { p: [0.1, 0.06, 0.16], n: [0, 0, 1], L1: 0.14, L2: 0.1, r: 0.013 },
-        { p: [-0.26, 0.09, 0.16], n: [0, 0, 1], L1: 0.17, L2: 0.03, r: 0.016 }, { p: [-0.36, 0.08, -0.02], n: [-1, 0, 0], L1: 0.16, L2: 0.02, r: 0.013 }] }
+    { c: [-0.88, -1.28], h: [0.3, 0.115, 0.17], kut: 0.1, nagib: 0, valj: 0, od: 0.45, sjeme: 11, poklop: [0.1, 0.5, -0.2], kapi: [] },
+    { c: [-1.2, -1.07], h: [0.33, 0.12, 0.15], kut: 0.55, nagib: 0.4, valj: 0.1, od: 0.5, sjeme: 23, poklop: [0.07, 0.75, -0.1],
+      kapi: [] }
   ];
-  // lokva meda na tanjuru ispred komada: [x, z, rx, rz]
-  const LOKVA = [[-1.5, -0.83, 0.17, 0.1], [-1.33, -0.73, 0.12, 0.08], [-1.02, -0.74, 0.12, 0.07]], LOKVA_H = 0.014;
+  // lokva meda na tanjuru uz prednje rubove komada i ispod kapi: [x, z, rx, rz]
+  const LOKVA = [[-1.33, -0.79, 0.13, 0.08], [-1.18, -0.88, 0.13, 0.07], [-1.05, -0.99, 0.11, 0.07], [-0.93, -1.05, 0.1, 0.06], [-0.7, -1.06, 0.1, 0.06]], LOKVA_H = 0.012;
   function sdfLokva(x, y, z) {
     const dy = y - VRH;
     let d = 1;
@@ -72,29 +75,33 @@
           if (y > najvise) najvise = y;
         }
         const rnd = N.slucajno(k.sjeme), rub = [new Float32Array(NR), new Float32Array(NR), new Float32Array(NR), new Float32Array(NR)];
-        for (let i = 0; i < NR; i++) for (let q = 0; q < 4; q++) rub[q][i] = (rnd() - 0.5) * (q < 2 ? 0.07 : 0.05) - 0.01;
-        K.push({ k: k, M: M, c: [k.c[0], VRH - najnize + 0.004, k.c[1]], vis: najvise - najnize, rub: rub });
+        for (let i = 0; i < NR; i++) for (let q = 0; q < 4; q++) rub[q][i] = (rnd() - 0.5) * (q < 2 ? 0.08 : 0.06) - 0.008;
         const cyk = VRH - najnize + 0.004, cxk = k.c[0], czk = k.c[1];
+        K.push({ k: k, M: M, c: [cxk, cyk, czk], vis: najvise - najnize, rub: rub });
         N.zaklon(function (px, pz) {
           // okomica kroz točku tanjura: gdje siječe donju plohu kutije i koliko je ta ploha iznad tanjura
           const dx = px - cxk, dy0 = VRH - cyk, dz = pz - czk;
           const px0 = M[0][0] * dx + M[1][0] * dy0 + M[2][0] * dz, py0 = M[0][1] * dx + M[1][1] * dy0 + M[2][1] * dz, pz0 = M[0][2] * dx + M[1][2] * dy0 + M[2][2] * dz;
           const dy = (-hy - py0) / M[1][1];
-          if (dy > 0.025) return false;
+          if (dy > 0.03) return false;
           return Math.abs(px0 + M[1][0] * dy) < hx + 0.01 && Math.abs(pz0 + M[1][2] * dy) < hz + 0.01;
         }, najvise - najnize);
       }
       N.zaklon(function (px, pz) { return sdfLokva(px, VRH + LOKVA_H * 0.6, pz) < 0; }, 0.03);
 
       // ── tanjur: krem keramika, uzdignuti rub, meka sjena komada na plohi
+      //    (tlocrt komada pomaknut prema nama i udesno, jače za uzdignuti)
       function sjenaTanjura(x, z) {
         let s = 0;
         for (let i = 0; i < K.length; i++) {
-          const k = K[i].k, cs = Math.cos(k.kut), sn = Math.sin(k.kut), fx = k.h[0] + 0.02, fz = k.h[2] * Math.cos(k.nagib) + k.h[1] * Math.sin(k.nagib) + 0.02;
+          const Q = K[i], k = Q.k, M = Q.M, ex0 = M[0][0], ex1 = M[2][0], ez0 = M[0][2], ez1 = M[2][2];
+          const nx = 1 / (ex0 * ex0 + ex1 * ex1), nz = 1 / (ez0 * ez0 + ez1 * ez1), fx = k.h[0] + 0.02, fz = k.h[2] + k.h[1] * Math.abs(M[2][1]) + 0.02;
+          const dig = 0.05 + 0.1 * Q.vis;
           for (let q = 1; q <= 3 && s < 0.6; q++) {
-            const dx = x - k.c[0] - 0.09 * q, dz = z - k.c[1] - 0.07 * q, lx = cs * dx - sn * dz, lz = sn * dx + cs * dz;
+            const dx = x - Q.c[0] - dig * q, dz = z - Q.c[2] - dig * 0.8 * q;
+            const lx = (dx * ex0 + dz * ex1) * nx, lz = (dx * ez0 + dz * ez1) * nz;
             const u = Math.max(Math.abs(lx) - fx, Math.abs(lz) - fz);
-            if (u < 0) s = Math.max(s, 0.62 - 0.14 * q); else if (u < 0.08) s = Math.max(s, (0.62 - 0.14 * q) * (1 - u / 0.08));
+            if (u < 0) s = Math.max(s, 0.62 - 0.14 * q); else if (u < 0.1) s = Math.max(s, (0.62 - 0.14 * q) * (1 - u / 0.1));
           }
         }
         return s;
@@ -105,9 +112,9 @@
         boja: function (T, y, r, a, ny, m) {
           if (!m && N.uZaklonu(T.x, T.z)) return false;
           const s = m ? 0 : sjenaTanjura(T.x, T.z);
-          let col = mijesaj(TANJUR_B, TANJUR_SJENA, 0.55 * s);
+          let col = mijesaj(TANJUR_B, TANJUR_SJENA, 0.6 * s);
           col = puta(col, (0.93 + 0.14 * pjega(T.x, T.y, T.z, 20)) * (m ? 1.02 : 0.96));
-          return tvar(T, col, m ? 0.6 : 0.5, 0.5, m ? 0.65 : 0.55, V.OBICNO, 0.12);
+          return tvar(T, col, m ? 0.5 : 0.45, 0.5, m ? 0.85 : 0.8, V.OBICNO, 0.12);
         }
       });
       N.zaklonKrug(TANJUR.x, TANJUR.z, TANJUR.r, 0.062);
@@ -115,14 +122,14 @@
 
       // ── komadi saća
       for (let ki = 0; ki < K.length; ki++) {
-        const Q = K[ki], k = Q.k, M = Q.M, hx = k.h[0], hy = k.h[1], hz = k.h[2], sj = k.sjeme, od = k.od;
+        const Q = K[ki], k = Q.k, M = Q.M, hx = k.h[0], hy = k.h[1], hz = k.h[2], sj = k.sjeme, od = k.od, pk = k.poklop, ravno = !k.nagib;
         const cx = Q.c[0], cy = Q.c[1], cz = Q.c[2];
         const m00 = M[0][0], m01 = M[0][1], m02 = M[0][2], m10 = M[1][0], m11 = M[1][1], m12 = M[1][2], m20 = M[2][0], m21 = M[2][1], m22 = M[2][2];
         const rubXp = Q.rub[0], rubXm = Q.rub[1], rubZp = Q.rub[2], rubZm = Q.rub[3];
         // sunce (straga lijevo) u vlastitim koordinatama, za odsjaj u stanicama
         const lsx = -0.55 * m00 - 0.7 * m20, lsz = -0.55 * m02 - 0.7 * m22, lsn = Math.hypot(lsx, lsz) || 1;
-        const LX = lsx / lsn, LZ = lsz / lsn, RI = R * 0.8660254;
-        let PX = 0, PY = 0, PZ = 0, QX = 0, QZ = 0, VRHS = 0, RAZ = 0, HA = 0;
+        const LX = lsx / lsn, LZ = lsz / lsn;
+        let PX = 0, PY = 0, PZ = 0, QX = 0, QZ = 0, VRHS = 0, RAZ = 0, HA = 0, NB = 0, REBRO = 0, POKL = false;
         // svjetske → vlastite koordinate (bez alokacija)
         function lokal(x, y, z) {
           const dx = x - cx, dy = y - cy, dz = z - cz;
@@ -138,31 +145,45 @@
           QX = PX > 0 ? PX - hx - rubXp[iz] - (rubXp[iz + 1] - rubXp[iz]) * fz : -PX - hx - rubXm[iz] - (rubXm[iz + 1] - rubXm[iz]) * fz;
           QZ = PZ > 0 ? PZ - hz - rubZp[ix] - (rubZp[ix + 1] - rubZp[ix]) * fx : -PZ - hz - rubZm[ix] - (rubZm[ix + 1] - rubZm[ix]) * fx;
         }
-        // stanica u kojoj je točka: visina stijenke (VRHS, neravna) i razina
-        // meda (RAZ; poneka stanica ima voštani poklopac gotovo do vrha)
+        // stanica u kojoj je točka: visina stijenke (VRHS, neravna), razina
+        // meda (RAZ) i je li zatvorena voštanim poklopcem (POKL, skupina
+        // lijevo-sprijeda i pokoja drugdje)
         function stanicaOvdje() {
           const d = stanica(PX, PZ, R);
           HA = hash3(CI, CJ, sj);
           VRHS = hy - 0.012 * ((HA * 5.1) % 1);
-          RAZ = HA < 0.09 ? VRHS - 0.007 : VRHS - DUB * (0.55 + 0.45 * ((HA * 11.7) % 1));
+          POKL = HA < pk[0] + pk[1] * korakG(pk[2] + 0.1, pk[2] - 0.1, CU - 0.6 * CV);
+          RAZ = POKL ? VRHS - 0.005 : VRHS - DUB * (0.5 + 0.5 * ((HA * 11.7) % 1));
           return d;
+        }
+        // med po boku: nabreknuće NB (okomita rebra po stupcima prerezanih
+        // stanica, svako svoje jačine, jače prema dnu) i udio rebra REBRO
+        function nabrek() {
+          const bokX = QX > QZ, s = bokX ? PZ : PX, lice = bokX ? (PX > 0 ? 1 : 2) : (PZ > 0 ? 3 : 4);
+          const stup = Math.floor(s / W2), f = s / W2 - stup, t = sat((PY + hy) / (2 * hy));
+          REBRO = 0.5 - 0.5 * Math.cos(6.2831853 * f);
+          NB = NABREK * (0.35 + 0.65 * hash3(stup, lice, sj)) * REBRO * (0.3 + 0.7 * (1 - t) * (1 - t));
         }
         const sdf = function (x, y, z) {
           lokal(x, y, z);
           rubovi();
-          const r = 0.012, qx = QX + r, qz = QZ + r;
-          let qy = Math.max(PY - hy, -hy - PY) + r;
-          const gruboK = Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, qy, qz), 0) - r;
-          if (gruboK > 0.025 || PY < hy - DUB - 0.03) return gruboK;      // daleko izvan ili duboko ispod stanica: stanice ne mijenjaju predznak
+          const r = 0.01, ay = Math.max(PY - hy, -hy - PY);
+          let qx = QX + r, qz = QZ + r, qy = ay + r;
+          const grubo = Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, qy, qz), 0) - r;
+          if (grubo > 0.04) return grubo - 0.02;                           // daleko izvan: donja međa (bok nabrekne do NABREK)
+          if (grubo < -0.04 && PY < hy - DUB - 0.03) return grubo;         // duboko unutra
           const d = stanicaOvdje();
-          qy = Math.max(PY - VRHS, -hy - PY) + r;
+          nabrek();
+          const jit = R * 0.35 * (((HA * 7.31) % 1) - 0.5);                // rub se lomi po stanicama
+          qx = QX + jit - NB + r; qz = QZ + jit - NB + r; qy = Math.max(PY - VRHS, -hy - PY) + r;
           const kut = Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, qy, qz), 0) - r;
-          const st = Math.max(d + ZID / 2, RAZ - PY);       // šupljina stanice iznad meda
+          if (PY < hy - DUB - 0.02) return kut;                            // ispod stanica
+          const st = Math.max(d + ZID / 2, RAZ - PY);                      // šupljina stanice iznad meda
           return Math.max(kut, -st);
         };
         const ok = [Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity];
         for (let s = 0; s < 8; s++) {
-          const px = (s & 1 ? 1 : -1) * (hx + 0.035), py = (s & 2 ? 1 : -1) * (hy + 0.006), pz = (s & 4 ? 1 : -1) * (hz + 0.035);
+          const px = (s & 1 ? 1 : -1) * (hx + 0.07), py = (s & 2 ? 1 : -1) * (hy + 0.006), pz = (s & 4 ? 1 : -1) * (hz + 0.07);
           const x = cx + m00 * px + m01 * py + m02 * pz, y = cy + m10 * px + m11 * py + m12 * pz, z = cz + m20 * px + m21 * py + m22 * pz;
           if (x < ok[0]) ok[0] = x; if (x > ok[1]) ok[1] = x; if (y < ok[2]) ok[2] = y; if (y > ok[3]) ok[3] = y; if (z < ok[4]) ok[4] = z; if (z > ok[5]) ok[5] = z;
         }
@@ -172,55 +193,58 @@
             lokal(T.x, T.y, T.z);
             const d = stanicaOvdje();
             rubovi();
+            nabrek();
             const nyl = m01 * T.nx + m11 * T.ny + m21 * T.nz;                         // koliko ploha gleda prema vrhu komada
-            const uStanici = d + ZID / 2 < -0.0015, vanjski = Math.max(QX, QZ) > -0.007, poklop = HA < 0.09;
+            const uStanici = d + ZID / 2 < -0.0015, vanjski = Math.max(QX, QZ) - NB > -0.012;
             const sum = 0.9 + 0.2 * pjega(T.x, T.y, T.z, 40);
             let col, lit, jak;
-            if (nyl > 0.45) {
-              if (!uStanici && PY > VRHS - 0.007) { col = VOSAK; lit = 0.6; jak = 1.15; }                        // vrh stijenke od voska
-              else if (poklop) { col = mijesaj(VOSAK, MED_S, 0.3 + 0.3 * pjega(T.x, T.z, 1, 60)); lit = 0.5; jak = 1.1; }  // voštani poklopac
-              else {                                                                                          // površina meda u stanici: sjaji
-                const f = 0.5 + 0.5 * ((PX - CU) * LX + (PZ - CV) * LZ) / RI;
-                col = mijesaj(mijesaj(MED_T, MED_S, korakG(-0.1, 0.5, f)), VOSAK, 0.3 * korakG(0.6, 1, f));
-                lit = 1; jak = 1.5;
-                if (d > -ZID / 2 - 0.009 && f > 0.62) { col = mijesaj(col, VOSAK, 0.5); jak = 1.6; }            // zlatni odsjaj uz rub
+            if (nyl > 0.5) {
+              // ravan komad gledan s ruba: gornja ploha na zaslonu gušća, pa rjeđa
+              if (ravno && hash3((T.x * 1931) | 0, (T.z * 1777) | 0, 3) < 0.3) return false;
+              if (!uStanici && PY > VRHS - 0.008) { col = VOSAK; lit = 0.45; jak = 1.3; }                        // vrh stijenke od voska
+              else if (POKL) {                                                                                 // voštani poklopac, blago ispupčen
+                col = mijesaj(POKLOP, MED_S, 0.2 + 0.3 * ((HA * 3.7) % 1));
+                lit = 0.5; jak = 1.25;
+              } else {                                                                                          // površina meda u stanici: meniskus, sjaji prema suncu
+                const ux = (PX - CU) / RI, uz = (PZ - CV) / RI;
+                const nx = -0.55 * ux, nz = -0.55 * uz, nn = 1 / Math.hypot(nx, 1, nz);
+                T.nx = (m00 * nx + m01 + m02 * nz) * nn; T.ny = (m10 * nx + m11 + m12 * nz) * nn; T.nz = (m20 * nx + m21 + m22 * nz) * nn;
+                const f = 0.5 + 0.5 * (ux * LX + uz * LZ);
+                col = mijesaj(mijesaj(MED, MED_S, korakG(-0.1, 0.5, f)), MED_SJAJ, 0.6 * korakG(0.5, 1, f));
+                lit = 1; jak = 1.75;
               }
-            } else if (nyl < -0.45) return false;
-            else if (!vanjski && uStanici) {                                                                  // unutarnja stijenka stanice
-              col = mijesaj(VOSAK_T, MED_S, 0.5 * sat((VRHS - PY) / DUB)); lit = 0.8; jak = 1.3;
-            } else {                                                                                          // vanjski bok: med curi preko odlomljenih stijenki
-              const trag = d > -ZID / 2 - 0.004;
-              col = trag ? mijesaj(VOSAK_T, VOSAK, 0.4) : mijesaj(MED_S, MED, 0.1 + 0.7 * sat((VRHS - PY) / (2 * hy)));
-              col = puta(col, 0.85 + 0.3 * pjega(T.x, 0, T.z, 28));
-              if (PY > VRHS - 0.014) col = mijesaj(col, VOSAK, 0.4);
-              lit = 1; jak = 1.4;
+            } else if (nyl < -0.5) return false;
+            else if (!vanjski && uStanici) {                                                                  // unutarnja stijenka stanice: vosak kroz koji prosijava med
+              col = mijesaj(VOSAK_Z, MED_S, 0.6 * sat((VRHS - PY) / DUB)); lit = 0.8; jak = 1.45;
+            } else {                                                                                          // vanjski bok: prerezane stanice obložene medom koji curi
+              const t = sat((PY + hy) / (2 * hy));
+              col = mijesaj(MED_D, MED_T, korakG(0, 0.3, t)); col = mijesaj(col, MED, korakG(0.25, 0.7, t)); col = mijesaj(col, MED_S, korakG(0.65, 1, t));
+              col = puta(col, 0.85 + 0.3 * REBRO);                                                            // greben rebra svjetliji
+              if (d > -ZID / 2 - 0.003) col = mijesaj(col, VOSAK_Z, 0.4 * (1 - NB / NABREK));                  // prerezana stijenka proviruje kroz tanak med
+              if (PY > VRHS - 0.012) col = mijesaj(col, VOSAK, 0.5);                                           // odlomljeni rub na vrhu: vosak
+              lit = 1; jak = 1.6;
             }
             return tvar(T, puta(col, sum), lit, 0.45, jak, V.OBICNO, od);
           }
         });
         yield;
-        // kapi meda: niz bok (u smjeru pada po plohi) pa vise ispod ruba, s kapljom na kraju
+        // kapi meda s prednjeg donjeg ruba: debele pri rubu, tanak vrat, kaplja
+        // koja dosegne tanjur (lokvu)
         for (let qi = 0; qi < k.kapi.length; qi++) {
-          const kp = k.kapi[qi], p = kp.p, n = kp.n, r0 = kp.r;
-          const nw = [m00 * n[0] + m01 * n[1] + m02 * n[2], m10 * n[0] + m11 * n[1] + m12 * n[2], m20 * n[0] + m21 * n[1] + m22 * n[2]];
-          PX = p[0]; PZ = p[2]; rubovi();                                               // stvarni (odlomljeni) bok na tom mjestu
-          const qb = n[1] ? 0 : n[0] ? QX : QZ, pom = -qb + r0 * 0.7;
-          const ox = p[0] + n[0] * pom, oy = n[1] ? -hy - r0 * 0.7 : p[1], oz = p[2] + n[2] * pom;
+          const kp = k.kapi[qi], r0 = kp.r;
+          PX = kp.px; PZ = hz; rubovi();                                               // stvarni (odlomljeni) prednji rub na tom mjestu
+          const ox = kp.px, oy = -hy + 0.02, oz = hz - QZ + PZ - hz + 0.004;
           const s0 = [cx + m00 * ox + m01 * oy + m02 * oz, cy + m10 * ox + m11 * oy + m12 * oz, cz + m20 * ox + m21 * oy + m22 * oz];
-          const dn = N.norm3([nw[0] * nw[1], -1 + nw[1] * nw[1], nw[2] * nw[1]]);      // pad projiciran na plohu boka
-          const L1 = kp.L1, L2 = kp.L2, e1 = [s0[0] + dn[0] * L1, s0[1] + dn[1] * L1, s0[2] + dn[2] * L1];
-          N.cijev(S, function (t) {
-            if (L2 <= 0) return [s0[0] + dn[0] * L1 * t, s0[1] + dn[1] * L1 * t, s0[2] + dn[2] * L1 * t];
-            if (t < 0.5) return [s0[0] + dn[0] * L1 * 2 * t, s0[1] + dn[1] * L1 * 2 * t, s0[2] + dn[2] * L1 * 2 * t];
-            return [e1[0], e1[1] - L2 * (2 * t - 1), e1[2]];
-          }, {
+          const L = s0[1] - VRH - 0.006;
+          if (L < 0.04) continue;
+          N.cijev(S, function (t) { return [s0[0], s0[1] - L * t, s0[2]]; }, {
             r: function (t) {
-              if (t >= 0.88) { const u = (t - 0.88) / 0.12; return r0 * 1.5 * Math.sqrt(Math.max(0, 1 - u * u)); }   // kaplja na kraju
-              return r0 * (1.4 - 0.9 * korakG(0, 0.4, t) + 1.0 * korakG(0.55, 0.88, t));               // široko s ruba, tanka nit, pa kaplja
+              const v = (t - 0.85) / 0.15;
+              return r0 * (1.6 - 1.1 * korakG(0.05, 0.45, t)) * (1 - korakG(0.85, 1, t)) + r0 * 1.5 * Math.sqrt(Math.max(0, 1 - v * v));   // vrat pa kaplja
             },
             boja: function (T, t, a) {
-              let col = mijesaj(MED_S, MED, 0.15 + 0.55 * t);
-              if (T.ny > 0.2 && T.nx < 0) col = mijesaj(col, VOSAK, 0.35 * korakG(0.2, 0.7, T.ny - T.nx));   // odsjaj na gornjoj lijevoj strani kapi
+              let col = mijesaj(MED_S, MED_T, 0.2 + 0.6 * t);
+              if (T.ny > 0.2 && T.nx < 0) col = mijesaj(col, MED_SJAJ, 0.4 * korakG(0.2, 0.7, T.ny - T.nx));   // odsjaj na gornjoj lijevoj strani kapi
               return tvar(T, puta(col, 0.92 + 0.16 * pjega(T.x, T.y, T.z, 50)), 1, 0.4, 1.45, V.OBICNO, od + 0.03);
             }
           });
@@ -229,13 +253,13 @@
       }
 
       // ── lokva meda na tanjuru: tanka sjajna ploha, na rubu tanja i svjetlija
-      N.rezSDF(S, sdfLokva, [-1.62, -0.78, VRH - 0.005, VRH + LOKVA_H + 0.01, -1.05, -0.58], {
+      N.rezSDF(S, sdfLokva, [-1.5, -0.56, VRH - 0.005, VRH + LOKVA_H + 0.01, -1.16, -0.68], {
         h: S.korak * 0.45, osi: 'z', bezDna: true, tezina: 1,
         boja: function (T) {
           const t = sat((T.y - VRH) / LOKVA_H);
           let col = mijesaj(MED, MED_T, korakG(0.1, 0.9, t));
-          col = mijesaj(col, VOSAK, 0.25 * korakG(0.9, 1, t) * pjega(T.x, 0, T.z, 15));
-          return tvar(T, puta(col, 0.92 + 0.16 * pjega(T.x, T.y, T.z, 40)), 1, 0.4, 1.3, V.OBICNO, 0.5);
+          col = mijesaj(col, MED_SJAJ, 0.3 * korakG(0.9, 1, t) * pjega(T.x, 0, T.z, 15));
+          return tvar(T, puta(col, 0.92 + 0.16 * pjega(T.x, T.y, T.z, 40)), 1, 0.4, 1.2, V.OBICNO, 0.5);
         }
       });
     }

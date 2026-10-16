@@ -43,6 +43,17 @@
             return tvar(T, col, 0.8, 0.45, 1, V.OBICNO, 0.8 + 0.18 * t);
           }
         });
+        // uski listići na nekim stabljikama (ispod cvijeta), sivozeleni
+        if (i % 3 === 1) {
+          for (let li = 0; li < 2; li++) {
+            const tl = 0.36 + 0.14 * li + 0.05 * rnd(), p0 = put(tl), la = rnd() * 6.28, up = 0.5 + 0.3 * rnd();
+            const ld = norm3([Math.cos(la) * 0.6, up, Math.sin(la) * 0.6]);
+            N.cijev(S, function (t) { return [p0[0] + ld[0] * 0.13 * t, p0[1] + ld[1] * 0.13 * t - 0.02 * t * t, p0[2] + ld[2] * 0.13 * t]; }, {
+              r: function (t) { return 0.012 * Math.pow(Math.sin(Math.PI * Math.min(1, t * 1.05 + 0.02)), 0.6); }, spljosti: 0.25,
+              boja: function (T) { return tvar(T, mijesaj(C.stabljika, C.list, 0.25), 0.7, 0.4, 0.9, V.OBICNO, 0.78 + 0.1 * tl); }
+            });
+          }
+        }
         if (i % 5 === 4) yield;
       }
       // uzica: spirala oko snopa pri vezu i dva kraja koja vise
