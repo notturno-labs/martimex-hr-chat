@@ -61,35 +61,6 @@ Druga ideja: zlatna kap padne u tamnu površinu poput zrcala, a iz tekućine nas
   ostatak kruga ide dalje kao sada) ili samostalna animacija drugdje na webshopu (npr. naslovnica).
   Trajanja i izgled su u `POSTAVKE` i konstantama na vrhu odjeljka POVRŠINA, KAP I FLAKON.
 
-## Tri note — priča o nastanku mirisa (`tri-note/`)
-
-Nastavak „Kapi esencije”: flakon i njegov odraz u površini su isti, a oko njih je složena priča
-kao u reklami za parfem.
-
-- `tri-note/tri-note.html` + `tri-note/tri-note.js`: samostalna stranica kao `kap/`; isti WebGL
-  program, četiri sloja (površina, kapi, flakon, miris).
-- Krug traje 22,5 s i ponavlja se:
-  - tri note: iz iskrica se jedna za drugom skupe tri kapi, svaka svoje boje i težine, i padnu
-    svaka na svoje mjesto (svijetla citrusna oko 2,1 s, ružičasta cvjetna oko 3,8 s, teška
-    jantarna oko 5,5 s); svaki udar ima krunu kapljica, kapljicu koja poskoči iz sredine i
-    krugove valova koji se međusobno presijecaju, a svaka note se razlije u lokvicu svoje boje
-    sa svijetlim rubom
-  - stapanje (od 6,5 s): tekućina se zavrti (bliže sredini brže), tri boje se u spirali uviju
-    jedna u drugu i uvuku prema sredini
-  - flakon (od 6,8 s): iz vrtloga se diže kao u `kap/`, prazno staklo se zatim puni esencijom
-    odozdo (8,3–11,2 s), a preko flakona prijeđe svjetlo kad je sprijeda (pločica sa znakom)
-  - otvaranje (11,9 s): zlatni čep se podigne, malo nagne i lebdi iznad grla; iz flakona izađu
-    tri trake mirisa u bojama svojih nota (12,6–19 s), dignu se, uviju oko flakona u sve široj
-    spirali, spuste niz njega i rasprše
-  - zatvaranje (16 s): čep se spusti natrag i svjetlo još jednom prijeđe preko flakona; flakon se
-    cijelo vrijeme polako okreće i zrcali u površini
-  - kraj (od 19,5 s): flakon se odozgo slije natrag u površinu, val se razlije i krug kreće
-    ispočetka
-- Trajanja su konstante na vrhu odjeljka POVRŠINA, TRI KAPI, FLAKON NA POVRŠINI I MIRIS (`KAPI`:
-  mjesto, trenutak i veličina svake kapi; `VRTLOG0`, `FLAKON0`, `PUNI0/1`, `SJAJ0/1`, `CEP0/1`,
-  `MIRIS0`, `KRAJ0`), boje nota u `POSTAVKE.boje.note`. `window.__mxSkok(t)` skoči na trenutak
-  (za slike).
-
 ## Stvarno — pravi 3D umjesto točkica (`stvarno/`)
 
 Isti početni ekran i isti krug (objekt → flakon → logotipi → Penhaligon's bočice → natpis
@@ -180,13 +151,12 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
 
 - `proba.html` glumi Voiceflowov prozor chata, pa se početni ekran vidi kao u pravom chatu:
   `proba.html?skripta=saturn/pocetna-chata-saturn.js`, `proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
-  (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije”, „Tri note” i „Naxos” se
-  otvaraju izravno: `kap/kap.html`, `tri-note/tri-note.html`, `naxos/naxos.html`.
+  (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije” i „Naxos” se otvaraju
+  izravno: `kap/kap.html`, `naxos/naxos.html`.
 - Kad je ova mapa na grani `main`, vidi se i na GitHub Pages:
   `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=saturn/pocetna-chata-saturn.js`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/kap/kap.html`
-  , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/tri-note/tri-note.html`
   i `https://notturno-labs.github.io/martimex-hr-chat/pokusi/naxos/naxos.html`.
 - `snimi.js` snima video sličicu po sličicu (vrijeme animacije teče točno 1/fps po sličici, pa je
   video gladak i na sporom računalu). Treba ffmpeg i Playwright (Chromium sa SwiftShaderom,
@@ -195,8 +165,6 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
     saturn.mp4 od=0 do=22 w=460 h=920 dpr=2 cekaj=marke,pen,prsten`
   - Kap: `NODE_PATH=$(npm root -g) node snimi.js "x=1" kap.mp4 stranica=kap/kap.html do=15
     w=460 h=920 dpr=2 cekaj=kap`
-  - Tri note: `NODE_PATH=$(npm root -g) node snimi.js "x=1" tri-note.mp4
-    stranica=tri-note/tri-note.html do=22.5 w=460 h=920 dpr=2 cekaj=triNote`
   - Stvarno: `NODE_PATH=$(npm root -g) node snimi.js "skripta=stvarno/pocetna-chata-stvarno.js"
     stvarno.mp4 do=45 w=460 h=920 dpr=2 cekaj=stvarno`
   - Naxos: `NODE_PATH=$(npm root -g) node snimi.js "x=1" naxos.mp4 stranica=naxos/naxos.html do=14
