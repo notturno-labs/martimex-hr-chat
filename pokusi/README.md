@@ -105,6 +105,39 @@ flakon izranja iz tamne tekućine i vraća se u nju.
 - Trajanja su konstante na vrhu odjeljka POVRŠINA I FLAKON KOJI SE DIŽE IZ TEKUĆINE (`SJAJ_ISPOD0/1`,
   `DIZ0/1`, `SJAJ0`, `TON0/1`, izvori valova u `UDARI`). `window.__mxSkok(t)` skoči na trenutak.
 
+## Veo — predstavljanje ispod vela (`veo/`)
+
+Nova priča oko istog flakona i iste tamne površine koja ga zrcali: otkrivanje ispod vela, kao kad se
+predstavlja novi parfem. Veo je prava simulacija svilene tkanine, a točkice su mu u nitima tkanine,
+kao flakon u nitima stakla.
+
+- `veo/veo.html` + `veo/veo.js`: samostalna stranica kao `kap/`; dva WebGL programa (površina i
+  flakon; veo), geometrija flakona prepisana iz `pocetna-chata.js`. `kap/`, `kap2/` i `izron/` nisu
+  mijenjani.
+- Krug traje 14 s i ponavlja se:
+  - iz tame polako pada svileni veo ružičastog pudera (boja naglaska u naslovu), vijori i lovi svjetlo
+  - zakači se za vrh čepa (oko 2,2 s), spušta se, obavija flakon i otkriva njegov oblik; kroz tkaninu
+    se staklo i zlatna pločica tek naziru, a gdje rubovi vela dodirnu površinu šire se tihi krugovi
+  - nevidljiva ruka uhvati veo pri vrhu (4,7 s) i povuče ga gore i natrag: svila klizi niz staklo,
+    otkriveno staklo zasvijetli na rubu vela, veo odleti u tamu, preko flakona prijeđe svjetlo (6,9 s)
+  - flakon stoji sam i zrcali se; kamera ga polako obilazi i primiče se, svjetlo se polako njiše pa
+    odsjaji klize preko faseta; još jedan prelazak svjetla (11,2 s)
+  - iz tame pada novi veo, prekrije flakon i krug kreće ispočetka. Pri prvom otvaranju flakon se ne
+    vidi dok ga veo ne prekrije i otkrije.
+- Simulacija (`napraviVeo`): mreža čestica (45 × 45 na računalu, 35 × 35 na mobitelu), XPBD u malim
+  koracima (1/300 s, uvijek od početka kruga, pa je svaki krug isti bez obzira na brzinu računala):
+  niti se ne rastežu, smik i savijanje su mekani (svila se priljubi uz oblik), zrak koči tkaninu
+  okomito na plohu (lebdi i vijori), sudari s flakonom (tijelo vrtnje, udaljenost do plašta na mreži)
+  i površinom s Coulombovim trenjem. Ruka drži nekoliko čestica i vodi ih po Bézierovoj krivulji;
+  dok vuče, nijedna čestica ne smije biti dalje od ruke nego po tkanini. Oko 1 ms po sličici.
+- Točkice vela (42 000 na računalu, 21 000 na mobitelu) su u nitima; svake sličice im se mjesto,
+  normala i smjer niti izračunaju iz čestica. Svila ima odsjaj uzduž niti (Kajiya-Kay), svijetli
+  porub i utapa se u tamu izvan svjetla. Flakon se ispod vela tek nazire (pokrivenost po 16 isječaka
+  oko osi), a odraz u površini je kao u `kap/`.
+- Postavke su na vrhu skripte: `POSTAVKE` (boje svile, broj točkica, trajanje kruga), `TIJEK`
+  (kad ruka vuče, kad veo nestane, prelasci svjetla) i `VEO` (veličina, odakle pada, teža, otpor
+  zraka, mekoća, trenje, mjesto hvata i put ruke). `window.__mxSkok(t)` skoči na trenutak (za slike).
+
 ## Stvarno — pravi 3D umjesto točkica (`stvarno/`)
 
 Isti početni ekran i isti krug (objekt → flakon → logotipi → Penhaligon's bočice → natpis
@@ -195,14 +228,16 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
 
 - `proba.html` glumi Voiceflowov prozor chata, pa se početni ekran vidi kao u pravom chatu:
   `proba.html?skripta=saturn/pocetna-chata-saturn.js`, `proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
-  (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije” (I i II), „Izron” i „Naxos”
-  se otvaraju izravno: `kap/kap.html`, `kap2/kap2.html`, `izron/izron.html`, `naxos/naxos.html`.
+  (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije” (I i II), „Izron”, „Veo” i
+  „Naxos” se otvaraju izravno: `kap/kap.html`, `kap2/kap2.html`, `izron/izron.html`, `veo/veo.html`,
+  `naxos/naxos.html`.
 - Kad je ova mapa na grani `main`, vidi se i na GitHub Pages:
   `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=saturn/pocetna-chata-saturn.js`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/kap/kap.html`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/kap2/kap2.html`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/izron/izron.html`
+  , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/veo/veo.html`
   i `https://notturno-labs.github.io/martimex-hr-chat/pokusi/naxos/naxos.html`.
 - `snimi.js` snima video sličicu po sličicu (vrijeme animacije teče točno 1/fps po sličici, pa je
   video gladak i na sporom računalu). Treba ffmpeg i Playwright (Chromium sa SwiftShaderom,
@@ -213,6 +248,10 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
     w=460 h=920 dpr=2 cekaj=kap`
   - Kap II: `NODE_PATH=$(npm root -g) node snimi.js "x=1" kap2.mp4 stranica=kap2/kap2.html do=18.5
     w=460 h=920 dpr=2 cekaj=kap2`
+  - Izron: `NODE_PATH=$(npm root -g) node snimi.js "x=1" izron.mp4 stranica=izron/izron.html do=17
+    w=460 h=920 dpr=2 cekaj=izron`
+  - Veo: `NODE_PATH=$(npm root -g) node snimi.js "x=1" veo.mp4 stranica=veo/veo.html do=14
+    w=460 h=920 dpr=2 cekaj=veo` (uski prozor je postavka za mobitel; za računalo npr. w=1280 h=860)
   - Stvarno: `NODE_PATH=$(npm root -g) node snimi.js "skripta=stvarno/pocetna-chata-stvarno.js"
     stvarno.mp4 do=45 w=460 h=920 dpr=2 cekaj=stvarno`
   - Naxos: `NODE_PATH=$(npm root -g) node snimi.js "x=1" naxos.mp4 stranica=naxos/naxos.html do=14
