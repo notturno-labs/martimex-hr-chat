@@ -61,6 +61,30 @@ Druga ideja: zlatna kap padne u tamnu površinu poput zrcala, a iz tekućine nas
   ostatak kruga ide dalje kao sada) ili samostalna animacija drugdje na webshopu (npr. naslovnica).
   Trajanja i izgled su u `POSTAVKE` i konstantama na vrhu odjeljka POVRŠINA, KAP I FLAKON.
 
+## Kap esencije II — kap na niti, flakon iz tekućine (`kap2/`)
+
+Dorada „Kapi esencije”: flakon, njegov odraz, svjetlo i boje su isti, nova je kap i način na
+koji flakon nastaje i nestaje; sporo i mirno, kao reklama.
+
+- `kap2/kap2.html` + `kap2/kap2.js`: samostalna stranica kao `kap/`; isti WebGL program, tri sloja
+  (površina, kap s niti, flakon). `kap/` nije mijenjan.
+- Krug traje 18,5 s i ponavlja se:
+  - iz tame se spusti tanka nit svjetla, niz koju teku iskre; na njezinu vrhu raste viseća kap
+    (okruglo dno, vrat prema niti), otežava i izduži se, vrat se stanji i kap se otkine (2,6 s);
+    nit se povuče natrag u tamu
+  - u padu se kap zaobli u kuglu istog obujma i zatitra; udar (3,15 s): bljesak, kruna kapljica u
+    usporenom tempu, stup tekućine iz sredine koji otkine kapljicu, krugovi valova
+  - površina se nadme, probije je šiljak čepa (oko 4,8 s) i flakon se uspravno izdigne iz tekućine
+    (do 8,4 s); dio pod površinom se ne crta, uz staklo se penje svijetla vodena crta (meniskus),
+    staklo je mokro i cijedi se u kapljicama, oko dna se uzdigne prsten površine
+  - flakon stoji, polako se okreće (sprijeda je usred stajanja), zrcali se, preko njega prijeđe
+    svjetlo (8,9 s)
+  - od 12,9 s flakon tone natrag (do 16,8 s): površina se penje uz staklo, zadnji nestane šiljak,
+    razlije se zadnji val i površina se smiri
+- Trajanja su konstante na vrhu odjeljka POVRŠINA, KAP S NITI I FLAKON KOJI SE DIŽE IZ TEKUĆINE
+  (`RAST0/1`, `VRAT0`, `OTKID`, `PADT`, `DIZ0/1`, `SJAJ0`, `TON0/1`). `window.__mxSkok(t)` skoči na
+  trenutak (za slike).
+
 ## Stvarno — pravi 3D umjesto točkica (`stvarno/`)
 
 Isti početni ekran i isti krug (objekt → flakon → logotipi → Penhaligon's bočice → natpis
@@ -151,12 +175,13 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
 
 - `proba.html` glumi Voiceflowov prozor chata, pa se početni ekran vidi kao u pravom chatu:
   `proba.html?skripta=saturn/pocetna-chata-saturn.js`, `proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
-  (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije” i „Naxos” se otvaraju
-  izravno: `kap/kap.html`, `naxos/naxos.html`.
+  (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije” (I i II) i „Naxos” se
+  otvaraju izravno: `kap/kap.html`, `kap2/kap2.html`, `naxos/naxos.html`.
 - Kad je ova mapa na grani `main`, vidi se i na GitHub Pages:
   `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=saturn/pocetna-chata-saturn.js`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/kap/kap.html`
+  , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/kap2/kap2.html`
   i `https://notturno-labs.github.io/martimex-hr-chat/pokusi/naxos/naxos.html`.
 - `snimi.js` snima video sličicu po sličicu (vrijeme animacije teče točno 1/fps po sličici, pa je
   video gladak i na sporom računalu). Treba ffmpeg i Playwright (Chromium sa SwiftShaderom,
@@ -165,6 +190,8 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
     saturn.mp4 od=0 do=22 w=460 h=920 dpr=2 cekaj=marke,pen,prsten`
   - Kap: `NODE_PATH=$(npm root -g) node snimi.js "x=1" kap.mp4 stranica=kap/kap.html do=15
     w=460 h=920 dpr=2 cekaj=kap`
+  - Kap II: `NODE_PATH=$(npm root -g) node snimi.js "x=1" kap2.mp4 stranica=kap2/kap2.html do=18.5
+    w=460 h=920 dpr=2 cekaj=kap2`
   - Stvarno: `NODE_PATH=$(npm root -g) node snimi.js "skripta=stvarno/pocetna-chata-stvarno.js"
     stvarno.mp4 do=45 w=460 h=920 dpr=2 cekaj=stvarno`
   - Naxos: `NODE_PATH=$(npm root -g) node snimi.js "x=1" naxos.mp4 stranica=naxos/naxos.html do=14
