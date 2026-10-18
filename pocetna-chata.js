@@ -7,14 +7,17 @@
   //  POSTAVKAMA (animacija):
   //
   //   'film' (zadano): film Naxos. Sastojci mirisa s fotografije lebde
-  //     složeni na crnoj podlozi, podignu se i zavrte u krug, u sredini
-  //     vrtloga iz zlatnog svjetla nastane bočica Xerjoff Naxos, vrtlog se
-  //     rasprsne prema kameri i oko bočice se izoštri prizor (med, limuni,
-  //     cvjetovi naranče) u mekom krugu svjetla; zatim se prizor povuče u
-  //     tamu, bočica se rastopi u svjetlo, a sastojci doplove natrag i
-  //     slože se. Krug traje 14,6 s i ponavlja se. Crta se uživo u WebGL-u
-  //     iz komada fotografija (modul film/film.js, vidi film/README.md);
-  //     ako se modul ne učita, prikaže se animacija od točkica ('tocke')
+  //     složeni na crnoj podlozi i dišu (listovi se savijaju, med teče),
+  //     podignu se i zavrte u krug (listovi lepršaju, s meda se otkidaju
+  //     kapi), u sredini vrtloga skupi se zlatno svjetlo i iz njega se
+  //     bočica Xerjoff Naxos napuni rastaljenim zlatom; vrtlog se rasprsne
+  //     prema kameri i oko bočice se izoštri živi prizor (vjetar u
+  //     listovima, sunce kroz krošnju, med teče) u mekom krugu svjetla;
+  //     zatim se prizor povuče u tamu, bočica se raspadne u zlatnu prašinu,
+  //     a sastojci doplove natrag i slože se. Krug traje 14,6 s i ponavlja
+  //     se. Crta se uživo u WebGL-u iz komada fotografija (modul
+  //     film/film.js, vidi film/README.md); ako se modul ne učita,
+  //     prikaže se animacija od točkica ('tocke')
   //
   //   'film-video': ista priča kao unaprijed izrađen video (modul
   //     film-video/film-video.js, vidi film-video/README.md)
@@ -194,8 +197,8 @@
     ponavljaj: true,          // false → animacija stane na natpisu MARTIMEX (film i film-video: na bočici u prizoru; razlijetanje: složeno nakon jednog kruga)
 
     // Koja animacija je na početnom ekranu:
-    // 'film'         → film Naxos: sastojci se zavrte u krug, iz svjetla nastane
-    //                  bočica Xerjoff Naxos u prizoru sa sastojcima, pa se sve
+    // 'film'         → film Naxos: živi sastojci se zavrte u krug, iz svjetla nastane
+    //                  bočica Xerjoff Naxos u živom prizoru sa sastojcima, pa se sve
     //                  vrati u sastojke; crta se uživo u WebGL-u (modul
     //                  film/film.js, vidi film/README.md)
     // 'film-video'   → ista priča kao unaprijed izrađen video (modul
