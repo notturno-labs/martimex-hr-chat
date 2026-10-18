@@ -85,6 +85,26 @@ koji flakon nastaje i nestaje; sporo i mirno, kao reklama.
   (`RAST0/1`, `VRAT0`, `OTKID`, `PADT`, `DIZ0/1`, `SJAJ0`, `TON0/1`). `window.__mxSkok(t)` skoči na
   trenutak (za slike).
 
+## Izron — bez kapi: flakon izranja iz tekućine (`izron/`)
+
+Dorada „Kapi esencije II” bez kapi. Flakon, odraz, svjetlo i boje su isti; priča je svedena na jedno:
+flakon izranja iz tamne tekućine i vraća se u nju.
+
+- `izron/izron.html` + `izron/izron.js`: samostalna stranica kao `kap/`; isti WebGL program, dva sloja
+  (površina, flakon). `kap/` i `kap2/` nisu mijenjani.
+- Krug traje 17 s i ponavlja se:
+  - tamna, mirna površina; ispod nje se u sredini probudi zlatno svjetlo koje se nazire kroz tekućinu
+    (0,6–2,4 s), a s ruba prema sredini dođu dva kruga valova (1,4 i 2,3 s) i stope se u sredini
+  - površina se nadme, probije je šiljak čepa (oko 4,8 s) i flakon se uspravno izdigne iz tekućine
+    (do 8,4 s): dio pod površinom se ne crta, uz staklo se penje svijetla vodena crta, staklo je mokro
+    i cijedi se u kapljicama, oko dna se uzdigne prsten površine
+  - flakon stoji, polako se okreće (sprijeda je usred stajanja), zrcali se, preko njega prijeđe
+    svjetlo (8,9 s)
+  - od 12,4 s flakon tone natrag (do 16,2 s): površina se penje uz staklo, svjetlo ispod površine
+    zasja i ugasi se, zadnji nestane šiljak, razliju se zadnji valovi i površina se smiri
+- Trajanja su konstante na vrhu odjeljka POVRŠINA I FLAKON KOJI SE DIŽE IZ TEKUĆINE (`SJAJ_ISPOD0/1`,
+  `DIZ0/1`, `SJAJ0`, `TON0/1`, izvori valova u `UDARI`). `window.__mxSkok(t)` skoči na trenutak.
+
 ## Stvarno — pravi 3D umjesto točkica (`stvarno/`)
 
 Isti početni ekran i isti krug (objekt → flakon → logotipi → Penhaligon's bočice → natpis
@@ -175,13 +195,14 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
 
 - `proba.html` glumi Voiceflowov prozor chata, pa se početni ekran vidi kao u pravom chatu:
   `proba.html?skripta=saturn/pocetna-chata-saturn.js`, `proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
-  (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije” (I i II) i „Naxos” se
-  otvaraju izravno: `kap/kap.html`, `kap2/kap2.html`, `naxos/naxos.html`.
+  (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije” (I i II), „Izron” i „Naxos”
+  se otvaraju izravno: `kap/kap.html`, `kap2/kap2.html`, `izron/izron.html`, `naxos/naxos.html`.
 - Kad je ova mapa na grani `main`, vidi se i na GitHub Pages:
   `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=saturn/pocetna-chata-saturn.js`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/kap/kap.html`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/kap2/kap2.html`
+  , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/izron/izron.html`
   i `https://notturno-labs.github.io/martimex-hr-chat/pokusi/naxos/naxos.html`.
 - `snimi.js` snima video sličicu po sličicu (vrijeme animacije teče točno 1/fps po sličici, pa je
   video gladak i na sporom računalu). Treba ffmpeg i Playwright (Chromium sa SwiftShaderom,
