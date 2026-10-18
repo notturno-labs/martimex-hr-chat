@@ -6,7 +6,17 @@
   //  početni ekran na crnoj podlozi. Animacija na njemu bira se u
   //  POSTAVKAMA (animacija):
   //
-  //   'razlijetanje' (zadano): fotografija sastojaka mirisa (limun s
+  //   'film' (zadano): film Naxos. Sastojci mirisa s fotografije lebde
+  //     složeni na crnoj podlozi, podignu se i zavrte u krug, u sredini
+  //     vrtloga iz zlatnog svjetla nastane bočica Xerjoff Naxos, vrtlog se
+  //     rasprsne prema kameri i oko bočice se izoštri prizor (med, limuni,
+  //     cvjetovi naranče) u mekom krugu svjetla; zatim se prizor povuče u
+  //     tamu, bočica se rastopi u svjetlo, a sastojci doplove natrag i
+  //     slože se. Krug traje 14,6 s i ponavlja se. Unaprijed izrađen video
+  //     (modul film/film.js, vidi film/README.md); ako se modul ne učita,
+  //     prikaže se animacija od točkica ('tocke')
+  //
+  //   'razlijetanje': fotografija sastojaka mirisa (limun s
   //     listovima, med, saće, kora limete, bijeli cvjetovi) izrezana u
   //     ~40 komada. Komadi doplove iz tame i slože se u prizor, prizor
   //     lebdi, zatim se komadi razlete uz prskanje kapi meda, u usporenoj
@@ -178,15 +188,18 @@
       natpis: 5,              // natpis MARTIMEX miruje (preko njega polako prijeđe meki sjaj)
       prijelaz: 2.4           // svaki ostali prijelaz iz oblika u oblik
     },
-    ponavljaj: true,          // false → animacija stane na natpisu MARTIMEX (razlijetanje: stane složeno nakon jednog kruga)
+    ponavljaj: true,          // false → animacija stane na natpisu MARTIMEX (film: na bočici u prizoru; razlijetanje: složeno nakon jednog kruga)
 
     // Koja animacija je na početnom ekranu:
+    // 'film'         → film Naxos: sastojci se zavrte u krug, iz svjetla nastane
+    //                  bočica Xerjoff Naxos u prizoru sa sastojcima, pa se sve
+    //                  vrati u sastojke (modul film/film.js, vidi film/README.md)
     // 'razlijetanje' → fotografija sastojaka mirisa (limun, med, saće, cvjetovi):
     //                  komadi se slože, razlete i ponovno slože (modul
     //                  razlijetanje/razlijetanje.js, vidi razlijetanje/README.md)
     // 'tocke'        → animacija od točkica: objekt, flakon, prizor Naxos,
     //                  logotipi, Penhaligon's bočice i natpis MARTIMEX
-    animacija: 'razlijetanje',
+    animacija: 'film',
 
     // Logotipi parfemskih kuća (marke/marke.js) između flakona i Penhaligon's
     // bočica (false → krug bez njih)
@@ -2808,44 +2821,54 @@
 
 
     // ═══════════════════════════════════════════════════════════════════
-    //  RAZLIJETANJE — fotografija sastojaka koja se razleti i ponovno složi
-    //  (modul razlijetanje/razlijetanje.js; postavka animacija:
-    //  'razlijetanje'). Ima isti oblik kao napraviAnimaciju. Modul se učita
-    //  pri pripremi; ako se ne učita, početni ekran ima animaciju od točkica
+    //  VANJSKE ANIMACIJE — film (film/film.js) i razlijetanje
+    //  (razlijetanje/razlijetanje.js); postavka animacija. Imaju isti oblik
+    //  kao napraviAnimaciju. Modul se učita pri pripremi; ako se ne učita,
+    //  početni ekran ima animaciju od točkica
     // ═══════════════════════════════════════════════════════════════════
-    let RAZ_MODUL = null;
-    function ucitajRazlijetanje() {
-      if (RAZ_MODUL) return RAZ_MODUL;
+    const VANJSKE = {
+      film: { datoteka: 'film/film.js', globalno: 'MX_FILM' },
+      razlijetanje: { datoteka: 'razlijetanje/razlijetanje.js', globalno: 'MX_RAZLIJETANJE' }
+    };
+    const VANJSKI_MODULI = {};
+    function ucitajVanjsku(vrsta) {
+      if (VANJSKI_MODULI[vrsta]) return VANJSKI_MODULI[vrsta];
+      const o = VANJSKE[vrsta];
       const v = '?v=' + Math.floor(Date.now() / 60000);
-      RAZ_MODUL = (window.MX_RAZLIJETANJE ? Promise.resolve(true) : ucitajSkriptu(BAZA + 'razlijetanje/razlijetanje.js' + v))
-        .then(function () { return window.MX_RAZLIJETANJE && window.MX_RAZLIJETANJE.napravi ? window.MX_RAZLIJETANJE : null; });
-      return RAZ_MODUL;
+      VANJSKI_MODULI[vrsta] = (window[o.globalno] ? Promise.resolve(true) : ucitajSkriptu(BAZA + o.datoteka + v))
+        .then(function () { const M = window[o.globalno]; return M && M.napravi ? M : null; });
+      return VANJSKI_MODULI[vrsta];
     }
 
-    function napraviRazlijetanje(platno, scena, dogadaji) {
-      let pravi = null, unisteno = false, priprema = null, misX = 0, misY = 0;
-      function pripremi() {
-        if (priprema) return priprema;
-        priprema = ucitajRazlijetanje().then(function (M) {
-          if (unisteno) return false;
-          if (M) pravi = M.napravi(platno, scena, dogadaji, { mirno: MIRNO, ponavljaj: P.ponavljaj, velicina: VELICINA });
-          else {
-            console.warn('[Martimex] Modul razlijetanje.js nije učitan – početni ekran s animacijom od točkica');
-            pravi = napraviAnimaciju(platno, scena, dogadaji);
-          }
-          pravi.mis(misX, misY);
-          return pravi.pripremi();
-        });
-        return priprema;
-      }
-      return {
-        pripremi: pripremi,
-        velicina: function () { if (pravi) pravi.velicina(); },
-        ispocetka: function () { return pripremi().then(function () { return pravi ? pravi.ispocetka() : false; }); },
-        stani: function () { if (pravi) pravi.stani(); },
-        mis: function (x, y) { misX = x; misY = y; if (pravi) pravi.mis(x, y); },
-        izlaz: function (gotovo) { if (pravi) pravi.izlaz(gotovo); else gotovo(); },
-        unisti: function () { unisteno = true; if (pravi) pravi.unisti(); }
+    function napraviVanjsku(vrsta) {
+      return function (platno, scena, dogadaji) {
+        let pravi = null, unisteno = false, priprema = null, misX = 0, misY = 0;
+        function pripremi() {
+          if (priprema) return priprema;
+          priprema = ucitajVanjsku(vrsta).then(function (M) {
+            if (unisteno) return false;
+            if (M) pravi = M.napravi(platno, scena, dogadaji, {
+              mirno: MIRNO, ponavljaj: P.ponavljaj, velicina: VELICINA,
+              mapa: BAZA + VANJSKE[vrsta].datoteka.replace(/[^\/]*$/, '')
+            });
+            else {
+              console.warn('[Martimex] Modul ' + VANJSKE[vrsta].datoteka + ' nije učitan – početni ekran s animacijom od točkica');
+              pravi = napraviAnimaciju(platno, scena, dogadaji);
+            }
+            pravi.mis(misX, misY);
+            return pravi.pripremi();
+          });
+          return priprema;
+        }
+        return {
+          pripremi: pripremi,
+          velicina: function () { if (pravi) pravi.velicina(); },
+          ispocetka: function () { return pripremi().then(function () { return pravi ? pravi.ispocetka() : false; }); },
+          stani: function () { if (pravi) pravi.stani(); },
+          mis: function (x, y) { misX = x; misY = y; if (pravi) pravi.mis(x, y); },
+          izlaz: function (gotovo) { if (pravi) pravi.izlaz(gotovo); else gotovo(); },
+          unisti: function () { unisteno = true; if (pravi) pravi.unisti(); }
+        };
       };
     }
 
@@ -3310,7 +3333,7 @@
       korijen.appendChild(dno);
 
       let otvoreno = false, izlazi = false;
-      const anim = (P.animacija === 'razlijetanje' ? napraviRazlijetanje : napraviAnimaciju)(platno, prostor, {
+      const anim = (VANJSKE[P.animacija] ? napraviVanjsku(P.animacija) : napraviAnimaciju)(platno, prostor, {
         bezAnimacije: function () { korijen.classList.add('mx-p-bez-gl'); },
         podnaslov: function (da) { korijen.classList.toggle('mx-p-podnaslov-da', da); },
         mjere: function (ispod) { korijen.style.setProperty('--mx-p-ispod', ispod + 'px'); },

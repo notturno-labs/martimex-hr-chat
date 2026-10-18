@@ -1,7 +1,7 @@
 # Razlijetanje — fotografija sastojaka koja se razleti i ponovno složi
 
 Animacija početnog ekrana chata kad je u `pocetna-chata.js` postavka `animacija: 'razlijetanje'`
-(zadano). Umjesto animacije od točkica prikazuje se fotografija sastojaka mirisa `izvor.jpg`
+(zadana je `'film'`, vidi `../film/README.md`). Umjesto animacije od točkica prikazuje se fotografija sastojaka mirisa `izvor.jpg`
 (limun s listovima, med, saće, kora limete, bijeli cvjetovi) izrezana u ~40 komada, na crnoj
 podlozi početnog ekrana.
 
