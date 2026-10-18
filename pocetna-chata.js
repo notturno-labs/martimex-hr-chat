@@ -12,9 +12,12 @@
   //     rasprsne prema kameri i oko bočice se izoštri prizor (med, limuni,
   //     cvjetovi naranče) u mekom krugu svjetla; zatim se prizor povuče u
   //     tamu, bočica se rastopi u svjetlo, a sastojci doplove natrag i
-  //     slože se. Krug traje 14,6 s i ponavlja se. Unaprijed izrađen video
-  //     (modul film/film.js, vidi film/README.md); ako se modul ne učita,
-  //     prikaže se animacija od točkica ('tocke')
+  //     slože se. Krug traje 14,6 s i ponavlja se. Crta se uživo u WebGL-u
+  //     iz komada fotografija (modul film/film.js, vidi film/README.md);
+  //     ako se modul ne učita, prikaže se animacija od točkica ('tocke')
+  //
+  //   'film-video': ista priča kao unaprijed izrađen video (modul
+  //     film-video/film-video.js, vidi film-video/README.md)
   //
   //   'razlijetanje': fotografija sastojaka mirisa (limun s
   //     listovima, med, saće, kora limete, bijeli cvjetovi) izrezana u
@@ -188,12 +191,15 @@
       natpis: 5,              // natpis MARTIMEX miruje (preko njega polako prijeđe meki sjaj)
       prijelaz: 2.4           // svaki ostali prijelaz iz oblika u oblik
     },
-    ponavljaj: true,          // false → animacija stane na natpisu MARTIMEX (film: na bočici u prizoru; razlijetanje: složeno nakon jednog kruga)
+    ponavljaj: true,          // false → animacija stane na natpisu MARTIMEX (film i film-video: na bočici u prizoru; razlijetanje: složeno nakon jednog kruga)
 
     // Koja animacija je na početnom ekranu:
     // 'film'         → film Naxos: sastojci se zavrte u krug, iz svjetla nastane
     //                  bočica Xerjoff Naxos u prizoru sa sastojcima, pa se sve
-    //                  vrati u sastojke (modul film/film.js, vidi film/README.md)
+    //                  vrati u sastojke; crta se uživo u WebGL-u (modul
+    //                  film/film.js, vidi film/README.md)
+    // 'film-video'   → ista priča kao unaprijed izrađen video (modul
+    //                  film-video/film-video.js, vidi film-video/README.md)
     // 'razlijetanje' → fotografija sastojaka mirisa (limun, med, saće, cvjetovi):
     //                  komadi se slože, razlete i ponovno slože (modul
     //                  razlijetanje/razlijetanje.js, vidi razlijetanje/README.md)
@@ -2821,13 +2827,15 @@
 
 
     // ═══════════════════════════════════════════════════════════════════
-    //  VANJSKE ANIMACIJE — film (film/film.js) i razlijetanje
-    //  (razlijetanje/razlijetanje.js); postavka animacija. Imaju isti oblik
+    //  VANJSKE ANIMACIJE — film uživo (film/film.js), film kao video
+    //  (film-video/film-video.js) i razlijetanje (razlijetanje/razlijetanje.js);
+    //  postavka animacija. Imaju isti oblik
     //  kao napraviAnimaciju. Modul se učita pri pripremi; ako se ne učita,
     //  početni ekran ima animaciju od točkica
     // ═══════════════════════════════════════════════════════════════════
     const VANJSKE = {
       film: { datoteka: 'film/film.js', globalno: 'MX_FILM' },
+      'film-video': { datoteka: 'film-video/film-video.js', globalno: 'MX_FILM_VIDEO' },
       razlijetanje: { datoteka: 'razlijetanje/razlijetanje.js', globalno: 'MX_RAZLIJETANJE' }
     };
     const VANJSKI_MODULI = {};

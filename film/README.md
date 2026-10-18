@@ -1,8 +1,8 @@
-# Film Naxos — animacija početnog ekrana chata
+# Film Naxos uživo — animacija početnog ekrana chata
 
-Animacija početnog ekrana kad je u `pocetna-chata.js` postavka `animacija: 'film'` (zadano).
-To je unaprijed izrađen video na crnoj podlozi. Krug traje 14,6 s i ponavlja se bez šava
-(zadnji kadar je isti kao prvi).
+Zadana animacija početnog ekrana (`pocetna-chata.js`, postavka `animacija: 'film'`).
+Ista priča kao video u `../film-video/`, ali bez video datoteke: film se crta uživo u
+pregledniku (WebGL) iz komada fotografija. Krug traje 14,6 s i ponavlja se bez šava.
 
 ## Što se vidi
 
@@ -23,32 +23,58 @@ To je unaprijed izrađen video na crnoj podlozi. Krug traje 14,6 s i ponavlja se
 Nakon **POČETAK** kadar se lagano poveća i nestane, dok se chat otvara u krugu koji se širi
 od poziva.
 
+## Kako se crta
+
+- **Sastojci**: 30 komada izrezanih iz fotografije i 20 kapi meda koje se otkinu u vrtlogu.
+  Svaki komad ima pet razina oštrine, pa se bliži i dalji komadi glatko zamute kao kod
+  objektiva (dubinska oštrina).
+- **Limun**: kora je preslikana na elipsoid koji se okreće, a svjetlo i sjena stoje na mjestu.
+  Zato izgleda kao pravi okret ploda, a ne kao okretanje slike.
+- **Pokretno zamućenje**: brzi komadi se u istom kadru nacrtaju više puta (do 5 podkadrova) i
+  zbroje, kao pri snimanju kamerom.
+- **Prizor**: fotografija s kartom dubine. Kamera ulazi u prizor, a bliži predmeti se pomiču više
+  od pozadine. Prizor se izoštri iz razina zamućenja. Maske s fotografije određuju gdje med
+  teče i kuda odsjaj prelazi preko zlata, a prašina su sitne čestice u svjetlu.
+- **Rub**: tamni rub i meki krug. Kadar se stapa s podlogom (`mix-blend-mode: screen`), pa se
+  vidi i zlatni sjaj početnog ekrana.
+
 ## Datoteke
 
-- `film.js`: modul koji film stavi na početni ekran (u prostor animacije, širok koliko prozor
-  chata). Video se stapa s podlogom (`mix-blend-mode: screen` i meki rub), pa se vidi i
-  zlatni sjaj početnog ekrana. Na vrhu su **POSTAVKE** (imena datoteka, veličina kadra,
-  `VERZIJA`).
-- `naxos-film.mp4`: video (H.264, 900 × 900, 30 sl/s, bez zvuka, 2,1 MB), za sve preglednike.
-- `naxos-film.webm`: isti video (VP9, 1,6 MB), za preglednike bez H.264.
-- `naxos-film-pocetak.jpg`: prvi kadar filma. Stoji dok se video ne pokrene, pa nema skoka.
-- `naxos-film-mirno.jpg`: završni prizor (bočica u prizoru). Stoji umjesto filma kad je na
-  uređaju uključeno **Smanji pokrete** ili ušteda podataka, ili kad se video ne može pokrenuti
-  (npr. iPhone u načinu štednje baterije).
+- `film.js` (≈ 47 KB): modul. Na vrhu su opis i **POSTAVKE**:
+  - `VELICINA`: veličina kadra (1 = širina prozora chata).
+  - `STANI_NA`: gdje film stane kad je `ponavljaj: false`.
+  - `IZLAZ_MS`: trajanje nestajanja nakon **POČETAK**.
+  - `NAJVISE_DPR` i `NAJVISE_UZORAKA`: najveća oštrina i najviše podkadrova.
+  - `VERZIJA`: povećaj kad zamijeniš slike ili podatke.
+- `film-podaci.js` (≈ 680 KB, preuzme se ≈ 500 KB jer se sažima): sve slike (komadi sastojaka
+  u pet razina oštrine, kora limuna, prizor, karta dubine, maske meda i zlata, bočica) i putanje
+  komada. Slike su u `data:` adresama, pa WebGL ne treba CORS. Datoteka je izrađena i ne mijenja
+  se ručno.
+- `film-pocetak.jpg` (≈ 60 KB): prvi kadar. Stoji dok se podaci ne učitaju, pa nema skoka.
+- `film-mirno.jpg` (≈ 70 KB): završni prizor (bočica u prizoru). Stoji umjesto filma kad je na
+  uređaju uključeno **Smanji pokrete** ili ušteda podataka, ili kad WebGL ne radi.
 
 ## Kako radi na stranici
 
-- `pocetna-chata.js` učita `film.js` (u odjeljku VANJSKE ANIMACIJE) kad pripremi početni
-  ekran. Tada se preuzme samo prvi kadar (~60 KB). Video (~2 MB) se počne preuzimati tek kad
-  kupac prvi put otvori chat, pa posjetitelji koji ne otvore chat ne troše podatke.
-- Svako otvaranje chata pokreće film ispočetka. Kad se chat zatvori, film stane.
+- `pocetna-chata.js` učita `film.js` (u odjeljku VANJSKE ANIMACIJE) kad pripremi početni ekran.
+  Tada se preuzme samo prvi kadar (≈ 60 KB). Podaci se preuzmu tek kad kupac prvi put otvori
+  chat, pa posjetitelji koji ne otvore chat ne troše podatke.
+- Svako otvaranje chata pokreće film ispočetka. Kad se chat zatvori, film stane i ne troši
+  bateriju.
+- Na sporom uređaju (ispod ≈ 25 sličica u sekundi) film sam smanji razlučivost i broj
+  podkadrova, da ostane tečan.
 - `ponavljaj: false` u `pocetna-chata.js`: film stane na bočici u prizoru (`STANI_NA`).
 - Ako se `film.js` ne učita, početni ekran ima animaciju od točkica.
 
-## Zamjena videa
+## Uživo ili video
 
-Video je izrađen iz fotografija `../razlijetanje/izvor.jpg` i `../naxos/izvor.jpg`: izrezani
-sastojci, simulirana vrtnja limuna, karta dubine prizora za pomak kamere, zamućenje pokreta,
-dubinska oštrina i svjetlo. Novi video mora ostati kvadratan, na crnoj podlozi i s crnim rubom,
-a prvi i zadnji kadar moraju biti isti. Nakon zamjene datoteka povećaj `VERZIJA` u `film.js`,
-da preglednici ne prikazuju stari video iz priručne memorije.
+| | `'film'` (uživo) | `'film-video'` |
+|---|---|---|
+| Preuzimanje | ≈ 0,5 MB | ≈ 2 MB |
+| Oštrina | razlučivost zaslona (do 2× gustoće piksela) | 900 × 900 |
+| iPhone u štednji baterije | radi | stoji završni prizor (video se ne pokreće sam) |
+| Opterećenje uređaja | grafički procesor | dekodiranje videa |
+
+Za prebacivanje u `pocetna-chata.js` promijeni postavku `animacija`. Za drugi proizvod treba
+izraditi nove podatke i nova dva kadra (`film-pocetak.jpg`, `film-mirno.jpg`), pa povećati
+`VERZIJA` u `film.js`.
