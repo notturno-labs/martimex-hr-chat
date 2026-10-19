@@ -1,37 +1,44 @@
 #!/usr/bin/env python3
 # ═════════════════════════════════════════════════════════════════════
-#  MARTIMEX — tekstura crnog Portoro mramora sa zlatnim žilama
+#  MARTIMEX — tekstura crnog mramora sa zlatnim i bijelim žilama
 #
-#  Po uzoru na pult Martimex poslovnice: duboka, malo hladnija crna
-#  podloga s blagim oblačastim dubinama i slojevima, a preko nje
-#  karakteristične Portoro žile boje brušenog zlata (kao slovo M i
-#  letvica pulta, svijetlo i žućkasto, nikako smeđe):
-#  razgranate, ispucale mreže (uglate, kao pukotine ispunjene zlatom)
-#  koje se skupljaju u vodoravno-kose pojaseve; u srcu pojasa izdužene,
-#  koso poredane zlatne ljuskice s vlaknastim nijansama, uz pojaseve
-#  sivkasta koprena, a preko svega rijetke, slabe sivo-bijele žilice.
+#  Po uzorku koji je poslao klijent (crni polirani mramor, "Nero Marquina
+#  sa zlatom"): duboka, neutralna crna podloga s tihim dubinama, preko
+#  nje DUGE KOSE ZLATNE ŽILE (metalno zlato, od tamnog mesinga do
+#  svijetlog odsjaja) u paralelnim skupinama (snopovima) koje se granaju,
+#  razilaze i opet spajaju, tanke i deblje, s nazubljenim rubom; uz zlato
+#  mjestimično široka, mliječna BIJELA KVARCNA ŽILA obrubljena zlatom,
+#  tanke bijele žile i mreža vrlo tankih bijelih i sivih pukotina.
 #
-#  Koristi se kao pozadina prozora chata (uvećano na najmanje 760 px
-#  širine), ispod stakla i teksta — zato žile nisu preguste. Pojasevi
-#  žila nisu samo vodoravni: dugi glavni pojas koso prolazi gornjim
-#  dijelom, jedan se spušta strmo uz desni rub, jedan se blago penje
-#  kroz donji dio prozora (iznad polja za poruku), a još jedan uz dno;
-#  sredina (iza stupca poruka) je mirnija.
+#  Žile se crtaju kao prave vrpce (lomljene krivulje promjenjive
+#  debljine), ne kao šum, pa izgledaju kao kamen, a ne kao mrlje.
 #
-#  Izrađuju se dvije datoteke s istim uzorkom: crni.webp (1000 × 1600)
-#  i crni-2x.webp (2000 × 3200, za mobitele i zaslone visoke
-#  razlučivosti, da žile ostanu oštre).
+#  Gdje se koristi (tema-chata.js):
+#   (a) pozadina početnog ekrana chata (400 × ~800 na računalu, cijeli
+#       ekran mobitela) iza animacije bočice od točkica i iza teksta —
+#       zato je sredina (bočica) i donja trećina (tekst) mirnija, a
+#       glavni snopovi žila prolaze dijagonalno kroz kutove: veliki snop
+#       s kvarcom kroz gornji desni kut, drugi kroz donji lijevi;
+#   (b) mali detalji (zaglavlje, kupčevi oblačići, gumbi).
+#  Za gumb chata u kutu stranice i druge male površine izrađuje se i mali
+#  isječak (crni-mali.webp) s jednom lijepom zlatnom žilom.
 #
-#  Tamnije / mirnije:  --svjetlina 0.8  (podloga)   --jacina 0.7 --gustoca 0.7  (zlato)
-#  Svjetlije / bogatije: --svjetlina 1.2              --jacina 1.2 --gustoca 1.3
+#  Datoteke (isti uzorak u dvije razlučivosti + mali isječak):
+#     crni.webp      900 × 1500   (≤ 110 KB)
+#     crni-2x.webp  1800 × 3000   (≤ 140 KB, oštri zasloni / mobiteli)
+#     crni-mali.webp 600 × 220    (≤ 12 KB, gumb chata, kupčeve poruke, pilula pod mišem)
+#
+#  Tamnije / mirnije:   --svjetlina 0.85 --jacina 0.8 --gustoca 0.7 --mir 1.3
+#  Svjetlije / bogatije: --svjetlina 1.15 --jacina 1.15 --gustoca 1.3 --mir 0.6
+#  Bez kvarca / bijelih žila: --bijele 0     Bez pukotina: --pukotine 0
 #
 #  Pokretanje (iz mape repozitorija):
-#     python3 mramor/izradi-crni.py                 (crni.webp i crni-2x.webp)
-#     python3 mramor/izradi-crni.py --jacina 0.8 --gustoca 0.9
-#     python3 mramor/izradi-crni.py --naduzorkovanje 1 --izlaz /tmp/proba.webp   (brza proba, samo 1×)
-#     python3 mramor/izradi-crni.py --mjerilo 2 --izlaz /tmp/proba-2x.webp
+#     python3 mramor/izradi-crni.py                       (sve tri datoteke)
+#     python3 mramor/izradi-crni.py --samo 1 --izlaz /tmp/proba.webp   (brza proba)
+#     python3 mramor/izradi-crni.py --samo mali
 #
-#  Treba samo numpy i Pillow. Seed je fiksan, pa je rezultat ponovljiv.
+#  Treba samo numpy i Pillow. Seed je fiksan, pa je rezultat ponovljiv
+#  (i 1× i 2× imaju potpuno isti raspored žila).
 # ═════════════════════════════════════════════════════════════════════
 
 import argparse
@@ -40,58 +47,81 @@ import os
 import time
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
 # ── POSTAVKE ─────────────────────────────────────────────────────────
 
-SIRINA, VISINA = 1000, 1600          # izlazna veličina (uspravno); crni-2x.webp je dvostruko veća
-NADUZORKOVANJE = 2                   # crta se 2× veće pa smanji (glatke žile)
-SEED = 7                             # isti seed = ista tekstura
+SIRINA, VISINA = 900, 1500           # crni.webp (uspravno); crni-2x.webp je dvostruko veći
+SIRINA_MALI, VISINA_MALI = 600, 220  # crni-mali.webp
+NADUZORKOVANJE = 3                   # žile se crtaju 3× gušće pa smanje (glatki, oštri rubovi)
+SEED = 11                            # isti seed = ista tekstura
 
-JACINA_ZILA = 1.3                    # 0 = bez zlatnih žila, 1 = kao na pultu, >1 jače (1.3: žile su gotovo neprozirno zlato)
-GUSTOCA_ZILA = 1.0                   # koliko je mreže zlatno (0.5 = upola rjeđe)
-JACINA_BIJELIH = 1.0                 # sivo-bijele žilice (0 = bez njih)
-SJAJ = 1.0                           # blagi odsjaj poliranog kamena (0 = bez)
-SVJETLINA_PODLOGE = 1.0              # <1 tamnija crna, >1 svjetlija (žile ostaju iste)
+KUT = 34.0                           # smjer žila: stupnjeva ispod vodoravne (spuštaju se udesno), kao na uzorku
+JACINA_ZLATA = 1.0                   # 0 = bez zlata, 1 = kao na uzorku
+GUSTOCA = 1.0                        # broj sporednih žila, grana i pukotina (0.5 = upola manje)
+JACINA_BIJELIH = 1.0                 # kvarc i bijele žile (0 = bez)
+JACINA_PUKOTINA = 1.0                # tanke bijelo-sive pukotine (0 = bez)
+SJAJ = 1.0                           # svjetlo poliranog kamena i odsjaj na zlatu (0 = bez)
+SVJETLINA_PODLOGE = 1.0              # <1 tamnija crna, >1 svjetlija
+MIR = 1.0                            # koliko su sredina (bočica) i donja trećina (tekst) mirnije; 0 = jednako posvuda
 
-# Podloga: od najdublje crne do najsvjetlijih oblaka (malo hladnija crna).
-CRNA_DUBOKA = '#0b0b0d'
-CRNA_OBLAK = '#1a191c'
-SIVI_SLOJ = '#29282c'                # slojeviti sivkasti oblaci uz pojaseve žila
-TOPLI_ODSJAJ = '#26221a'             # tihi zlatni sjaj oko gustih zlatnih žila (ne smeđ)
+# Podloga: duboka neutralna crna (ni smeđa ni plava), malo dubine.
+CRNA_DUBOKA = '#050505'
+CRNA = '#0b0b0c'
+CRNA_OBLAK = '#111112'
+SIVA_KOPRENA = '#1d1e20'             # tihi sivi "dim" uz snopove žila (kao na uzorku)
 
-# Zlatne žile: brušeni mesing → zlato → svijetla jezgra debljih žila
-# (ton 37–41°, svijetlo i žućkasto kao slovo M u poslovnici, ne narančasto).
-ZLATO_TAMNO = '#c9a15e'
-ZLATO = '#e6c27f'
-ZLATO_SVIJETLO = '#f0d49a'
+# Zlato (metalno): tamni mesing → zlato → svijetli odsjaj.
+ZLATO_TAMNO = '#9a7426'
+ZLATO = '#c9a04a'
+ZLATO_ODSJAJ = '#ecd08a'
 
-BIJELA_ZILA = '#8e8b87'              # rijetke tanke sivo-bijele žile
+# Bijelo: mliječni kvarc, tanke bijele žile i pukotine.
+KVARC = '#d8dadc'
+KVARC_SJENA = '#8e959c'              # sivo-plavkasta sjena u kvarcu
+BIJELA_ZILA = '#e2e4e6'
+PUKOTINA = '#a9acb0'
 
-# Pojasevi žila: svaki je (x, y, kut, polovična debljina, jačina):
-#   x, y  točka kroz koju pojas prolazi (0–1 širine / visine slike),
-#   kut   stupnjeva od vodoravnog; plus = spušta se udesno, 90 = okomito,
-#   debljina u jedinicama visine slike, jačina 0–1.
-POJASEVI = [
-    (0.50, 0.21, 15.0, 0.052, 1.00),   # glavni: dugi kosi pojas kroz gornji dio
-    (0.89, 0.60, 76.0, 0.030, 0.80),   # strmo uz desni rub
-    (0.50, 0.81, -9.0, 0.046, 0.85),   # donji, blago se penje udesno (uz dno početnog ekrana)
-    (0.50, 0.62, -9.0, 0.046, 0.60),   # kroz donji dio prozora chata, iznad polja za poruku
-    (0.40, 0.04, 6.0, 0.022, 0.35),    # slabi, uz sam vrh
-    (0.30, 0.50, 4.0, 0.016, 0.22),    # tihi, kroz sredinu
-    (0.50, 0.97, 3.0, 0.026, 0.40),    # slabi, uz dno
+# Snopovi žila. Svaki: os prolazi kroz točku (x, y) (udio širine / visine),
+# kut (stupnjeva, kao KUT), raspon = koliko je snop širok poprijeko (px slike 1×),
+# zlatnih = broj zlatnih žila, debljina = najdeblja žila (px 1×), bijelih = broj
+# tankih bijelih žila, kvarc = najveća širina kvarcne žile (px 1×, 0 = bez),
+# kvarc_od = gdje duž vidljivog dijela osi kvarc počinje (0 = ulaz u sliku, 1 = izlaz; dalje ide do ruba),
+# jacina = 1 jasno, manje = dublje "ispod poliranja".
+SNOPOVI = [
+    dict(x=0.66, y=0.145, kut=34.0, raspon=170, zlatnih=12, debljina=11.0, bijelih=4,
+         kvarc=50, kvarc_od=0.38, jacina=1.0, glavni=True),          # gornji desni kut, s kvarcom
+    dict(x=0.13, y=0.90, kut=33.0, raspon=150, zlatnih=10, debljina=9.0, bijelih=3,
+         kvarc=0, jacina=0.95, glavni=True),                           # donji lijevi kut
+    dict(x=0.00, y=0.045, kut=36.0, raspon=60, zlatnih=4, debljina=3.2, bijelih=1,
+         kvarc=0, jacina=0.80, glavni=False),                          # tanji, gornji lijevi kut
+    dict(x=1.00, y=0.80, kut=31.0, raspon=55, zlatnih=4, debljina=3.0, bijelih=1,
+         kvarc=0, jacina=0.75, glavni=False),                          # tanji, donji desni kut
 ]
-KUT_POJASEVA = -8.0                  # stupnjeva: smjer pružanja same mreže žila (minus = blago se spušta udesno)
-KUT_BIJELIH = 38.0                   # bijele žilice idu koso preko pojaseva
+SAMOTNIH = 6                         # usamljene tanke zlatne žile preko cijele plohe (u miru jedva vidljive)
+PUKOTINA_BROJ = 80                   # tanke pukotine
 
-KVALITETA = 92                       # početna webp kvaliteta …
-NAJVISE_KB = 110                     # … smanjuje se dok datoteka ne stane u ovo (ispod
-                                     #   tamnog vela razlika do kvalitete ~75 se ne vidi)
-NAJVISE_KB_2X = 180                  # isto za crni-2x.webp (učitava se na mobitelima)
+# Mali isječak: jedna lijepa zlatna žila s pratiljom, koso preko trake.
+SNOPOVI_MALI = [
+    dict(x=0.50, y=0.50, kut=13.0, raspon=46, zlatnih=4, debljina=13.0, bijelih=1,
+         kvarc=0, jacina=1.0, glavni=True),
+]
+SAMOTNIH_MALI = 1
+PUKOTINA_MALI = 12
+
+# Mirna područja početnog ekrana (udio širine / visine): bočica i tekst.
+MIR_BOCICA = (0.50, 0.34, 0.40, 0.21)        # središte x, y i polumjeri
+MIR_TEKST = (0.12, 0.63, 0.88, 0.95)         # lijevo, gore, desno, dolje
+
+KVALITETA = 90                       # početna webp kvaliteta; smanjuje se dok datoteka ne stane u granicu
+NAJVISE_KB = 110
+NAJVISE_KB_2X = 140                  # mobiteli: zajedno s bijeli-2x.webp i crni-mali.webp ispod ~300 KB
+NAJVISE_KB_MALI = 12
 
 MAPA = os.path.dirname(os.path.abspath(__file__))
 IZLAZ = os.path.join(MAPA, 'crni.webp')
 IZLAZ_2X = os.path.join(MAPA, 'crni-2x.webp')
+IZLAZ_MALI = os.path.join(MAPA, 'crni-mali.webp')
 
 BLOK = 1 << 18                       # šum se računa po blokovima piksela (brže)
 
@@ -115,7 +145,7 @@ def pomijesaj(a, b, t):
 
 def zamuti(polje, polumjer):
     """Brzo zamućenje (3 prolaza kliznog prosjeka ≈ Gaussovo)."""
-    r = max(1, int(polumjer))
+    r = max(1, int(round(polumjer)))
     izlaz = polje.astype(np.float32)
     for os_ in (0, 1):
         for _ in range(3):
@@ -135,56 +165,24 @@ def povecaj(polje, sirina, visina):
                       .resize((sirina, visina), Image.BICUBIC))
 
 
-def koordinate(sirina, visina):
-    """x, y u jedinicama visine slike (y 0–1 odozgo, x 0–0.625)."""
-    yy, xx = np.mgrid[0:visina, 0:sirina].astype(np.float32)
-    return (xx + 0.5) / visina, (yy + 0.5) / visina
-
-
-def zakreni(x, y, stupnjeva):
-    a = np.radians(stupnjeva)
-    c, s = np.float32(np.cos(a)), np.float32(np.sin(a))
-    return x * c - y * s, x * s + y * c
-
-
-def udaljenost_u_px(polje, najmanji=0.35):
-    """Polje udaljenosti (bilo kojeg mjerila) → pikseli, dijeljenjem s
-    nagibom; skokovi na granicama ćelija se ograniče. Veći `najmanji`
-    znači oštriji rub i tamo gdje je polje gotovo ravno."""
-    gy, gx = np.gradient(polje)
-    nagib = np.sqrt(gx * gx + gy * gy)
-    srednji = np.median(nagib[::7, ::7])
-    return polje / np.clip(nagib, srednji * najmanji, srednji * 3.0)
+def smanji(slika_l, n):
+    """Sloj nacrtan n× gušće → prosjek n×n piksela, vrijednosti 0–1."""
+    a = np.asarray(slika_l, np.float32)
+    h, w = a.shape
+    return a.reshape(h // n, n, w // n, n).mean(axis=(1, 3)) * np.float32(1 / 255)
 
 
 class Sum:
-    """Gradijentni (Perlinov) i stanični (Voronoi) šum, sve u numpyju."""
+    """Gradijentni (Perlinov) šum u numpyju (za podlogu i nijanse zlata)."""
 
     def __init__(self, seed):
         rng = np.random.default_rng(seed)
         perm = rng.permutation(256).astype(np.int32)
-        # hash(ix, iy) za sve parove 0–255, indeks (ix << 8) | iy
         self.h = perm[(perm[:, None] + np.arange(256)[None, :]) & 255].ravel().astype(np.int32)
         kut = rng.uniform(0.0, 2.0 * np.pi, 256)
         self.gx = np.cos(kut).astype(np.float32)[self.h]
         self.gy = np.sin(kut).astype(np.float32)[self.h]
-        self.tx = (0.08 + 0.84 * rng.random(256)).astype(np.float32)   # točke ćelija
-        self.ty = (0.08 + 0.84 * rng.random(256)).astype(np.float32)
-        self.slucajno = rng.random((4, 256)).astype(np.float32)          # po rubu ćelija
         self.pomaci = rng.uniform(-200.0, 200.0, (64, 2)).astype(np.float32)
-
-    @staticmethod
-    def _po_blokovima(fn, x, y, izlaza=1, tipovi=(np.float32,)):
-        izlaz = [np.empty(x.shape, t) for t in tipovi]
-        xf, yf = x.ravel(), y.ravel()
-        rav = [i.reshape(-1) for i in izlaz]
-        for i in range(0, xf.size, BLOK):
-            r = fn(xf[i:i + BLOK], yf[i:i + BLOK])
-            if izlaza == 1:
-                r = (r,)
-            for cilj, vr in zip(rav, r):
-                cilj[i:i + BLOK] = vr
-        return izlaz[0] if izlaza == 1 else izlaz
 
     def _gradijentni(self, x, y):
         x0 = np.floor(x)
@@ -205,15 +203,17 @@ class Sum:
         v = fy * fy * fy * (fy * (fy * 6.0 - 15.0) + 10.0)
         a = n00 + (n10 - n00) * u
         b = n01 + (n11 - n01) * u
-        return (a + (b - a) * v) * 1.41  # ≈ −1 … 1
+        return (a + (b - a) * v) * 1.41
 
     def gradijentni(self, x, y):
-        return self._po_blokovima(self._gradijentni, x, y)
+        izlaz = np.empty(x.shape, np.float32)
+        xf, yf, of = x.ravel(), y.ravel(), izlaz.reshape(-1)
+        for i in range(0, xf.size, BLOK):
+            of[i:i + BLOK] = self._gradijentni(xf[i:i + BLOK], yf[i:i + BLOK])
+        return izlaz
 
-    def fbm(self, x, y, oktave=5, lak=2.0, poj=0.5, pomak=0):
-        """Fraktalni šum; svaka oktava malo zakrenuta da nema rešetke.
-        Vraća vrijednosti sa standardnom devijacijom ≈ 0.45 (uglavnom −1 … 1),
-        bez obzira na broj oktava."""
+    def fbm(self, x, y, oktave=4, lak=2.0, poj=0.5, pomak=0):
+        """Fraktalni šum, standardna devijacija ≈ 0.45 (uglavnom −1 … 1)."""
         zbroj = np.zeros(np.shape(x), np.float32)
         a, f, norma = 1.0, 1.0, 0.0
         for o in range(oktave):
@@ -226,256 +226,406 @@ class Sum:
             f *= lak
         return zbroj * np.float32(0.45 / (0.30 * np.sqrt(norma)))
 
-    def _voronoi(self, x, y):
-        x0 = np.floor(x)
-        y0 = np.floor(y)
-        fx = x - x0
-        fy = y - y0
-        ix = x0.astype(np.int32)
-        iy = y0.astype(np.int32)
-        n = x.size
-        D = np.empty((9, n), np.float32)
-        PX = np.empty((9, n), np.float32)
-        PY = np.empty((9, n), np.float32)
-        HH = np.empty((9, n), np.int32)
-        k = 0
-        for dy in (-1, 0, 1):
-            for dx in (-1, 0, 1):
-                h = self.h.take((((ix + dx) & 255) << 8) | ((iy + dy) & 255))
-                PX[k] = dx + self.tx.take(h)
-                PY[k] = dy + self.ty.take(h)
-                HH[k] = h
-                D[k] = (PX[k] - fx) ** 2 + (PY[k] - fy) ** 2
-                k += 1
-        stupci = np.arange(n)
-        i1 = D.argmin(0)
-        D[i1, stupci] = np.inf
-        i2 = D.argmin(0)
-        p1x, p1y, h1 = PX[i1, stupci], PY[i1, stupci], HH[i1, stupci]
-        p2x, p2y, h2 = PX[i2, stupci], PY[i2, stupci], HH[i2, stupci]
-        nx, ny = p2x - p1x, p2y - p1y
-        duljina = np.sqrt(nx * nx + ny * ny) + 1e-6
-        rub = np.abs((fx - (p1x + p2x) * 0.5) * nx + (fy - (p1y + p2y) * 0.5) * ny) / duljina
-        # isti broj s obje strane ruba (redoslijed ćelija ne smije biti bitan)
-        lo, hi = np.minimum(h1, h2), np.maximum(h1, h2)
-        kljuc = (lo * 31 + hi * 17 + ((lo * hi) >> 3)) & 255
-        return rub, kljuc
 
-    def voronoi(self, x, y):
-        """Udaljenost do najbližeg ruba ćelija (u jedinicama ćelije) i
-        slučajni ključ 0–255 koji je isti duž cijelog jednog ruba."""
-        return self._po_blokovima(self._voronoi, x, y, 2, (np.float32, np.int32))
+class Krivulja:
+    """Jednodimenzionalni šum duž žile: slučajne točke svakih `korak` px,
+    spojene glatko (Catmull-Rom) ili ravnim crtama (oštri lomovi, kao na
+    pukotini). Slučajni brojevi se izvlače odmah, pa oblik ne ovisi o
+    tome koliko se gusto krivulja kasnije uzorkuje (1× i 2× su isti)."""
+
+    def __init__(self, rng, duljina, korak, glatka=True):
+        self.korak = float(korak)
+        self.glatka = glatka
+        self.cv = rng.standard_normal(int(duljina / korak) + 6).astype(np.float32)
+
+    def __call__(self, s):
+        u = np.clip(s / self.korak + 2.0, 1.0, len(self.cv) - 3.001)
+        if not self.glatka:
+            return np.interp(u, np.arange(len(self.cv)), self.cv).astype(np.float32)
+        i = np.floor(u).astype(np.int32)
+        t = (u - i).astype(np.float32)
+        p0, p1, p2, p3 = self.cv[i - 1], self.cv[i], self.cv[i + 1], self.cv[i + 2]
+        return 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t
+                      + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t)
+
+
+def rampa(s, a, b, ulaz, izlaz):
+    """1 između a i b, glatko 0 prema van na duljini ulaz / izlaz (vrh žile)."""
+    return glatko(a - 1e-3, a + ulaz, s) * glatko(b + 1e-3, b - izlaz, s)
+
+
+# ── CRTANJE ŽILA ─────────────────────────────────────────────────────
+
+class Platno:
+    """Slojevi (crno-bijele maske) na kojima se žile crtaju n× gušće."""
+
+    SLOJEVI = ('zlato', 'zlato_sporedno', 'zlato_obrub', 'kvarc', 'bijelo', 'pukotine')
+
+    def __init__(self, sirina, visina, mjerilo, n):
+        self.S = float(mjerilo * n)           # px platna po px slike 1×
+        self.n = n
+        self.sirina1, self.visina1 = sirina, visina
+        self.W, self.H = int(sirina * mjerilo * n), int(visina * mjerilo * n)
+        self.slike = {k: Image.new('L', (self.W, self.H), 0) for k in self.SLOJEVI}
+        self.olovke = {k: ImageDraw.Draw(v) for k, v in self.slike.items()}
+        self.popis = []                       # (sloj, jačina, točke) — crta se poslije, slabije prvo
+
+    def vrpca(self, sloj, cx, cy, nx, ny, lijevo, desno, jacina=1.0):
+        """Vrpca oko središnje crte (px 1×): lijevo/desno su polovične debljine.
+        Dijelovi gdje je debljina ~0 se preskaču (žila je prekinuta)."""
+        S = self.S
+        ima = (lijevo + desno) * S > 0.35
+        if not ima.any():
+            return
+        rubovi = np.flatnonzero(np.diff(np.concatenate(([0], ima.astype(np.int8), [0]))))
+        for a, b in zip(rubovi[::2], rubovi[1::2]):
+            if b - a < 2:
+                continue
+            sl = slice(a, b)
+            lx = (cx[sl] + nx[sl] * lijevo[sl]) * S
+            ly = (cy[sl] + ny[sl] * lijevo[sl]) * S
+            dx = (cx[sl] - nx[sl] * desno[sl]) * S
+            dy = (cy[sl] - ny[sl] * desno[sl]) * S
+            # samo dijelovi blizu slike
+            if lx.max() < -50 or lx.min() > self.W + 50 or ly.max() < -50 or ly.min() > self.H + 50:
+                continue
+            tocke = np.concatenate([np.stack([lx, ly], 1), np.stack([dx, dy], 1)[::-1]])
+            self.popis.append((sloj, jacina, [tuple(p) for p in tocke.tolist()]))
+
+    def nacrtaj(self):
+        # slabije žile prvo, jače preko njih (gdje se križaju, vrijedi jača)
+        for sloj, jacina, tocke in sorted(self.popis, key=lambda z: z[1]):
+            self.olovke[sloj].polygon(tocke, fill=int(round(255 * min(1.0, jacina))))
+        self.popis = []
+
+    def maske(self):
+        self.nacrtaj()
+        return {k: smanji(v, self.n) for k, v in self.slike.items()}
+
+
+def os_snopa(sirina, visina, x, y, kut, rub=90.0):
+    """Točka, smjer i raspon s (px 1×) duž kojeg os snopa prolazi kroz sliku."""
+    A = np.array([x * sirina, y * visina], np.float32)
+    k = np.radians(kut)
+    d = np.array([np.cos(k), np.sin(k)], np.float32)
+    kutovi = np.array([[0, 0], [sirina, 0], [0, visina], [sirina, visina]], np.float32) - A
+    proj = kutovi @ d
+    # vidljivi dio osi (gdje je sama os unutar slike)
+    ts = []
+    for i, gr in ((0, sirina), (1, visina)):
+        if abs(d[i]) > 1e-6:
+            ts += [(-A[i]) / d[i], (gr - A[i]) / d[i]]
+    vidljivo = []
+    for t in ts:
+        p = A + d * t
+        if -1 <= p[0] <= sirina + 1 and -1 <= p[1] <= visina + 1:
+            vidljivo.append(t)
+    vid = (min(vidljivo), max(vidljivo)) if len(vidljivo) >= 2 else (proj.min(), proj.max())
+    return A, d, (float(proj.min() - rub), float(proj.max() + rub)), vid
+
+
+def zila(platno, sloj, rng, A, d, s, os_pomak, pomak0, debljina, jacina,
+         aktivno=None, lomovi=1.0, nazubljenost=1.0, prekidi=0.0, gibanje=0.0, grane=0.0,
+         sirenje=1.0):
+    """Jedna žila uz os snopa. os_pomak(s) = zajedničko vijuganje snopa,
+    pomak0 = udaljenost od osi (px 1×), sirenje(s) = koliko je snop na tom
+    mjestu raširen (žile se razilaze i opet skupljaju). Vraća (pomak, debljina) za kvarc i grane."""
+    rng = np.random.default_rng(rng.integers(1 << 31))   # vlastiti slučajni niz (promjena jedne žile ne mijenja ostale)
+    L = s[-1] - s[0] + 1.0
+    s0 = s - s[0]
+    # vlastito vijuganje: sporo razilaženje (spajanje sa susjednima),
+    # srednji lomovi i sitni cik-cak (kao na pukotini)
+    pom = (pomak0 * sirenje + os_pomak
+           + gibanje * Krivulja(rng, L, rng.uniform(250, 520))(s0)
+           + lomovi * 2.2 * Krivulja(rng, L, rng.uniform(28, 55), glatka=False)(s0)
+           + lomovi * 0.28 * Krivulja(rng, L, rng.uniform(7, 13), glatka=False)(s0))
+    # debljina duž žile: tanji i deblji dijelovi, ponegdje prekid
+    w = debljina * (0.42 + 0.58 * glatko(-0.9, 0.9, Krivulja(rng, L, rng.uniform(110, 220))(s0)))
+    w = w * (0.80 + 0.20 * np.tanh(Krivulja(rng, L, rng.uniform(25, 45))(s0)))
+    if prekidi > 0:
+        w = w * glatko(prekidi - 0.15, prekidi + 0.25, Krivulja(rng, L, rng.uniform(70, 140))(s0) * 0.6 + 0.5)
+    if aktivno is not None:
+        w = w * rampa(s, *aktivno)
+    # nazubljen rub: lijevi i desni neovisno (blagi valovi + sitni zupci)
+    zub = nazubljenost * (0.10 + 0.3 / (debljina + 0.5))
+    jl = (1.0 + 0.16 * nazubljenost * Krivulja(rng, L, rng.uniform(9, 16))(s0)
+          + zub * Krivulja(rng, L, rng.uniform(2.5, 4.5), glatka=False)(s0))
+    jr = (1.0 + 0.16 * nazubljenost * Krivulja(rng, L, rng.uniform(9, 16))(s0)
+          + zub * Krivulja(rng, L, rng.uniform(2.5, 4.5), glatka=False)(s0))
+    nacrtaj_vrpcu(platno, sloj, A, d, s, pom, np.maximum(w * 0.5 * jl, 0), np.maximum(w * 0.5 * jr, 0), jacina)
+
+    # grane: odvoje se pod malim kutom pa se ili vrate u žilu ili utihnu
+    for _ in range(rng.poisson(grane)):
+        duz = rng.uniform(90, 420)
+        a = rng.uniform(s[0], s[-1] - duz)
+        if aktivno is not None and not (aktivno[0] < a < aktivno[1]):
+            continue
+        m = (s >= a) & (s <= a + duz)
+        if m.sum() < 4:
+            continue
+        t = (s[m] - a) / duz
+        smjer = rng.choice([-1.0, 1.0])
+        if rng.random() < 0.5:     # vrati se u žilu (luk)
+            odmak = smjer * rng.uniform(5, 26) * np.sin(np.pi * t) ** 0.8
+            tanj = 0.55 + 0.35 * np.sin(np.pi * t)
+        else:                      # odvoji se i utihne
+            odmak = smjer * np.tan(np.radians(rng.uniform(5, 15))) * duz * t ** 1.3
+            tanj = (1.0 - t) ** 0.9
+        odmak = odmak + lomovi * 1.6 * Krivulja(rng, duz, rng.uniform(14, 30), glatka=False)(s[m] - a)
+        wg = w[m] * rng.uniform(0.35, 0.75) * tanj + 0.25 * glatko(0.0, 0.1, t) * glatko(1.0, 0.85, t)
+        jg = 1.0 + 0.25 * Krivulja(rng, duz, 3.5, glatka=False)(s[m] - a)
+        nacrtaj_vrpcu(platno, sloj, A, d, s[m], pom[m] + odmak, wg * 0.5 * jg, wg * 0.5 * (2 - jg), jacina)
+    return pom, w
+
+
+def nacrtaj_vrpcu(platno, sloj, A, d, s, pom, lijevo, desno, jacina):
+    """Središnja crta = A + s·d + pom·normala. Debljina se nanosi okomito na
+    os (ne na lokalni smjer): žile su gotovo usporedne s osi, a na oštrim
+    lomovima tako nema lepeza ni izbočina (važno za široki kvarc)."""
+    nrm = np.array([-d[1], d[0]], np.float32)
+    cx = A[0] + s * d[0] + pom * nrm[0]
+    cy = A[1] + s * d[1] + pom * nrm[1]
+    nx = np.full_like(cx, nrm[0])
+    ny = np.full_like(cy, nrm[1])
+    platno.vrpca(sloj, cx, cy, nx, ny, lijevo, desno, jacina)
+
+
+def snop(platno, rng, sn, gustoca, bijele):
+    """Paralelna skupina zlatnih žila (s kvarcom i bijelim žilama)."""
+    sir, vis = platno.sirina1, platno.visina1
+    A, d, (sa, sb), (va, vb) = os_snopa(sir, vis, sn['x'], sn['y'], sn['kut'])
+    korak = 0.55 / platno.S                   # gustoća uzorkovanja duž žile (px 1×)
+    s = np.arange(sa, sb, korak, dtype=np.float32)
+    L = sb - sa
+    s0 = s - sa
+    sloj = 'zlato' if sn.get('glavni') else 'zlato_sporedno'
+    raspon = sn['raspon']
+    # zajedničko vijuganje cijelog snopa
+    os_pomak = (raspon * 0.20 * Krivulja(rng, L, 430)(s0) + 3.0 * Krivulja(rng, L, 120)(s0))
+    # snop se mjestimično raširi (lepeza), a mjestimično skupi (uz kvarc najuži)
+    sirenje = 0.55 + 0.75 * glatko(-0.9, 0.9, Krivulja(rng, L, 300)(s0))
+
+    # kvarc: široka mliječna žila u snopu, obrubljena zlatom
+    rng_k = np.random.default_rng(rng.integers(1 << 31))
+    if sn.get('kvarc', 0) > 0 and bijele > 0:
+        rng, rng_snop = rng_k, rng
+        # kvarc izroni iz zlatne žile i proteže se do ruba slike
+        profil = rampa(s, va + (vb - va) * sn.get('kvarc_od', 0.1), vb + 400, 320, 200)
+        wq = sn['kvarc'] * profil * (0.78 + 0.22 * np.tanh(Krivulja(rng, L, 220)(s0)))
+        wq = wq * (0.88 + 0.12 * Krivulja(rng, L, 24)(s0))
+        pq = os_pomak + raspon * 0.06 + 1.6 * Krivulja(rng, L, 40, glatka=False)(s0)
+        # rub kvarca: blago valovit, sitno nazubljen tek malo
+        ql = wq * 0.5 * (1 + 0.08 * Krivulja(rng, L, 30)(s0) + 0.04 * Krivulja(rng, L, 4, glatka=False)(s0))
+        qd = wq * 0.5 * (1 + 0.08 * Krivulja(rng, L, 30)(s0) + 0.04 * Krivulja(rng, L, 4, glatka=False)(s0))
+        nacrtaj_vrpcu(platno, 'kvarc', A, d, s, pq, ql, qd, min(1.0, bijele))
+        # zlatni obrub s obje strane kvarca (mjestimično rastrgan u ljuskice)
+        for strana, rub in ((1.0, ql), (-1.0, qd)):
+            wz = (2.6 + 6.0 * glatko(-0.6, 0.9, Krivulja(rng, L, 70)(s0))) * (0.55 + 0.45 * profil)
+            # rijetko se obrub raspadne u ljuskice (kratki prekidi)
+            wz = wz * glatko(-1.05, -0.75, 0.75 * Krivulja(rng, L, 38)(s0) + 0.3 * Krivulja(rng, L, 9)(s0))
+            p = pq + strana * (rub - 0.25 * wz)
+            j1 = 1 + 0.12 * Krivulja(rng, L, 11)(s0) + 0.12 * Krivulja(rng, L, 3.5, glatka=False)(s0)
+            j2 = 1 + 0.12 * Krivulja(rng, L, 11)(s0) + 0.12 * Krivulja(rng, L, 3.5, glatka=False)(s0)
+            nacrtaj_vrpcu(platno, 'zlato_obrub', A, d, s, p, wz * 0.5 * j1, wz * 0.5 * j2, sn['jacina'])
+        rng = rng_snop
+
+    # zlatne žile: jedna-dvije debele, ostale tanje i dlakave
+    n = max(1, int(round(sn['zlatnih'] * (0.6 + 0.4 * gustoca))))
+    for i in range(n):
+        if i == 0:
+            deb, p0 = sn['debljina'], rng.uniform(-0.12, 0.12) * raspon
+        elif i == 1:
+            deb, p0 = sn['debljina'] * rng.uniform(0.6, 0.85), rng.uniform(-0.45, 0.45) * raspon
+        elif i == 2:
+            deb, p0 = sn['debljina'] * rng.uniform(0.35, 0.55), rng.uniform(-0.5, 0.5) * raspon
+        else:
+            deb = rng.choice([rng.uniform(0.7, 1.4), sn['debljina'] * rng.uniform(0.18, 0.45)])
+            p0 = rng.normal(0, 0.32) * raspon
+        # neke žile ne prolaze cijelim snopom: ulaze ili nestaju unutar slike
+        if i > 1 and rng.random() < 0.55:
+            dulj = rng.uniform(0.35, 0.8) * (vb - va + 300)
+            a = rng.uniform(va - 200, vb - dulj + 200)
+            aktivno = (a, a + dulj, rng.uniform(60, 220), rng.uniform(60, 260))
+        else:
+            aktivno = None
+        jac = sn['jacina'] * (1.0 if deb > 1.5 else rng.uniform(0.75, 1.0))
+        zila(platno, sloj, rng, A, d, s, os_pomak, p0, deb, jac, aktivno=aktivno,
+             lomovi=1.0 if deb < 3 else 0.6, prekidi=rng.uniform(-0.2, 0.15) if deb < 2 else -0.5,
+             gibanje=raspon * rng.uniform(0.06, 0.16), grane=(1.3 if deb > 1.5 else 0.5) * gustoca,
+             sirenje=sirenje)
+
+    # tanke bijele žile uz zlato (sjajne, mjestimično)
+    if bijele > 0:
+        for i in range(sn.get('bijelih', 0)):
+            dulj = rng.uniform(0.4, 0.9) * (vb - va + 300)
+            a = rng.uniform(va - 200, vb - dulj + 200)
+            zila(platno, 'bijelo', rng, A, d, s, os_pomak, rng.normal(0, 0.35) * raspon,
+                 rng.uniform(1.0, 2.6), min(1.0, rng.uniform(0.6, 0.95) * bijele),
+                 aktivno=(a, a + dulj, rng.uniform(80, 250), rng.uniform(80, 250)),
+                 lomovi=1.0, prekidi=-0.1, gibanje=raspon * 0.1, grane=0.6 * gustoca, sirenje=sirenje)
+
+
+def samotna(platno, rng, kut, sloj, debljina, jacina, gustoca, duljina=None):
+    """Usamljena tanka žila ili pukotina na slučajnom mjestu."""
+    sir, vis = platno.sirina1, platno.visina1
+    A, d, (sa, sb), _ = os_snopa(sir, vis, rng.uniform(0.05, 0.95), rng.uniform(0.03, 0.97), kut, rub=20)
+    s = np.arange(sa, sb, 0.55 / platno.S, dtype=np.float32)
+    if duljina:
+        a = rng.uniform(-duljina, 0)
+        aktivno = (a, a + duljina, rng.uniform(20, 120), rng.uniform(20, 120))
+    else:
+        aktivno = None
+    zila(platno, sloj, rng, A, d, s, 0.0, 0.0, debljina, jacina, aktivno=aktivno,
+         lomovi=rng.uniform(0.8, 1.6), nazubljenost=0.6, prekidi=-0.3,
+         gibanje=rng.uniform(4, 14), grane=0.5 * gustoca)
 
 
 # ── IZRADA ───────────────────────────────────────────────────────────
 
-def izradi(jacina=JACINA_ZILA, gustoca=GUSTOCA_ZILA, bijele=JACINA_BIJELIH,
-           sjaj=SJAJ, seed=SEED, naduzorkovanje=NADUZORKOVANJE,
-           svjetlina=SVJETLINA_PODLOGE, mjerilo=1):
-    """mjerilo 2 = isti uzorak u dvostrukoj razlučivosti: debljine žila
-    rastu s mjerilom, a meki rub žila ostaje širok jedan izlazni piksel
-    (zato su žile oštrije)."""
+def izradi(mjerilo=1, mali=False, jacina=JACINA_ZLATA, gustoca=GUSTOCA, bijele=JACINA_BIJELIH,
+           pukotine=JACINA_PUKOTINA, sjaj=SJAJ, svjetlina=SVJETLINA_PODLOGE, mir=MIR,
+           seed=SEED, naduzorkovanje=NADUZORKOVANJE, kut=KUT):
+    """mjerilo 2 = isti uzorak u dvostrukoj razlučivosti (žile oštrije)."""
     t0 = time.time()
-    n = naduzorkovanje
-    m = max(1, int(mjerilo))
-    jed = n * m                              # izlazni piksel slike 1× u pikselima crtanja
-    SW, SH = SIRINA * m, VISINA * m          # izlazna veličina
-    W, H = SW * n, SH * n
-    s = Sum(seed)
 
     def javi(sto):
         print(f'  {sto} … {time.time() - t0:.1f} s')
 
-    # ── 1. glatka polja u pola izlazne rezolucije (brzo), pa uvećana ──
-    x, y = koordinate(SIRINA // 2, VISINA // 2)
-    u, v = zakreni(x, y, KUT_POJASEVA)        # u = duž pojasa, v = poprijeko
-    # iskrivljenje domene: sve plovi, nijedna linija nije ravna
-    uw = u + 0.024 * s.fbm(u * 2.0, v * 2.6, 4, pomak=1)
-    vw = (v + 0.012 * s.fbm(u * 2.2 + 5.2, v * 3.0 + 1.3, 4, pomak=2)
-            + 0.020 * s.fbm(u * 1.0, v * 0.5, 3, pomak=3))
+    sir1, vis1 = (SIRINA_MALI, VISINA_MALI) if mali else (SIRINA, VISINA)
+    m = max(1, int(mjerilo))
+    W, H = sir1 * m, vis1 * m
+    rng = np.random.default_rng(seed + (100 if mali else 0))
+    platno = Platno(sir1, vis1, m, naduzorkovanje)
 
-    # pojasevi u kojima se skupljaju žile
-    # (svaki pojas ima svoj smjer; iskrivljenje domene je isto za sve)
-    pomak_u, pomak_v = uw - u, vw - v
-    pojas = np.zeros_like(x)
-    for i, (px, py, kut, debljina, snaga) in enumerate(POJASEVI):
-        k = np.radians(kut)
-        c, sn = np.float32(np.cos(k)), np.float32(np.sin(k))
-        dx, dy = x - np.float32(px * SIRINA / VISINA), y - np.float32(py)
-        pu = dx * c + dy * sn + pomak_u            # duž pojasa
-        pv = -dx * sn + dy * c + pomak_v           # poprijeko (0 = sredina pojasa)
-        val = 0.015 * s.fbm(pu * 1.7, pv * 0.3 + i * 3.7, 3, pomak=10 + i)
-        deb = debljina * (0.70 + 0.6 * glatko(-0.5, 0.5, s.fbm(pu * 2.6, pv * 0.3 + i * 5.1, 3, pomak=20 + i)))
-        # pojas mjestimično slabi i nestaje duž svoje duljine
-        prekid = glatko(-0.45, 0.25, s.fbm(pu * 2.8 + i * 9.0, pv * 0.3 + i * 1.9, 3, pomak=30 + i))
-        d = (pv - val) / deb
-        pojas = np.maximum(pojas, snaga * np.exp(-d * d) * (0.60 + 0.40 * prekid))
+    # ── 1. žile (vektorski, kao vrpce) ──
+    if mali:
+        snopovi, samotnih, broj_pukotina = SNOPOVI_MALI, SAMOTNIH_MALI, PUKOTINA_MALI
+    else:
+        snopovi, samotnih, broj_pukotina = SNOPOVI, SAMOTNIH, PUKOTINA_BROJ
+    for sn in snopovi:
+        sn = dict(sn)
+        sn['kut'] = sn['kut'] + (kut - KUT)
+        snop(platno, np.random.default_rng(rng.integers(1 << 31)), sn, gustoca, bijele)
+    for _ in range(int(round(samotnih * gustoca))):
+        samotna(platno, rng, kut + rng.normal(0, 4), 'zlato_sporedno', rng.uniform(0.7, 1.6),
+                rng.uniform(0.55, 0.85), gustoca, duljina=rng.uniform(250, 900))
+    if pukotine > 0:
+        for _ in range(int(round(broj_pukotina * gustoca))):
+            # većina prati smjer žila, ostale ih presijecaju pod raznim kutovima
+            k = kut + rng.normal(0, 9) if rng.random() < 0.55 else kut + rng.uniform(25, 155)
+            samotna(platno, rng, k, 'pukotine', rng.uniform(0.38, 0.75),
+                    rng.uniform(0.18, 0.62), 0.6, duljina=rng.uniform(70, 650))
+    javi('žile nacrtane')
+    mk = platno.maske()
+    del platno
+    javi('maske')
 
-    lokalno = s.fbm(uw * 8.0, vw * 8.0, 4, pomak=40)              # mjestimične praznine
-    ton = glatko(-0.45, 0.45, s.fbm(uw * 6.0, vw * 6.0, 3, pomak=41))  # nijansa zlata
-    oblak = 0.5 + 0.5 * s.fbm(u * 1.5, v * 1.5, 5, pomak=42)
-    # slojevi: duge mekane pruge koje prate pojaseve (kao valovi u kamenu)
-    slojevi = 0.5 + 0.5 * s.fbm(uw * 1.1, vw * 11.0, 5, poj=0.55, pomak=43)
-    # i tanje, oštrije pruge (kao brušeni slojevi na pultu)
-    pruge = (1.0 - np.abs(s.fbm(uw * 0.8 + 2.0, vw * 26.0 + 0.6 * s.fbm(uw * 4.0, vw * 4.0, 2, pomak=47),
-                                3, lak=2.3, pomak=45))) ** 8
-    pruge = pruge * glatko(0.0, 0.6, s.fbm(uw * 2.5, vw * 4.0, 3, pomak=46))
+    # ── 2. polja: mirna područja, svjetlo, šum ──
+    s = Sum(seed)
+    yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+    xn, yn = (xx + 0.5) / W, (yy + 0.5) / H              # 0–1
+    x1, y1 = (xx + 0.5) / m, (yy + 0.5) / m              # px slike 1×
+    del xx, yy
+    if mali or mir <= 0:
+        miran = np.zeros((H, W), np.float32)
+    else:
+        cx, cy, rx, ry = MIR_BOCICA
+        r = np.sqrt(((xn - cx) / rx) ** 2 + ((yn - cy) / ry) ** 2)
+        l, g, dsn, dl = MIR_TEKST
+        u_tekstu = (glatko(l - 0.10, l + 0.04, xn) * glatko(dsn + 0.10, dsn - 0.04, xn)
+                    * glatko(g - 0.07, g + 0.03, yn) * glatko(dl + 0.06, dl - 0.02, yn))
+        miran = np.maximum(glatko(1.25, 0.65, r), u_tekstu) * np.float32(min(mir, 1.6))
+        del r, u_tekstu
+    k = np.radians(kut)
+    uu = (x1 * np.cos(k) + y1 * np.sin(k)).astype(np.float32)    # duž žila
+    vv = (-x1 * np.sin(k) + y1 * np.cos(k)).astype(np.float32)   # poprijeko
 
-    # bijele žilice idu koso; njihove koordinate
-    bu, bv = zakreni(x, y, KUT_BIJELIH)
-    bu = bu + 0.018 * s.fbm(bu * 2.0, bv * 2.0, 3, pomak=44)
-
-    glatka = {k: povecaj(p, W, H) for k, p in dict(
-        uw=uw, vw=vw, pojas=pojas, lokalno=lokalno, ton=ton, oblak=oblak,
-        slojevi=slojevi, pruge=pruge, bu=bu, bv=bv).items()}
-    uw, vw, pojas = glatka['uw'], glatka['vw'], glatka['pojas']
-    del x, y, u, v
-    javi('glatka polja')
-
-    # ── 2. zlatne žile: ispucale mreže, kao pukotine ispunjene zlatom ──
-    zlato_pokrov = np.zeros((H, W), np.float32)
-    zlato_jezgra = np.zeros((H, W), np.float32)
-    bijelo = np.zeros((H, W), np.float32)
-    lokalno = glatko(-0.5, 0.45, glatka['lokalno'])
-
-    for (vel_u, vel_v, sirina_px, udio, od_pojasa, izvan, udio_bijelih, pomak) in (
-        # krupna mreža: izdužene ćelije, deblje žile; izvan pojaseva rijetko
-        (0.110, 0.036, 1.8, 0.85, 0.00, 0.22, 0.16, 50),
-        # sitna mreža: gusti, vlaknasti rubovi samo u srcu pojaseva
-        (0.040, 0.014, 1.1, 0.95, 0.20, 0.00, 0.05, 60),
-    ):
-        # iskrivljenje: srednje (rub vijuga) + sitno "presavijeno" (|šum|),
-        # koje daje oštre lomove kao na pukotini, a ne okrugle petlje
-        ku, kv = uw / vel_u, vw / vel_v
-        iu = ku + 0.18 * s.fbm(ku * 0.8, kv * 0.8, 2, pomak=pomak) \
-                + 0.06 * np.abs(s.fbm(ku * 3.0, kv * 3.0, 2, pomak=pomak + 1))
-        iv = kv + 0.16 * s.fbm(ku * 0.8 + 3.3, kv * 0.8 + 7.7, 2, pomak=pomak + 2) \
-                + 0.06 * np.abs(s.fbm(ku * 3.0 + 1.1, kv * 3.0 + 2.2, 2, pomak=pomak + 3))
-        rub, kljuc = s.voronoi(iu, iv)
-        rub_px = udaljenost_u_px(rub)
-        del rub, ku, kv
-
-        # koliko je rubova obojeno: ovisi o pojasu, lokalnom šumu i gustoći
-        zelja = gustoca * udio * (glatko(od_pojasa, 1.0, pojas) + izvan) * (0.45 + 0.85 * lokalno)
-        prisutno = glatko(0.06, -0.06, s.slucajno[0].take(kljuc) - zelja)
-
-        # debljina duž ruba: tanji i deblji dijelovi, deblji u srcu pojasa
-        tok = glatko(-0.55, 0.55, s.fbm(iu * 2.2, iv * 2.2, 3, pomak=pomak + 4))
-        deb = sirina_px * jed * (0.30 + 0.85 * s.slucajno[1].take(kljuc)) * (0.25 + 1.25 * tok)
-        deb = deb * (0.55 + 1.30 * pojas)
-        # žile se mjestimično prekidaju (ispucalo, ne kao nacrtana crta)
-        deb = deb * glatko(-0.45, -0.15, s.fbm(iu * 3.0 + 9.0, iv * 3.0, 2, pomak=pomak + 5))
-        # poneki rub nije zlatan nego tanka sivo-bijela pukotina
-        bijeli_rub = (s.slucajno[2].take(kljuc) < udio_bijelih).astype(np.float32)
-        del iu, iv, kljuc, tok
-
-        crta = glatko(deb + 0.6 * n, deb - 0.6 * n, rub_px) * prisutno * glatko(0.1 * m, 0.4 * m, deb)
-        jezgra = glatko(np.maximum(deb * 0.6, 0.01), 0.0, rub_px) * prisutno * glatko(1.6 * jed, 3.5 * jed, deb)
-        tanje = deb * 0.55
-        np.maximum(bijelo, glatko(tanje + 0.6 * n, tanje - 0.6 * n, rub_px) * prisutno * bijeli_rub, out=bijelo)
-        np.maximum(zlato_pokrov, crta * (1.0 - bijeli_rub), out=zlato_pokrov)
-        np.maximum(zlato_jezgra, jezgra * (1.0 - bijeli_rub), out=zlato_jezgra)
-        del rub_px, prisutno, deb, crta, jezgra, tanje, bijeli_rub
-        javi(f'mreža {pomak}')
-
-    # zlatne ljuskice: izdužene, šiljaste krpice uz pojas (grebeni šuma)
-    # ljuskice su blago koso poredane prema pojasu (kao "stepenice" na pultu)
-    lu, lv = zakreni(uw, vw, 14.0)
-    greben = 1.0 - np.abs(s.fbm(lu * 9.0, lv * 55.0, 3, pomak=65))
-    greben = greben + 0.30 * s.fbm(lu * 30.0, lv * 190.0, 2, pomak=66)    # vlaknast, nazubljen rub
-    # gdje je pojas slab ili je ljuskica "razlomljena", prag raste: ljuskice
-    # se smanjuju i nestaju, ali im rub ostaje oštar (ne blijede u mrlju)
-    razlom = glatko(-0.15, 0.25, s.fbm(uw * 6.0, vw * 14.0, 2, pomak=67))
-    prag = 1.12 - 0.38 * glatko(0.30, 1.0, pojas) * min(gustoca, 1.5) + 0.30 * (1.0 - razlom)
-    krpe = glatko(-0.7 * n, 0.7 * n, udaljenost_u_px(greben - prag, 0.9)) * glatko(0.25, 0.45, pojas)
-    # tamne rupice i pukotine unutar ljuskica (zgužvana folija)
-    rupe = s.fbm(lu * 40.0, lv * 170.0, 2, pomak=68)
-    krpe = krpe * glatko(-0.62 * n, 0.62 * n, udaljenost_u_px(0.45 - rupe, 0.9))
-    np.maximum(zlato_pokrov, krpe, out=zlato_pokrov)
-    np.maximum(zlato_jezgra, krpe * 0.55, out=zlato_jezgra)
-    del greben, razlom, prag, krpe, rupe, lu, lv
-    javi('ljuskice')
-
-    # duge tanke zlatne niti uz pojaseve (vlasi)
-    nit = s.fbm(uw * 1.6, vw * 13.0, 3, poj=0.4, pomak=70)
-    nit_px = np.abs(udaljenost_u_px(nit))
-    nit_ima = glatko(0.10, 0.45, s.fbm(uw * 4.0, vw * 4.0, 3, pomak=71)) * glatko(0.04, 0.45, pojas)
-    nit_deb = 0.55 * jed * (0.4 + glatko(-0.4, 0.5, s.fbm(uw * 25, vw * 25, 2, pomak=72)))
-    nit_deb = nit_deb * glatko(-0.35, -0.05, s.fbm(uw * 30 + 4, vw * 30, 2, pomak=73))
-    niti = glatko(nit_deb + 0.6 * n, nit_deb - 0.6 * n, nit_px) * nit_ima * gustoca
-    # dio niti nije zlatan nego sivo-bijel (kao vlakna u pojasu na pultu)
-    bijele_niti = glatko(0.15, 0.45, s.fbm(uw * 3.0, vw * 8.0, 2, pomak=74))
-    niti = np.minimum(niti, 1.0)
-    np.maximum(zlato_pokrov, niti * 0.75 * (1.0 - bijele_niti), out=zlato_pokrov)
-    np.maximum(bijelo, niti * 0.8 * bijele_niti, out=bijelo)
-    del nit, nit_px, nit_ima, nit_deb, niti, bijele_niti
-    javi('niti')
-
-    # ── 3. sivo-bijele žilice: rijetke, tanke, duge, koso ──
-    bu, bv = glatka['bu'], glatka['bv']
-    bv = bv + 0.004 * np.abs(s.fbm(bu * 40.0, bv * 40.0, 2, pomak=83))     # sitni lomovi
-    bj = s.fbm(bu * 0.9, bv * 5.0, 2, poj=0.35, pomak=80)
-    bj_px = np.abs(udaljenost_u_px(bj))
-    bj_ima = glatko(0.25, 0.60, s.fbm(bu * 2.4, bv * 2.4, 3, pomak=81))
-    bj_deb = 0.45 * jed * (0.5 + glatko(-0.3, 0.5, s.fbm(bu * 20, bv * 20, 2, pomak=82)))
-    np.maximum(bijelo, glatko(bj_deb + 0.6 * n, bj_deb - 0.6 * n, bj_px) * bj_ima, out=bijelo)
-    del bj, bj_px, bj_ima, bj_deb
-    javi('bijele žilice')
-
-    # ── 4. podloga: oblačaste dubine i slojevi ──
-    oblak, slojevi = glatka['oblak'], glatka['slojevi']
-    t = 0.03 + 0.45 * glatko(0.25, 0.85, oblak) + 0.45 * glatko(0.42, 0.80, slojevi) * (0.5 + 0.5 * oblak)
-    rgb = pomijesaj(np.broadcast_to(boja(CRNA_DUBOKA), (H, W, 3)), boja(CRNA_OBLAK), np.clip(t, 0, 1))
-    del t
-
-    # sivkasti slojeviti oblaci uz pojaseve (kao na pultu)
-    k = 2 * jed                              # korak: polje u pola izlazne rezolucije slike 1×
-    oko_pojasa = povecaj(zamuti(pojas[::k, ::k], 22), W, H)
-    sivo = oko_pojasa * (0.25 + 0.75 * glatko(0.35, 0.85, slojevi)) * 0.85 + 0.18 * glatko(0.6, 0.95, slojevi)
-    sivo = sivo + glatka['pruge'] * (0.15 + 0.6 * oko_pojasa)
-    rgb = pomijesaj(rgb, boja(SIVI_SLOJ), np.clip(sivo, 0, 1))
-    del sivo, oko_pojasa
-
-    # tihi topli sjaj oko gustih zlatnih žila
-    sjaj_zila = povecaj(zamuti(zlato_pokrov[::k, ::k], 3), W, H)
-    rgb = pomijesaj(rgb, boja(TOPLI_ODSJAJ), np.clip(sjaj_zila * 1.6, 0, 1) * 0.45 * min(jacina, 1.5))
-    del sjaj_zila
+    # ── 3. podloga: duboka crna s tihim oblacima i sivim dimom ──
+    # (glatka polja u četvrtini rezolucije pa uvećana)
+    q = 4
+    oblak = povecaj(s.fbm(x1[::q, ::q] / 520, y1[::q, ::q] / 520, 5, pomak=1), W, H)
+    dim = povecaj(s.fbm(uu[::q, ::q] / 420, vv[::q, ::q] / 95, 4, poj=0.55, pomak=2), W, H)
+    t = 0.35 + 0.50 * glatko(-0.6, 0.8, oblak)
+    rgb = pomijesaj(np.broadcast_to(boja(CRNA_DUBOKA), (H, W, 3)), boja(CRNA), np.clip(t, 0, 1))
+    rgb = pomijesaj(rgb, boja(CRNA_OBLAK), glatko(0.25, 1.0, oblak) * 0.6)
+    # dim uz snopove žila (širok, mekan, koso)
+    zile_sve = mk['zlato'] + 0.6 * mk['kvarc'] + 0.4 * mk['zlato_sporedno']
+    korak = max(1, 2 * m)
+    oko = povecaj(zamuti(zile_sve[::korak, ::korak], 26), W, H)
+    oko = np.clip(oko * 5.0, 0, 1)
+    koprena = (0.10 + 0.90 * oko) * glatko(0.0, 0.8, dim) * 0.70 * (1.0 - 0.6 * miran)
+    rgb = pomijesaj(rgb, boja(SIVA_KOPRENA), np.clip(koprena, 0, 1))
     rgb = rgb * np.float32(svjetlina)
+    del oblak, t, koprena, zile_sve
     javi('podloga')
 
-    # ── 5. bijele i zlatne žile preko podloge ──
-    rgb = pomijesaj(rgb, boja(BIJELA_ZILA), np.clip(bijelo * 0.40 * bijele, 0, 1))
-    del bijelo
-    # nijansa zlata: krupne promjene + vlakna uz pojas unutar svake ljuskice
-    vlakna = s.fbm(uw * 18.0, vw * 150.0, 3, pomak=96)
-    ton = np.clip(glatka['ton'] + 0.45 * vlakna, 0, 1)
-    # rub zlata je tamniji, sredina deblje žile i ljuskice svjetlija
-    rub_zlata = 1.0 - glatko(0.35, 0.95, zamuti(zlato_pokrov, 2 * jed))
-    ton = ton * (1.0 - 0.6 * rub_zlata)
-    zlatna = pomijesaj(np.broadcast_to(boja(ZLATO_TAMNO), (H, W, 3)), boja(ZLATO), ton)
-    svijetla_vlakna = glatko(0.30, 0.70, vlakna) * glatko(0.5, 1.0, zlato_pokrov) * 0.45
-    zlatna = pomijesaj(zlatna, boja(ZLATO_SVIJETLO),
-                       np.clip(zlato_jezgra * (0.15 + 0.45 * ton) + svijetla_vlakna, 0, 1))
-    del rub_zlata, svijetla_vlakna
-    # tanke žile su prozirnije, kao da leže malo ispod polirane površine
-    alfa = zlato_pokrov * (0.58 + 0.42 * zlato_jezgra) * (0.78 + 0.22 * glatko(-0.5, 0.3, vlakna))
-    alfa = np.clip(alfa * jacina, 0, 1)
-    del vlakna
-    rgb = rgb + (zlatna - rgb) * alfa[..., None]
-    del zlatna, alfa
+    # svjetlo poliranog kamena: širok mekan koso postavljen odsjaj (gore desno)
+    if mali:
+        svjetlo = 0.6 + 0.4 * np.exp(-(((xn - 0.6) / 0.5) ** 2 + ((yn - 0.3) / 0.9) ** 2))
+    else:
+        dd = xn * 0.6 + yn * 0.8
+        svjetlo = 0.55 + 0.45 * np.exp(-((dd - 0.45) / 0.30) ** 2)
+    svjetlo = svjetlo.astype(np.float32)
+    rgb = rgb + (np.float32(0.010 * sjaj) * svjetlo)[..., None] * np.array([0.96, 0.98, 1.0], np.float32)
 
-    # ── 6. blagi odsjaj poliranog kamena (široki, mekani, koso) ──
-    if sjaj > 0:
-        x, y = koordinate(W, H)
-        d = x * 0.55 + y * 0.85
-        odsjaj = np.exp(-((d - 0.55) / 0.20) ** 2) * 0.018 + np.exp(-((d - 1.20) / 0.10) ** 2) * 0.010
-        rgb = rgb + (odsjaj * sjaj)[..., None] * np.array([0.92, 0.95, 1.0], np.float32)
-        del x, y, d, odsjaj
+    # ── 4. pukotine: vrlo tanke, bijelo-sive, mjestimično jače ──
+    puk = mk['pukotine'] * np.float32(pukotine) * (1.0 - 0.55 * miran)
+    rgb = pomijesaj(rgb, boja(PUKOTINA), np.clip(puk, 0, 1))
+    del puk
 
-    # smanji na izlaznu veličinu (prosjek n×n piksela)
-    rgb = np.clip(rgb, 0, 1).reshape(SH, n, SW, n, 3).mean(axis=(1, 3))
-    # sitno zrno (protiv pruga u glatkim prijelazima nakon kompresije)
-    zrno = np.random.default_rng(seed + 1).normal(0, 0.0030, rgb.shape[:2]).astype(np.float32)
+    # ── 5. kvarc: mliječan, prozirnih rubova, sa sivim oblacima unutra ──
+    if bijele > 0:
+        kv = mk['kvarc']
+        meko = zamuti(kv, 0.6 * m)
+        oblaci = s.fbm(uu / 50, vv / 11, 4, poj=0.6, pomak=5)
+        jezgra = glatko(0.25, 0.85, zamuti(kv, 3.5 * m))
+        alfa_k = np.clip(meko * 1.05, 0, 1) ** 1.2 * (0.84 + 0.16 * jezgra) * (0.90 + 0.10 * oblaci)
+        boja_k = pomijesaj(np.broadcast_to(boja(KVARC_SJENA), (H, W, 3)), boja(KVARC),
+                           np.clip(0.70 + 0.35 * jezgra + 0.30 * oblaci, 0, 1))
+        # tihi mliječni sjaj oko kvarca
+        sjaj_k = povecaj(zamuti(kv[::korak, ::korak], 3), W, H) * 0.12 * (1.0 - kv)
+        rgb = pomijesaj(rgb, boja(KVARC_SJENA), np.clip(sjaj_k, 0, 1))
+        rgb = rgb + (boja_k - rgb) * alfa_k[..., None]
+        # unutrašnjost kvarca ostaje čista: zlatne žile snopa ga ne presijecaju
+        cisti_kvarc = glatko(0.90, 0.99, zamuti(kv, 4.0 * m))
+        del kv, meko, oblaci, jezgra, alfa_k, boja_k, sjaj_k
+    else:
+        cisti_kvarc = 0.0
+
+        # tanke bijele žile (sjajne, s tihim mliječnim rubom)
+        bj = mk['bijelo'] * np.float32(min(1.0, bijele)) * (1.0 - 0.45 * miran)
+        rgb = pomijesaj(rgb, boja(KVARC_SJENA), np.clip(zamuti(bj, 1.2 * m) * 0.35, 0, 1))
+        rgb = pomijesaj(rgb, boja(BIJELA_ZILA), np.clip(bj, 0, 1))
+        del bj
+    javi('kvarc i bijele žile')
+
+    # ── 6. zlato: metalno, s vlaknima, odsjajem i tamnijim mrljama ──
+    zl = np.maximum(mk['zlato'] * (1.0 - 0.30 * miran), mk['zlato_sporedno'] * (1.0 - 0.72 * miran))
+    zl = np.maximum(zl * (1.0 - 0.92 * cisti_kvarc), mk['zlato_obrub'] * (1.0 - 0.30 * miran))
+    zl = np.clip(zl * np.float32(jacina), 0, 1)
+    if zl.max() > 0:
+        unutra = np.clip(zamuti(np.maximum(np.maximum(mk['zlato'], mk['zlato_sporedno']), mk['zlato_obrub']),
+                                1.3 * m) * 1.6, 0, 1)
+        vlakna = s.fbm(uu / 26, vv / 2.2, 3, pomak=7)                 # duge pruge duž žile
+        listici = s.fbm(uu / 3.2, vv / 2.4, 3, pomak=8)               # sitna "folija"
+        nijansa = np.clip(0.30 + 0.40 * unutra + 0.50 * vlakna, 0, 1)
+        zlatna = pomijesaj(np.broadcast_to(boja(ZLATO_TAMNO), (H, W, 3)), boja(ZLATO), nijansa)
+        odsjaj = np.clip((unutra - 0.45) * 1.3 + 0.8 * listici + 0.45 * vlakna - 0.22, 0, 1) * (0.40 + 0.60 * svjetlo)
+        zlatna = pomijesaj(zlatna, boja(ZLATO_ODSJAJ), np.clip(odsjaj * (0.5 + 0.5 * sjaj), 0, 1))
+        tamno = glatko(0.30, 0.70, -listici) * unutra * 0.30
+        zlatna = pomijesaj(zlatna, boja(ZLATO_TAMNO) * 0.78, tamno)
+        rgb = rgb + (zlatna - rgb) * zl[..., None]
+        del unutra, vlakna, listici, nijansa, zlatna, odsjaj, tamno
+    del zl
+    javi('zlato')
+
+    # ── 7. sitne iskrice u kamenu (kao na uzorku) i zrno ──
+    rng2 = np.random.default_rng(seed + 7)
+    broj = int(W * H / (9000 * m * m) * gustoca)
+    iy, ix = rng2.integers(0, H, broj), rng2.integers(0, W, broj)
+    jak = rng2.uniform(0.04, 0.35, broj).astype(np.float32) * (1.0 - 0.6 * miran[iy, ix])
+    rgb[iy, ix] = rgb[iy, ix] + (boja('#c8cacc') - rgb[iy, ix]) * jak[:, None]
+    zrno = rng2.normal(0, 0.0022, (H, W)).astype(np.float32)
     rgb = np.clip(rgb + zrno[..., None], 0, 1)
     javi('gotovo')
     return Image.fromarray((rgb * 255 + 0.5).astype(np.uint8), 'RGB')
@@ -487,9 +637,9 @@ def spremi(slika, put, kvaliteta=KVALITETA, najvise_kb=NAJVISE_KB):
         spremnik = io.BytesIO()
         slika.save(spremnik, 'WEBP', quality=q, method=6)
         kb = spremnik.tell() / 1024
-        if kb <= najvise_kb or q <= 40:
+        if kb <= najvise_kb or q <= 30:
             break
-        q -= 3
+        q -= 2
     with open(put, 'wb') as f:
         f.write(spremnik.getvalue())
     print(f'Spremljeno: {put}  ({slika.width} × {slika.height} px, {kb:.0f} KB, webp kvaliteta {q})')
@@ -497,20 +647,26 @@ def spremi(slika, put, kvaliteta=KVALITETA, najvise_kb=NAJVISE_KB):
 
 
 if __name__ == '__main__':
-    p = argparse.ArgumentParser(description='Tekstura crnog Portoro mramora sa zlatnim žilama.')
-    p.add_argument('--jacina', type=float, default=JACINA_ZILA, help='jačina zlatnih žila (1 = kao na pultu)')
-    p.add_argument('--gustoca', type=float, default=GUSTOCA_ZILA, help='gustoća zlatnih žila (1 = kao na pultu)')
-    p.add_argument('--bijele', type=float, default=JACINA_BIJELIH, help='jačina sivo-bijelih žilica')
-    p.add_argument('--sjaj', type=float, default=SJAJ, help='odsjaj poliranog kamena')
-    p.add_argument('--svjetlina', type=float, default=SVJETLINA_PODLOGE, help='svjetlina crne podloge (1 = kao na pultu)')
+    p = argparse.ArgumentParser(description='Tekstura crnog mramora sa zlatnim i bijelim žilama.')
+    p.add_argument('--jacina', type=float, default=JACINA_ZLATA, help='jačina zlatnih žila (1 = kao na uzorku)')
+    p.add_argument('--gustoca', type=float, default=GUSTOCA, help='broj sporednih žila, grana i pukotina')
+    p.add_argument('--bijele', type=float, default=JACINA_BIJELIH, help='kvarc i bijele žile (0 = bez)')
+    p.add_argument('--pukotine', type=float, default=JACINA_PUKOTINA, help='tanke pukotine (0 = bez)')
+    p.add_argument('--sjaj', type=float, default=SJAJ, help='svjetlo kamena i odsjaj zlata')
+    p.add_argument('--svjetlina', type=float, default=SVJETLINA_PODLOGE, help='svjetlina crne podloge')
+    p.add_argument('--mir', type=float, default=MIR, help='mirnija sredina i donja trećina (0 = ne)')
+    p.add_argument('--kut', type=float, default=KUT, help='smjer žila u stupnjevima')
     p.add_argument('--seed', type=int, default=SEED)
-    p.add_argument('--naduzorkovanje', type=int, default=NADUZORKOVANJE, help='1 = brza proba, 2 = konačno')
+    p.add_argument('--naduzorkovanje', type=int, default=NADUZORKOVANJE, help='2 = brže, 3 = konačno')
     p.add_argument('--kvaliteta', type=int, default=KVALITETA)
-    p.add_argument('--mjerilo', type=int, default=0, help='1 = crni.webp, 2 = crni-2x.webp; bez toga obje')
-    p.add_argument('--izlaz', default='', help='kamo spremiti (samo uz jedno mjerilo; zadano mramor/crni.webp ili crni-2x.webp)')
+    p.add_argument('--samo', default='', choices=['', '1', '2', 'mali'], help='izradi samo jednu datoteku')
+    p.add_argument('--izlaz', default='', help='kamo spremiti (samo uz --samo)')
     arg = p.parse_args()
-    mjerila = [arg.mjerilo] if arg.mjerilo else ([1] if arg.izlaz else [1, 2])
-    for mj in mjerila:
-        slika = izradi(arg.jacina, arg.gustoca, arg.bijele, arg.sjaj, arg.seed, arg.naduzorkovanje, arg.svjetlina, mj)
-        put = arg.izlaz or (IZLAZ if mj == 1 else IZLAZ_2X)
-        spremi(slika, put, arg.kvaliteta, NAJVISE_KB if mj == 1 else NAJVISE_KB_2X)
+    poslovi = {'1': (1, False, IZLAZ, NAJVISE_KB), '2': (2, False, IZLAZ_2X, NAJVISE_KB_2X),
+               'mali': (1, True, IZLAZ_MALI, NAJVISE_KB_MALI)}
+    for kljuc in ([arg.samo] if arg.samo else ['1', '2', 'mali']):
+        mj, mali, put, gr = poslovi[kljuc]
+        print(f'{os.path.basename(put)}:')
+        slika = izradi(mj, mali, arg.jacina, arg.gustoca, arg.bijele, arg.pukotine, arg.sjaj,
+                       arg.svjetlina, arg.mir, arg.seed, arg.naduzorkovanje, arg.kut)
+        spremi(slika, (arg.izlaz if arg.samo and arg.izlaz else put), arg.kvaliteta, gr)
