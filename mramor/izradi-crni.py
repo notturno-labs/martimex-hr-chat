@@ -19,18 +19,21 @@
 #       zato je sredina (bočica) i donja trećina (tekst) mirnija, a
 #       glavni snopovi žila prolaze dijagonalno kroz kutove: veliki snop
 #       s kvarcom kroz gornji desni kut, drugi kroz donji lijevi;
-#   (b) mali detalji (zaglavlje, kupčevi oblačići, gumbi).
-#  Za gumb chata u kutu stranice i druge male površine izrađuje se i mali
-#  isječak (crni-mali.webp) s jednom lijepom zlatnom žilom.
+#   (b) sve ostale površine od crnog mramora (zaglavlje prozora, kupčeve
+#       poruke, glavni gumb, ponuđeni odgovor pod mišem, gumb chata u kutu
+#       stranice): za njih je mali, ZAMUĆENI isječak (crni-mali.webp) s dvije
+#       kose zlatne žile (jedna s mliječnim kvarcom). Zamućen je da tekst
+#       preko njega bude lako čitljiv; početni ekran ostaje oštar.
 #
 #  Datoteke (isti uzorak u dvije razlučivosti + mali isječak):
 #     crni.webp      900 × 1500   (≤ 110 KB)
 #     crni-2x.webp  1800 × 3000   (≤ 140 KB, oštri zasloni / mobiteli)
-#     crni-mali.webp 600 × 220    (≤ 12 KB, gumb chata, kupčeve poruke, pilula pod mišem)
+#     crni-mali.webp 900 × 330    (≤ 14 KB, zamućen; sve osim početnog ekrana)
 #
 #  Tamnije / mirnije:   --svjetlina 0.85 --jacina 0.8 --gustoca 0.7 --mir 1.3
 #  Svjetlije / bogatije: --svjetlina 1.15 --jacina 1.15 --gustoca 1.3 --mir 0.6
 #  Bez kvarca / bijelih žila: --bijele 0     Bez pukotina: --pukotine 0
+#  Mali isječak više / manje zamućen: --samo mali --zamucenje 6 / 2.5 (px)
 #
 #  Pokretanje (iz mape repozitorija):
 #     python3 mramor/izradi-crni.py                       (sve tri datoteke)
@@ -47,12 +50,13 @@ import os
 import time
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 # ── POSTAVKE ─────────────────────────────────────────────────────────
 
 SIRINA, VISINA = 900, 1500           # crni.webp (uspravno); crni-2x.webp je dvostruko veći
-SIRINA_MALI, VISINA_MALI = 600, 220  # crni-mali.webp
+SIRINA_MALI, VISINA_MALI = 900, 330  # crni-mali.webp (u temi se prikazuje oko 630 px široko)
+MALI_ZAMUCENJE = 4.0                 # px: koliko je mali isječak zamućen (u temi ≈ 0,7 × toliko; 0 = oštar)
 NADUZORKOVANJE = 3                   # žile se crtaju 3× gušće pa smanje (glatki, oštri rubovi)
 SEED = 11                            # isti seed = ista tekstura
 
@@ -101,13 +105,16 @@ SNOPOVI = [
 SAMOTNIH = 6                         # usamljene tanke zlatne žile preko cijele plohe (u miru jedva vidljive)
 PUKOTINA_BROJ = 80                   # tanke pukotine
 
-# Mali isječak: jedna lijepa zlatna žila s pratiljom, koso preko trake.
+# Mali (zamućeni) isječak: dva kosa snopa kao na velikom mramoru, lijevi s
+# mliječnim kvarcom, a između njih mirna crna (iza natpisa i teksta).
 SNOPOVI_MALI = [
-    dict(x=0.50, y=0.50, kut=13.0, raspon=46, zlatnih=4, debljina=13.0, bijelih=1,
-         kvarc=0, jacina=1.0, glavni=True),
+    dict(x=0.24, y=0.50, kut=31.0, raspon=90, zlatnih=7, debljina=10.0, bijelih=2,
+         kvarc=34, kvarc_od=0.05, jacina=1.0, glavni=True),           # lijevi, s kvarcom
+    dict(x=0.80, y=0.50, kut=33.0, raspon=60, zlatnih=5, debljina=6.5, bijelih=1,
+         kvarc=0, jacina=0.9, glavni=True),                            # desni, tanji
 ]
-SAMOTNIH_MALI = 1
-PUKOTINA_MALI = 12
+SAMOTNIH_MALI = 2
+PUKOTINA_MALI = 18
 
 # Mirna područja početnog ekrana (udio širine / visine): bočica i tekst.
 MIR_BOCICA = (0.50, 0.34, 0.40, 0.21)        # središte x, y i polumjeri
@@ -116,7 +123,7 @@ MIR_TEKST = (0.12, 0.63, 0.88, 0.95)         # lijevo, gore, desno, dolje
 KVALITETA = 90                       # početna webp kvaliteta; smanjuje se dok datoteka ne stane u granicu
 NAJVISE_KB = 110
 NAJVISE_KB_2X = 140                  # mobiteli: zajedno s bijeli-2x.webp i crni-mali.webp ispod ~300 KB
-NAJVISE_KB_MALI = 12
+NAJVISE_KB_MALI = 14
 
 MAPA = os.path.dirname(os.path.abspath(__file__))
 IZLAZ = os.path.join(MAPA, 'crni.webp')
@@ -661,6 +668,7 @@ if __name__ == '__main__':
     p.add_argument('--kvaliteta', type=int, default=KVALITETA)
     p.add_argument('--samo', default='', choices=['', '1', '2', 'mali'], help='izradi samo jednu datoteku')
     p.add_argument('--izlaz', default='', help='kamo spremiti (samo uz --samo)')
+    p.add_argument('--zamucenje', type=float, default=MALI_ZAMUCENJE, help='zamućenje malog isječka u px (0 = oštar)')
     arg = p.parse_args()
     poslovi = {'1': (1, False, IZLAZ, NAJVISE_KB), '2': (2, False, IZLAZ_2X, NAJVISE_KB_2X),
                'mali': (1, True, IZLAZ_MALI, NAJVISE_KB_MALI)}
@@ -669,4 +677,6 @@ if __name__ == '__main__':
         print(f'{os.path.basename(put)}:')
         slika = izradi(mj, mali, arg.jacina, arg.gustoca, arg.bijele, arg.pukotine, arg.sjaj,
                        arg.svjetlina, arg.mir, arg.seed, arg.naduzorkovanje, arg.kut)
+        if mali and arg.zamucenje > 0:
+            slika = slika.filter(ImageFilter.GaussianBlur(arg.zamucenje))   # mali isječak je zamućen (tekst preko njega)
         spremi(slika, (arg.izlaz if arg.samo and arg.izlaz else put), arg.kvaliteta, gr)
