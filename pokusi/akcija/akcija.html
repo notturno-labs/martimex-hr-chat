@@ -6,7 +6,7 @@
 <title>Kartica artikla na akciji</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <!--
-  Pokus: kartica artikla s akcijom i promo kodom (kartica-artikla-akcija.js).
+  Pokus: kartica artikla s akcijom i promo kodom (kartica-artikla-popust.js).
   Stranica glumi Voiceflowov prozor chata (poruke su u shadow rootu, kao u
   pravom widgetu) i pokazuje kartice sa stvarnim podacima iz payloada.
   kartica-artikla.js (prava kartica) nije mijenjan; ništa iz ove mape se
@@ -155,7 +155,7 @@
     <div>
       <p class="nadnaslov">Marti · kartica artikla · pokus</p>
       <h1 id="naslov">Akcija i promo kod na kartici artikla</h1>
-      <p class="uvod">Kad je artikl na akciji ili za njega vrijedi promo kod, stara cijena se precrta potezom pera, nova izroni ispod nje, a pokraj njih se utisne voštani pečat s postotkom. Promo kod pretvori dno kartice u odrezak kupona; dodir na kod ga kopira.</p>
+      <p class="uvod">Kad je artikl na akciji ili za njega vrijedi promo kod, stara cijena se precrta potezom pera, nova izroni ispod nje, a pokraj njih se utisne voštani pečat s postotkom. Uz cijenu s kodom ispod nje diskretno piše „uz kod MRTMX”.</p>
     </div>
 
     <button class="ponovi" id="ponovi" type="button">
@@ -173,9 +173,10 @@
       <h2>Stanja u chatu</h2>
       <ul class="stanja">
         <li><b>Akcija</b><span>Naxos: precrtana redovna cijena, nova cijena i pečat −20&nbsp;%.</span></li>
-        <li><b>Promo kod</b><span>Red Tobacco: cijena s kodom, ispod nje „uz kod MRTMX”, a na dnu odrezak „−30&nbsp;% uz kod MRTMX” s rokom.</span></li>
-        <li><b>Akcija + kod</b><span>Delina: precrtana redovna cijena, cijena nakon akcije i koda, pečat s ukupnim popustom; na odresku piše da kod vrijedi dodatno.</span></li>
+        <li><b>Promo kod</b><span>Red Tobacco: precrtana trenutna cijena, ispod nje cijena s kodom i „uz kod MRTMX”, pečat −30&nbsp;%.</span></li>
+        <li><b>Akcija + kod</b><span>Delina: precrtana redovna cijena, cijena nakon akcije i koda, „uz kod MRTMX” i pečat s ukupnim popustom.</span></li>
         <li><b>Bez popusta</b><span>Halfeti: kartica izgleda točno kao danas.</span></li>
+        <li><b>Ravna polja</b><span>Fico di Amalfi: isti kod, zadan kao <code>promoCode</code> i <code>promoPercent</code>.</span></li>
       </ul>
     </div>
 
@@ -191,12 +192,12 @@
     <i>"validUntil": "2026-10-31"</i> <i>// neobavezno</i>
   <i>}</i>
 }</pre>
-      <p class="napomena">Ostala polja su ista kao danas. Kod kojem je rok prošao se ne prikazuje. Prava kartica (<code>kartica-artikla.js</code>) nije mijenjana; ovo je njezina kopija u <code>pokusi/akcija/</code>.</p>
+      <p class="napomena">Ostala polja su ista kao danas. Kod kojem je rok prošao se ne prikazuje. Prava kartica (<code>kartica-artikla.js</code>) nije mijenjana; ovo je njezina kopija s dodanim popustom: <code>pokusi/akcija/kartica-artikla-popust.js</code>.</p>
     </div>
   </section>
 </main>
 
-<script src="kartica-artikla-akcija.js"></script>
+<script src="kartica-artikla-popust.js"></script>
 <script>
 (function () {
   // promo kod vrijedi još 12 dana od danas, da ga pokus nikad ne sakrije kao istekao

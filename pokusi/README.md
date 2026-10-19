@@ -229,9 +229,9 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
 Kartica artikla kad je artikl na akciji ili za njega vrijedi promo kod. `kartica-artikla.js` (prava
 kartica) **nije mijenjan**.
 
-- `akcija/kartica-artikla-akcija.js`: kopija `kartica-artikla.js` (v30) s dodanom akcijom i promo
-  kodom; promjene su u komentarima označene s AKCIJA / KOD. Može izravno zamijeniti pravu karticu
-  (isti `ext_product_card`, isti payload, nova polja su neobavezna).
+- `akcija/kartica-artikla-popust.js` (v31): kopija `kartica-artikla.js` (v30) u koju je dodan samo
+  popust uz cijenu. Može izravno zamijeniti pravu karticu: isti `ext_product_card`, isti payload,
+  nova polja su neobavezna, a kartica bez popusta izgleda točno kao v30.
 - `akcija/akcija.html`: pokusna stranica; glumi prozor chata (poruke u shadow rootu, kao Voiceflow) s
   pet artikala: akcija, promo kod, akcija + kod, bez popusta i kod zadan ravnim poljima. Gumb
   „Ponovi pojavu” ponovno pokrene animaciju. `akcija/slike/`: nacrtane bočice na bijeloj pozadini
@@ -242,20 +242,15 @@ kartica) **nije mijenjan**.
     `percent` može `price` (cijena s kodom). Isto kao ravna polja: `promoCode`, `promoPercent`,
     `promoPrice`, `promoValidUntil`. Kad je `validUntil` prošao, kod se ne prikazuje.
 - Što se vidi:
-  - akcija: preko stare cijene se kad poruka stigne „perom” povuče tanka kosa crta (s lijeva na
-    desno), ispod izroni nova cijena, a pokraj njih se utisne voštani pečat u roza boji s
-    postotkom (−20 %), od kojeg se raširi tanki val
-  - promo kod: precrtana je trenutna cijena, nova je cijena s kodom, ispod nje „uz kod MRTMX”, a
-    dno kartice postane odrezak kupona: perforacija preko kartice i polukružni izrezi s obje strane
-    (dvostruki rub kartice obilazi oko njih; izrezi su pravi, kroz njih se vidi pozadina chata).
-    Na odresku piše „−30 % uz kod [MRTMX]” i „vrijedi do 31. listopada”; preko koda jednom
-    prijeđe odsjaj. Dodir na kod ga kopira: iz koda prsnu roza kapljice (kao sprej u pojavi
-    kartica) i piše „✓ Kopirano”; kad preglednik ne dopusti kopiranje, kod se označi
-  - akcija + kod: precrtana je redovna cijena, nova je cijena nakon akcije i koda, pečat pokazuje
-    ukupni popust, a na odresku piše „dodatno na sniženu cijenu”
-  - uz „Smanji pokrete” nema animacija ni kapljica; sve je odmah na mjestu
-- Postavke su u `MX_POSTAVKE`: boje `vosak` i `akcija`, `pecat` (pečat da/ne) i tekstovi
-  (`tekstUzKod`, `tekstKopirano`, `tekstDodatno`, `tekstVrijedi`).
+  - akcija: preko stare cijene je „perom” povučena tanka kosa crta, ispod je nova cijena (malo veća
+    i tamnija), a desno od njih roza voštani pečat s postotkom (−20 %)
+  - promo kod: precrtana je trenutna cijena, nova je cijena s kodom, ispod nje diskretno piše
+    „uz kod MRTMX”, a pečat pokazuje −30 %
+  - akcija + kod: precrtana je redovna cijena, nova je cijena nakon akcije i koda, ispod nje
+    „uz kod MRTMX”, a pečat pokazuje ukupni popust
+  - pojava: kad poruka stigne, pero precrta staru cijenu (s lijeva na desno), ispod izroni nova, a
+    pečat se utisne i od njega se raširi tanki val; uz „Smanji pokrete” sve je odmah na mjestu
+- Postavke su u `MX_POSTAVKE`: boje `vosak` i `akcija`, `pecat` (pečat da/ne) i `tekstUzKod`.
 
 ## Pregled i snimanje
 
