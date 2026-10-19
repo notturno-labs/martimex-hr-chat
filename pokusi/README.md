@@ -224,13 +224,46 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
 - Gradnja traje oko 2 s na računalu (grubi i točni prolaz brojanja, pa gradnja), u malim koracima,
   pa se prizor pokaže kad je gotov. Konzola ispiše broj točkica i razmak niti.
 
+## Akcija i promo kod na kartici artikla (`akcija/`)
+
+Kartica artikla kad je artikl na akciji ili za njega vrijedi promo kod. `kartica-artikla.js` (prava
+kartica) **nije mijenjan**.
+
+- `akcija/kartica-artikla-akcija.js`: kopija `kartica-artikla.js` (v30) s dodanom akcijom i promo
+  kodom; promjene su u komentarima označene s AKCIJA / KOD. Može izravno zamijeniti pravu karticu
+  (isti `ext_product_card`, isti payload, nova polja su neobavezna).
+- `akcija/akcija.html`: pokusna stranica; glumi prozor chata (poruke u shadow rootu, kao Voiceflow) s
+  pet artikala: akcija, promo kod, akcija + kod, bez popusta i kod zadan ravnim poljima. Gumb
+  „Ponovi pojavu” ponovno pokrene animaciju. `akcija/slike/`: nacrtane bočice na bijeloj pozadini
+  (martimex.hr nije bio dostupan), da kartica radi punu obradu fotografije.
+- Payload (sve neobavezno, ostalo isto kao dosad):
+  - `oldPrice` → akcija
+  - `promo: { code: "MRTMX", percent: 30, validUntil: "2026-10-31" }` → promo kod; umjesto
+    `percent` može `price` (cijena s kodom). Isto kao ravna polja: `promoCode`, `promoPercent`,
+    `promoPrice`, `promoValidUntil`. Kad je `validUntil` prošao, kod se ne prikazuje.
+- Što se vidi:
+  - akcija: preko stare cijene se kad poruka stigne „perom” povuče tanka kosa crta (s lijeva na
+    desno), ispod izroni nova cijena, a pokraj njih se utisne voštani pečat u roza boji s
+    postotkom (−20 %), od kojeg se raširi tanki val
+  - promo kod: precrtana je trenutna cijena, nova je cijena s kodom, ispod nje „uz kod MRTMX”, a
+    dno kartice postane odrezak kupona: perforacija preko kartice i polukružni izrezi s obje strane
+    (dvostruki rub kartice obilazi oko njih; izrezi su pravi, kroz njih se vidi pozadina chata).
+    Na odresku piše „−30 % uz kod [MRTMX]” i „vrijedi do 31. listopada”; preko koda jednom
+    prijeđe odsjaj. Dodir na kod ga kopira: iz koda prsnu roza kapljice (kao sprej u pojavi
+    kartica) i piše „✓ Kopirano”; kad preglednik ne dopusti kopiranje, kod se označi
+  - akcija + kod: precrtana je redovna cijena, nova je cijena nakon akcije i koda, pečat pokazuje
+    ukupni popust, a na odresku piše „dodatno na sniženu cijenu”
+  - uz „Smanji pokrete” nema animacija ni kapljica; sve je odmah na mjestu
+- Postavke su u `MX_POSTAVKE`: boje `vosak` i `akcija`, `pecat` (pečat da/ne) i tekstovi
+  (`tekstUzKod`, `tekstKopirano`, `tekstDodatno`, `tekstVrijedi`).
+
 ## Pregled i snimanje
 
 - `proba.html` glumi Voiceflowov prozor chata, pa se početni ekran vidi kao u pravom chatu:
   `proba.html?skripta=saturn/pocetna-chata-saturn.js`, `proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
   (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije” (I i II), „Izron”, „Veo” i
   „Naxos” se otvaraju izravno: `kap/kap.html`, `kap2/kap2.html`, `izron/izron.html`, `veo/veo.html`,
-  `naxos/naxos.html`.
+  `naxos/naxos.html`. Kartica s akcijom i promo kodom: `akcija/akcija.html`.
 - Kad je ova mapa na grani `main`, vidi se i na GitHub Pages:
   `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=saturn/pocetna-chata-saturn.js`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
@@ -238,7 +271,8 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/kap2/kap2.html`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/izron/izron.html`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/veo/veo.html`
-  i `https://notturno-labs.github.io/martimex-hr-chat/pokusi/naxos/naxos.html`.
+  , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/naxos/naxos.html`
+  i `https://notturno-labs.github.io/martimex-hr-chat/pokusi/akcija/akcija.html`.
 - `snimi.js` snima video sličicu po sličicu (vrijeme animacije teče točno 1/fps po sličici, pa je
   video gladak i na sporom računalu). Treba ffmpeg i Playwright (Chromium sa SwiftShaderom,
   nikad `playwright install`). Iz mape `pokusi/`:
