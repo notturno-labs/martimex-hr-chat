@@ -13,8 +13,9 @@
 
   // Skripte koje se učitavaju prije pokretanja chata – jedno ime po retku.
   // Redak koji počinje s # se preskače (tako privremeno isključiš modul).
-  // tema-chata.js je novi izgled "Staklo" (proba: proba-staklo.html); kad se
-  // odobri, makne se # ispred njega i izgled vrijedi na martimex.hr.
+  // tema-chata.js je novi izgled chata "Portoro" (mramor i zlato; proba:
+  // proba-staklo.html); kad se odobri, makne se # ispred njega i izgled
+  // vrijedi na martimex.hr.
   var MODULI = `
     kartica-artikla.js
     gumb-chata.js
