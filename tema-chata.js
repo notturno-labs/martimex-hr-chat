@@ -7,11 +7,11 @@
   //  zlatnim žilama), a CRNI mramor sa zlatnim žilama je samo za manje
   //  detalje. Preko mramora lebdi svijetlo, mliječno staklo:
   //
-  //   - pozadina razgovora: bijeli mramor (mramor/bijeli.webp, na oštrim
-  //     zaslonima bijeli-2x.webp) pod tankim hladnim velom; zlatne žile i
-  //     dim su uz rubove, a sredina iza poruka je mirna; preko kamena polako
-  //     klizi meko svjetlo; pri vrhu i dnu se kamen zamagli, pa poruke tiho
-  //     nestaju ispod zaglavlja i polja za poruku
+  //   - pozadina razgovora: tihi bijeli mramor (mramor/bijeli.webp, na oštrim
+  //     zaslonima bijeli-2x.webp) pod tankim hladnim velom; blijede zlatne
+  //     žile boje šampanjca i meki dim su uz rubove, a sredina iza poruka je
+  //     mirna; preko kamena polako klizi meko svjetlo; pri vrhu i dnu se
+  //     kamen zamagli, pa poruke tiho nestaju ispod zaglavlja i polja za poruku
   //   - zaglavlje je traka preko cijele širine prozora, kao Voiceflowova
   //     (ista visina i položaj), od crnog mramora sa zlatnim žilama i tankom
   //     zlatnom linijom na dnu; u sredini je samo natpis MARTIMEX zlatom, isti
@@ -22,9 +22,9 @@
   //     desno), sjaj na vrhu i meka sjena, pa se jasno odvoje od kamena
   //   - kupčeve poruke su komadići crnog mramora sa zlatnom žilom i rubom od
   //     brušenog zlata, sa svijetlim tekstom
-  //   - crni mramor je svugdje osim na početnom ekranu (zaglavlje, kupčeve
-  //     poruke, gumbi, gumb chata) zamućen, pa je tekst preko njega miran i
-  //     lako čitljiv; na početnom ekranu je oštar
+  //   - crni mramor je svugdje zamućen (zaglavlje, kupčeve poruke, gumbi,
+  //     gumb chata, početni ekran), pa je tekst preko njega miran i lako
+  //     čitljiv
   //   - ponuđeni odgovori su bijeli gumbi-pilule s punim zlatnim rubom;
   //     pod mišem postanu crni mramor sa zlatnim slovima
   //   - polje za poruku je kapsula od mliječnog stakla sa zlatnim rubom;
@@ -39,9 +39,10 @@
   //     16 px, na mobitelu preko cijelog ekrana); od bijele stranice ga
   //     odvaja tanka zlatna linija s unutarnje strane i meka sjena
   //   - početni ekran (pocetna-chata.js) zadrži sve svoje elemente i boje;
-  //     pozadina mu je crni mramor sa zlatnim žilama (iza bočice i teksta
-  //     kamen je tiho zatamnjen), a od animacija je samo Xerjoff flakon koji
-  //     se polako okreće (način "samo flakon")
+  //     tekst je velik i u prvom planu, a od animacija je samo Xerjoff flakon
+  //     koji se polako okreće (način "samo flakon"), manji i malo prigušen;
+  //     pozadina je tihi crni mramor s prigušenim zlatnim žilama, mekano
+  //     zamućen kao da je izvan fokusa (iza teksta i flakona tiho zatamnjen)
   //   - gumb chata u kutu stranice (gumb-chata.js) je komadić crnog mramora
   //     sa zlatnom žilom, zlatnim rubom i natpisom te pozlaćenom bočicom
   //   - tekstovi koje Voiceflow piše engleski ("Start new chat", "Cancel",
@@ -59,7 +60,8 @@
   //  (prozor se ionako prije prvog otvaranja ne vidi); isto ostaje ako se
   //  slika ne učita. Gumb u kutu odmah koristi samo mali komadić crnog
   //  mramora (nekoliko KB). Na zaslonima visoke gustoće (mobiteli, Retina)
-  //  učitaju se slike u dvostrukoj razlučivosti, inače obične.
+  //  bijeli mramor se učita u dvostrukoj razlučivosti, inače običan (crni je
+  //  zamućen, pa je dovoljan u jednoj).
   //
   //  Tehnički: kao i ostali moduli, ovaj samo ubaci svoj stil u shadow DOM
   //  elementa #voiceflow-chat i u chat ništa ne umeće. Oslanja se na
@@ -93,15 +95,16 @@
       zlatoTamno:    '#8e6a1c',   // sjena zlata (dno kuglice, rub metala)
       zlatoTekst:    '#5f4a12',   // sitni zlatni natpisi na svijetlom (dovoljno tamni za čitanje)
       crni:          '#0c0c0d',   // crni mramor dok se slika ne učita
-      bjelokost:     '#f6f5f2'    // tekst na crnom mramoru
+      bjelokost:     '#f6f5f2',   // tekst na crnom mramoru
+      opisPocetne:   '#cdc3bb'    // opis na početnom ekranu (svjetliji od izvornog, da je tekst u prvom planu)
     },
 
     // Teksture mramora iz mape mramor/ ('' = bez teksture, samo boja)
     mramor: {
       bijeli:   'mramor/bijeli.webp',     // pozadina razgovora
       bijeli2x: 'mramor/bijeli-2x.webp',  // isti u dvostrukoj razlučivosti (mobiteli, oštri zasloni)
-      crni:     'mramor/crni.webp',       // početni ekran (oštar)
-      crni2x:   'mramor/crni-2x.webp',
+      crni:     'mramor/crni.webp',       // početni ekran: tihi, mekano zamućen kamen (dovoljan i za oštre zaslone)
+      crni2x:   '',                       // nije potreban: crni je zamućen, pa je oštar i u jednoj razlučivosti
       crniMali: 'mramor/crni-mali.webp',  // zamućeni komadić (8 KB) za sve ostalo: zaglavlje, kupčeve poruke, glavni
                                           // gumb, ponuđeni odgovor pod mišem, gumb chata (tekst preko njega je lako čitljiv)
       gustoca2x: 1.75,                    // od koje gustoće piksela zaslona se uzimaju slike "2x" (1.25–1.5 = računalo sa skaliranjem → obične)
@@ -178,6 +181,7 @@
     // zaslon visoke gustoće: slike "2x" (isti uvjet u CSS-u i pri predučitavanju)
     const GUSTO = '(min-resolution: ' + izmedju(M.gustoca2x || 1.75, 1.01, 4) + 'dppx), (-webkit-min-device-pixel-ratio: ' + izmedju(M.gustoca2x || 1.75, 1.01, 4) + ')';
     const MALI = slika(M.crniMali);       // mali komadić crnog mramora: izravno (ne kroz var(), da ga preglednik ne traži iznova)
+    const OPIS_POCETNE = B.opisPocetne || '#a89d95';
 
     // ── STIL ─────────────────────────────────────────────────────────────
     // Svi selektori počinju s ":host .vfrc-widget", pa su jači od
@@ -201,7 +205,9 @@
     const GLAVNI = [W + ' #vfrc-start-chat', W + ' .vfrc-prompt .vfrc-button:first-child'];
     const SPOREDNI = W + ' .vfrc-prompt .vfrc-button:last-child:not(:first-child)';
     const IKONA_GUMBA = W + ' .vfrc-launcher img[src*="/widget-next/message.png"]';   // bočica iz gumb-chata.js
-    // početni ekran u načinu "samo flakon", s WebGL-om, kad je mramor učitan
+    // početni ekran u načinu "samo flakon" (raspored: veći tekst, manji flakon)
+    const POCETNA = ':host .mx-p.mx-p-samo-flakon';
+    // isto, s WebGL-om, kad je mramor učitan (pozadina)
     const POCETNA_M = WM + ' .mx-p.mx-p-samo-flakon:not(.mx-p-bez-gl)';
 
     const VISINA_ZAGLAVLJA = 56;          // px, mramorna traka gore (kao Voiceflowovo zaglavlje)
@@ -868,29 +874,67 @@
 
       ${P.pocetniEkran ? `
       /* ═══ POČETNI EKRAN (pocetna-chata.js) ═══ */
-      /* Svi elementi i boje ostaju izvorni; mijenja se samo pozadina: crni
-         mramor sa zlatnim žilama (tek kad je slika učitana; dotad i bez
-         WebGL-a je crno kao prije). Platno s točkicama je crno, pa se stapa
-         sa "screen": crno postane prozirno, a točkice svijetle preko kamena. */
+      /* Svi elementi i boje ostaju izvorni. Tekst je velik i u prvom planu, a
+         flakon manji i tiši: pocetna-chata.js ga crta prema veličini prostora
+         .mx-p-animacija. Slobodan prostor se dijeli iznad flakona (3 dijela) i
+         iznad "POČETAK" (2 dijela), pa flakon, naslov i opis ostaju skupa. */
+      ${POCETNA} .mx-p-scena { flex: 3 1 236px; min-height: 96px; align-items: flex-end; }
+      ${POCETNA} .mx-p-animacija { width: 210px; height: 236px; }
+      ${POCETNA} .mx-p-tekst { flex: none; gap: 20px; padding: 24px 28px 0; }
+      ${POCETNA} .mx-p-naslov {
+        font-size: 40px;
+        font-size: min(42px, 11.2cqw);
+        line-height: 1.1;
+        letter-spacing: -.015em;
+        text-shadow: 0 0 28px rgba(0, 0, 0, .6);
+      }
+      ${POCETNA} .mx-p-opis {
+        max-width: 340px;
+        font-size: 16px;
+        line-height: 1.6;
+        color: ${OPIS_POCETNE};
+        text-shadow: 0 0 22px rgba(0, 0, 0, .7);
+      }
+      ${POCETNA} .mx-p-dno { flex: 2 0 auto; align-items: flex-end; padding-top: 28px; padding-bottom: calc(34px + env(safe-area-inset-bottom, 0px)); }
+      ${POCETNA} .mx-p-gumb-tekst { font-size: 18px; }
+      ${POCETNA} .mx-p-gumb-crta { width: 180px; }
+      /* niži prozor: tekst se malo smanji (flakon se smanjuje sam, s prostorom) */
+      @container (max-height: 720px) {
+        ${POCETNA} .mx-p-tekst { gap: 16px; padding-top: 18px; }
+        ${POCETNA} .mx-p-naslov { font-size: 36px; font-size: min(36px, 10cqw); }
+        ${POCETNA} .mx-p-opis { font-size: 15px; line-height: 1.55; }
+        ${POCETNA} .mx-p-dno { padding-top: 20px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+      }
+      @container (max-height: 620px) {
+        ${POCETNA} .mx-p-tekst { gap: 14px; padding-top: 14px; }
+        ${POCETNA} .mx-p-naslov { font-size: 32px; font-size: min(32px, 10cqw); }
+        ${POCETNA} .mx-p-opis { font-size: 14px; line-height: 1.5; }
+        ${POCETNA} .mx-p-dno { padding-top: 16px; padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+        ${POCETNA} .mx-p-gumb { gap: 10px; }
+      }
+      @container (max-width: 400px) {
+        ${POCETNA} .mx-p-tekst { padding-left: 24px; padding-right: 24px; }
+      }
+
+      /* Pozadina: tihi crni mramor sa zlatnim žilama, mekano zamućen kao da je
+         izvan fokusa (tek kad je slika učitana; dotad i bez WebGL-a je crno kao
+         prije). Preko kamena su meke sjene (iza natpisa MARTIMEX, flakona,
+         teksta i "POČETAK"), bez rubova, pa je sve na njemu u prvom planu.
+         Platno s točkicama je crno, pa se stapa sa "screen": crno postane
+         prozirno, a točkice svijetle preko kamena. */
       ${POCETNA_M} {
-        background: var(--mx-t-mramor-crni) center / cover no-repeat, #050505;
+        background:
+          radial-gradient(54% 74px at 50% env(safe-area-inset-top, 0px), rgba(0, 0, 0, .7), rgba(0, 0, 0, 0)),
+          radial-gradient(38% 22% at 50% 35%, rgba(0, 0, 0, .62), rgba(0, 0, 0, .4) 50%, rgba(0, 0, 0, 0)),
+          radial-gradient(62% 26% at 50% 64%, rgba(0, 0, 0, .6), rgba(0, 0, 0, .38) 55%, rgba(0, 0, 0, 0)),
+          radial-gradient(40% 9% at 50% calc(100% - 64px - env(safe-area-inset-bottom, 0px)), rgba(0, 0, 0, .55), rgba(0, 0, 0, 0)),
+          var(--mx-t-mramor-crni) center / cover no-repeat,
+          #050505;
       }
       ${POCETNA_M} .mx-p-platno { mix-blend-mode: screen; }
-      /* mekana tama iza flakona (iz nje izranja, žile se oko njega utišaju) */
-      ${POCETNA_M} .mx-p-scena {
-        background: radial-gradient(closest-side, rgba(0, 0, 0, .86), rgba(0, 0, 0, .64) 58%, rgba(0, 0, 0, 0));
-      }
-      /* mekana tama iza natpisa, opisa i "POČETAK" (tekst je uvijek čitljiv) */
-      ${POCETNA_M} .mx-p-tekst {
-        background: radial-gradient(closest-side, rgba(0, 0, 0, .74), rgba(0, 0, 0, .58) 62%, rgba(0, 0, 0, 0));
-      }
-      ${POCETNA_M} .mx-p-dno {
-        background: radial-gradient(42% 70% at 50% 46%, rgba(0, 0, 0, .7), rgba(0, 0, 0, 0));
-      }
-      ${POCETNA_M} .mx-p-vrh {
-        background: radial-gradient(44% 64% at 50% calc(50% + env(safe-area-inset-top, 0px) / 2), rgba(0, 0, 0, .88), rgba(0, 0, 0, .6) 55%, rgba(0, 0, 0, 0)),
-          radial-gradient(28px 28px at calc(100% - 36px) calc(32px + env(safe-area-inset-top, 0px)), rgba(0, 0, 0, .7), rgba(0, 0, 0, 0));
-      }
+      /* flakon je tih: bez zlatnog sjaja iza njega i malo prigušen, pa je tekst u prvom planu */
+      ${POCETNA_M} .mx-p-scena { background: none; }
+      ${POCETNA_M}.mx-p-spremno .mx-p-platno { opacity: .85; }
       /* kamen izroni iz tame pri svakom otvaranju (samo prozirnost; klasu
          mx-p-ulaz pocetna-chata.js doda iznova pri svakom otvaranju) */
       ${POCETNA_M}::before {
@@ -909,14 +953,14 @@
       /* vrlo nizak prozor (npr. mobitel položen vodoravno): flakon se smanji,
          a natpis i "POČETAK" ostanu u prozoru (i dostupni na dodir) */
       @container (max-height: 440px) {
-        :host .mx-p.mx-p-samo-flakon .mx-p-scena { flex: 1 1 0; min-height: 0; }
-        :host .mx-p.mx-p-samo-flakon .mx-p-tekst { flex: none; gap: 8px; padding-top: 6px; padding-bottom: 6px; }
-        :host .mx-p.mx-p-samo-flakon .mx-p-naslov { font-size: 20px; }
-        :host .mx-p.mx-p-samo-flakon .mx-p-dno { padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
-        :host .mx-p.mx-p-samo-flakon .mx-p-gumb { gap: 8px; padding-top: 6px; padding-bottom: 6px; }
+        ${POCETNA} .mx-p-scena { flex: 1 1 0; min-height: 0; }
+        ${POCETNA} .mx-p-tekst { gap: 8px; padding-top: 6px; padding-bottom: 6px; }
+        ${POCETNA} .mx-p-naslov { font-size: 22px; }
+        ${POCETNA} .mx-p-dno { flex: none; padding-top: 0; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+        ${POCETNA} .mx-p-gumb { gap: 8px; padding-top: 6px; padding-bottom: 6px; }
       }
       @media (max-height: 440px) {
-        :host .mx-p.mx-p-samo-flakon { overflow-y: auto; }      /* zadnja rezerva: može se pomaknuti */
+        ${POCETNA} { overflow-y: auto; }      /* zadnja rezerva: može se pomaknuti */
       }` : ''}
 
       ${P.gumbChata ? `
@@ -994,10 +1038,10 @@
     // Stil ide u shadow root chata (jednom; starija verzija se zamijeni)
     function ubaciStil(korijen) {
       const stari = korijen.querySelector('style[data-mx-tema]');
-      if (stari && stari.getAttribute('data-mx-tema') === '5') return;
+      if (stari && stari.getAttribute('data-mx-tema') === '6') return;
       if (stari) stari.remove();
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-tema', '5');
+      stil.setAttribute('data-mx-tema', '6');
       stil.textContent = CSS;
       korijen.appendChild(stil);
     }

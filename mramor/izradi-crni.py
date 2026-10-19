@@ -15,33 +15,31 @@
 #
 #  Gdje se koristi (tema-chata.js):
 #   (a) pozadina početnog ekrana chata (400 × ~800 na računalu, cijeli
-#       ekran mobitela) iza animacije bočice od točkica i iza teksta —
-#       zato je sredina (bočica) i donja trećina (tekst) mirnija, a
-#       glavni snopovi žila prolaze dijagonalno kroz kutove: veliki snop
-#       s kvarcom kroz gornji desni kut, drugi kroz donji lijevi;
+#       ekran mobitela) iza animacije bočice od točkica i iza teksta. Tu je
+#       kamen samo pozadina, pa je tih: prigušeno zlato, bez kvarca, mekano
+#       zamućen (kao izvan fokusa), a mjesta flakona i teksta su još
+#       mirnija; glavni snopovi žila prolaze dijagonalno kroz kutove;
 #   (b) sve ostale površine od crnog mramora (zaglavlje prozora, kupčeve
 #       poruke, glavni gumb, ponuđeni odgovor pod mišem, gumb chata u kutu
 #       stranice): za njih je mali, ZAMUĆENI isječak (crni-mali.webp) s dvije
 #       kose zlatne žile (jedna s mliječnim kvarcom). Zamućen je da tekst
-#       preko njega bude lako čitljiv; početni ekran ostaje oštar.
+#       preko njega bude lako čitljiv.
 #
-#  Datoteke (isti uzorak u dvije razlučivosti + mali isječak):
-#     crni.webp      900 × 1500   (≤ 110 KB)
-#     crni-2x.webp  1800 × 3000   (≤ 140 KB, oštri zasloni / mobiteli)
-#     crni-mali.webp 900 × 330    (≤ 14 KB, zamućen; sve osim početnog ekrana)
+#  Datoteke (obje su zamućene, pa nisu potrebne ni u dvostrukoj razlučivosti):
+#     crni.webp      900 × 1500   (≤ 110 KB; početni ekran)
+#     crni-mali.webp 900 × 330    (≤ 14 KB; sve ostalo)
 #
-#  Tamnije / mirnije:   --svjetlina 0.85 --jacina 0.8 --gustoca 0.7 --mir 1.3
-#  Svjetlije / bogatije: --svjetlina 1.15 --jacina 1.15 --gustoca 1.3 --mir 0.6
-#  Bez kvarca / bijelih žila: --bijele 0     Bez pukotina: --pukotine 0
-#  Mali isječak više / manje zamućen: --samo mali --zamucenje 6 / 2.5 (px)
+#  Jačine su u VELIKI i MALI (niže); za probu ih mijenjaju istoimene opcije:
+#  Tamnije / mirnije:    --svjetlina 0.85 --jacina 0.55 --gustoca 0.7 --mir 1.5
+#  Svjetlije / bogatije: --svjetlina 1 --jacina 1 --gustoca 1 --mir 1
+#  S kvarcom: --kvarc 1 --bijele 1        Oštar: --zamucenje 0
 #
 #  Pokretanje (iz mape repozitorija):
-#     python3 mramor/izradi-crni.py                       (sve tri datoteke)
-#     python3 mramor/izradi-crni.py --samo 1 --izlaz /tmp/proba.webp   (brza proba)
+#     python3 mramor/izradi-crni.py                       (obje datoteke)
+#     python3 mramor/izradi-crni.py --samo veliki --izlaz /tmp/proba.webp   (brza proba)
 #     python3 mramor/izradi-crni.py --samo mali
 #
-#  Treba samo numpy i Pillow. Seed je fiksan, pa je rezultat ponovljiv
-#  (i 1× i 2× imaju potpuno isti raspored žila).
+#  Treba samo numpy i Pillow. Seed je fiksan, pa je rezultat ponovljiv.
 # ═════════════════════════════════════════════════════════════════════
 
 import argparse
@@ -54,20 +52,33 @@ from PIL import Image, ImageDraw, ImageFilter
 
 # ── POSTAVKE ─────────────────────────────────────────────────────────
 
-SIRINA, VISINA = 900, 1500           # crni.webp (uspravno); crni-2x.webp je dvostruko veći
+SIRINA, VISINA = 900, 1500           # crni.webp (uspravno, početni ekran)
 SIRINA_MALI, VISINA_MALI = 900, 330  # crni-mali.webp (u temi se prikazuje oko 630 px široko)
-MALI_ZAMUCENJE = 4.0                 # px: koliko je mali isječak zamućen (u temi ≈ 0,7 × toliko; 0 = oštar)
 NADUZORKOVANJE = 3                   # žile se crtaju 3× gušće pa smanje (glatki, oštri rubovi)
 SEED = 11                            # isti seed = ista tekstura
-
 KUT = 34.0                           # smjer žila: stupnjeva ispod vodoravne (spuštaju se udesno), kao na uzorku
-JACINA_ZLATA = 1.0                   # 0 = bez zlata, 1 = kao na uzorku
-GUSTOCA = 1.0                        # broj sporednih žila, grana i pukotina (0.5 = upola manje)
-JACINA_BIJELIH = 1.0                 # kvarc i bijele žile (0 = bez)
-JACINA_PUKOTINA = 1.0                # tanke bijelo-sive pukotine (0 = bez)
-SJAJ = 1.0                           # svjetlo poliranog kamena i odsjaj na zlatu (0 = bez)
-SVJETLINA_PODLOGE = 1.0              # <1 tamnija crna, >1 svjetlija
-MIR = 1.0                            # koliko su sredina (bočica) i donja trećina (tekst) mirnije; 0 = jednako posvuda
+
+# Jačine, posebno za svaku datoteku (za probu ih mijenjaju istoimene opcije):
+#   jacina     zlatne žile (0 = bez zlata, 1 = kao na uzorku)
+#   gustoca    broj sporednih žila, grana i pukotina (0.5 = upola manje)
+#   bijele     kvarc i tanke bijele žile (0 = bez)
+#   kvarc      širina mliječne kvarcne žile (1 = kao u snopovima, 0 = bez kvarca)
+#   pukotine   tanke bijelo-sive pukotine (0 = bez)
+#   sjaj       svjetlo poliranog kamena i odsjaj na zlatu (0 = bez)
+#   svjetlina  podloga: <1 tamnija crna, >1 svjetlija
+#   mir        koliko su mjesta flakona i teksta mirnija (0 = jednako posvuda; samo veliki)
+#   zamucenje  px slike 1× (0 = oštar); mali se u temi prikazuje ≈ 0,7 ×, veliki ≈ 0,5 × toliko
+#   zrno       sitno zrno nakon zamućenja, u razinama boje (da se glatki tamni
+#              prijelazi ne slože u stepenice i kockice kompresije)
+#   kvaliteta  početna webp kvaliteta (smanjuje se dok datoteka ne stane u
+#              granicu); zrno ostane samo uz visoku kvalitetu
+# Veliki (početni ekran): kamen je samo pozadina, pa je tih — prigušeno zlato,
+# bez kvarca, mekano zamućen (izvan fokusa), da su tekst i flakon u prvom planu
+VELIKI = dict(jacina=0.7, gustoca=0.8, bijele=0.6, kvarc=0.0, pukotine=1.0, sjaj=1.0,
+              svjetlina=0.92, mir=1.3, zamucenje=4.5, zrno=0.85, kvaliteta=98)
+# Mali isječak (zaglavlje, kupčeve poruke, gumbi): bogat kao uzorak, ali zamućen
+MALI = dict(jacina=1.0, gustoca=1.0, bijele=1.0, kvarc=1.0, pukotine=1.0, sjaj=1.0,
+            svjetlina=1.0, mir=0.0, zamucenje=4.0, zrno=0.0, kvaliteta=90)
 
 # Podloga: duboka neutralna crna (ni smeđa ni plava), malo dubine.
 CRNA_DUBOKA = '#050505'
@@ -116,18 +127,16 @@ SNOPOVI_MALI = [
 SAMOTNIH_MALI = 2
 PUKOTINA_MALI = 18
 
-# Mirna područja početnog ekrana (udio širine / visine): bočica i tekst.
+# Mirna područja početnog ekrana (udio širine / visine): bočica i tekst
+# (naslov počinje oko polovice visine, "POČETAK" je oko 0,9).
 MIR_BOCICA = (0.50, 0.34, 0.40, 0.21)        # središte x, y i polumjeri
-MIR_TEKST = (0.12, 0.63, 0.88, 0.95)         # lijevo, gore, desno, dolje
+MIR_TEKST = (0.10, 0.49, 0.90, 0.95)         # lijevo, gore, desno, dolje
 
-KVALITETA = 90                       # početna webp kvaliteta; smanjuje se dok datoteka ne stane u granicu
-NAJVISE_KB = 110
-NAJVISE_KB_2X = 140                  # mobiteli: zajedno s bijeli-2x.webp i crni-mali.webp ispod ~300 KB
+NAJVISE_KB = 110                     # granice veličine datoteka (kvaliteta se smanjuje dok ne stanu)
 NAJVISE_KB_MALI = 14
 
 MAPA = os.path.dirname(os.path.abspath(__file__))
 IZLAZ = os.path.join(MAPA, 'crni.webp')
-IZLAZ_2X = os.path.join(MAPA, 'crni-2x.webp')
 IZLAZ_MALI = os.path.join(MAPA, 'crni-mali.webp')
 
 BLOK = 1 << 18                       # šum se računa po blokovima piksela (brže)
@@ -489,11 +498,13 @@ def samotna(platno, rng, kut, sloj, debljina, jacina, gustoca, duljina=None):
 
 # ── IZRADA ───────────────────────────────────────────────────────────
 
-def izradi(mjerilo=1, mali=False, jacina=JACINA_ZLATA, gustoca=GUSTOCA, bijele=JACINA_BIJELIH,
-           pukotine=JACINA_PUKOTINA, sjaj=SJAJ, svjetlina=SVJETLINA_PODLOGE, mir=MIR,
-           seed=SEED, naduzorkovanje=NADUZORKOVANJE, kut=KUT):
-    """mjerilo 2 = isti uzorak u dvostrukoj razlučivosti (žile oštrije)."""
+def izradi(mjerilo=1, mali=False, postavke=None, seed=SEED, naduzorkovanje=NADUZORKOVANJE, kut=KUT):
+    """mali: crni-mali.webp umjesto crni.webp; postavke: jačine koje se razlikuju
+    od VELIKI / MALI; mjerilo 2 = isti uzorak u dvostrukoj razlučivosti."""
     t0 = time.time()
+    p = dict(MALI if mali else VELIKI, **(postavke or {}))
+    jacina, gustoca, bijele, pukotine = p['jacina'], p['gustoca'], p['bijele'], p['pukotine']
+    sjaj, svjetlina, mir, kvarc = p['sjaj'], p['svjetlina'], p['mir'], p['kvarc']
 
     def javi(sto):
         print(f'  {sto} … {time.time() - t0:.1f} s')
@@ -512,6 +523,7 @@ def izradi(mjerilo=1, mali=False, jacina=JACINA_ZLATA, gustoca=GUSTOCA, bijele=J
     for sn in snopovi:
         sn = dict(sn)
         sn['kut'] = sn['kut'] + (kut - KUT)
+        sn['kvarc'] = sn.get('kvarc', 0) * max(0.0, kvarc)
         snop(platno, np.random.default_rng(rng.integers(1 << 31)), sn, gustoca, bijele)
     for _ in range(int(round(samotnih * gustoca))):
         samotna(platno, rng, kut + rng.normal(0, 4), 'zlato_sporedno', rng.uniform(0.7, 1.6),
@@ -634,11 +646,19 @@ def izradi(mjerilo=1, mali=False, jacina=JACINA_ZLATA, gustoca=GUSTOCA, bijele=J
     rgb[iy, ix] = rgb[iy, ix] + (boja('#c8cacc') - rgb[iy, ix]) * jak[:, None]
     zrno = rng2.normal(0, 0.0022, (H, W)).astype(np.float32)
     rgb = np.clip(rgb + zrno[..., None], 0, 1)
+    slika = Image.fromarray((rgb * 255 + 0.5).astype(np.uint8), 'RGB')
+    # ── 8. zamućenje (mali: tekst preko njega; veliki: kamen izvan fokusa) ──
+    if p['zamucenje'] > 0:
+        slika = slika.filter(ImageFilter.GaussianBlur(p['zamucenje'] * m))
+        if p['zrno'] > 0:
+            z = rng2.normal(0, p['zrno'] / 255.0, (H, W)).astype(np.float32)
+            rgb = np.asarray(slika, np.float32) / 255.0 + z[..., None]
+            slika = Image.fromarray((np.clip(rgb, 0, 1) * 255 + 0.5).astype(np.uint8), 'RGB')
     javi('gotovo')
-    return Image.fromarray((rgb * 255 + 0.5).astype(np.uint8), 'RGB')
+    return slika
 
 
-def spremi(slika, put, kvaliteta=KVALITETA, najvise_kb=NAJVISE_KB):
+def spremi(slika, put, kvaliteta, najvise_kb):
     q = kvaliteta
     while True:
         spremnik = io.BytesIO()
@@ -655,28 +675,29 @@ def spremi(slika, put, kvaliteta=KVALITETA, najvise_kb=NAJVISE_KB):
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description='Tekstura crnog mramora sa zlatnim i bijelim žilama.')
-    p.add_argument('--jacina', type=float, default=JACINA_ZLATA, help='jačina zlatnih žila (1 = kao na uzorku)')
-    p.add_argument('--gustoca', type=float, default=GUSTOCA, help='broj sporednih žila, grana i pukotina')
-    p.add_argument('--bijele', type=float, default=JACINA_BIJELIH, help='kvarc i bijele žile (0 = bez)')
-    p.add_argument('--pukotine', type=float, default=JACINA_PUKOTINA, help='tanke pukotine (0 = bez)')
-    p.add_argument('--sjaj', type=float, default=SJAJ, help='svjetlo kamena i odsjaj zlata')
-    p.add_argument('--svjetlina', type=float, default=SVJETLINA_PODLOGE, help='svjetlina crne podloge')
-    p.add_argument('--mir', type=float, default=MIR, help='mirnija sredina i donja trećina (0 = ne)')
+    for ime, pomoc in (('jacina', 'zlatne žile (1 = kao na uzorku)'),
+                       ('gustoca', 'broj sporednih žila, grana i pukotina'),
+                       ('bijele', 'kvarc i tanke bijele žile (0 = bez)'),
+                       ('kvarc', 'širina kvarcne žile (0 = bez kvarca)'),
+                       ('pukotine', 'tanke pukotine (0 = bez)'),
+                       ('sjaj', 'svjetlo kamena i odsjaj zlata'),
+                       ('svjetlina', 'svjetlina crne podloge'),
+                       ('mir', 'mirnija mjesta flakona i teksta (0 = ne)'),
+                       ('zamucenje', 'zamućenje u px slike 1× (0 = oštar)'),
+                       ('zrno', 'zrno nakon zamućenja (0 = bez)'),
+                       ('kvaliteta', 'početna webp kvaliteta')):
+        p.add_argument('--' + ime, type=float, default=None, help=pomoc + '; zadano iz VELIKI / MALI')
     p.add_argument('--kut', type=float, default=KUT, help='smjer žila u stupnjevima')
     p.add_argument('--seed', type=int, default=SEED)
     p.add_argument('--naduzorkovanje', type=int, default=NADUZORKOVANJE, help='2 = brže, 3 = konačno')
-    p.add_argument('--kvaliteta', type=int, default=KVALITETA)
-    p.add_argument('--samo', default='', choices=['', '1', '2', 'mali'], help='izradi samo jednu datoteku')
+    p.add_argument('--samo', default='', choices=['', 'veliki', 'mali'], help='izradi samo jednu datoteku')
     p.add_argument('--izlaz', default='', help='kamo spremiti (samo uz --samo)')
-    p.add_argument('--zamucenje', type=float, default=MALI_ZAMUCENJE, help='zamućenje malog isječka u px (0 = oštar)')
     arg = p.parse_args()
-    poslovi = {'1': (1, False, IZLAZ, NAJVISE_KB), '2': (2, False, IZLAZ_2X, NAJVISE_KB_2X),
-               'mali': (1, True, IZLAZ_MALI, NAJVISE_KB_MALI)}
-    for kljuc in ([arg.samo] if arg.samo else ['1', '2', 'mali']):
-        mj, mali, put, gr = poslovi[kljuc]
+    promjene = {k: v for k, v in vars(arg).items() if k in VELIKI and v is not None}
+    poslovi = {'veliki': (False, IZLAZ, NAJVISE_KB), 'mali': (True, IZLAZ_MALI, NAJVISE_KB_MALI)}
+    for kljuc in ([arg.samo] if arg.samo else ['veliki', 'mali']):
+        mali, put, gr = poslovi[kljuc]
         print(f'{os.path.basename(put)}:')
-        slika = izradi(mj, mali, arg.jacina, arg.gustoca, arg.bijele, arg.pukotine, arg.sjaj,
-                       arg.svjetlina, arg.mir, arg.seed, arg.naduzorkovanje, arg.kut)
-        if mali and arg.zamucenje > 0:
-            slika = slika.filter(ImageFilter.GaussianBlur(arg.zamucenje))   # mali isječak je zamućen (tekst preko njega)
-        spremi(slika, (arg.izlaz if arg.samo and arg.izlaz else put), arg.kvaliteta, gr)
+        slika = izradi(1, mali, promjene, arg.seed, arg.naduzorkovanje, arg.kut)
+        q = int(promjene.get('kvaliteta', (MALI if mali else VELIKI)['kvaliteta']))
+        spremi(slika, (arg.izlaz if arg.samo and arg.izlaz else put), q, gr)

@@ -23,10 +23,12 @@
 #     bijeli.webp       900 × 1500  (računalo; nastaje smanjenjem 2x slike,
 #                                    pa je ujedno glatko naduzorkovana)
 #
-#  Mirnije / svjetlije:   --jacina 0.7   --mirna-sredina 1.0   --svjetlina 1.01
-#  Bogatije / tamnije:    --jacina 1.25  --zlato 1.2           --svjetlina 0.98
-#  Samo sive žile:        --zlato 0
-#  Samo zlato, bez dima:  --dim 0
+#  Zadano je kamen tih (prigušeno zlato boje šampanjca, mekši dim, mirna
+#  sredina), jer je samo pozadina razgovora.
+#  Još mirnije / svjetlije: --jacina 0.55  --mirna-sredina 1.0   --svjetlina 1.01
+#  Bogatije (kao uzorak):   --jacina 1 --zlato 1 --dim 1 --pukotine 1 --mirna-sredina 0.75
+#  Samo sive žile:          --zlato 0
+#  Samo zlato, bez dima:    --dim 0
 #
 #  Pokretanje (iz mape repozitorija):
 #     python3 mramor/izradi-bijeli.py                       (obje datoteke)
@@ -48,12 +50,12 @@ from PIL import Image
 SIRINA, VISINA = 900, 1500           # bijeli.webp (uspravno); bijeli-2x.webp je dvostruko veća
 SEED = 11                            # isti seed = ista tekstura
 
-JACINA = 1.0                         # sve žile zajedno (0 = čista bijela podloga)
-JACINA_DIMA = 1.0                    # sivo-plave dimne žile
-JACINA_ZLATA = 1.0                   # zlatne žile i nanosi
-JACINA_PUKOTINA = 1.0                # fine zlatne i sive pukotine preko cijelog kamena
+JACINA = 0.7                         # sve žile zajedno (0 = čista bijela podloga, 1 = kao na uzorcima)
+JACINA_DIMA = 0.7                    # sivo-plave dimne žile
+JACINA_ZLATA = 0.5                   # zlatne žile i nanosi
+JACINA_PUKOTINA = 0.6                # fine zlatne i sive pukotine preko cijelog kamena
 JACINA_OBRUBA = 1.0                  # tanki grafitni obrub uz zlato (kao na uzorku 9.jpg)
-MIRNA_SREDINA = 0.75                 # 0 = bez smirivanja, 1 = sredina stupca poruka gotovo čista
+MIRNA_SREDINA = 0.9                  # 0 = bez smirivanja, 1 = sredina stupca poruka gotovo čista
 SJAJ = 1.0                           # blagi odsjaj polirane površine (0 = bez)
 SVJETLINA = 1.0                      # množi podlogu (0.98 tamnije, 1.01 svjetlije); žile ostaju iste
 
@@ -133,7 +135,7 @@ POJASEVI = [
 
 KVALITETA = 90                       # početna webp kvaliteta …
 NAJVISE_KB = 88                      # … smanjuje se dok bijeli.webp ne stane u ovo
-NAJVISE_KB_2X = 135                  # isto za bijeli-2x.webp (mobiteli: s crni-2x.webp i crni-mali.webp ispod ~300 KB)
+NAJVISE_KB_2X = 135                  # isto za bijeli-2x.webp (mobiteli: s crni.webp i crni-mali.webp ispod ~250 KB)
 
 MAPA = os.path.dirname(os.path.abspath(__file__))
 IZLAZ = os.path.join(MAPA, 'bijeli.webp')
