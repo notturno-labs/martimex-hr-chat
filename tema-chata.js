@@ -27,8 +27,8 @@
   //   - crni mramor je svugdje zamućen (zaglavlje, kupčeve poruke, gumbi,
   //     gumb chata, početni ekran), pa je tekst preko njega miran i lako
   //     čitljiv
-  //   - ponuđeni odgovori su bijeli gumbi-pilule; pod mišem postanu crni
-  //     mramor sa zlatnim slovima
+  //   - ponuđeni odgovori su bijeli gumbi blago zaobljenih kutova; pod
+  //     mišem postanu crni mramor s bijelim slovima
   //   - polje za poruku je kapsula od mliječnog stakla; gumb za slanje je
   //     kuglica od zlata čim ima što poslati
   //   - kartica proizvoda (kartica-artikla.js) je bijela; bočica stoji ravno
@@ -216,6 +216,7 @@
     const POCETNA_M = WM + ' .mx-p.mx-p-samo-flakon:not(.mx-p-bez-gl)';
 
     const VISINA_ZAGLAVLJA = 56;          // px, mramorna traka gore (kao Voiceflowovo zaglavlje)
+    const KUT_GUMBA = 10;                 // px: zaobljenje gumba (ponuđeni odgovori, "Pogledaj proizvod"); veliki gumbi na ploči +2 px
     const MALI_SIRINA = 630;              // px: koliko je širok zamućeni komadić crnog mramora na svakoj površini (pa je svugdje jednako zamućen)
     const ISPOD_DNA = 84;                 // px: koliko se poruke protežu ispod polja za poruku (najviše visina dna)
     const VELO_VRHA = 30;                 // px: koliko ispod zaglavlja se poruke još mekano gube u mlijeku
@@ -390,7 +391,7 @@
         box-sizing: content-box;
         height: ${VISINA_ZAGLAVLJA}px;
         margin: 0;
-        padding: env(safe-area-inset-top, 0px) 10px 0 14px;
+        padding: env(safe-area-inset-top, 0px) 6px 0 14px;   /* desno: ikona X završava točno gdje i poruke (20 px od ruba) */
         border-radius: 0;
         background: ${crniMramor('left -120px top -88px', MALI_SIRINA, [
           `radial-gradient(30% 130% at 50% 50%, ${prozirna(B.crni, .86)}, ${prozirna(B.crni, .6)} 55%, ${prozirna(B.crni, 0)})`,
@@ -452,7 +453,8 @@
         letter-spacing: .01em;
         color: var(--mx-t-bjelokost);
       }`}
-      /* gumbi: gusti tamni diskovi s tihim svijetlim rubom (ne plivaju po žilama) */
+      /* gumbi: samo svijetle ikone, bez kruga i obruba (iza njih je kamen
+         taman); desni rub ikone X je poravnat s desnim rubom poruka */
       ${ZAGLAVLJE} .vfrc-header--button {
         position: relative;
         width: 38px;
@@ -460,11 +462,11 @@
         padding: 9px;
         border-radius: 50%;
         color: var(--mx-t-bjelokost);
-        background: linear-gradient(160deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, 0) 60%), ${prozirna(B.crni, .88)};
-        box-shadow: var(--mx-t-linija-tamna), inset 0 1px 0 rgba(255, 255, 255, .1), 0 4px 12px -4px rgba(0, 0, 0, .7);
+        background: transparent;
+        box-shadow: none;
         transition: background-color .3s var(--mx-t-meko), color .3s var(--mx-t-meko), transform .3s var(--mx-t-glatko);
       }
-      ${ZAGLAVLJE} .vfrc-header--button:hover { color: var(--mx-t-zlato-svijetlo); background: linear-gradient(160deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .03) 60%), ${prozirna(B.crni, .92)}; }
+      ${ZAGLAVLJE} .vfrc-header--button:hover { color: var(--mx-t-zlato-svijetlo); background: rgba(255, 255, 255, .08); }
       ${ZAGLAVLJE} .vfrc-header--button:active { transform: scale(.94); }
       ${ZAGLAVLJE} .vfrc-header--button:focus-visible { outline: 1px solid var(--mx-t-zlato-svijetlo); outline-offset: 2px; }
 
@@ -595,13 +597,13 @@
         25%           { opacity: 1; transform: scale(1.15); }
       }
 
-      /* ponuđeni odgovori: bijeli gumbi-pilule s tihim rubom kao Martina
-         poruka; pod mišem postanu crni mramor */
+      /* ponuđeni odgovori: bijeli gumbi blago zaobljenih kutova, s tihim
+         rubom kao Martina poruka; pod mišem postanu crni mramor s bijelim slovima */
       ${W} .vfrc-system-response--actions { gap: 8px; margin: 14px 0 6px; }
       ${PILULA} {
         position: relative;
         padding: 9px 18px 9px;
-        border-radius: 999px;
+        border-radius: ${KUT_GUMBA}px;
         background: linear-gradient(180deg, #fff 0%, ${B.mlijeko} 55%, #f1f3f5 100%);
         color: var(--mx-t-tinta);
         box-shadow: inset 0 1px 0 #fff, var(--mx-t-linija), 0 6px 14px -8px rgba(30, 40, 56, .45), 0 1px 2px rgba(30, 40, 56, .12);
@@ -615,7 +617,7 @@
       ${PILULA}::before { ${RUB} }
       ${PILULA}:hover::before { background: var(--mx-t-rub-tamni); }
       ${PILULA}:hover {
-        color: var(--mx-t-zlato-svijetlo);
+        color: #fff;
         background: ${crniMramor('left -90px top -110px', MALI_SIRINA, [veo(B.crni, .45), tamaSredine(.62)], MALI)};
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 10px 22px -12px rgba(8, 10, 14, .6);
       }
@@ -634,7 +636,7 @@
       ${W} .vfrc-card::before { ${RUB} z-index: 1; }
       ${W} .vfrc-card--header { color: var(--mx-t-tinta); font-family: var(--mx-t-font-naslova); font-size: 18px; font-weight: 600; }
       ${W} .vfrc-card--content, ${W} .vfrc-card--description { color: var(--mx-t-tih); font-family: var(--mx-t-font); }
-      ${W} .vfrc-card .vfrc-button { background: #fff; color: var(--mx-t-tinta); border-radius: 999px; box-shadow: inset 0 1px 0 #fff, var(--mx-t-linija); font-family: var(--mx-t-font); font-size: 13px; font-weight: 500; letter-spacing: .02em; }
+      ${W} .vfrc-card .vfrc-button { background: #fff; color: var(--mx-t-tinta); border-radius: ${KUT_GUMBA}px; box-shadow: inset 0 1px 0 #fff, var(--mx-t-linija); font-family: var(--mx-t-font); font-size: 13px; font-weight: 500; letter-spacing: .02em; }
       ${W} .vfrc-card .vfrc-button:hover { background: var(--mx-t-crni); color: var(--mx-t-zlato-svijetlo); }
       ${W} .vfrc-image { border-radius: 18px; box-shadow: var(--mx-t-sjena); }
       ${W} .vfrc-timestamp { color: var(--mx-t-tih); font-size: 10.5px; letter-spacing: .06em; }
@@ -787,7 +789,7 @@
       ${W} .vfrc-prompt .vfrc-button {
         position: relative;
         min-height: 46px;
-        border-radius: 999px;
+        border-radius: ${KUT_GUMBA + 2}px;
         font-family: var(--mx-t-font);
         font-size: 11.5px;
         font-weight: 500;
@@ -805,7 +807,7 @@
         color: #fbeec4;
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .24), inset 0 1px 0 rgba(255, 255, 255, .22), 0 14px 30px -12px rgba(8, 10, 14, .75);
       }
-      /* sporedni gumb ("Odustani"): bijela pilula s tihim rubom kao Martina
+      /* sporedni gumb ("Odustani"): bijeli gumb s tihim rubom kao Martina
          poruka; pod mišem ostaje svijetla (samo malo tamnija linija), da se
          razlikuje od glavnog gumba */
       ${SPOREDNI} {
@@ -881,6 +883,7 @@
       ${W} .mx-gumb {
         min-height: 34px;
         border-color: transparent;
+        border-radius: ${KUT_GUMBA}px;
         background: linear-gradient(180deg, #fff 0%, ${B.mlijeko} 55%, #f1f3f5 100%);
         color: var(--mx-t-tinta);
         box-shadow: inset 0 1px 0 #fff, var(--mx-t-linija), 0 4px 10px -6px rgba(30, 40, 56, .35);
@@ -1060,10 +1063,10 @@
     // Stil ide u shadow root chata (jednom; starija verzija se zamijeni)
     function ubaciStil(korijen) {
       const stari = korijen.querySelector('style[data-mx-tema]');
-      if (stari && stari.getAttribute('data-mx-tema') === '7') return;
+      if (stari && stari.getAttribute('data-mx-tema') === '8') return;
       if (stari) stari.remove();
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-tema', '7');
+      stil.setAttribute('data-mx-tema', '8');
       stil.textContent = CSS;
       korijen.appendChild(stil);
     }
