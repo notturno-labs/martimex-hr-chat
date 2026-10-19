@@ -111,14 +111,14 @@
   const MX_POSTAVKE = {
     boje: {                   // uvijek u obliku #rrggbb
       tinta:   '#000000', // crna kao trake u headeru i footeru: marka, naziv, cijena
-      roza:    '#e2c3ba', // prašnjava roza iza loga: izmaglica, oznaka popusta
+      roza:    '#e2c3ba', // prašnjava roza iza loga: izmaglica, crtica iznad cijene, val oko pečata
       puder:   '#f6ebe7', // najsvjetlija roza: rubovi aure oko bočice
       linija:  '#eee3de', // tanki rubovi i traka napretka
       dim:     '#6b605c', // opis proizvoda
       kartica: '#ffffff', // pozadina kartice
       gumb:    '#2b2522', // gumb "Pogledaj proizvod": obrub i tekst, a kad je miš iznad (ili prst na) njemu, ispuna
       vosak:   '#dfbcb1', // voštani pečat s postotkom popusta
-      akcija:  '#a0675a'  // crta preko stare cijene i natpis "uz kod MRTMX"
+      akcija:  '#a0675a'  // crta preko stare cijene, natpis "uz kod MRTMX", prsten i broj na pečatu
     },
 
     // Fontovi: sav tekst u Jostu, naziv proizvoda u Cormorant Garamondu.
@@ -687,11 +687,15 @@
         font-variant-numeric: lining-nums;
         white-space: nowrap;
       }
-      /* popust: stara cijena precrtana, nova ispod nje, pečat s postotkom desno */
+      /* popust: stara cijena precrtana, nova ispod nje, pečat s postotkom desno.
+         Pečat smije zauzeti i uvlaku desno od teksta (ukras je, ne tekst), pa ostaje
+         pokraj cijena i na uskom mobitelu */
+      .mx-cijene--popust { margin-right: calc(-1 * var(--mx-uvlaka)); }
       .mx-snizenje {
         display: flex;
+        flex-wrap: wrap;              /* uzak chat: pečat ide ispod cijena, kartica ne postaje šira */
         align-items: center;
-        gap: 12px;
+        gap: 6px 12px;
         max-width: 100%;
       }
       .mx-cijene-stup {
@@ -701,7 +705,8 @@
         min-width: 0;
       }
       /* stara cijena: sitnija i siva; preko nje je tanka kosa crta, kao potez
-         perom (ne obično precrtavanje fonta), koja se pri pojavi iscrta s lijeva */
+         perom (ne obično precrtavanje fonta). Crta je nagnuta oko svoje sredine,
+         pa prelazi cijelu cijenu; pri pojavi se iscrta s lijeva */
       .mx-stara {
         position: relative;
         display: inline-block;
@@ -724,7 +729,6 @@
         border-radius: 1px;
         background: var(--mx-akcija);
         transform: rotate(-8deg);
-        transform-origin: 0 50%;
       }
       /* nova cijena: jasnija od obične (tamnija, malo veća), ali i dalje mirna */
       .mx-nova {
@@ -748,7 +752,6 @@
         letter-spacing: .14em;
         text-transform: uppercase;
         color: var(--mx-akcija);
-        white-space: nowrap;
       }
 
       /* voštani pečat: nepravilan rub (clip-path), vosak svjetliji gore lijevo i
@@ -1021,8 +1024,9 @@
         animation: mx-pecat-val .9s ease-out;
         animation-delay: calc(1750ms + var(--mx-i, 0) * 110ms);
       }
-      @keyframes mx-precrtaj {
-        from { transform: rotate(-8deg) scaleX(0); }
+      @keyframes mx-precrtaj {                /* clip-path je u smjeru same crte: otkriva je s lijeva */
+        from { clip-path: inset(0 100% 0 0); }
+        to   { clip-path: inset(0 0 0 0); }
       }
       @keyframes mx-nova {
         from { opacity: 0; transform: translateY(4px); filter: blur(3px); }
@@ -1035,6 +1039,11 @@
       @keyframes mx-pecat-val {
         0%   { opacity: .9; transform: scale(.95); }
         100% { opacity: 0; transform: scale(1.9); }
+      }
+
+      @media (forced-colors: active) {
+        .mx-stara { text-decoration: line-through; }
+        .mx-stara::after { display: none; }
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -1268,12 +1277,17 @@
       return t ? el('span', 'mx-cijena', t) : null;
     }
 
-    // Je li rok promo koda prošao: "2026-10-31", "2026-10-31T18:00" ili
-    // "31. 10. 2026." (bez sata vrijedi do kraja tog dana). Rok upisan
-    // drugačije ne skriva kod.
+    // Je li rok promo koda prošao: "2026-10-31", "2026-10-31T18:00" (i sa
+    // zonom, npr. "Z" ili "+02:00") ili "31. 10. 2026." (bez sata vrijedi do
+    // kraja tog dana). Rok upisan drugačije ne skriva kod.
     function rokProsao(v) {
       if (v === null || v === undefined || v === '') return false;
       const s = String(v).trim();
+      // vrijeme sa zonom ("…T18:00Z", "…T18:00+02:00"): pretvori ga sam preglednik
+      if (/T\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})$/i.test(s)) {
+        const t = Date.parse(s);
+        if (!isNaN(t)) return t < Date.now();
+      }
       let g, mj, d, h = 23, min = 59, sek = 59;
       let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{2}))?/);
       if (m) {
@@ -1294,12 +1308,20 @@
       if (!k.kod || rokProsao(k.kodRok)) return null;
       let postotak = k.kodPostotak !== null ? Math.abs(brojIz(k.kodPostotak) || 0) : 0;
       let sKodom = brojCijene(k.kodCijena);
-      if (!postotak && sKodom !== null && nCijena) postotak = Math.round((1 - sKodom / nCijena) * 100);
-      postotak = Math.round(postotak * 10) / 10;
+      if (!postotak && sKodom !== null && nCijena) postotak = (1 - sKodom / nCijena) * 100;
+      const tocan = postotak;                                  // za izračun cijene s kodom
+      postotak = Math.round(postotak * 10) / 10;               // za prikaz
       if (!(postotak > 0 && postotak < 100)) return null;      // bez iznosa popusta kod se ne spominje
-      if (sKodom === null && nCijena !== null) sKodom = Math.round(nCijena * (100 - postotak)) / 100;
-      if (sKodom !== null && nCijena !== null && !(sKodom < nCijena)) sKodom = null;
+      // cijena s kodom samo kad je i trenutna cijena čist broj (ne npr. "od 49 €")
+      if (nCijena === null) sKodom = null;
+      else if (sKodom === null) sKodom = Math.round(nCijena * (100 - tocan)) / 100;
+      if (sKodom !== null && !(sKodom < nCijena)) sKodom = null;
       return { tekst: k.kod, postotak: postotak, cijena: sKodom };
+    }
+
+    // "−30 % uz kod MRTMX" (kad cijena s kodom nije poznata)
+    function natpisKoda(kod) {
+      return '\u2212' + String(kod.postotak).replace('.', ',') + '\u00a0% ' + P.tekstUzKod + ' ' + kod.tekst;
     }
 
     // voštani pečat s postotkom (čitaču zaslona postotak je već u tekstu cijene)
@@ -1335,7 +1357,14 @@
     }
     function trebaPojava(tip, kartice) {
       if (!P.animacijaSamoPrviPut) return true;
-      const potpis = hash(tip + '|' + kartice.map(function (k) { return k.url + '~' + k.naziv; }).join('|'));
+      const potpis = hash(tip + '|' + kartice.map(function (k) {
+        // popust je dio potpisa (samo kad ga ima, pa kartice bez popusta imaju isti potpis
+        // kao u v30): proizvod koji se već pojavio bez popusta pojavi se opet kad dobije popust
+        const c = brojIz(k.cijena), st = brojIz(k.stara);
+        const popust = (c !== null && st !== null && st > c) || k.kod
+          ? '~' + [k.cijena, k.stara, k.kod, k.kodPostotak, k.kodCijena].join('~') : '';
+        return k.url + '~' + k.naziv + popust;
+      }).join('|'));
       const KLJUC = 'mx_kartice_prikazano';
       const sad = Date.now();
       try {
@@ -1729,7 +1758,7 @@
       const popust = prije ? Math.round((1 - sada / prije) * 100) : 0;
       const ec = elementCijene(k.cijena);
       if (ec) {
-        const cijene = el('div', 'mx-cijene');
+        const cijene = el('div', popust >= 1 ? 'mx-cijene mx-cijene--popust' : 'mx-cijene');
         if (popust >= 1) {
           const red = el('div', 'mx-snizenje');
           const stup = el('div', 'mx-cijene-stup');
@@ -1742,6 +1771,7 @@
           nova.appendChild(document.createTextNode(sKodom ? EUR.format(kod.cijena) : cijena(k.cijena)));
           stup.appendChild(nova);
           if (sKodom) stup.appendChild(el('span', 'mx-uz-kod', P.tekstUzKod + ' ' + kod.tekst));
+          else if (kod) stup.appendChild(el('span', 'mx-uz-kod', natpisKoda(kod)));
           stup.appendChild(el('span', 'mx-skriveno', ' (popust ' + popust + '\u00a0%)'));
           red.appendChild(stup);
           if (P.pecat) red.appendChild(pecat(popust));
@@ -1749,7 +1779,7 @@
         } else {
           cijene.appendChild(ec);
           // cijena nije broj (npr. "od 49 €"): kod se samo spomene ispod nje
-          if (kod) cijene.appendChild(el('span', 'mx-uz-kod', '\u2212' + String(kod.postotak).replace('.', ',') + '\u00a0% ' + P.tekstUzKod + ' ' + kod.tekst));
+          if (kod) cijene.appendChild(el('span', 'mx-uz-kod', natpisKoda(kod)));
         }
         glava.appendChild(cijene);
       }
