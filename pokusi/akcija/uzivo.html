@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marti – proba kartice s popustom</title>
+<!--
+  Pravi Marti chat (Voiceflow, gumb-chata.js, pocetna-chata.js), ali s novom
+  karticom kartica-artikla-popust.js umjesto kartica-artikla.js.
+  Voiceflow funkcija još ne šalje akciju ni promo kod, pa ih ova stranica
+  dodaje preporukama sama (samo za probu):
+    1. preporuka → promo kod MRTMX −30 %
+    2. preporuka → akcija (stara cijena 25 % viša)
+    3. preporuka → akcija + kod
+  ?demo=0 u adresi isključi probne popuste (kartica tada prikazuje samo ono što
+  funkcija stvarno pošalje). martimex.hr i loader.js se ne mijenjaju.
+-->
+<style id="mx-kartice-font">
+  /* kartica je u pokusi/akcija/, a fontovi u fonts/ repozitorija */
+  @font-face { font-family: "MX Jost"; src: url("../../fonts/jost-latin.woff2") format("woff2"); font-weight: 400 600; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "MX Jost"; src: url("../../fonts/jost-latin-ext.woff2") format("woff2"); font-weight: 400 600; font-display: swap; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  @font-face { font-family: "MX Cormorant"; src: url("../../fonts/cormorant-garamond-latin.woff2") format("woff2"); font-weight: 500 700; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "MX Cormorant"; src: url("../../fonts/cormorant-garamond-latin-ext.woff2") format("woff2"); font-weight: 500 700; font-display: swap; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  body { font-family: "MX Jost", Arial, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; color: #1f1a19; line-height: 1.55; }
+  h1 { font-family: "MX Cormorant", Georgia, serif; font-weight: 600; font-size: 34px; line-height: 1.1; }
+  p { color: #6b605c; }
+</style>
+</head>
+<body>
+  <h1>Proba: kartica s popustom u pravom chatu</h1>
+  <p>Ovo je pravi Marti chat, samo s novom karticom artikla. Otvori chat u kutu i zatraži preporuku (npr. „preporuči mi slatki parfem”).</p>
+  <p>Funkcija u Voiceflowu još ne šalje akcije ni promo kodove, pa ih ova stranica za probu dodaje sama: prva preporuka dobije kod MRTMX −30 %, druga akciju, a treća oboje.</p>
+
+  <script>
+  (function () {
+    var PROJEKT = '6abcf8b2128a6fc786128cca';   // isti projekt kao proba.html
+    var DEMO = !/[?&]demo=0\b/.test(location.search);
+    var MODULI = ['../../gumb-chata.js', '../../pocetna-chata.js', 'kartica-artikla-popust.js'];
+
+    window.MartimexExtensions = [];
+    window.MartimexVoiceflow = {};
+
+    function ucitaj(src) {
+      return new Promise(function (gotovo) {
+        var s = document.createElement('script');
+        s.src = src + '?v=' + Math.floor(Date.now() / 60000);
+        s.async = false;
+        s.onload = gotovo;
+        s.onerror = function () { console.warn('[Martimex proba] Nije učitano:', src); gotovo(); };
+        document.head.appendChild(s);
+      });
+    }
+
+    // probni popusti: dodaju se samo karticama koje ih već nemaju
+    function dodajPopuste(trace) {
+      var p = trace.payload;
+      if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { return trace; } }
+      var lista = p && (p.cards || p.kartice);
+      if (!Array.isArray(lista)) return trace;
+      var kartice = lista.map(function (c, i) {
+        if (!c || c.oldPrice != null || c.promo || c.promoCode) return c;
+        var n = parseFloat(String(c.price).replace(/[^\d.,]/g, '').replace(',', '.'));
+        var k = Object.assign({}, c);
+        var vrsta = i % 3;
+        if (vrsta !== 1) k.promo = { code: 'MRTMX', percent: 30 };
+        if (vrsta !== 0 && isFinite(n)) k.oldPrice = (Math.round(n * 125) / 100).toFixed(2);
+        return k;
+      });
+      return Object.assign({}, trace, { payload: Object.assign({}, p, { cards: kartice }) });
+    }
+
+    var vf = new Promise(function (gotovo) {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.voiceflow.com/widget-next/bundle.mjs';
+      s.onload = gotovo;
+      document.head.appendChild(s);
+    });
+
+    Promise.all([vf, Promise.all(MODULI.map(ucitaj))]).then(function () {
+      var ekstenzije = window.MartimexExtensions.map(function (e) {
+        if (!DEMO || e.name !== 'ProductCard') return e;
+        return Object.assign({}, e, { render: function (a) { return e.render(Object.assign({}, a, { trace: dodajPopuste(a.trace) })); } });
+      });
+      var odModula = window.MartimexVoiceflow || {};
+      var cfg = Object.assign({
+        verify: { projectID: PROJEKT },
+        url: 'https://general-runtime.voiceflow.com',
+        voice: { url: 'https://runtime-api.voiceflow.com' }
+      }, odModula);
+      cfg.assistant = Object.assign({}, odModula.assistant, { extensions: ekstenzije });
+      window.voiceflow.chat.load(cfg);
+    });
+  })();
+  </script>
+</body>
+</html>
