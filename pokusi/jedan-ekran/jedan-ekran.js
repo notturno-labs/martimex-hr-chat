@@ -653,7 +653,7 @@
     `;
     const UNIFORME = ['uVrijeme', 'uKut', 'uNagib', 'uMis', 'uUvod', 'uIzlaz', 'uOdsjaj', 'uPx', 'uSredina', 'uVelicina', 'uJacina',
       'uSrebro', 'uZlato', 'uPuder'];
-    const KUT0 = -0.75;                // kad se flakon složi, prednja strana (pločica sa znakom X) okrenuta je udesno
+    const KUT0 = -0.62;                // kad se flakon složi, prednja strana (pločica sa znakom X) okrenuta je udesno, pa se odatle okreće dalje
     const NAGIB = 0.1;                 // gledamo ga malo odozgo
 
     // Raspored flakona na pozornici: flakon je jednako udaljen od natpisa
