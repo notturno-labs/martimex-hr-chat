@@ -9,14 +9,18 @@ na martimex.hr (`loader.js` učitava samo module iz popisa `MODULI`).
 Nije pokus početnog ekrana, nego proba modula `cekanje-odgovora.js` (uključen je u `loader.js`):
 animacija koja se u chatu vidi dok Marti smišlja odgovor, umjesto Voiceflowovih sivih točkica.
 
-- Tri crne perlice leže na tankoj niti od točkica boje ružičastog zlata (kao niti od kojih je satkan
-  flakon u zaglavlju). Nit se polako njiše kao svila, val putuje slijeva nadesno, pa se perlice dižu i
-  spuštaju jedna za drugom (kao „tipkanje”); na vrhu vala nit i perlica uhvate zlatno svjetlo, a s
-  perle se ponekad digne sitna zlatna iskra. Pri pojavi se nit iscrta slijeva nadesno, a perlice jedna
-  za drugom sjednu na nju.
-- Ako odgovor potraje dulje od 1,5 s, oblačić se glatko proširi i pojavi se natpis „Trenutak, molim…”,
-  preko kojeg polako prelazi zlatni odsjaj. Između dviju Martinih poruka zaredom (Voiceflow tada
-  nakratko pokaže isti oblačić) vide se samo perlice.
+- Tri sjajne crne perlice (s mekom sjenom) leže na tankoj niti od točkica boje ružičastog zlata (kao
+  niti od kojih je satkan flakon u zaglavlju). Oblačić meko izroni kao Martine poruke, nit se iscrta
+  slijeva nadesno, a perlice jedna za drugom sjednu na nju (nit pod svakom malo popusti, kao svila).
+  Zatim se nit polako njiše, val putuje slijeva nadesno, pa se perlice dižu i spuštaju jedna za drugom
+  (kao „tipkanje”); s vrhom vala putuje meko zlatno svjetlo.
+- Ako odgovor potraje dulje od 1,5 s, oblačić se glatko proširi i iz blage izmaglice se pojavi natpis
+  „Trenutak, molim…”; svjetlo koje stigne do kraja niti prijeđe i preko natpisa. Između dviju Martinih
+  poruka zaredom (Voiceflow tada nakratko pokaže isti oblačić) vide se samo perlice.
+- Kad stigne odgovor, oblačić ne nestane naglo: perlice se rasplinu u mali oblak izmaglice, natpis se
+  zamuti, a oblačić izblijedi dok se na njegovu mjestu pojavljuje odgovor.
+- Crta se točno prema vremenu (glatko pri svakoj brzini zaslona), u barem dvostrukoj razlučivosti, i
+  samo dok je oblačić u chatu.
 - Boju i oblik oblačića daje izgled chata (u „Jednom ekranu” bijela kartica, u Voiceflowovu izgledu
   siva); modul mijenja samo ono unutra i visinu oblačića. „Smanji pokrete”: ravna nit, mirne perlice,
   natpis odmah i bez odsjaja.
