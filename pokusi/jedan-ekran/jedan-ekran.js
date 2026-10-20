@@ -8,16 +8,15 @@
   //   - gore je tamna traka s natpisom MARTIMEX (Cormorant Garamond,
   //     razmaknuta velika slova, boja pudera) i Voiceflowovim gumbima za
   //     novi razgovor i zatvaranje (samo tanke ikone, bez kruga)
-  //   - ispod nje, u istoj toploj crnoj boji, je pozornica: neutralni
-  //     Martimexov flakon (bez ičijeg logotipa) satkan od tisuća svjetlećih
-  //     točkica u tankim nitima, u istom stilu kao dosadašnja animacija.
+  //   - ispod nje, u istoj toploj crnoj boji, je pozornica: Xerjoff flakon
+  //     s dosadašnjeg početnog ekrana (Xerjoff 1861, Naxos: fasetirano
+  //     staklo s medenom tekućinom, zlatni prsten, zlatni čep sa šiljkom i
+  //     zlatna pločica sa znakom X), satkan od tisuća svjetlećih točkica u
+  //     tankim nitima; oblik i boje su prepisani iz pocetna-chata.js.
   //     Pri svakom otvaranju chata točkice se iz izmaglice spuste i slegnu
-  //     u flakon (staklo se puni odozdo, čep zadnji); flakon se zatim vrlo
-  //     polako okreće, a svakih nekoliko sekundi preko stakla ukoso prijeđe
-  //     svjetlo. Ispod flakona piše "Marti · AI asistentica"
-  //   - flakon: staklo zaobljenih rubova, u njemu ružičasta tekućina,
-  //     tanki prsten od ružičastog zlata na grlu i čep od crnog laka koji
-  //     se vidi po odsjajima na rubovima
+  //     u flakon (staklo se puni odozdo, čep zadnji); flakon se zatim samo
+  //     vrlo polako okreće, a svakih nekoliko sekundi preko stakla ukoso
+  //     prijeđe svjetlo. Ispod flakona piše "Marti · AI asistentica"
   //   - razgovor je na toploj bjelokosti, bez mramora i bez teksture:
   //     Martine poruke su bijele kartice s jedva vidljivom sjenom, kupčeve
   //     su tamne (tinta), ponuđeni odgovori su pilule s tankim tamnim
@@ -70,13 +69,11 @@
       tinta:     '#1c1715',     // tekst; kupčeve poruke; obrub i ispuna ponuđenih odgovora
       tih:       '#7a6d66',     // prigušeni tekst (napomene, "Vaša poruka...")
       linija:    '#e8ddd6',     // tanki topli rubovi na svijetlom
-      puder:     '#f3e5de',     // natpis MARTIMEX, tekst na tamnom
+      puder:     '#f3e5de',     // natpis MARTIMEX, tekst na tamnom; odsjaj na znaku X
       roza:      '#e2c3ba',     // naglasak (Martimexova prašnjava roza): crte, fokus, "Marti · AI asistentica"
-      // flakon
-      staklo:    '#efe6e1',     // točkice stakla
-      tekucina:  '#e7bdac',     // ružičasta tekućina u flakonu
-      metal:     '#e8c6b2',     // prsten od ružičastog zlata na grlu
-      lak:       '#3d3330'      // čep od crnog laka (vidi se po odsjajima)
+      // flakon (iste boje kao na dosadašnjem početnom ekranu)
+      srebro:    '#e8e6eb',     // točkice stakla
+      zlato:     '#e0bb72'      // zlatni čep, prsten i pločica flakona, medena tekućina u njemu
     },
 
     // Fontovi iz mape fonts/ (učitavaju ih i ostali moduli)
@@ -104,8 +101,8 @@
       pojava: 2.4,            // s: točkice se iz izmaglice slegnu u flakon
       brzina: 0.3,            // rad/s: okretanje (0.3 = jedan krug za oko 21 s)
       odsjaj: 7,              // s: svakih toliko preko stakla prijeđe svjetlo (0 = bez)
-      tocaka: 24000,          // računalo
-      tocakaMobitel: 15000,   // mobitel i tablet
+      tocaka: 20000,          // računalo
+      tocakaMobitel: 14000,   // mobitel i tablet
       velicina: 0.7,          // visina flakona kao udio visine pozornice
       nagibPremaMisu: true    // na računalu se flakon lagano nagne prema mišu
     },
@@ -155,73 +152,61 @@
 
 
     // ═══════════════════════════════════════════════════════════════════
-    //  FLAKON — oblik od točkica u vodoravnim nitima
+    //  FLAKON — Xerjoff 1861 (Naxos) od točkica u vodoravnim nitima
     //
-    //  Visina flakona je 0,905 jedinica (dno na 0), a za crtanje se spusti
-    //  za VRH / 2, pa mu je sredina u ishodištu. Presjek tijela i čepa je
-    //  zaobljeni pravokutnik (superelipsa |x/W|^n + |z/D|^n = 1), grlo i
-    //  prsten su okrugli. Točkice idu po "nitima" (prstenovima oko flakona i
-    //  krugovima na vodoravnim plohama), na niti gušće nego što su niti
-    //  razmaknute, kao u dosadašnjoj animaciji.
+    //  Isti flakon kao na dosadašnjem početnom ekranu: oblik, mjere i
+    //  gradnja su prepisani iz pocetna-chata.js (funkcija flakon i ono što
+    //  ona koristi), samo bez koraka (yield), jer se gradi jednom. Točkice se
+    //  slažu u linije (prstenove oko flakona i vodoravne niti preko vrha
+    //  čepa), a po linijama su gušće nego što su linije razmaknute: zato
+    //  flakon izgleda kao da je satkan od tankih niti. Mjere su u "svjetskim
+    //  jedinicama" kao u pocetna-chata.js (dno -0,86, vrh čepa 0,90); za
+    //  crtanje se flakon pomakne za SREDINA, pa mu je sredina u ishodištu.
     // ═══════════════════════════════════════════════════════════════════
-    const OMJER = 2.3;                 // koliko su točkice na niti gušće nego razmak niti
-    const N_TIJELA = 3.4;              // "kvadratnost" presjeka tijela i čepa (2 = elipsa)
-    const DUBINA = 0.6;                // dubina tijela prema širini
-    const M = {                        // mjere (visina od dna, pola širine)
-      rubDna: 0.018, rame: 0.5, vrat: 0.6, prsten: 0.616, prstenVrh: 0.642, vrh: 0.88,
-      dno: 0.19, tijelo: 0.206, ramena: 0.232, grlo: 0.056, prstenW: 0.074, cep: 0.1, cepDubina: 0.78,
-      razina: 0.41                     // do koje visine je tekućina
-    };
-    const VRH = M.vrh;
-    // vrsta točkice (u shaderu): staklo, staklo s tekućinom iza, površina
-    // tekućine, rub tekućine uz staklo, metal (prsten), lak (čep)
-    const STAKLO = 0, TEKUCINA = 1, POVRSINA = 2, MENISKUS = 3, METAL = 4, LAK = 5;
+    const OMJER = 2.3;             // koliko su točkice na liniji gušće nego razmak linija
+    const DNO_BOCICE = -0.86, VRH_BOCICE = 0.90;
+    const VISINA = VRH_BOCICE - DNO_BOCICE;              // 1,76
+    const SREDINA = (DNO_BOCICE + VRH_BOCICE) / 2;       // 0,02
 
-    // pola širine tijela, omjer dubine i "kvadratnost" na visini y
-    function tijelo(y) {
-      if (y < M.rubDna) {
-        const t = y / M.rubDna;
-        return { W: M.dno + (M.tijelo - M.dno) * Math.sqrt(Math.max(0, 1 - (1 - t) * (1 - t))), d: DUBINA, n: N_TIJELA };
-      }
-      if (y < M.rame) return { W: lerp(M.tijelo, M.ramena, (y - M.rubDna) / (M.rame - M.rubDna)), d: DUBINA, n: N_TIJELA };
-      // rame: ravno pa meko zaobljeno (malo "kvadratnije" od četvrtine kruga) do okruglog grla
-      const t = sat((y - M.rame) / (M.vrat - M.rame)), k = glatko((t - 0.45) / 0.55);
-      return { W: M.grlo + (M.ramena - M.grlo) * Math.pow(Math.max(0, 1 - Math.pow(t, 2.6)), 1 / 2.6), d: lerp(DUBINA, 1, k), n: lerp(N_TIJELA, 2, k) };
-    }
-    // pola širine čepa (gornji brid je malo zaobljen)
-    function cep(y) {
-      const t = sat((y - (VRH - 0.014)) / 0.014);
-      return M.cep * (1 - 0.06 * (1 - Math.sqrt(Math.max(0, 1 - t * t))));
-    }
-
-    // prsten (nit) oko presjeka: točke jednoliko po opsegu
-    const UZORAKA = 160;
-    function presjek(W, d, n) {
-      const D = W * d, x = new Float32Array(UZORAKA), z = new Float32Array(UZORAKA);
-      const nx = new Float32Array(UZORAKA), nz = new Float32Array(UZORAKA), dio = new Float32Array(UZORAKA + 1);
-      const e = 2 / n;
-      for (let i = 0; i < UZORAKA; i++) {
-        const t = i / UZORAKA * 2 * Math.PI, c = Math.cos(t), s = Math.sin(t);
-        const px = W * Math.sign(c) * Math.pow(Math.abs(c), e), pz = D * Math.sign(s) * Math.pow(Math.abs(s), e);
-        x[i] = px; z[i] = pz;
-        let gx = Math.sign(px) * Math.pow(Math.abs(px / W), n - 1) / W, gz = Math.sign(pz) * Math.pow(Math.abs(pz / D), n - 1) / D;
-        const l = Math.hypot(gx, gz) || 1;
-        nx[i] = gx / l; nz[i] = gz / l;
-      }
-      for (let i = 0; i < UZORAKA; i++) {
-        const j = (i + 1) % UZORAKA;
-        dio[i + 1] = dio[i] + Math.hypot(x[j] - x[i], z[j] - z[i]);
-      }
-      return { x: x, z: z, nx: nx, nz: nz, dio: dio, opseg: dio[UZORAKA] };
-    }
-    function naPresjeku(p, u) {                  // u: 0..1 po opsegu
-      const s = u * p.opseg;
-      let lo = 0, hi = UZORAKA;
-      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (p.dio[m] <= s) lo = m; else hi = m; }
-      const dl = p.dio[lo + 1] - p.dio[lo], f = dl > 0 ? sat((s - p.dio[lo]) / dl) : 0, b = (lo + 1) % UZORAKA;
-      const nx = lerp(p.nx[lo], p.nx[b], f), nz = lerp(p.nz[lo], p.nz[b], f), l = Math.hypot(nx, nz) || 1;
-      return { x: lerp(p.x[lo], p.x[b], f), z: lerp(p.z[lo], p.z[b], f), nx: nx / l, nz: nz / l };
-    }
+    // Flakon po uzoru na Xerjoff 1861 (Naxos): fasetirano tijelo, jednako
+    // široko sprijeda i sa strane (presjek je osmerokut: četiri široke plohe
+    // i između njih četiri kose fasete), koje se od zaobljenih ramena blago
+    // sužava prema dnu; zlatni prsten na grlu i zlatni čep kojemu se vrh
+    // straga uzdiže u šiljak. Na prednjoj plohi zlatna pločica u obliku
+    // trapeza (gore šira) s dvostrukim okvirom i znakom X. Mjere su izmjerene
+    // s fotografije bočice (u pikselima; bočica je na njoj visoka 695 px).
+    const FLAKON_K = VISINA / 695;   // piksel fotografije → svjetska jedinica
+    // [visina od dna, pola širine, izraženost faseta]
+    const FLAKON = [
+      [0, 0, 1], [0, 66, 1], [4, 84, 1], [9, 93, 1], [15, 96, 1], [23, 99.5, 1],     // dno sa zaobljenim rubom
+      [39, 106, 1], [71, 116.5, 1], [103, 125, 1], [135, 132.5, 1], [167, 138.5, 1], // tijelo se prema dnu sužava
+      [199, 144, 1], [231, 148, 1], [263, 152, 1], [295, 154.5, 1], [327, 156, 1],
+      [351, 155.5, 1], [367, 151.5, 1], [383, 145.5, 1], [399, 136.5, 1],             // zaobljena ramena
+      [415, 124, 1], [431, 108, .95], [447, 86.5, .85], [455, 71.5, .75], [461, 58, .6],
+      [461, 58, 0], [471, 58, 0], [471, 62.5, 0], [501, 62.5, 0],                     // zlatni prsten
+      [501, 53, 0], [511, 52.5, 0], [527, 56.5, 0], [543, 59.5, 0], [559, 61.5, 0],   // čep se prema gore
+      [575, 63, 0], [583, 64, 0], [599, 64, 0]                                        // lagano širi do ruba
+    ];
+    const FLAKON_ZLATO = 461, FLAKON_RUB = 599, FLAKON_VRH = 695;
+    const PLOHA = 0.48;           // široke plohe zauzimaju 48 % širine, između njih su kose fasete
+    // pločica (trapez) i znak X na njoj: [visina od dna, pola širine] s fotografije
+    const PLOCICA_VRH = [311, 51], PLOCICA_DNO = [158, 41], ZNAK_VRH = 273, ZNAK_DNO = 199, ZNAK_POLA = 25;
+    const RED_PLOCICE = 0.0045;   // razmak linija na pločici (gušće od tijela, da se vidi znak)
+    // vrsta točke: staklo, zlato (prsten i čep), pločica, znak X i okvir, brid između faseta
+    const STAKLO = 0, ZLATO = 1, PLOCICA = 2, SLOVO = 3, BRID = 4;
+    // Znak X (Xerjoff): debeli potez sa šiljastim serifom gore lijevo i
+    // repom koji se dolje desno produžuje i savija; tanki potez prekinut na
+    // križanju, s vodoravnim serifima. Koordinate u okviru 495 × 709.
+    const ZNAK_X = [
+      [32, 117, 170, 0, 154, 27, 150, 57, 154, 87, 167, 122, 187, 152, 212, 187, 242, 232, 277, 282, 312, 332,
+        342, 377, 372, 427, 402, 482, 427, 537, 440, 587, 440, 627, 427, 667, 407, 697, 384, 709, 402, 677,
+        412, 637, 410, 597, 397, 557, 372, 507, 342, 457, 312, 407, 282, 362, 252, 317, 217, 267, 182, 217,
+        152, 172, 127, 137, 107, 109, 97, 100, 82, 97, 57, 105],
+      [317, 34, 495, 34, 495, 39, 462, 43, 437, 59, 412, 87, 377, 134, 337, 189, 304, 234, 289, 252, 270, 222,
+        287, 197, 312, 162, 342, 119, 357, 94, 360, 72, 352, 52, 332, 40, 317, 39],
+      [207, 312, 225, 345, 192, 387, 157, 437, 139, 472, 137, 499, 147, 517, 162, 527, 177, 529, 177, 535,
+        0, 535, 0, 529, 32, 525, 67, 509, 97, 479, 132, 419, 172, 359]
+    ];
 
     // ponovljiv "slučajni" niz (isti flakon pri svakom učitavanju)
     function slucajno(sjeme) {
@@ -235,111 +220,315 @@
       };
     }
 
-    // Niti flakona za zadani razmak niti (korak): prstenovi po profilu
-    // (tijelo, grlo, prsten, čep) i krugovi na vodoravnim plohama
-    function niti(korak) {
-      const L = [];
-      // a) profil: dio krivulje (W(y) od y0 do y1) → prstenovi razmaknuti po duljini krivulje
-      function profil(y0, y1, sirina, vrsta) {
-        const K = 400, ys = [], ws = [], s = [0];
-        for (let i = 0; i <= K; i++) {
-          const y = lerp(y0, y1, i / K), w = sirina(y);
-          ys.push(y); ws.push(w);
-          if (i) s.push(s[i - 1] + Math.hypot(w.W - ws[i - 1].W, y - ys[i - 1]));
-        }
-        const ukupno = s[K], k = Math.max(1, Math.round(ukupno / korak));
-        let j = 0;
-        for (let q = 0; q < k; q++) {
-          const cilj = (q + 0.5) / k * ukupno;
-          while (j < K - 1 && s[j + 1] < cilj) j++;
-          const f = (cilj - s[j]) / ((s[j + 1] - s[j]) || 1);
-          const y = lerp(ys[j], ys[j + 1], f), a = ws[j], b = ws[j + 1];
-          const W = lerp(a.W, b.W, f), d = lerp(a.d, b.d, f), n = lerp(a.n, b.n, f);
-          const dW = b.W - a.W, dy = ys[j + 1] - ys[j], dl = Math.hypot(dW, dy) || 1;
-          L.push({ y: y, W: W, d: d, n: n, nr: dy / dl, ny: -dW / dl, vrsta: typeof vrsta === 'function' ? vrsta(y) : vrsta, tezina: 1 });
-        }
+    // n točaka jednoliko po ukupnoj duljini svih linija; za svaku točku
+    // vraća redni broj linije i udio duljine te linije (0..1)
+    function poLinijama(duljine, n) {
+      let ukupno = 0;
+      for (let i = 0; i < duljine.length; i++) ukupno += duljine[i];
+      const korak = ukupno / n;
+      const linija = new Int32Array(n), udio = new Float32Array(n);
+      let l = 0, pocetak = 0;
+      for (let i = 0; i < n; i++) {
+        const s = (i + 0.5) * korak;
+        while (l < duljine.length - 1 && s >= pocetak + duljine[l]) { pocetak += duljine[l]; l++; }
+        linija[i] = l;
+        udio[i] = duljine[l] > 0 ? sat((s - pocetak) / duljine[l]) : 0;
       }
-      // b) vodoravna ploha na visini y: krugovi od W1 prema W0 (W0 = 0: puna ploha)
-      function ploha(y, W0, W1, d, n, gore, vrsta, gustoca) {
-        const k = Math.max(1, Math.round((W1 - W0) / (korak / (gustoca || 1))));
-        for (let q = 0; q < k; q++) {
-          const W = W1 - (q + 0.5) / k * (W1 - W0);
-          L.push({ y: y, W: W, d: d, n: n, nr: 0, ny: gore ? 1 : -1, vrsta: vrsta, tezina: gustoca || 1 });
-        }
-      }
-      const tekucinaDo = function (y) { return y < M.razina ? TEKUCINA : STAKLO; };
-      profil(0, M.vrat, tijelo, tekucinaDo);                                                   // tijelo
-      ploha(0, 0, M.dno, DUBINA, N_TIJELA, false, TEKUCINA, 0.8);                              // dno
-      const tr = tijelo(M.razina);
-      ploha(M.razina, 0, tr.W * 0.955, DUBINA, N_TIJELA, true, POVRSINA, 0.55);               // površina tekućine
-      L.push({ y: M.razina, W: tr.W * 0.965, d: DUBINA, n: N_TIJELA, nr: 1, ny: 0, vrsta: MENISKUS, tezina: 2.2 });   // rub tekućine
-      profil(M.vrat, M.prsten, function () { return { W: M.grlo, d: 1, n: 2 }; }, STAKLO);    // grlo
-      ploha(M.prsten, M.grlo, M.prstenW, 1, 2, false, METAL, 1.4);                             // prsten: donja ploha
-      profil(M.prsten, M.prstenVrh, function () { return { W: M.prstenW, d: 1, n: 2 }; }, METAL);   // prsten
-      ploha(M.prstenVrh, M.prstenW, M.cep, M.cepDubina, N_TIJELA, false, LAK, 1);             // čep: donja ploha
-      profil(M.prstenVrh, VRH, function (y) { return { W: cep(y), d: M.cepDubina, n: N_TIJELA }; }, LAK);   // čep
-      ploha(VRH, 0, cep(VRH), M.cepDubina, N_TIJELA, true, LAK, 1);                           // čep: gornja ploha
-      return L;
+      return { linija: linija, udio: udio };
     }
 
-    // n točkica po nitima (po duljini × težini niti): položaj, smjer plohe,
+    // Presjek tijela: fasetirani osmerokut (meki minimum udaljenosti do
+    // ravnina daje blago zaobljene bridove), stopljen s krugom prema
+    // izraženosti faseta. Računa se za pola širine 1 i pamti, jer većina
+    // prstenova ima iste proporcije i razlikuje se samo veličinom.
+    let PRESJECI = {};
+    function jedinicniPresjek(f) {
+      const c = Math.SQRT1_2, cd = (1 + PLOHA) * c;
+      const R = [1, 0, 1, -1, 0, 1, 0, 1, 1, 0, -1, 1, c, c, cd, -c, c, cd, c, -c, cd, -c, -c, cd];
+      const M = 192, mek = 0.012, t = new Float64Array(8);
+      const x = new Float32Array(M), z = new Float32Array(M);
+      for (let j = 0; j < M; j++) {
+        const th = j / M * 2 * Math.PI, ux = Math.cos(th), uz = Math.sin(th);
+        let min = Infinity, zbroj = 0, k = 0;
+        for (let q = 0; q < 24; q += 3) {
+          const d = ux * R[q] + uz * R[q + 1];
+          if (d > 1e-6) { const v = R[q + 2] / d; t[k++] = v; if (v < min) min = v; }
+        }
+        for (let q = 0; q < k; q++) zbroj += Math.exp(-(t[q] - min) / mek);
+        const rp = min - mek * Math.log(zbroj);
+        const r = 1 + (rp - 1) * f;
+        x[j] = ux * r; z[j] = uz * r;
+      }
+      const vx = new Float32Array(M), vz = new Float32Array(M), tab = new Float32Array(M + 1), brid = new Uint8Array(M);
+      for (let j = 0; j < M; j++) {
+        const a = (j + M - 1) % M, b = (j + 1) % M;
+        let ex = z[b] - z[a], ez = x[a] - x[b];
+        const l = Math.hypot(ex, ez) || 1;
+        ex /= l; ez /= l;
+        if (ex * x[j] + ez * z[j] < 0) { ex = -ex; ez = -ez; }
+        vx[j] = ex; vz[j] = ez;
+        tab[j + 1] = tab[j] + Math.hypot(x[b] - x[j], z[b] - z[j]);
+      }
+      if (f > 0.5) {
+        // brid između faseta: ondje gdje se smjer plohe najjače mijenja
+        const promjena = new Float32Array(M);
+        for (let j = 0; j < M; j++) {
+          const a = (j + M - 1) % M, b = (j + 1) % M;
+          promjena[j] = Math.hypot(vx[b] - vx[a], vz[b] - vz[a]);
+        }
+        for (let j = 0; j < M; j++) {
+          if (promjena[j] > 0.15 && promjena[j] >= promjena[(j + M - 1) % M] && promjena[j] >= promjena[(j + 1) % M]) brid[j] = 1;
+        }
+      }
+      return { x: x, z: z, vx: vx, vz: vz, tab: tab, obod: tab[M], brid: brid };
+    }
+    function presjekFlakona(W, f) {
+      const kljuc = f.toFixed(3);
+      const J = PRESJECI[kljuc] || (PRESJECI[kljuc] = jedinicniPresjek(f));
+      return { J: J, W: W, obod: J.obod * W };
+    }
+    function naPresjeku(P, s) {
+      const J = P.J, M = J.x.length;
+      s /= P.W;
+      let lo = 0, hi = M;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (J.tab[m] <= s) lo = m; else hi = m; }
+      const dl = J.tab[lo + 1] - J.tab[lo], u = dl > 0 ? sat((s - J.tab[lo]) / dl) : 0, b = (lo + 1) % M;
+      return { x: lerp(J.x[lo], J.x[b], u) * P.W, z: lerp(J.z[lo], J.z[b], u) * P.W, vx: lerp(J.vx[lo], J.vx[b], u), vz: lerp(J.vz[lo], J.vz[b], u), brid: J.brid[lo] };
+    }
+
+    // Vodoravni presjek tijela zadanog vrijednostima v na mreži (N + 1) × (N + 1)
+    // preko kvadrata [-X, X]² (< 0 unutra): dužine po rubu (marching
+    // squares), redom [x1, z1, x2, z2, ...]
+    const RUBOVI = { 1: [[3, 0]], 2: [[0, 1]], 3: [[3, 1]], 4: [[1, 2]], 5: [[3, 0], [1, 2]], 6: [[0, 2]], 7: [[3, 2]],
+      8: [[2, 3]], 9: [[0, 2]], 10: [[0, 1], [2, 3]], 11: [[1, 2]], 12: [[3, 1]], 13: [[0, 1]], 14: [[3, 0]] };
+    function presjekPlohe(v, X, N) {
+      const h = 2 * X / N, out = [];
+      for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+          const a = v[i * (N + 1) + j], b = v[(i + 1) * (N + 1) + j], c = v[(i + 1) * (N + 1) + j + 1], d = v[i * (N + 1) + j + 1];
+          const idx = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0);
+          if (idx === 0 || idx === 15) continue;
+          const x0 = -X + i * h, z0 = -X + j * h;
+          const tocka = function (e) {
+            let px, pz, qx, qz, vp, vq;
+            if (e === 0) { px = x0; pz = z0; qx = x0 + h; qz = z0; vp = a; vq = b; }
+            else if (e === 1) { px = x0 + h; pz = z0; qx = x0 + h; qz = z0 + h; vp = b; vq = c; }
+            else if (e === 2) { px = x0; pz = z0 + h; qx = x0 + h; qz = z0 + h; vp = d; vq = c; }
+            else { px = x0; pz = z0; qx = x0; qz = z0 + h; vp = a; vq = d; }
+            const t = vp / (vp - vq);
+            return [px + (qx - px) * t, pz + (qz - pz) * t];
+          };
+          RUBOVI[idx].forEach(function (par) {
+            const A = tocka(par[0]), Bt = tocka(par[1]);
+            out.push(A[0], A[1], Bt[0], Bt[1]);
+          });
+        }
+      }
+      return out;
+    }
+
+    // Znak X kao maska: nacrta se u malo skriveno platno, pa se za svaku
+    // točku pločice pogleda je li u znaku (u, v od 0 do 1)
+    function maskaZnaka() {
+      const W = 99, H = 142;
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const ctx = c.getContext('2d');
+      if (!ctx) return function () { return false; };
+      ctx.scale(W / 495, H / 709);
+      ctx.fillStyle = ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 8;                     // tanki potezi i serifi malo deblji, da ih linije uhvate
+      ctx.lineJoin = 'round';
+      ZNAK_X.forEach(function (o) {
+        ctx.beginPath();
+        for (let i = 0; i < o.length; i += 2) { if (i) ctx.lineTo(o[i], o[i + 1]); else ctx.moveTo(o[i], o[i + 1]); }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      });
+      const d = ctx.getImageData(0, 0, W, H).data;
+      return function (u, v) {
+        const i = Math.floor(u * W), j = Math.floor(v * H);
+        return i >= 0 && j >= 0 && i < W && j < H && d[(j * W + i) * 4 + 3] > 96;
+      };
+    }
+
+    // n točkica flakona: položaj (sredina flakona u ishodištu), smjer plohe,
     // vrsta i četiri slučajna broja; spremnik za grafičku karticu
     const VELICINA_TOCKE = 11;
     function gradiFlakon(n) {
-      // razmak niti prema površini: najprije gruba procjena
-      let korak = 0.03;
-      let L = niti(korak);
-      L.forEach(function (l) { l.p = presjek(l.W, l.d, l.n); });
-      const povrsina = L.reduce(function (z, l) { return z + l.p.opseg * l.tezina; }, 0) * korak;
-      korak = Math.sqrt(povrsina * OMJER / n);
-      L = niti(korak);
-      const tezine = L.map(function (l) { l.p = presjek(l.W, l.d, l.n); return l.p.opseg * l.tezina; });
+      const K = FLAKON_K;
+      const tocke = FLAKON.map(function (p) { return { h: p[0], y: DNO_BOCICE + p[0] * K, W: p[1] * K, f: p[2] }; });
+      const seg = [];
       let ukupno = 0;
-      tezine.forEach(function (t) { ukupno += t; });
-      const rnd = slucajno(20261020);
+      for (let i = 0; i < tocke.length - 1; i++) {
+        const p = tocke[i], q = tocke[i + 1];
+        const dm = q.W - p.W, dy = q.y - p.y;
+        const d = Math.hypot(dm, dy);
+        if (d < 1e-6) continue;
+        // profil ide odozdo prema gore: normala prema van je (dy, -dm)
+        seg.push({ p: p, q: q, d: d, od: ukupno, nr: dy / d, ny: -dm / d });
+        ukupno += d;
+      }
+      function sirinaNa(y) {                       // pola širine tijela na visini y
+        for (let i = 0; i < tocke.length - 1; i++) {
+          const p = tocke[i], q = tocke[i + 1];
+          if (y >= p.y && y <= q.y && q.y > p.y) return lerp(p.W, q.W, (y - p.y) / (q.y - p.y));
+        }
+        return 0;
+      }
+      // vrh čepa: valjak odrezan plohom koja je sprijeda na rubu čepa, a
+      // straga se uzdiže; po širini se sužava gotovo ravnim bokovima u šiljak
+      const R0 = FLAKON[FLAKON.length - 1][1] * K, h0 = DNO_BOCICE + FLAKON_RUB * K, H = (FLAKON_VRH - FLAKON_RUB) * K;
+      function vrhCepa(x, z) {
+        const straga = sat((1 - z / R0) / 2), sredina = sat(1 - Math.pow(Math.min(1, Math.abs(x) / R0), 1.5));
+        return h0 + H * Math.pow(straga, 1.5) * sredina;
+      }
+      function cep(x, y, z) { return Math.max(Math.hypot(x, z) - R0, y - vrhCepa(x, z)); }
+
+      // mreža preko vrha čepa: udaljenost od stijenke i visina reza (ne ovise o visini presjeka)
+      const MX = 64, MR = R0 * 1.08, mh = 2 * MR / MX;
+      const doStijenke = new Float32Array((MX + 1) * (MX + 1)), rez = new Float32Array((MX + 1) * (MX + 1)), v = new Float32Array((MX + 1) * (MX + 1));
+      for (let i = 0; i <= MX; i++) {
+        for (let j = 0; j <= MX; j++) {
+          const x = -MR + i * mh, z = -MR + j * mh;
+          doStijenke[i * (MX + 1) + j] = Math.hypot(x, z) - R0;
+          rez[i * (MX + 1) + j] = vrhCepa(x, z);
+        }
+      }
+
+      // pločica: trapez (gore širi) na prednjoj plohi, znak X u sredini
+      const PT = DNO_BOCICE + PLOCICA_VRH[0] * K, PB = DNO_BOCICE + PLOCICA_DNO[0] * K;
+      const XT = DNO_BOCICE + ZNAK_VRH * K, XB = DNO_BOCICE + ZNAK_DNO * K, XW = ZNAK_POLA * K;
+      function polaPlocice(y) { return lerp(PLOCICA_DNO[1], PLOCICA_VRH[1], (y - PB) / (PT - PB)) * K; }
+      const uZnaku = maskaZnaka();
+      function naZnaku(x, y) {                      // okvir (vanjski i unutarnji) ili znak X
+        const hw = polaPlocice(y), rub = Math.min(hw - Math.abs(x), y - PB, PT - y);
+        if (rub < 0) return false;
+        if (rub < 0.008 || Math.abs(rub - 0.017) < 0.0022) return true;
+        return y <= XT && y >= XB && uZnaku((x + XW) / (2 * XW), (XT - y) / (XT - XB));
+      }
+
+      function linije(korak, grubo) {
+        const L = [];
+        const k = Math.max(8, Math.round(ukupno / korak)), kk = ukupno / k;
+        for (let i = 0; i < k; i++) {
+          const s = (i + 0.5) * kk;
+          let j = 0;
+          while (j < seg.length - 1 && s > seg[j].od + seg[j].d) j++;
+          const g = seg[j], t = sat((s - g.od) / g.d);
+          const P = presjekFlakona(lerp(g.p.W, g.q.W, t), lerp(g.p.f, g.q.f, t));
+          L.push({ prsten: P, y: lerp(g.p.y, g.q.y, t), nr: g.nr, ny: g.ny, zlato: lerp(g.p.h, g.q.h, t) >= FLAKON_ZLATO, duljina: P.obod, tezina: P.obod });
+        }
+        if (grubo) return L;
+        for (let y = h0 + korak * 0.3; y < h0 + H; y += korak * 0.6) {      // vrh čepa malo gušće
+          for (let q = 0; q < v.length; q++) v[q] = Math.max(doStijenke[q], y - rez[q]);
+          const d = presjekPlohe(v, MR, MX);
+          for (let q = 0; q < d.length; q += 4) {
+            const len = Math.hypot(d[q + 2] - d[q], d[q + 3] - d[q + 1]);
+            if (len > 1e-7) L.push({ a: [d[q], d[q + 1]], b: [d[q + 2], d[q + 3]], y: y, duljina: len, tezina: len });
+          }
+        }
+        // okvir i znak X: vlastite guste linije preko pločice
+        const dx = 0.0008;
+        for (let y = PB + RED_PLOCICE / 2; y < PT; y += RED_PLOCICE) {
+          const hw = polaPlocice(y), zf = sirinaNa(y) + 0.0075;
+          let od = null;
+          for (let x = -hw; x <= hw + dx; x += dx) {
+            const u = x <= hw && naZnaku(x, y);
+            if (u && od === null) od = x;
+            else if (!u && od !== null) {
+              const len = x - od;
+              if (len > 1e-6) L.push({ znak: true, a: [od, zf], b: [x, zf], y: y, duljina: len, tezina: len * 3 });
+              od = null;
+            }
+          }
+        }
+        return L;
+      }
+      // razmak linija ovisi o površini: prvo gruba procjena s rijetkim linijama
+      let korak = 0.05;
+      let L = linije(korak, true);
+      const povrsina = L.reduce(function (z, l) { return z + l.duljina; }, 0) * korak;
+      korak = Math.sqrt(povrsina * OMJER / n);
+      L = linije(korak);
+
+      // točke se dijele po težini linija (linije znaka su 3 puta gušće)
+      const r = poLinijama(L.map(function (l) { return l.tezina; }), n);
+      const rnd = slucajno(20251);
       const podaci = new Float32Array(n * VELICINA_TOCKE);
-      const kk = ukupno / n;
-      let l = 0, pocetak = 0;
       for (let i = 0; i < n; i++) {
-        const s = (i + 0.5) * kk;
-        while (l < L.length - 1 && s >= pocetak + tezine[l]) { pocetak += tezine[l]; l++; }
-        const nit = L[l];
-        const u = ((tezine[l] > 0 ? (s - pocetak) / tezine[l] : 0) + l * 0.618034) % 1;
-        const q = naPresjeku(nit.p, u);
-        // smjer plohe: na profilu iz presjeka i nagiba profila, na plohi gore ili dolje
-        let nx, ny, nz;
-        if (nit.nr === 0) { nx = 0; ny = nit.ny; nz = 0; }
-        else { nx = q.nx * nit.nr; ny = nit.ny; nz = q.nz * nit.nr; }
+        const l = L[r.linija[i]];
+        let x, y = l.y, z, nx, ny, nz, m;
+        if (l.prsten) {
+          const q = naPresjeku(l.prsten, ((r.udio[i] + r.linija[i] * 0.618034) % 1) * l.prsten.obod);
+          x = q.x; z = q.z;
+          nx = q.vx * l.nr; ny = l.ny; nz = q.vz * l.nr;
+          m = l.zlato ? ZLATO : (q.brid ? BRID : STAKLO);
+        } else if (l.znak) {
+          x = lerp(l.a[0], l.b[0], r.udio[i]); z = l.a[1];
+          nx = 0; ny = 0; nz = 1;
+          m = SLOVO;
+        } else {
+          x = lerp(l.a[0], l.b[0], r.udio[i]); z = lerp(l.a[1], l.b[1], r.udio[i]);
+          const e = 0.002;
+          nx = cep(x + e, y, z) - cep(x - e, y, z); ny = cep(x, y + e, z) - cep(x, y - e, z); nz = cep(x, y, z + e) - cep(x, y, z - e);
+          m = ZLATO;
+          const u = (y - h0) / H;
+          if (u > 0.5) z += R0 * 0.4 * (u - 0.5) * (u - 0.5) / 0.25;   // šiljak se pri vrhu izvija naprijed
+        }
         const nl = Math.hypot(nx, ny, nz) || 1;
+        nx /= nl; ny /= nl; nz /= nl;
+        // točke stakla na mjestu pločice postaju zlatna pločica (malo strši)
+        if ((m === STAKLO || m === BRID) && z > 0 && nz > 0.35 && y >= PB && y <= PT && Math.abs(x) <= polaPlocice(y)) {
+          m = PLOCICA;
+          x += nx * 0.006; y += ny * 0.006; z += nz * 0.006;
+        }
         const o = i * VELICINA_TOCKE;
-        podaci[o] = q.x;
-        podaci[o + 1] = nit.y - VRH / 2;
-        podaci[o + 2] = q.z;
-        podaci[o + 3] = nx / nl;
-        podaci[o + 4] = ny / nl;
-        podaci[o + 5] = nz / nl;
-        podaci[o + 6] = nit.vrsta;
+        podaci[o] = x;
+        podaci[o + 1] = y - SREDINA;
+        podaci[o + 2] = z;
+        podaci[o + 3] = nx;
+        podaci[o + 4] = ny;
+        podaci[o + 5] = nz;
+        podaci[o + 6] = m;
         podaci[o + 7] = rnd(); podaci[o + 8] = rnd(); podaci[o + 9] = rnd(); podaci[o + 10] = rnd();
       }
+      PRESJECI = {};                               // zapamćeni presjeci više ne trebaju
       return podaci;
     }
 
-    // Obris istog flakona sprijeda (SVG), kad nema WebGL-a
+    // Obris istog flakona sprijeda (SVG), kad nema WebGL-a: tijelo, prsten,
+    // čep sa šiljkom i pločica sa znakom X; mjere s fotografije (px)
     function obrisFlakona() {
-      const S = 200, v = function (y) { return (S * 0.04 + (VRH - y) / VRH * S * 0.92).toFixed(1); };
-      const x = function (w) { return (S / 2 + w * S * 0.92).toFixed(1); };
-      const lijevo = [], desno = [];
-      for (let i = 0; i <= 80; i++) {
-        const y = i / 80 * M.vrat, w = tijelo(y).W;
-        lijevo.push(x(-w) + ',' + v(y)); desno.unshift(x(w) + ',' + v(y));
+      const y = function (h) { return (FLAKON_VRH + 8 - h).toFixed(1); };
+      const tijelo = FLAKON.filter(function (p) { return p[0] <= FLAKON_ZLATO && p[1] > 0; });
+      const lijevo = tijelo.map(function (p) { return (-p[1]).toFixed(1) + ',' + y(p[0]); });
+      const desno = tijelo.slice().reverse().map(function (p) { return p[1].toFixed(1) + ',' + y(p[0]); });
+      // čep: od prstena do ruba, pa šiljak (sprijeda gledan: 1 - |x|^1.5)
+      const cepL = [], cepD = [];
+      FLAKON.filter(function (p) { return p[0] >= 501; }).forEach(function (p) {
+        cepL.push((-p[1]).toFixed(1) + ',' + y(p[0])); cepD.unshift(p[1].toFixed(1) + ',' + y(p[0]));
+      });
+      const R0 = 64, siljak = [];
+      for (let i = 0; i <= 24; i++) {
+        const x = -R0 + i / 24 * 2 * R0;
+        siljak.push(x.toFixed(1) + ',' + y(FLAKON_RUB + (FLAKON_VRH - FLAKON_RUB) * Math.max(0, 1 - Math.pow(Math.abs(x) / R0, 1.5))));
       }
-      const tijeloPut = 'M' + lijevo.join(' L') + ' L' + x(-M.grlo) + ',' + v(M.prsten) + ' L' + x(M.grlo) + ',' + v(M.prsten) + ' L' + desno.join(' L') + ' Z';
-      const razina = tijelo(M.razina).W * 0.965;
-      return '<svg viewBox="0 0 ' + S + ' ' + S + '" aria-hidden="true" fill="none" stroke="currentColor" stroke-width=".7" stroke-linejoin="round">' +
-        '<path d="' + tijeloPut + '"/>' +
-        '<path d="M' + x(-razina) + ',' + v(M.razina) + ' L' + x(razina) + ',' + v(M.razina) + '" opacity=".55"/>' +
-        '<rect x="' + x(-M.prstenW) + '" y="' + v(M.prstenVrh) + '" width="' + (2 * M.prstenW * S * 0.92).toFixed(1) + '" height="' + ((M.prstenVrh - M.prsten) / VRH * S * 0.92).toFixed(1) + '"/>' +
-        '<rect x="' + x(-M.cep) + '" y="' + v(VRH) + '" width="' + (2 * M.cep * S * 0.92).toFixed(1) + '" height="' + ((VRH - M.prstenVrh) / VRH * S * 0.92).toFixed(1) + '" rx="2"/>' +
+      const znak = ZNAK_X.map(function (o) {
+        let d = '';
+        for (let i = 0; i < o.length; i += 2) {
+          d += (i ? 'L' : 'M') + (-ZNAK_POLA + o[i] / 495 * 2 * ZNAK_POLA).toFixed(1) + ',' + y(ZNAK_VRH - o[i + 1] / 709 * (ZNAK_VRH - ZNAK_DNO));
+        }
+        return '<path d="' + d + 'Z" fill="currentColor" fill-opacity=".55" stroke="none"/>';
+      }).join('');
+      const pl = PLOCICA_DNO, pv = PLOCICA_VRH;
+      return '<svg viewBox="-180 0 360 712" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round">' +
+        '<path d="M' + lijevo.join(' L') + ' L' + desno.join(' L') + ' Z"/>' +
+        '<rect x="-62.5" y="' + y(501) + '" width="125" height="30"/>' +
+        '<path d="M' + cepL.join(' L') + ' L' + siljak.join(' L') + ' L' + cepD.join(' L') + ' Z"/>' +
+        '<path d="M' + (-pl[1]) + ',' + y(pl[0]) + ' L' + (-pv[1]) + ',' + y(pv[0]) + ' L' + pv[1] + ',' + y(pv[0]) + ' L' + pl[1] + ',' + y(pl[0]) + ' Z"/>' +
+        znak +
         '</svg>';
     }
 
@@ -349,9 +538,9 @@
     // ═══════════════════════════════════════════════════════════════════
     const VS = `
       precision highp float;
-      attribute vec3 aPoz;
-      attribute vec3 aNor;
-      attribute float aVrsta;
+      attribute vec3 aPoz;      // mjesto na flakonu (sredina flakona u ishodištu)
+      attribute vec3 aNor;      // smjer plohe
+      attribute float aVrsta;   // 0 staklo, 1 zlato (prsten, čep), 2 pločica, 3 znak X i okvir, 4 brid
       attribute vec4 aRnd;
       uniform float uVrijeme;
       uniform float uKut;       // okret oko uspravne osi
@@ -359,22 +548,26 @@
       uniform vec2 uMis;        // lagani nagib prema mišu
       uniform float uUvod;      // pojava (0..1)
       uniform float uIzlaz;     // raspršivanje kad se pozornica sklopi (0..1)
-      uniform float uOdsjaj;    // gdje je svjetlo koje ukoso prelazi preko stakla
+      uniform float uOdsjaj;    // gdje je svjetlo koje ukoso prelazi preko flakona
       uniform vec2 uPx;         // svjetska jedinica → ekran
       uniform vec2 uSredina;
       uniform float uVelicina;  // veličina točkice (px)
-      uniform float uJacina;    // jačina točkica (prema njihovu broju)
-      uniform vec3 uStaklo, uTekucina, uMetal, uLak;
+      uniform float uJacina;    // jačina točkica (prema njihovoj gustoći na zaslonu)
+      uniform vec3 uSrebro, uZlato, uPuder;
       varying vec4 vBoja;
 
       const float CAM = 4.2;
+      const float MJ = ${(VISINA / 0.85).toFixed(3)};   // pomaci izmaglice i svjetla prema veličini flakona
 
       vec2 okreni(vec2 v, float a) { float c = cos(a), s = sin(a); return vec2(c * v.x - s * v.y, s * v.x + c * v.y); }
 
       void main() {
         vec3 p = aPoz;
         vec3 n = aNor;
-        float vis = clamp(aPoz.y / ${VRH.toFixed(3)} + 0.5, 0.0, 1.0);   // 0 dno, 1 vrh čepa
+        float m = aVrsta;
+        float t = uVrijeme;
+        float y0 = aPoz.y + ${SREDINA.toFixed(3)};              // visina kao u pocetna-chata.js (-0,86 .. 0,90)
+        float vis = clamp((y0 - ${DNO_BOCICE.toFixed(3)}) / ${VISINA.toFixed(3)}, 0.0, 1.0);   // 0 dno, 1 vrh čepa
         float alfa = 1.0;
 
         // pojava: izmaglica iznad flakona se spusti i slegne u staklo,
@@ -384,7 +577,7 @@
           float k = clamp(uUvod * 1.6 - red * 0.6, 0.0, 1.0);
           k = 1.0 - pow(1.0 - k, 3.0);
           vec3 smjer = normalize(vec3(aRnd.z, aRnd.w, aRnd.y) - 0.5 + 0.001);
-          vec3 izvor = p + smjer * (0.2 + 0.34 * aRnd.y) + vec3(0.0, 0.3 + 0.24 * aRnd.x, 0.0);
+          vec3 izvor = p + (smjer * (0.2 + 0.34 * aRnd.y) + vec3(0.0, 0.3 + 0.24 * aRnd.x, 0.0)) * MJ;
           izvor.xz = okreni(izvor.xz, (1.0 - k) * 1.9);
           p = mix(izvor, p, k);
           alfa *= k * (2.0 - k);
@@ -394,8 +587,8 @@
         if (uIzlaz > 0.0) {
           float ke = clamp(uIzlaz * 1.45 - aRnd.x * 0.45, 0.0, 1.0);
           ke = ke * ke * (3.0 - 2.0 * ke);
-          vec3 smjer = normalize(p + (aRnd.yzw - 0.5) * 0.9 + vec3(0.0, 0.35, 0.0));
-          p += smjer * ke * 0.5 + vec3(0.0, 0.5, 0.0) * ke;
+          vec3 smjer = normalize(p + ((aRnd.yzw - 0.5) * 0.9 + vec3(0.0, 0.35, 0.0)) * MJ);
+          p += (smjer * 0.5 + vec3(0.0, 0.5, 0.0)) * ke * MJ;
           alfa *= 1.0 - ke;
         }
 
@@ -406,48 +599,45 @@
 
         float persp = CAM / (CAM - p.z);
         gl_Position = vec4(p.x * uPx.x * persp + uSredina.x, p.y * uPx.y * persp + uSredina.y, 0.0, 1.0);
-        float iskra = step(0.9935, aRnd.z) * (aVrsta < 1.5 ? 1.0 : 0.0);
+        float iskra = step(0.993, aRnd.z);
         gl_PointSize = uVelicina * persp * (1.0 + 0.7 * iskra);
 
-        // svjetlo gore lijevo: sjena, odsjaj i svijetli rub (staklo svijetli po rubovima)
+        // boje kao u pocetna-chata.js: fasetirano staklo s medenom tekućinom
+        // koja se njiše (prema dnu je staklo deblje pa boja blijedi), zlatni
+        // čep, prsten i pločica; pločica je polirano zlato, znak X najjači
+        float zlato = step(0.5, m) * step(m, 3.5);
+        float plocica = step(1.5, m) * step(m, 3.5);
+        float slovo = step(2.5, m) * step(m, 3.5);
+        float brid = step(3.5, m);
+        float staklo = (1.0 - zlato) * step(y0, 0.3);
+        float razina = 0.2 + 0.02 * sin(t * 1.3 + aPoz.x * 3.0) + 0.01 * sin(t * 2.1 - aPoz.z * 5.0);
+        float tekucina = staklo * (1.0 - smoothstep(razina - 0.014, razina + 0.014, y0)) * smoothstep(-0.9, -0.45, y0);
+        float dr = (y0 - razina) / 0.016;
+        vec3 cs = mix(uSrebro, uZlato * 1.1, tekucina * 0.45) + uZlato * staklo * exp(-dr * dr) * 0.6;
+        cs *= 1.0 + 0.5 * brid;
+        vec3 cz = mix(uZlato * 1.05, mix(uZlato * 0.95, mix(uZlato, uPuder, 0.2) * 1.2, slovo), plocica);
+        vec3 c = mix(cs, cz, zlato);
+        // svjetlo koje ukoso prijeđe preko flakona
+        float d = (p.y * 0.85 - p.x * 0.55 - uOdsjaj * MJ) / (0.09 * MJ);
+        c += vec3(0.5) * exp(-d * d);
+        float lit = mix(mix(0.75, 1.0, zlato), 0.35, plocica);
+        float back = mix(0.45, 0.28, zlato);
+        float jak = 1.0 + 0.8 * plocica - 1.0 * slovo + 1.2 * brid;   // pločica, znak X i bridovi su gušći
+
+        // svjetlo gore lijevo: sjena, odsjaj i svijetli rub
         vec3 N = normalize(n);
-        vec3 L = normalize(vec3(-0.55, 0.62, 0.6));
+        vec3 L = normalize(vec3(-0.5, 0.62, 0.6));
         vec3 H = normalize(L + vec3(0.0, 0.0, 1.0));
         float dif = max(dot(N, L), 0.0);
-        float spe = pow(max(dot(N, H), 0.0), 28.0);
-        float rub = pow(1.0 - abs(N.z), 2.4);
-        float lice = mix(0.42, 1.0, smoothstep(-0.25, 0.25, N.z));   // stražnja strana tamnija (vidi se kroz staklo)
-
-        // svjetlo koje ukoso prijeđe preko flakona
-        float d = (p.y * 0.85 - p.x * 0.55 - uOdsjaj) / 0.09;
-        float pruga = exp(-d * d);
-
-        vec3 boja;
-        float a;
-        if (aVrsta < 0.5) {            // staklo
-          boja = uStaklo * (0.12 + 0.3 * dif + 1.3 * spe + 0.85 * rub);
-          a = 0.5;
-        } else if (aVrsta < 1.5) {     // staklo s tekućinom iza
-          boja = mix(uStaklo, uTekucina, 0.74) * (0.26 + 0.42 * dif + 1.0 * spe + 0.55 * rub);
-          a = 0.7;
-        } else if (aVrsta < 2.5) {     // površina tekućine
-          boja = uTekucina * (0.5 + 0.9 * spe);
-          a = 0.36;
-        } else if (aVrsta < 3.5) {     // rub tekućine uz staklo
-          boja = mix(uTekucina, uStaklo, 0.45) * 1.25;
-          a = 0.85;
-        } else if (aVrsta < 4.5) {     // prsten od ružičastog zlata
-          boja = uMetal * (0.3 + 0.65 * dif + 2.0 * spe + 0.6 * rub);
-          a = 0.95;
-        } else {                       // čep od crnog laka: odsjaji na rubovima
-          boja = uLak * (0.25 + 0.4 * dif) + uStaklo * (1.5 * spe + 0.62 * rub);
-          a = 0.82;
-        }
-        boja *= 1.0 + 1.35 * pruga * (aVrsta > 4.5 ? 0.55 : 1.0);
-        float treptaj = 0.86 + 0.14 * sin(uVrijeme * (1.4 + 2.0 * aRnd.w) + aRnd.y * 40.0);
-        treptaj = mix(treptaj, 1.0 + 1.1 * max(0.0, sin(uVrijeme * 2.0 + aRnd.x * 50.0)), iskra);
-        float dubina = clamp(0.72 + 0.42 * p.z, 0.35, 1.12);
-        vBoja = vec4(boja * lice, a * alfa * treptaj * dubina * uJacina);
+        float spe = pow(max(dot(N, H), 0.0), 26.0);
+        float rub = pow(1.0 - abs(N.z), 2.2);
+        float nebo = smoothstep(-0.08, 0.3, N.y);                   // odraz neba i tla, kao na kromu
+        float svjetlo = 0.08 + 0.7 * dif + 1.5 * spe + 0.6 * rub + 0.28 * nebo;
+        float lice = mix(back, 1.0, smoothstep(-0.2, 0.25, N.z));   // stražnja strana tamnija
+        float dubina = mix(1.0, clamp(0.62 + 0.42 * p.z, 0.25, 1.15), lit);
+        float treptaj = 0.84 + 0.16 * sin(t * (1.5 + 2.0 * aRnd.w) + aRnd.y * 40.0);
+        treptaj = mix(treptaj, 1.0 + 1.1 * max(0.0, sin(t * 2.1 + aRnd.x * 50.0)), iskra);
+        vBoja = vec4(c * mix(1.0, svjetlo, lit) * lice, uJacina * jak * alfa * treptaj * dubina);
       }
     `;
     const FS = `
@@ -461,9 +651,17 @@
       }
     `;
     const UNIFORME = ['uVrijeme', 'uKut', 'uNagib', 'uMis', 'uUvod', 'uIzlaz', 'uOdsjaj', 'uPx', 'uSredina', 'uVelicina', 'uJacina',
-      'uStaklo', 'uTekucina', 'uMetal', 'uLak'];
-    const KUT0 = -0.5;                 // flakon nastane malo okrenut (prema svjetlu)
-    const NAGIB = 0.13;                // gledamo ga malo odozgo
+      'uSrebro', 'uZlato', 'uPuder'];
+    const KUT0 = -0.3;                 // flakon nastane malo okrenut ulijevo (kao na dosadašnjem početnom ekranu)
+    const NAGIB = 0.1;                 // gledamo ga malo odozgo
+    // jačina točkica: 0,7 uz gustoću 26 000 točkica na flakonu visokom 175 px
+    // po jedinici (kao u pocetna-chata.js); uz gušće točkice slabije
+    const JACINA_FLAKONA = 0.7, GUSTOCA_FLAKONA = 26000 / (175 * 175);
+
+    function zasiti(c, k) {                      // jača zasićenost boje (0..1)
+      const l = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+      return c.map(function (v) { return sat(l + (v - l) * k); });
+    }
 
     function napraviAnimaciju(platno, scena, dogadaji) {
       const n = Math.max(3000, Math.round(+(MOBITEL ? F.tocakaMobitel : F.tocaka) || 20000));
@@ -509,13 +707,10 @@
           gl.vertexAttribPointer(mj, a[1], gl.FLOAT, false, korak, a[2] * 4);
         });
         UNIFORME.forEach(function (u) { U[u] = gl.getUniformLocation(program, u); });
-        gl.uniform3fv(U.uStaklo, boja01(B.staklo));
-        gl.uniform3fv(U.uTekucina, boja01(B.tekucina));
-        gl.uniform3fv(U.uMetal, boja01(B.metal));
-        gl.uniform3fv(U.uLak, boja01(B.lak));
+        gl.uniform3fv(U.uSrebro, boja01(B.srebro));
+        gl.uniform3fv(U.uZlato, zasiti(boja01(B.zlato), 1.2));
+        gl.uniform3fv(U.uPuder, boja01(B.puder));
         gl.uniform1f(U.uNagib, NAGIB);
-        // jačina: uz 24 000 točkica 1; uz manje točkica (mobitel) malo jače
-        gl.uniform1f(U.uJacina, Math.min(1.6, Math.pow(24000 / n, 0.55)));
         gl.disable(gl.DEPTH_TEST);
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE);           // točkice se zbrajaju (svjetlo)
@@ -556,12 +751,16 @@
         }
         if (!gl || !spremno) return;
         gl.viewport(0, 0, platno.width, platno.height);
-        // flakon (visok VRH jedinica) zauzme zadani udio visine pozornice;
+        // flakon (visok VISINA jedinica) zauzme zadani udio visine pozornice;
         // sredina mu je malo iznad sredine (ispod je natpis)
-        const px = vis * broj(F.velicina, 0.7, 0.3, 0.9) / VRH;
+        const px = vis * broj(F.velicina, 0.7, 0.3, 0.9) / VISINA;
         gl.uniform2f(U.uPx, 2 * px / w, 2 * px / vis);
         gl.uniform2f(U.uSredina, 0, 1 - 2 * (vis * 0.445) / vis);
-        gl.uniform1f(U.uVelicina, 1.55 * dpr);
+        // veličina i jačina točkica kao u pocetna-chata.js: manji flakon ima
+        // gušće točkice na zaslonu, pa su one slabije (ne sasvim razmjerno)
+        gl.uniform1f(U.uVelicina, 1.35 * dpr * Math.min(1.25, Math.max(0.8, Math.sqrt(px / 160))));
+        const gustoca = n / (px * px) / GUSTOCA_FLAKONA;
+        gl.uniform1f(U.uJacina, JACINA_FLAKONA * Math.min(2, Math.max(0.25, Math.pow(gustoca, -0.65))));
         if (!vrti) nacrtaj(vrijeme);
       }
 
@@ -826,7 +1025,7 @@
         position: absolute;
         left: 50%;
         top: 44.5%;
-        width: calc(var(--mx-j-visina, 230px) * .74);
+        width: calc(var(--mx-j-visina, 230px) * .74 * .506);
         height: calc(var(--mx-j-visina, 230px) * .74);
         transform: translate(-50%, -50%);
         color: ${prozirna(B.puder, .72)};
