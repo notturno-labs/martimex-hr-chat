@@ -295,13 +295,41 @@ učitava na martimex.hr.
   Voiceflowov prozor i učita i perlice; `?razgovor=1` postojeći razgovor, `?klik=3` sam pritisne
   ponuđeni odgovor, `?kraj=1` završen razgovor, `?tipka=6` Marti „tipka” 6 s).
 
+## Akcija i promo kod na kartici artikla (`akcija/`)
+
+Popust uz cijenu je u pravoj kartici, `kartica-artikla.js` (v31 = v30 + popust; uputa:
+`akcija/PREDAJA-popust.md`). Isti `ext_product_card` i isti payload; nova polja su neobavezna, a
+kartica bez popusta izgleda točno kao v30.
+
+- Payload (sve neobavezno, ostalo isto kao dosad):
+  - `oldPrice` → akcija
+  - `promo: { code: "MRTMX", percent: 30, validUntil: "2026-10-31" }` → promo kod; umjesto
+    `percent` može `price` (cijena s kodom). Isto kao ravna polja: `promoCode`, `promoPercent`,
+    `promoPrice`, `promoValidUntil`. Kad je `validUntil` prošao, kod se ne prikazuje.
+- Što se vidi:
+  - akcija: preko stare cijene je „perom” povučena tanka kosa crta, ispod je nova cijena (malo veća
+    i tamnija), a desno od njih roza voštani pečat s postotkom (−20 %)
+  - promo kod: precrtana je trenutna cijena, nova je cijena s kodom, ispod nje diskretno piše
+    „uz kod MRTMX”, a pečat pokazuje −30 %
+  - akcija + kod: precrtana je redovna cijena, nova je cijena nakon akcije i koda, ispod nje
+    „uz kod MRTMX”, a pečat pokazuje ukupni popust
+  - pojava: kad poruka stigne, pero precrta staru cijenu (s lijeva na desno), ispod izroni nova, a
+    pečat se utisne i od njega se raširi tanki val; uz „Smanji pokrete” sve je odmah na mjestu
+- Postavke su u `MX_POSTAVKE`: boje `vosak` i `akcija`, `pecat` (pečat da/ne) i `tekstUzKod`.
+- Proba bez Voiceflowa: `akcija/akcija.html` (glumi prozor chata s pet artikala: akcija, promo kod,
+  akcija + kod, bez popusta i kod zadan ravnim poljima; „Ponovi pojavu” ponovno pokrene animaciju).
+  `akcija/slike/`: nacrtane bočice na bijeloj pozadini.
+- Proba u pravom chatu: `jedan-ekran/proba.html?popust=1` (stranica sama dodaje probne popuste
+  preporukama: 1. kartica kod MRTMX −30 %, 2. akcija, 3. akcija + kod).
+- Da bi se popust vidio na webshopu, funkcija u Voiceflowu mora početi slati `oldPrice` i/ili `promo`.
+
 ## Pregled i snimanje
 
 - `proba.html` glumi Voiceflowov prozor chata, pa se početni ekran vidi kao u pravom chatu:
   `proba.html?skripta=saturn/pocetna-chata-saturn.js`, `proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
   (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije” (I i II), „Izron”, „Veo” i
   „Naxos” se otvaraju izravno: `kap/kap.html`, `kap2/kap2.html`, `izron/izron.html`, `veo/veo.html`,
-  `naxos/naxos.html`.
+  `naxos/naxos.html`. Kartica s akcijom i promo kodom: `akcija/akcija.html`.
 - Kad je ova mapa na grani `main`, vidi se i na GitHub Pages:
   `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=saturn/pocetna-chata-saturn.js`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
@@ -309,7 +337,8 @@ učitava na martimex.hr.
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/kap2/kap2.html`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/izron/izron.html`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/veo/veo.html`
-  i `https://notturno-labs.github.io/martimex-hr-chat/pokusi/naxos/naxos.html`.
+  , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/naxos/naxos.html`
+  i `https://notturno-labs.github.io/martimex-hr-chat/pokusi/akcija/akcija.html`.
 - `snimi.js` snima video sličicu po sličicu (vrijeme animacije teče točno 1/fps po sličici, pa je
   video gladak i na sporom računalu). Treba ffmpeg i Playwright (Chromium sa SwiftShaderom,
   nikad `playwright install`). Iz mape `pokusi/`:

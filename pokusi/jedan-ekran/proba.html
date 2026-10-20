@@ -41,6 +41,7 @@
     moduli s vrha repozitorija), samo se umjesto početnog ekrana učita jedan-ekran.js.
       pokusi/jedan-ekran/proba.html                    → chat na jednom ekranu
       pokusi/jedan-ekran/proba.html?izgled=calacatta   → dosadašnja proba (početni ekran + „Calacatta”), za usporedbu
+      pokusi/jedan-ekran/proba.html?popust=1           → probni popusti na preporukama (vidi dolje)
     Bez Voiceflowa i interneta: pokusi/jedan-ekran/mock.html
   -->
   <h1>Proba: chat na jednom ekranu</h1>
@@ -70,6 +71,39 @@
 
     var vfSpreman = false, githubGotov = false, domSpreman = false, pokrenut = false, dodatno = {};
 
+    // ?popust=1 → probni popusti na karticama artikla (samo na ovoj stranici).
+    // Voiceflow funkcija još ne šalje akciju ni promo kod, pa se dodaju ovdje:
+    // 1. kartica u preporuci → promo kod MRTMX −30 %, 2. → akcija (stara cijena
+    // 25 % viša), 3. → akcija + kod. Kartice koje popust već imaju ostaju kakve jesu.
+    var PROBNI_POPUSTI = new URLSearchParams(location.search).get('popust') === '1';
+    function dodajPopuste(trace) {
+      var p = trace && trace.payload;
+      if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { return trace; } }
+      var lista = p && (p.cards || p.kartice);
+      if (!Array.isArray(lista)) return trace;
+      var kartice = lista.map(function (c, i) {
+        if (!c || c.oldPrice != null || c.promo || c.promoCode) return c;
+        var n = parseFloat(String(c.price).replace(/[^\d.,]/g, '').replace(',', '.'));
+        var k = Object.assign({}, c);
+        var vrsta = i % 3;
+        if (vrsta !== 1) k.promo = { code: 'MRTMX', percent: 30 };
+        if (vrsta !== 0 && isFinite(n)) k.oldPrice = (Math.round(n * 125) / 100).toFixed(2);
+        return k;
+      });
+      return Object.assign({}, trace, { payload: Object.assign({}, p, { cards: kartice }) });
+    }
+    function sProbnimPopustima(cfg) {
+      var a = cfg && cfg.assistant;
+      if (!PROBNI_POPUSTI || !a || !Array.isArray(a.extensions)) return cfg;
+      var ekstenzije = a.extensions.map(function (e) {
+        if (!e || e.name !== 'ProductCard') return e;
+        return Object.assign({}, e, {
+          render: function (x) { return e.render(Object.assign({}, x, { trace: dodajPopuste(x.trace) })); }
+        });
+      });
+      return Object.assign({}, cfg, { assistant: Object.assign({}, a, { extensions: ekstenzije }) });
+    }
+
     function ucitajChat(cfg) {
       return Promise.resolve().then(function () { return window.voiceflow.chat.load(cfg); });
     }
@@ -96,7 +130,7 @@
     // loader.js s GitHuba javlja se ovdje kad je spreman
     window.__martimexGitHub = function (cfg) {
       if (githubGotov) return;  // stiglo prekasno – chat već radi bez toga
-      dodatno = cfg || {};
+      dodatno = sProbnimPopustima(cfg || {});
       githubGotov = true;
       pokreni();
     };

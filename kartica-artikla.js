@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v30)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v31)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -9,8 +9,18 @@
   //  Payload koji funkcija šalje ostaje isti:
   //   { cards: [{ title, price, description, url, imageUrl }] }
   //  Neobavezna polja (prikažu se samo ako postoje):
-  //   oldPrice → precrtana stara cijena i postotak popusta
+  //   oldPrice → artikl je na akciji: stara cijena se precrta, ispod nje je
+  //              nova, a pokraj njih voštani pečat s postotkom popusta
   //   badge    → mala oznaka iznad marke, npr. "Novo"
+  //   promo    → promo kod koji vrijedi za artikl:
+  //              { code: "MRTMX", percent: 30, validUntil: "2026-10-31" }
+  //              (isto kao ravna polja promoCode, promoPercent, promoPrice,
+  //              promoValidUntil). Umjesto percent može price (cijena s kodom);
+  //              dovoljno je jedno. validUntil je neobavezan; kad je prošao, kod
+  //              se ne prikazuje. Precrta se trenutna cijena, nova je cijena s
+  //              kodom, a ispod nje diskretno piše "uz kod MRTMX".
+  //              Kad su i akcija i kod: precrtana je redovna cijena, nova je
+  //              cijena s kodom, a pečat pokazuje ukupni popust
   //
   //  Raspored kartice:
   //   ┌────────────────────────────┐
@@ -36,6 +46,10 @@
   //     vrsta s volumenom (EAU DE PARFUM · 100 ML) stane u jedan redak, a dulja
   //     se prelomi tako da točka između dijelova ne ostaje visjeti
   //   - kratka roza crtica odvaja naziv od cijene, a cijena je diskretna
+  //   - popust (akcija ili promo kod): preko stare cijene "rukom" je povučena
+  //     tanka kosa crta (ne obično precrtavanje fonta), ispod je nova cijena,
+  //     malo veća i tamnija, a desno od njih roza voštani pečat s postotkom
+  //     (−30 %), kao pečat na kutiji parfema
   //
   //  Fontovi (Jost za tekst, Cormorant Garamond za naziv) nalaze se u mapi
   //  fonts/ ovog repozitorija, pa kartica izgleda jednako na iPhoneu,
@@ -84,8 +98,10 @@
   //
   //  Pojava: kad Marti pošalje preporuke, preko kartica prođe blaga
   //  ružičasta izmaglica sa sitnim kapljicama (kao sprej parfema) i
-  //  bočice se pojave iz nje, jedna za drugom. Animacija se vrti samo
-  //  prvi put; kad se povijest razgovora ponovno učita, kartice su odmah tu.
+  //  bočice se pojave iz nje, jedna za drugom. Kod popusta pero zatim
+  //  precrta staru cijenu, ispod nje izroni nova, a pokraj njih se utisne
+  //  pečat. Animacija se vrti samo prvi put; kad se povijest razgovora
+  //  ponovno učita, kartice su odmah tu.
   // ═════════════════════════════════════════════════════════════════════
 
 
@@ -95,12 +111,14 @@
   const MX_POSTAVKE = {
     boje: {                   // uvijek u obliku #rrggbb
       tinta:   '#000000', // crna kao trake u headeru i footeru: marka, naziv, cijena
-      roza:    '#e2c3ba', // prašnjava roza iza loga: izmaglica, oznaka popusta
+      roza:    '#e2c3ba', // prašnjava roza iza loga: izmaglica, crtica iznad cijene, val oko pečata
       puder:   '#f6ebe7', // najsvjetlija roza: rubovi aure oko bočice
       linija:  '#eee3de', // tanki rubovi i traka napretka
       dim:     '#6b605c', // opis proizvoda
       kartica: '#ffffff', // pozadina kartice
-      gumb:    '#2b2522'  // gumb "Pogledaj proizvod": obrub i tekst, a kad je miš iznad (ili prst na) njemu, ispuna
+      gumb:    '#2b2522', // gumb "Pogledaj proizvod": obrub i tekst, a kad je miš iznad (ili prst na) njemu, ispuna
+      vosak:   '#dfbcb1', // voštani pečat s postotkom popusta
+      akcija:  '#a0675a'  // crta preko stare cijene, natpis "uz kod MRTMX", prsten i broj na pečatu
     },
 
     // Fontovi: sav tekst u Jostu, naziv proizvoda u Cormorant Garamondu.
@@ -134,7 +152,11 @@
     parametarPracenja: 'vfrec=true',
 
     // true → "sprej" animacija samo kad preporuka stigne prvi put
-    animacijaSamoPrviPut: true
+    animacijaSamoPrviPut: true,
+
+    // Popust: true → voštani pečat s postotkom pokraj cijene
+    pecat: true,
+    tekstUzKod: 'uz kod'      // ispod cijene s kodom: "uz kod MRTMX"
   };
 
 
@@ -175,6 +197,22 @@
       return 'rgb(' + [0, 1, 2].map(function (i) { return Math.round(a[i] * udio + b[i] * (1 - udio)); }).join(', ') + ')';
     }
 
+    // Obris voštanog pečata (PECAT × PECAT px): krug s blagim, nepravilnim
+    // valovima ruba, kao kapljica voska; uvijek isti
+    const PECAT = 40;
+    const OBRIS_PECATA = (function () {
+      const N = 36, c = PECAT / 2, t = [];
+      for (let i = 0; i < N; i++) {
+        const a = i / N * Math.PI * 2;
+        const r = c - 1.9 + 0.8 * Math.sin(a * 5 + 0.7) + 0.5 * Math.sin(a * 8 + 2.1) + 0.35 * Math.sin(a * 13 + 4);
+        t.push([c + r * Math.cos(a), c + r * Math.sin(a)]);
+      }
+      const sred = function (p, q) { return ((p[0] + q[0]) / 2).toFixed(2) + ' ' + ((p[1] + q[1]) / 2).toFixed(2); };
+      let d = 'M' + sred(t[N - 1], t[0]);
+      for (let i = 0; i < N; i++) d += ' Q' + t[i][0].toFixed(2) + ' ' + t[i][1].toFixed(2) + ' ' + sred(t[i], t[(i + 1) % N]);
+      return d + ' Z';
+    })();
+
     const IKONA_BOCA = '<svg viewBox="0 0 48 64" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M19 4.5h10v6.5H19z"/><path d="M21.5 11v4.5M26.5 11v4.5"/><rect x="9.5" y="15.5" width="29" height="44" rx="7"/><path d="M15.5 33.5h17M15.5 38.5h10" stroke-linecap="round" opacity=".55"/></svg>';
 
     // ── STIL ─────────────────────────────────────────────────────────────
@@ -193,6 +231,8 @@
         --mx-rub-hover: ${mijesaj(B.roza, B.linija, .7)};
         --mx-ikona: ${mijesaj(B.roza, B.tinta, .55)};
         --mx-kap: ${mijesaj(B.roza, B.tinta, .8)};
+        --mx-vosak: ${B.vosak};
+        --mx-akcija: ${B.akcija};
         --mx-font: ${P.font};
         --mx-font-naziv: ${P.fontNaziva};
         --mx-uvlaka: 20px;            /* koliko je opis uvučen s obje strane; do tu smije ići i tekst gore */
@@ -647,26 +687,135 @@
         font-variant-numeric: lining-nums;
         white-space: nowrap;
       }
-      .mx-popust-red {
+      /* popust: stara cijena precrtana, nova ispod nje, pečat s postotkom desno.
+         Pečat smije zauzeti i uvlaku desno od teksta (ukras je, ne tekst), pa ostaje
+         pokraj cijena i na uskom mobitelu */
+      .mx-cijene--popust { margin-right: calc(-1 * var(--mx-uvlaka)); }
+      .mx-snizenje {
         display: flex;
+        flex-wrap: wrap;              /* uzak chat: pečat ide ispod cijena, kartica ne postaje šira */
         align-items: center;
-        gap: 6px;
+        gap: 6px 12px;
+        max-width: 100%;
+      }
+      .mx-cijene-stup {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        min-width: 0;
+      }
+      /* stara cijena: sitnija i siva; preko nje je tanka kosa crta, kao potez
+         perom (ne obično precrtavanje fonta). Crta je nagnuta oko svoje sredine,
+         pa prelazi cijelu cijenu; pri pojavi se iscrta s lijeva */
+      .mx-stara {
+        position: relative;
+        display: inline-block;
+        font-size: 11px;
+        line-height: 1.3;
+        font-weight: 400;
+        letter-spacing: .04em;
+        color: var(--mx-dim);
+        font-variant-numeric: lining-nums;
+        text-decoration: none;
         white-space: nowrap;
       }
-      .mx-stara {
-        font-size: 11.5px;
-        line-height: 1.2;
-        color: var(--mx-dim);
-        text-decoration: line-through;
+      .mx-stara::after {
+        content: "";
+        position: absolute;
+        left: -2px;
+        right: -2px;
+        top: 54%;
+        height: 1px;
+        border-radius: 1px;
+        background: var(--mx-akcija);
+        transform: rotate(-8deg);
       }
-      .mx-popust {
-        padding: 2px 6px;
-        border-radius: 999px;
-        background: var(--mx-roza);
+      /* nova cijena: jasnija od obične (tamnija, malo veća), ali i dalje mirna */
+      .mx-nova {
+        display: block;
+        margin-top: 1px;
+        font-size: 14px;
+        line-height: 1.25;
+        font-weight: 500;
+        letter-spacing: .03em;
         color: var(--mx-tinta);
-        font-size: 10.5px;
-        line-height: 1.2;
-        font-weight: 800;
+        font-variant-numeric: lining-nums;
+        white-space: nowrap;
+      }
+      /* "uz kod MRTMX" ispod cijene s kodom: slova kao vrsta mirisa, u boji akcije */
+      .mx-uz-kod {
+        display: block;
+        margin-top: 3px;
+        font-size: 8px;
+        line-height: 1.4;
+        font-weight: 500;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        color: var(--mx-akcija);
+      }
+
+      /* voštani pečat: nepravilan rub (clip-path), vosak svjetliji gore lijevo i
+         tamniji uz rub, utisnut prsten i utisnut broj */
+      .mx-pecat {
+        position: relative;
+        flex: none;
+        width: ${PECAT}px;
+        height: ${PECAT}px;
+        transform: rotate(-12deg);
+        filter: drop-shadow(0 1px 1px rgba(95, 50, 40, .22)) drop-shadow(0 3px 4px rgba(95, 50, 40, .12));
+      }
+      .mx-pecat-vosak {
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        border-radius: 50%;           /* rezerva kad preglednik ne zna clip-path: path() */
+        clip-path: path('${OBRIS_PECATA}');
+        background:
+          radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .55) 0, rgba(255, 255, 255, 0) 42%),
+          radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 58%, ${prozirna(B.akcija, .28)} 100%),
+          var(--mx-vosak);
+      }
+      /* utisnuti prsten: tamna crta gore, svijetla dolje (kao udubljenje u vosku) */
+      .mx-pecat-vosak::before {
+        content: "";
+        position: absolute;
+        top: 6px; right: 6px; bottom: 6px; left: 6px;
+        border-radius: 50%;
+        border: 1px solid ${prozirna(B.akcija, .38)};
+        box-shadow: 0 1px 0 rgba(255, 255, 255, .55), inset 0 1px 0 rgba(255, 255, 255, .4);
+      }
+      .mx-pecat-tekst {
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-left: 1px;
+        font-size: 11px;
+        line-height: 1;
+        font-weight: 600;
+        letter-spacing: 0;
+        color: ${mijesaj(B.akcija, B.tinta, .45)};
+        text-shadow: 0 1px 0 rgba(255, 255, 255, .5);
+        font-variant-numeric: lining-nums;
+        white-space: nowrap;
+      }
+      .mx-pecat-tekst small {
+        margin-left: 1px;
+        font-size: 7px;
+        font-weight: 600;
+        transform: translateY(-2px);
+      }
+      /* minus u Jostu sjedi nisko (kao "_30"): podigne se do sredine brojki */
+      .mx-minus { display: inline-block; margin-right: .04em; transform: translateY(-.1em); }
+      /* val kad pečat "sjedne" na karticu */
+      .mx-pecat::after {
+        content: "";
+        position: absolute;
+        top: 2px; right: 2px; bottom: 2px; left: 2px;
+        border-radius: 50%;
+        border: 1px solid var(--mx-roza);
+        opacity: 0;
+        pointer-events: none;
       }
 
       /* tanka linija između gornjeg dijela i opisa: najjača u sredini, prema krajevima nestaje */
@@ -855,9 +1004,53 @@
         from { opacity: 0; }
       }
 
+      /* popust: kad se kartica pojavi, pero precrta staru cijenu, ispod nje izroni
+         nova, a zatim se pokraj njih utisne pečat (i od njega se raširi tanki val) */
+      .mx-pojava .mx-stara::after {
+        animation: mx-precrtaj .5s cubic-bezier(.6, 0, .3, 1) backwards;
+        animation-delay: calc(900ms + var(--mx-i, 0) * 110ms);
+      }
+      .mx-pojava .mx-nova,
+      .mx-pojava .mx-uz-kod {
+        animation: mx-nova .7s var(--mx-glatko) backwards;
+        animation-delay: calc(1250ms + var(--mx-i, 0) * 110ms);
+      }
+      .mx-pojava .mx-uz-kod { animation-delay: calc(1380ms + var(--mx-i, 0) * 110ms); }
+      .mx-pojava .mx-pecat {
+        animation: mx-pecat .62s cubic-bezier(.3, 1.35, .55, 1) backwards;
+        animation-delay: calc(1450ms + var(--mx-i, 0) * 110ms);
+      }
+      .mx-pojava .mx-pecat::after {
+        animation: mx-pecat-val .9s ease-out;
+        animation-delay: calc(1750ms + var(--mx-i, 0) * 110ms);
+      }
+      @keyframes mx-precrtaj {                /* clip-path je u smjeru same crte: otkriva je s lijeva */
+        from { clip-path: inset(0 100% 0 0); }
+        to   { clip-path: inset(0 0 0 0); }
+      }
+      @keyframes mx-nova {
+        from { opacity: 0; transform: translateY(4px); filter: blur(3px); }
+      }
+      @keyframes mx-pecat {
+        0%   { opacity: 0; transform: scale(1.8) rotate(-38deg); }
+        55%  { opacity: 1; transform: scale(.92) rotate(-9deg); }
+        100% { opacity: 1; transform: rotate(-12deg); }
+      }
+      @keyframes mx-pecat-val {
+        0%   { opacity: .9; transform: scale(.95); }
+        100% { opacity: 0; transform: scale(1.9); }
+      }
+
+      @media (forced-colors: active) {
+        .mx-stara { text-decoration: line-through; }
+        .mx-stara::after { display: none; }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .mx-maglica { display: none; }
         .mx-pojava .mx-kartica { animation: mx-samo-prozirnost .35s linear backwards; animation-delay: 0s; }
+        .mx-pojava .mx-stara::after, .mx-pojava .mx-nova, .mx-pojava .mx-uz-kod,
+        .mx-pojava .mx-pecat, .mx-pojava .mx-pecat::after { animation: none; }
         .mx-kartica, .mx-kartica::before, .mx-nisa, .mx-boca, .mx-aura, .mx-aura-slika, .mx-aura-podloga, .mx-sjena { transition-duration: .01s !important; }
         .mx-gumb { transition: none; }
         .mx-lebdi, .mx-sjena { animation: none !important; }
@@ -870,11 +1063,11 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '30');
+      stil.setAttribute('data-mx-kartice', '31');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '30') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '31') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
@@ -934,12 +1127,22 @@
       return s.replace(/\s+/g, ' ').trim();
     }
 
+    // prva vrijednost koja je zadana (null, undefined i '' se preskaču)
+    function prvo() {
+      for (let i = 0; i < arguments.length; i++) {
+        if (arguments[i] !== null && arguments[i] !== undefined && arguments[i] !== '') return arguments[i];
+      }
+      return null;
+    }
+
     function uzmiKartice(trace) {
       let p = trace && trace.payload;
       if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { p = null; } }
       const lista = (p && (p.cards || p.kartice)) || [];
       if (!Array.isArray(lista)) return [];
       return lista.filter(Boolean).map(function (c) {
+        // promo kod: { promo: { code, percent, price, validUntil } } ili ravna polja
+        const promo = (c.promo && typeof c.promo === 'object') ? c.promo : {};
         return {
           naziv: tekst(c.title || c.name),
           opis: tekst(c.description),
@@ -947,7 +1150,11 @@
           stara: c.oldPrice != null ? c.oldPrice : (c.regularPrice != null ? c.regularPrice : c.regular_price),
           slika: c.imageUrl || c.image || '',
           url: c.url || c.link || '',
-          oznaka: tekst(c.badge)
+          oznaka: tekst(c.badge),
+          kod: tekst(prvo(promo.code, c.promoCode)),
+          kodPostotak: prvo(promo.percent, c.promoPercent),
+          kodCijena: prvo(promo.price, c.promoPrice),
+          kodRok: prvo(promo.validUntil, c.promoValidUntil)
         };
       });
     }
@@ -1070,6 +1277,66 @@
       return t ? el('span', 'mx-cijena', t) : null;
     }
 
+    // Je li rok promo koda prošao: "2026-10-31", "2026-10-31T18:00" (i sa
+    // zonom, npr. "Z" ili "+02:00") ili "31. 10. 2026." (bez sata vrijedi do
+    // kraja tog dana). Rok upisan drugačije ne skriva kod.
+    function rokProsao(v) {
+      if (v === null || v === undefined || v === '') return false;
+      const s = String(v).trim();
+      // vrijeme sa zonom ("…T18:00Z", "…T18:00+02:00"): pretvori ga sam preglednik
+      if (/T\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})$/i.test(s)) {
+        const t = Date.parse(s);
+        if (!isNaN(t)) return t < Date.now();
+      }
+      let g, mj, d, h = 23, min = 59, sek = 59;
+      let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{2}))?/);
+      if (m) {
+        g = +m[1]; mj = +m[2]; d = +m[3];
+        if (m[4] !== undefined) { h = +m[4]; min = +m[5]; sek = 0; }
+      } else if ((m = s.match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\.?$/))) {
+        g = +m[3]; mj = +m[2]; d = +m[1];
+      } else {
+        return false;
+      }
+      const kraj = new Date(g, mj - 1, d, h, min, sek);
+      return !isNaN(kraj.getTime()) && kraj.getTime() < Date.now();
+    }
+
+    // Promo kod artikla → { tekst, postotak, cijena (s kodom; null kad se ne zna) }
+    // ili null. nCijena: trenutna cijena kao broj (ili null).
+    function promoKod(k, nCijena) {
+      if (!k.kod || rokProsao(k.kodRok)) return null;
+      let postotak = k.kodPostotak !== null ? Math.abs(brojIz(k.kodPostotak) || 0) : 0;
+      let sKodom = brojCijene(k.kodCijena);
+      if (!postotak && sKodom !== null && nCijena) postotak = (1 - sKodom / nCijena) * 100;
+      const tocan = postotak;                                  // za izračun cijene s kodom
+      postotak = Math.round(postotak * 10) / 10;               // za prikaz
+      if (!(postotak > 0 && postotak < 100)) return null;      // bez iznosa popusta kod se ne spominje
+      // cijena s kodom samo kad je i trenutna cijena čist broj (ne npr. "od 49 €")
+      if (nCijena === null) sKodom = null;
+      else if (sKodom === null) sKodom = Math.round(nCijena * (100 - tocan)) / 100;
+      if (sKodom !== null && !(sKodom < nCijena)) sKodom = null;
+      return { tekst: k.kod, postotak: postotak, cijena: sKodom };
+    }
+
+    // "−30 % uz kod MRTMX" (kad cijena s kodom nije poznata)
+    function natpisKoda(kod) {
+      return '\u2212' + String(kod.postotak).replace('.', ',') + '\u00a0% ' + P.tekstUzKod + ' ' + kod.tekst;
+    }
+
+    // voštani pečat s postotkom (čitaču zaslona postotak je već u tekstu cijene)
+    function pecat(p) {
+      const v = el('span', 'mx-pecat');
+      v.setAttribute('aria-hidden', 'true');
+      v.appendChild(el('span', 'mx-pecat-vosak'));
+      const t = el('span', 'mx-pecat-tekst');
+      t.appendChild(el('span', 'mx-minus', '\u2212'));
+      t.appendChild(document.createTextNode(String(p)));
+      t.appendChild(el('small', '', '%'));
+      v.appendChild(t);
+      return v;
+    }
+
     function sigurniLink(url) {
       if (!url) return '';
       try {
@@ -1090,7 +1357,14 @@
     }
     function trebaPojava(tip, kartice) {
       if (!P.animacijaSamoPrviPut) return true;
-      const potpis = hash(tip + '|' + kartice.map(function (k) { return k.url + '~' + k.naziv; }).join('|'));
+      const potpis = hash(tip + '|' + kartice.map(function (k) {
+        // popust je dio potpisa (samo kad ga ima, pa kartice bez popusta imaju isti potpis
+        // kao u v30): proizvod koji se već pojavio bez popusta pojavi se opet kad dobije popust
+        const c = brojIz(k.cijena), st = brojIz(k.stara);
+        const popust = (c !== null && st !== null && st > c) || k.kod
+          ? '~' + [k.cijena, k.stara, k.kod, k.kodPostotak, k.kodCijena].join('~') : '';
+        return k.url + '~' + k.naziv + popust;
+      }).join('|'));
       const KLJUC = 'mx_kartice_prikazano';
       const sad = Date.now();
       try {
@@ -1472,21 +1746,40 @@
         glava.appendChild(vrsta);
       }
 
+      // POPUST: precrtana je redovna cijena (ili trenutna, kad popust daje samo
+      // kod), ispod nje nova (s kodom, kad ga ima), a pečat pokazuje popust
       const nCijena = brojIz(k.cijena);
       const nStara = brojIz(k.stara);
-      const popust = (nCijena !== null && nStara !== null && nStara > nCijena) ? Math.round((1 - nCijena / nStara) * 100) : 0;
+      const naAkciji = nCijena !== null && nStara !== null && nStara > nCijena;
+      const kod = promoKod(k, brojCijene(k.cijena));
+      const sKodom = !!kod && kod.cijena !== null;
+      const prije = naAkciji ? nStara : (sKodom ? nCijena : null);
+      const sada = sKodom ? kod.cijena : nCijena;
+      const popust = prije ? Math.round((1 - sada / prije) * 100) : 0;
       const ec = elementCijene(k.cijena);
       if (ec) {
-        const cijene = el('div', 'mx-cijene');
-        cijene.appendChild(ec);
+        const cijene = el('div', popust >= 1 ? 'mx-cijene mx-cijene--popust' : 'mx-cijene');
         if (popust >= 1) {
-          const red = el('div', 'mx-popust-red');
+          const red = el('div', 'mx-snizenje');
+          const stup = el('div', 'mx-cijene-stup');
           const stara = el('s', 'mx-stara');
           stara.appendChild(el('span', 'mx-skriveno', 'Prije: '));
-          stara.appendChild(document.createTextNode(cijena(k.stara)));
-          red.appendChild(stara);
-          red.appendChild(el('span', 'mx-popust', '\u2212' + popust + '\u00a0%'));
+          stara.appendChild(document.createTextNode(cijena(naAkciji ? k.stara : k.cijena)));
+          stup.appendChild(stara);
+          const nova = el('span', 'mx-nova');
+          nova.appendChild(el('span', 'mx-skriveno', 'Sada: '));
+          nova.appendChild(document.createTextNode(sKodom ? EUR.format(kod.cijena) : cijena(k.cijena)));
+          stup.appendChild(nova);
+          if (sKodom) stup.appendChild(el('span', 'mx-uz-kod', P.tekstUzKod + ' ' + kod.tekst));
+          else if (kod) stup.appendChild(el('span', 'mx-uz-kod', natpisKoda(kod)));
+          stup.appendChild(el('span', 'mx-skriveno', ' (popust ' + popust + '\u00a0%)'));
+          red.appendChild(stup);
+          if (P.pecat) red.appendChild(pecat(popust));
           cijene.appendChild(red);
+        } else {
+          cijene.appendChild(ec);
+          // cijena nije broj (npr. "od 49 €"): kod se samo spomene ispod nje
+          if (kod) cijene.appendChild(el('span', 'mx-uz-kod', natpisKoda(kod)));
         }
         glava.appendChild(cijene);
       }
@@ -1548,7 +1841,8 @@
       }
       korijen.appendChild(magla);
       setTimeout(function () { magla.remove(); }, 2300);
-      setTimeout(function () { korijen.classList.remove('mx-pojava'); }, 140 + broj * 110 + 1150);
+      // pojava traje dok se ne utisne i zadnji pečat (crta, nova cijena, pečat)
+      setTimeout(function () { korijen.classList.remove('mx-pojava'); }, 140 + broj * 110 + 2500);
     }
 
     // ── PRIKAZI ──────────────────────────────────────────────────────────
