@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marti – proba: čekanje odgovora</title>
+  <style>
+    @font-face { font-family: "MX Jost"; src: url("../../fonts/jost-latin.woff2") format("woff2"); font-weight: 400 600; font-display: swap; unicode-range: U+0000-00FF, U+2000-206F, U+20AC; }
+    @font-face { font-family: "MX Jost"; src: url("../../fonts/jost-latin-ext.woff2") format("woff2"); font-weight: 400 600; font-display: swap; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF; }
+    @font-face { font-family: "MX Cormorant"; src: url("../../fonts/cormorant-garamond-latin.woff2") format("woff2"); font-weight: 500 700; font-display: swap; unicode-range: U+0000-00FF, U+2000-206F; }
+    html, body { margin: 0; min-height: 100%; background: #fff; font-family: Georgia, "Times New Roman", serif; color: #1b1b1d; }
+    .stranica { padding: 28px 24px; max-width: 520px; }
+    @media (min-width: 769px) { .stranica { max-width: min(520px, calc(100vw - 500px)); } }   /* lijevo od prozora chata */
+    h1 { margin: 0 0 8px; font-weight: 400; }
+    p { line-height: 1.5; }
+    .gumbi { display: flex; flex-wrap: wrap; gap: 8px; font-family: Arial, sans-serif; font-size: 14px; }
+    .gumbi button { padding: 8px 14px; border: 1px solid #1b1b1d; border-radius: 999px; background: #fff; color: #1b1b1d; font: inherit; cursor: pointer; }
+    .gumbi button:hover { background: #1b1b1d; color: #fff; }
+    .gumbi a { padding: 8px 14px; color: #1b1b1d; }
+  </style>
+</head>
+<body>
+  <!--
+    Proba animacije čekanja odgovora (cekanje-odgovora.js) bez Voiceflowa:
+    stranica glumi Voiceflowov prozor chata (#voiceflow-chat sa shadow rootom
+    i oblačićem s točkicama .vfrc-typing-indicator, kao kad je u Voiceflowu
+    za "Response loader" odabrano "Dots"), u izgledu pokusa "Jedan ekran".
+    Odgovori su izmišljeni (samo za izgled).
+      proba.html                 → Marti razmišlja 5 s (vidi se i natpis)
+      proba.html?trajanje=1      → kratko razmišljanje (samo perlice)
+      proba.html?izgled=voiceflow → Voiceflowov zadani izgled oblačića (sivi), za usporedbu
+      proba.html?ponavljaj=1     → pitanje i odgovor se sami ponavljaju
+  -->
+  <div class="stranica">
+    <h1>Proba: dok Marti smišlja odgovor</h1>
+    <p>Ova stranica glumi chat s Marti. Pošaljite pitanje i pogledajte animaciju dok Marti „razmišlja”; ako potraje, pojavi se natpis.</p>
+    <div class="gumbi">
+      <button type="button" data-trajanje="5">Pitanje (Marti razmišlja 5 s)</button>
+      <button type="button" data-trajanje="1">Pitanje (1 s)</button>
+      <a href="?izgled=voiceflow" id="izgled">Voiceflowov izgled</a>
+    </div>
+  </div>
+  <div id="voiceflow-chat"></div>
+  <script>
+  (function () {
+    var q = new URLSearchParams(location.search);
+    var voiceflow = q.get('izgled') === 'voiceflow';
+    if (voiceflow) { var a = document.getElementById('izgled'); a.textContent = 'Izgled „Jedan ekran”'; a.href = '?'; }
+    var host = document.getElementById('voiceflow-chat');
+    var root = host.attachShadow({ mode: 'open' });
+    var AVATAR = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="32" cy="32" r="32" fill="#000"/><text x="32" y="43" font-family="Georgia,serif" font-size="30" font-weight="700" fill="#fff" text-anchor="middle">M</text></svg>');
+
+    // Voiceflowov zadani izgled (prozor, poruke, oblačić s točkicama)
+    var osnovno =
+      '.vfrc-widget{font-family:"UCity Pro","Open Sans",Arial,sans-serif;color:#1a1e23}' +
+      '.vfrc-chat{position:fixed;right:20px;bottom:20px;width:400px;height:min(640px,calc(100vh - 40px));display:flex;flex-direction:column;overflow:hidden;border-radius:16px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 8px 80px rgba(0,0,0,.18)}' +
+      // na mobitelu je prozor ispod gumba probe (inače bi ih prekrio)
+      '@media (max-width:768px){.vfrc-chat{position:relative;right:auto;bottom:auto;width:auto;height:520px;margin:0 12px 24px}}' +
+      '.vfrc-header{display:flex;align-items:center;justify-content:center;flex:none;height:56px;background:#000;color:#fff;font-weight:600}' +
+      '.vfrc-chat-dialog__container{flex:1 1 auto;overflow-y:auto;padding:8px 20px 24px}' +
+      '.vfrc-system-response{display:flex;align-items:flex-end;margin:16px 0 0}' +
+      '.vfrc-avatar{flex:none;width:32px;height:32px;border-radius:50%}' +
+      '.vfrc-system-response>.vfrc-avatar{margin-right:12px}' +
+      '.vfrc-message{background:#f1f2f2;border-radius:10px;font-size:14px;line-height:20px;max-width:100%}' +
+      '.vfrc-message .markdown{padding:10px 14px}.vfrc-message p{margin:0}' +
+      '.vfrc-user-response{display:flex;justify-content:flex-end;margin:16px 0}' +
+      '.vfrc-user-response>div{background:#000;color:#fff;border-radius:10px;padding:10px 14px;max-width:80%;font-size:14px;line-height:20px}' +
+      // oblačić s točkicama: spojeno ono što ima Voiceflow (visina 41 px) i probni prozor iz pokusa "Jedan ekran" (razmak)
+      '.vfrc-typing-indicator--container{display:flex;align-items:center;gap:12px;margin:16px 0 0}' +
+      '.vfrc-typing-indicator--container-inner{display:flex;align-items:center;justify-content:center;min-width:64px;height:41px;padding:14px 16px;box-sizing:border-box;border-radius:10px;background:#f1f2f2}' +
+      '.vfrc-typing-indicator{display:inline-flex;gap:5px}' +
+      '.vfrc-typing-indicator>span{width:7px;height:7px;border-radius:50%;background:#9aa1a3;animation:vf-tocka 1s infinite}' +
+      '.vfrc-typing-indicator>span:nth-child(2){animation-delay:.33s}.vfrc-typing-indicator>span:nth-child(3){animation-delay:.66s}' +
+      '@keyframes vf-tocka{25%{background-color:#6e797b;scale:1.2}50%{scale:1;background-color:#9aa1a3}}';
+
+    // izgled iz pokusa "Jedan ekran" (jedan-ekran.js): topla bjelokost, bijele kartice, tinta
+    var W = ':host .vfrc-widget';
+    var jedanEkran =
+      W + ' .vfrc-chat{background:#f7f3ef;color:#1c1715;font-family:"MX Jost",Futura,"Avenir Next",Arial,sans-serif;-webkit-font-smoothing:antialiased}' +
+      W + ' .vfrc-header{position:relative;flex-direction:column;height:56px;background:#0e0c0b}' +
+      W + ' .vfrc-header b{font:500 17px/1 "MX Cormorant",Garamond,Georgia,serif;letter-spacing:.36em;padding-left:.36em;color:#f3e5de;margin-top:-4px}' +
+      W + ' .vfrc-header small{margin-top:7px;font-size:10px;font-weight:400;line-height:10px;letter-spacing:.32em;padding-left:.32em;text-transform:uppercase;color:#e2c3ba}' +
+      W + ' .vfrc-system-response>.vfrc-avatar{background-color:#0e0c0b;box-shadow:0 0 0 1px rgba(60,40,30,.06),0 6px 14px -8px rgba(30,20,14,.55)}' +
+      W + ' .vfrc-message{background:#fffdfb;color:#1c1715;border-radius:18px 18px 18px 6px;box-shadow:0 0 0 1px rgba(60,40,30,.05),0 10px 26px -16px rgba(60,40,30,.32),0 2px 5px -3px rgba(60,40,30,.12);font-size:14.5px;line-height:1.58;letter-spacing:.005em;animation:mx-j-pojava .6s cubic-bezier(.16,1,.3,1) backwards}' +
+      '@keyframes mx-j-pojava{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}' +
+      '@keyframes mx-j-pojava-desno{from{opacity:0;transform:translate(6px,6px)}to{opacity:1;transform:none}}' +
+      W + ' .vfrc-message>.markdown{padding:12px 16px}' +
+      W + ' .vfrc-message strong{font-weight:500}' +
+      W + ' .vfrc-user-response>div{background:#1c1715;color:#f3e5de;border-radius:18px 18px 6px 18px;padding:11px 16px;box-shadow:0 10px 22px -14px rgba(20,14,10,.6);font-size:14.5px;line-height:1.5;animation:mx-j-pojava-desno .5s cubic-bezier(.16,1,.3,1) backwards}' +
+      // kao u jedan-ekran.js: oblačić s točkicama je bijela kartica, a točkice su tople (modul ih zamijeni)
+      W + ' div:has(> .vfrc-typing-indicator){background:#fffdfb;border-radius:18px 18px 18px 6px;box-shadow:0 0 0 1px rgba(60,40,30,.05),0 10px 26px -16px rgba(60,40,30,.32),0 2px 5px -3px rgba(60,40,30,.12)}' +
+      W + ' .vfrc-typing-indicator>span{background-color:rgba(28,23,21,.55);animation-name:mx-j-tocka}' +
+      '@keyframes mx-j-tocka{0%,60%,100%{opacity:.3;transform:scale(.85)}25%{opacity:1;transform:scale(1.1)}}';
+
+    root.innerHTML =
+      '<style>' + osnovno + (voiceflow ? '' : jedanEkran) + '</style>' +
+      '<div class="vfrc-widget"><div class="vfrc-chat">' +
+        '<div class="vfrc-header">' + (voiceflow ? 'Vaš AI beauty asistent' : '<b>MARTIMEX</b><small>Marti · AI asistentica</small>') + '</div>' +
+        '<div class="vfrc-chat-dialog__container"><div class="vfrc-chat-dialog"></div></div>' +
+      '</div></div>';
+
+    var dijalog = root.querySelector('.vfrc-chat-dialog');
+    var spremnik = root.querySelector('.vfrc-chat-dialog__container');
+    function dodaj(html) {
+      var d = document.createElement('div');
+      d.innerHTML = html;
+      var e = d.firstChild;
+      dijalog.appendChild(e);
+      spremnik.scrollTop = spremnik.scrollHeight;
+      return e;
+    }
+    function marti(tekst) {
+      dodaj('<div class="vfrc-system-response"><img class="vfrc-avatar" src="' + AVATAR + '" alt=""><div class="vfrc-message"><div class="markdown"><p>' + tekst + '</p></div></div></div>');
+    }
+    function kupac(tekst) { dodaj('<div class="vfrc-user-response"><div>' + tekst + '</div></div>'); }
+    function tipka() {
+      return dodaj('<div class="vfrc-typing-indicator--container"><img class="vfrc-avatar" src="' + AVATAR + '" alt=""><div class="vfrc-typing-indicator--container-inner"><span class="vfrc-typing-indicator"><span></span><span></span><span></span></span></div></div>');
+    }
+
+    var PITANJA = ['koliko traje dostava', 'imate li poklon pakiranje?', 'koji je najpopularniji muški miris?'];
+    var redni = 0, zauzeto = false;
+    function pitaj(sekunde, gotovo) {
+      if (zauzeto) return;
+      zauzeto = true;
+      kupac(PITANJA[redni++ % PITANJA.length]);
+      var t = tipka();
+      setTimeout(function () {
+        t.remove();
+        marti('Ovdje stiže Martin odgovor. <em>(U probi je tekst izmišljen.)</em>');
+        zauzeto = false;
+        if (gotovo) gotovo();
+      }, sekunde * 1000);
+    }
+
+    marti('Ako želite, izbor mogu dodatno suziti prema tome želite li <strong>slađi, elegantniji ili izrazito dominantan</strong> miris.');
+
+    document.querySelectorAll('[data-trajanje]').forEach(function (b) {
+      b.addEventListener('click', function () { pitaj(+b.getAttribute('data-trajanje')); });
+    });
+
+    var s = document.createElement('script');
+    s.src = '../../cekanje-odgovora.js?v=' + Date.now();
+    s.onload = function () {
+      var trajanje = +q.get('trajanje') || 5;
+      if (q.get('ponavljaj') === '1') {
+        (function krug() { pitaj(trajanje, function () { setTimeout(krug, 2500); }); })();
+      } else {
+        setTimeout(function () { pitaj(trajanje); }, 400);
+      }
+    };
+    document.head.appendChild(s);
+  })();
+  </script>
+</body>
+</html>

@@ -13,10 +13,21 @@
 
   // Skripte koje se učitavaju prije pokretanja chata – jedno ime po retku.
   // Redak koji počinje s # se preskače (tako privremeno isključiš modul).
+  // jedan-ekran.js je novi izgled "Jedan ekran" (chat bez početnog ekrana;
+  // vidi se na testnoj stranici proba.html). Kad se odobri za martimex.hr:
+  // makne se # ispred jedan-ekran.js, a stavi # ispred pocetna-chata.js. Da
+  // se vide i perlice iz cekanje-odgovora.js, u Voiceflowu projekta s
+  // webshopa za prikaz čekanja odgovora odabere se "dots" (pa Publish).
+  // tema-chata.js je novi izgled chata "Calacatta" (bijeli i crni mramor
+  // sa zlatom; proba: proba-staklo.html); kad se odobri, makne se # ispred
+  // njega i izgled vrijedi na martimex.hr.
   var MODULI = `
     kartica-artikla.js
     gumb-chata.js
+    cekanje-odgovora.js
     pocetna-chata.js
+    # jedan-ekran.js
+    # tema-chata.js
   `;
 
   // Ostale Voiceflow postavke koje želiš dodati s GitHuba (za sada ništa).

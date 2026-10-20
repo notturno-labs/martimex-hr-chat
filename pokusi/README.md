@@ -4,6 +4,37 @@ Ovdje su probne verzije animacije, da se vidi kako bi izgledale prije nego išta
 chat. `pocetna-chata.js` (prava animacija) **nije mijenjan**, a ništa iz ove mape se ne učitava
 na martimex.hr (`loader.js` učitava samo module iz popisa `MODULI`).
 
+## Čekanje odgovora — perlice na niti (`cekanje/`)
+
+Nije pokus početnog ekrana, nego proba modula `cekanje-odgovora.js` (uključen je u `loader.js`):
+animacija koja se u chatu vidi dok Marti smišlja odgovor, umjesto Voiceflowovih sivih točkica.
+
+- Tri sjajne crne perlice (s mekom sjenom) leže na tankoj niti od točkica boje ružičastog zlata (kao
+  niti od kojih je satkan flakon u zaglavlju). Oblačić meko izroni kao Martine poruke, nit se iscrta
+  slijeva nadesno, a perlice jedna za drugom sjednu na nju (nit pod svakom malo popusti, kao svila).
+  Zatim se nit polako njiše, val putuje slijeva nadesno, pa se perlice dižu i spuštaju jedna za drugom
+  (kao „tipkanje”); s vrhom vala putuje meko zlatno svjetlo.
+- Ako odgovor potraje dulje od 1,5 s, oblačić se glatko proširi i iz blage izmaglice se pojavi natpis
+  „Trenutak, molim…”; svjetlo koje stigne do kraja niti prijeđe i preko natpisa. Između dviju Martinih
+  poruka zaredom (Voiceflow tada nakratko pokaže isti oblačić) vide se samo perlice.
+- Kad stigne odgovor, oblačić ne nestane naglo: perlice se rasplinu u mali oblak izmaglice, natpis se
+  zamuti, a oblačić izblijedi dok se na njegovu mjestu pojavljuje odgovor.
+- Crta se točno prema vremenu (glatko pri svakoj brzini zaslona), u barem dvostrukoj razlučivosti, i
+  samo dok je oblačić u chatu.
+- Boju i oblik oblačića daje izgled chata (u „Jednom ekranu” bijela kartica, u Voiceflowovu izgledu
+  siva); modul mijenja samo ono unutra i visinu oblačića. „Smanji pokrete”: ravna nit, mirne perlice,
+  natpis odmah i bez odsjaja.
+- **Voiceflow:** prikaz dok agent priprema odgovor mora biti „točkice” (u postavkama widgeta; u API-ju
+  `chat.responseLoader: { type: 'dots' }`). Sada je u oba projekta (webshop i proba) odabran spinner s
+  tekstom (`type: 'spinner-with-text'`, „Trenutak, molim...”); uz njega modul ne radi ništa i ostaje
+  Voiceflowov spinner. Tekst natpisa se zato upisuje u postavke modula (`natpis`).
+- Postavke su na vrhu `cekanje-odgovora.js`: boje, natpis i nakon koliko sekundi se pojavi, brzina
+  vala, iskre.
+- Proba bez Voiceflowa: `cekanje/proba.html` (glumi Voiceflowov prozor u izgledu „Jedan ekran”;
+  `?trajanje=1` kratko čekanje, `?izgled=voiceflow` Voiceflowov sivi oblačić, `?ponavljaj=1` pitanje i
+  odgovor se sami ponavljaju). Kad je na grani `main`, i na GitHub Pages:
+  `https://notturno-labs.github.io/martimex-hr-chat/pokusi/cekanje/proba.html`.
+
 ## Saturn — prsten bočica oko flakona (`saturn/`)
 
 Xerjoff flakon u sredini, a oko njega se kao Saturnov prsten vrti dvanaest malih bočica.
@@ -224,13 +255,92 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
 - Gradnja traje oko 2 s na računalu (grubi i točni prolaz brojanja, pa gradnja), u malim koracima,
   pa se prizor pokaže kad je gotov. Konzola ispiše broj točkica i razmak niti.
 
+## Jedan ekran — chat bez početnog ekrana (`jedan-ekran.js`, probe u `jedan-ekran/`)
+
+Novi raspored: nema početnog ekrana ni gumba „Početak”. Kad se chat otvori, razgovor je odmah tu
+(pozdrav, ponuđeni odgovori i polje za poruku), a vrh prozora je mala tamna pozornica s flakonom. Ne
+ide uz `pocetna-chata.js` ni `tema-chata.js` (to je drugi izgled).
+
+**Gdje se vidi:** na testnoj stranici `proba.html` s vrha repozitorija (grana `main`:
+`https://notturno-labs.github.io/martimex-hr-chat/proba.html`), s perlicama dok Marti priprema
+odgovor i karticom artikla s popustom (`?popust=1` doda probne popuste). Na martimex.hr se ne
+učitava: kad se odobri, u `loader.js` se makne # ispred `jedan-ekran.js` i stavi ispred
+`pocetna-chata.js` (upute su u `loader.js`).
+
+- `jedan-ekran.js` (vrh repozitorija, uz ostale module): cijeli izgled i pozornica u jednom modulu
+  (stil u shadow DOM-u, kao ostali moduli; u prozor umeće samo pozornicu, ispod Voiceflowova
+  zaglavlja). Postavke na vrhu: boje, tekstovi, visina pozornice, flakon (pojava, brzina, odsjaj,
+  broj točkica).
+- Izgled:
+  - gore topla crna traka s natpisom MARTIMEX (Cormorant Garamond) i tankim ikonama (novi razgovor, X)
+  - pozornica u istoj boji: Xerjoff flakon s dosadašnjeg početnog ekrana (oblik, mjere i boje prepisani
+    iz `pocetna-chata.js`: fasetirano staklo s medenom tekućinom, zlatni prsten, zlatni čep sa šiljkom,
+    zlatna pločica sa znakom X), od točkica u nitima, s toplom svijetlom aurom iza sebe; ispod njega
+    „Marti · AI asistentica”. Flakon je jednako udaljen od natpisa MARTIMEX iznad i tog natpisa ispod
+    sebe, a kad se složi, prednja strana s pločicom okrenuta je udesno
+  - razgovor na toploj bjelokosti bez teksture: Martine poruke su bijele kartice, kupčeve tamne,
+    ponuđeni odgovori pilule s tankim tamnim obrubom (pod mišem ili prstom se ispune), polje za
+    poruku bijela kapsula; ploča „Započni novi razgovor / Odustani” je bijela, odozdo
+- Animacija: pri svakom otvaranju chata izmaglica iznad flakona se spusti i slegne u staklo (odozdo
+  prema gore, čep zadnji, oko 2,4 s); flakon se zatim samo vrlo polako okreće (krug za oko 21 s), svakih
+  7 s preko stakla ukoso prijeđe svjetlo, na računalu se lagano nagne prema mišu. Bez WebGL-a je tanki
+  obris istog flakona (s pločicom i znakom X).
+- Kad kupac pošalje prvu poruku ili pritisne ponuđeni odgovor, točkice se rasprše kao izmaglica, a
+  pozornica se u 0,9 s sklopi; „Marti · AI asistentica” sjedne u traku ispod natpisa MARTIMEX. Na niskom
+  prozoru (mobitel) pozornica se sklopi već kad kupac dotakne polje za poruku. Novi razgovor (gumb gore)
+  vrati pozornicu; postojeći razgovor (npr. nakon prelaska na stranicu proizvoda) se otvori sklopljen.
+- Razgovor u Voiceflowu kreće tek otvaranjem chata (autostart je isključen, modul pritisne Voiceflowov
+  skriveni gumb za početak), kao i dosad s „Početak”: samo učitavanje stranice ne troši ništa.
+- „Smanji pokrete”: flakon stoji, pozornica se sklopi bez animacije.
+- Kad razgovor završi, gumb „Započni novi razgovor” je na jednoj bijeloj ploči uz dno prozora,
+  zaobljenoj gore (kao ploča „Novi razgovor?”); donje kutove zaobli prozor.
+- Dok Marti priprema odgovor, oblačić je bijela kartica, a u njoj su perlice na niti iz
+  `cekanje-odgovora.js` (vidi gore; vide se jer je u Voiceflowu probnog projekta za prikaz čekanja
+  odgovora odabrano „dots”).
+- Testna stranica `proba.html` (vrh repozitorija): `?popust=1` probni popusti na karticama,
+  `?izgled=dosadasnji` dosadašnji izgled s početnim ekranom za usporedbu.
+- Proba s pravim Voiceflowom i s kodom s bilo koje grane: `jedan-ekran/proba.html` (učitava
+  `loader.js` i module iz iste grane; `?izgled=calacatta` je dosadašnja proba za usporedbu,
+  `?popust=1` probni popusti). Bez Voiceflowa i interneta: `jedan-ekran/mock.html` (glumi
+  Voiceflowov prozor i učita i perlice; `?razgovor=1` postojeći razgovor, `?klik=3` sam pritisne
+  ponuđeni odgovor, `?kraj=1` završen razgovor, `?tipka=6` Marti „tipka” 6 s).
+
+## Akcija i promo kod na kartici artikla (`akcija/`)
+
+Popust uz cijenu je u pravoj kartici, `kartica-artikla.js` (v31 = v30 + popust; uputa:
+`akcija/PREDAJA-popust.md`). Isti `ext_product_card` i isti payload; nova polja su neobavezna, a
+kartica bez popusta izgleda točno kao v30.
+
+- Payload (sve neobavezno, ostalo isto kao dosad):
+  - `oldPrice` → akcija
+  - `promo: { code: "MRTMX", percent: 30, validUntil: "2026-10-31" }` → promo kod; umjesto
+    `percent` može `price` (cijena s kodom). Isto kao ravna polja: `promoCode`, `promoPercent`,
+    `promoPrice`, `promoValidUntil`. Kad je `validUntil` prošao, kod se ne prikazuje.
+- Što se vidi:
+  - akcija: preko stare cijene je „perom” povučena tanka kosa crta, ispod je nova cijena (malo veća
+    i tamnija), a desno od njih roza voštani pečat s postotkom (−20 %)
+  - promo kod: precrtana je trenutna cijena, nova je cijena s kodom, ispod nje diskretno piše
+    „uz kod MRTMX”, a pečat pokazuje −30 %
+  - akcija + kod: precrtana je redovna cijena, nova je cijena nakon akcije i koda, ispod nje
+    „uz kod MRTMX”, a pečat pokazuje ukupni popust
+  - pojava: kad poruka stigne, pero precrta staru cijenu (s lijeva na desno), ispod izroni nova, a
+    pečat se utisne i od njega se raširi tanki val; uz „Smanji pokrete” sve je odmah na mjestu
+- Postavke su u `MX_POSTAVKE`: boje `vosak` i `akcija`, `pecat` (pečat da/ne) i `tekstUzKod`.
+- Proba bez Voiceflowa: `akcija/akcija.html` (glumi prozor chata s pet artikala: akcija, promo kod,
+  akcija + kod, bez popusta i kod zadan ravnim poljima; „Ponovi pojavu” ponovno pokrene animaciju).
+  `akcija/slike/`: nacrtane bočice na bijeloj pozadini.
+- Proba u pravom chatu: `proba.html?popust=1` s vrha repozitorija ili `jedan-ekran/proba.html?popust=1`
+  (stranica sama dodaje probne popuste preporukama: 1. kartica kod MRTMX −30 %, 2. akcija,
+  3. akcija + kod).
+- Da bi se popust vidio na webshopu, funkcija u Voiceflowu mora početi slati `oldPrice` i/ili `promo`.
+
 ## Pregled i snimanje
 
 - `proba.html` glumi Voiceflowov prozor chata, pa se početni ekran vidi kao u pravom chatu:
   `proba.html?skripta=saturn/pocetna-chata-saturn.js`, `proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
   (ili `?skripta=../pocetna-chata.js` za sadašnju animaciju). „Kap esencije” (I i II), „Izron”, „Veo” i
   „Naxos” se otvaraju izravno: `kap/kap.html`, `kap2/kap2.html`, `izron/izron.html`, `veo/veo.html`,
-  `naxos/naxos.html`.
+  `naxos/naxos.html`. Kartica s akcijom i promo kodom: `akcija/akcija.html`.
 - Kad je ova mapa na grani `main`, vidi se i na GitHub Pages:
   `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=saturn/pocetna-chata-saturn.js`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/proba.html?skripta=stvarno/pocetna-chata-stvarno.js`
@@ -238,7 +348,8 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/kap2/kap2.html`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/izron/izron.html`
   , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/veo/veo.html`
-  i `https://notturno-labs.github.io/martimex-hr-chat/pokusi/naxos/naxos.html`.
+  , `https://notturno-labs.github.io/martimex-hr-chat/pokusi/naxos/naxos.html`
+  i `https://notturno-labs.github.io/martimex-hr-chat/pokusi/akcija/akcija.html`.
 - `snimi.js` snima video sličicu po sličicu (vrijeme animacije teče točno 1/fps po sličici, pa je
   video gladak i na sporom računalu). Treba ffmpeg i Playwright (Chromium sa SwiftShaderom,
   nikad `playwright install`). Iz mape `pokusi/`:

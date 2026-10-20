@@ -69,6 +69,20 @@
   //     širi od poziva
   //   - na računalu se objekt lagano nagne prema mišu
   //
+  //  Način "samo flakon" (postavka samoFlakon; zadano isključen, pa je
+  //  bez njega sve kao gore): na početnom ekranu je samo Xerjoff flakon.
+  //  Točkice se iz izmaglice skupe ravno u flakon (staklo se puni odozdo,
+  //  čep zadnji), a flakon zatim stoji u sredini i jednoliko se polako
+  //  okreće bez kraja; povremeno niz staklo prijeđe odsjaj, a na računalu se
+  //  nagne prema mišu. Nema AI objekta, prizora Naxos, logotipa, Penhaligon's
+  //  bočica ni natpisa MARTIMEX od točkica, i ništa od toga se ne učitava ni
+  //  ne računa (ni font natpisa se ne čeka). Ostatak ekrana je isti
+  //  (zaglavlje, naslov, crta, opis, "POČETAK", raspršivanje točkica).
+  //  "Smanji pokrete": flakon miruje. Uključuje ga izgled chata (tema-chata.js)
+  //  izvana, objektom window.MartimexPocetna = { samoFlakon: true, ... },
+  //  koji se pročita kad se početni ekran gradi (vidi IZVANA niže); sloj
+  //  početnog ekrana tada dobije klasu mx-p-samo-flakon
+  //
   //  Početni ekran se prikaže pri prvom otvaranju chata nakon svakog
   //  učitavanja stranice. Ako razgovor već postoji (npr. korisnik je s
   //  preporuke otišao na stranicu proizvoda), "Početak" samo otkrije taj
@@ -197,6 +211,14 @@
 
     nagibPremaMisu: true,     // na računalu se objekt lagano nagne prema mišu
 
+    // Način "samo flakon": umjesto cijelog kruga samo Xerjoff flakon koji se
+    // polako okreće (vidi opis na vrhu). Zadano isključeno; izgled chata ga
+    // uključuje izvana (window.MartimexPocetna, vidi IZVANA niže)
+    samoFlakon: false,
+    samoFlakonPojava: 2.6,    // s: točkice se iz izmaglice skupe u flakon (staklo odozdo, čep zadnji)
+    samoFlakonBrzina: 0.42,   // rad/s: okretanje flakona (u krugu je 0,55, tj. okret za 11,4 s; 0,42 → 15 s)
+    samoFlakonOdsjaj: 7.5,    // s: svakih toliko niz staklo prijeđe odsjaj (0 = bez odsjaja)
+
     // Veličina animacije: 1 = prema dizajnu (oblici ispune prostor 345 × 393 px),
     // 1.09 = 9 % veća (oblici malo izađu iz tog prostora, što se ne vidi)
     velicinaAnimacije: 1.09,
@@ -255,6 +277,36 @@
     function glatko(x) { x = sat(x); return x * x * (3 - 2 * x); }
     function lerp(a, b, t) { return a + (b - a) * t; }
     function sekunde(v, zadano, min) { v = +v; return isFinite(v) && v >= min ? v : zadano; }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  IZVANA — postavke koje daje izgled chata (tema-chata.js)
+    //
+    //  window.MartimexPocetna = { samoFlakon: true, samoFlakonBrzina: 0.4, ... }
+    //  Vrijede samo ključevi iz IZVANA_KLJUCEVI (isti nazivi i značenje kao u
+    //  POSTAVKAMA); ostale postavke se izvana ne mijenjaju (stil i shader se
+    //  slažu pri učitavanju ovog modula). Pročita se tek kad se početni ekran
+    //  gradi (kad se pojavi Voiceflowov prozor chata), a ne pri učitavanju
+    //  modula: tema se izvrši nakon ovog modula, ali prije nego Voiceflow
+    //  nacrta prozor. Vraća null (cijeli krug) ili postavke načina samo flakon.
+    // ═══════════════════════════════════════════════════════════════════
+    const IZVANA_KLJUCEVI = ['samoFlakon', 'samoFlakonPojava', 'samoFlakonBrzina', 'samoFlakonOdsjaj'];
+    function nacinFlakona() {
+      const v = {};
+      IZVANA_KLJUCEVI.forEach(function (k) { v[k] = P[k]; });
+      let izvana = null;
+      try { izvana = window.MartimexPocetna; } catch (e) { /* nema */ }
+      if (izvana && typeof izvana === 'object') {
+        IZVANA_KLJUCEVI.forEach(function (k) { if (izvana[k] !== undefined) v[k] = izvana[k]; });
+      }
+      if (!v.samoFlakon) return null;
+      const brzina = +v.samoFlakonBrzina, odsjaj = sekunde(v.samoFlakonOdsjaj, 7.5, 0);
+      return {
+        pojava: sekunde(v.samoFlakonPojava, 2.6, 0.3),
+        brzina: isFinite(brzina) ? Math.max(-3, Math.min(3, brzina)) : 0.42,
+        odsjaj: odsjaj > 0 ? Math.max(3, odsjaj) : 0      // odsjaj traje oko 2,6 s
+      };
+    }
 
 
     // ═══════════════════════════════════════════════════════════════════
@@ -931,10 +983,32 @@
       });
     }
 
-    // Oblici se računaju jednom (i čekaju font natpisa, najviše 2,5 s)
-    let OBLICI = null;
-    function pripremiOblike() {
-      if (OBLICI) return OBLICI;
+    // Oblici se računaju jednom (i čekaju font natpisa, najviše 2,5 s). U
+    // načinu samo flakon (samo = true) natpis se ne slaže i font se ne čeka:
+    // umjesto natpisa je spljoštena kugla (rezervniNatpis), koja se ne vidi
+    let OBLICI = null, OBLICI_SAMO = false;
+    function pripremiOblike(samo) {
+      samo = !!samo;
+      if (OBLICI && OBLICI_SAMO === samo) return OBLICI;
+      OBLICI_SAMO = samo;
+      if (samo) {
+        const s = { n: Math.max(2000, Math.round(+(MOBITEL ? P.tocakaMobitel : P.tocaka) || 16000)), rnd: slucajno(20251) };
+        OBLICI = pauza().then(function () {
+          s.kug = kugla(s.n);
+          s.nat = rezervniNatpis(s.kug.poz, s.n);
+          return pauza();
+        }).then(function () {
+          return poKoracima(flakon(s.n));
+        }).then(function (fla) {
+          s.fla = fla;
+          return pauza();
+        }).then(function () {
+          return poKoracima(spoji(s.kug, s.fla, s.nat, s.n, s.rnd));
+        }).then(function (sp) {
+          return { podaci: sp.podaci, redX: sp.redX, n: s.n, pola: s.nat.pola, slova: s.nat.slova, sredine: s.nat.sredine };
+        });
+        return OBLICI;
+      }
       const font = document.fonts && document.fonts.load
         ? Promise.race([
             document.fonts.load(TEZINA_NATPISA + ' 100px ' + P.fontNatpisa, P.natpis).catch(function () {}),
@@ -1501,6 +1575,7 @@
       uniform vec3 uPenDolje[5];   // ... i pri dnu
       uniform float uProg;     // napredak prijelaza (0 = oblik miruje)
       uniform float uIntro;    // pojava (0..1)
+      uniform float uUvodFlakon;   // 1: način samo flakon (pojava ravno u flakon, staklo odozdo, čep zadnji)
       uniform float uExit;     // raspršivanje nakon "Početak" (0..1)
       uniform mat3 uRotA;      // okret oblika iz kojeg točkice kreću
       uniform mat3 uRotB;      // okret oblika u koji idu
@@ -2066,9 +2141,12 @@
           }
         }
 
-        // pojava: točkice doplove iz izmaglice u vrtlogu
+        // pojava: točkice doplove iz izmaglice u vrtlogu (u načinu samo flakon
+        // redom kao u prijelazu u flakon: staklo se puni odozdo, čep zadnji)
         if (uIntro < 1.0) {
-          float ki = clamp(uIntro * 1.6 - aRnd.y * 0.6, 0.0, 1.0);
+          float redU = aRnd.y;
+          if (uUvodFlakon > 0.5) redU = 0.75 * clamp((aFla.y + 0.86) / 1.76, 0.0, 1.0) + 0.25 * aRnd.x;
+          float ki = clamp(uIntro * 1.6 - redU * 0.6, 0.0, 1.0);
           ki = 1.0 - pow(1.0 - ki, 3.0);
           vec3 izvor = normalize(vec3(aRnd.z, aRnd.w, aRnd.x) - 0.5 + 0.001) * (1.5 + 1.3 * aRnd.y);
           izvor.xz = okreni(izvor.xz, (1.0 - ki) * 2.4);
@@ -2136,7 +2214,7 @@
     const UNIFORME = ['uTime', 'uOd', 'uDo', 'uProg', 'uIntro', 'uExit', 'uRotA', 'uRotB', 'uPx', 'uCenter', 'uSize',
       'uSweep', 'uAlpha', 'uTxt', 'uSilver', 'uPowder', 'uGold', 'uSredina',
       'uMar', 'uPenKut', 'uAlphaPen', 'uPenGore', 'uPenDolje', 'uPenMjesto', 'uPenGlava', 'uSloj',
-      'uAlphaNax', 'uNaxA', 'uCam'];
+      'uAlphaNax', 'uNaxA', 'uCam', 'uUvodFlakon'];
     const ATRIBUTI = [['aSph', 3, 0], ['aTxt', 3, 3], ['aRnd', 4, 6], ['aFla', 4, 10], ['aFlaN', 3, 14]];
     // jačina točkica (objekt, flakon, natpis) uz 26 000 točkica na računalu i
     // 16 000 na mobitelu; uz više točkica prva dva se smanje s gustoca^-0,65
@@ -2179,6 +2257,8 @@
     //  stranica je stranica logotipa na ekranu (0 .. broj stranica − 1; dok
     //  se zid pomiče, decimalni broj).
     // ═══════════════════════════════════════════════════════════════════
+    const NAGIB = 0.08;                      // flakon i bočice malo nagnuti prema nama
+    const KUT_FLAKONA = -0.3;                // flakon nastane malo okrenut ulijevo, gledano od nas (oko 17°)
     function napraviTijek(imaMarke, imaPen, brojStranica, imaNaxos, naxosNagib) {
       const pojava = sekunde(T.pojava, 1.6, 0.3);
       const D = sekunde(T.prijelaz, 2.4, 0.6);
@@ -2188,8 +2268,6 @@
       const DX = sekunde(T.nastanakNaxosa, 4.4, 0.8);
       const DRX = sekunde(T.rastapanjeNaxosa, 3.4, 0.8);
       const wO = 0.4, wF = 0.55, wP = 0.05;  // kutne brzine objekta, flakona i Penhaligon bočica (rad/s; bočice se samo lagano okreću)
-      const NAGIB = 0.08;                    // flakon i bočice malo nagnuti prema nama
-      const KUT_FLAKONA = -0.3;              // flakon nastane malo okrenut ulijevo, gledano od nas (oko 17°)
       // [oblik, mirovanje]
       const KRUG = [
         ['objekt', sekunde(T.objekt, 3.4, 0.5)],
@@ -2309,6 +2387,27 @@
       return Math.min(a.L, b.L);
     }
 
+    // Način samo flakon (sf iz nacinFlakona): točkice se iz izmaglice skupe u
+    // flakon (pojava; uUvodFlakon: staklo se puni odozdo, čep zadnji), a
+    // flakon se zatim jednoliko okreće bez kraja (i dok nastaje, pa nema
+    // trzaja); prvi odsjaj prijeđe niz staklo pola sekunde nakon pojave, pa
+    // svakih sf.odsjaj s. Isti oblik stanja kao napraviTijek().stanje
+    function napraviTijekFlakona(sf) {
+      return {
+        pojava: sf.pojava,
+        stanje: function (t) {
+          const st = { od: OBLIK.flakon, do: OBLIK.flakon, prog: 0, uvod: 1, A: null, B: null, odsjaj: 99, sjaj: 99, podnaslov: false, penKut: 0, stranica: 0 };
+          st.A = st.B = [KUT_FLAKONA + sf.brzina * (t - sf.pojava), NAGIB, 0];
+          if (t < sf.pojava) st.uvod = t / sf.pojava;
+          else if (sf.odsjaj > 0) {
+            const c = (t - sf.pojava) % sf.odsjaj;
+            if (c < 2.8) st.odsjaj = lerp(1.15, -1.25, (c - 0.5) / 1.7);   // kao u krugu (vidi stanje)
+          }
+          return st;
+        }
+      };
+    }
+
 
     // ═══════════════════════════════════════════════════════════════════
     //  ANIMACIJA — WebGL platno koje crta točkice
@@ -2321,6 +2420,8 @@
       let spremnikMar = null, markeSpremne = false, marPodaci = null, jacinaMar = JACINA_MAREK, skalaMar = 1, pasMar = 1.1;
       let spremnikNax = null, spremnikGustiNax = null, brojGustihNax = 0, naxSpreman = false, naxPodaci = null, jacinaNax = JACINA_NAX;   // prizor Naxos
       let dodaciTrazeni = false;
+      // način samo flakon (null: cijeli krug); čita se sada, kad se početni ekran gradi
+      const SF = nacinFlakona(), tijekSF = SF ? napraviTijekFlakona(SF) : null;
       // krugovi sa i bez logotipa, Penhaligon bočica i prizora Naxos (svaki se napravi kad zatreba)
       const tijekovi = {};
       function tijekZa(m, p, x) {
@@ -2335,6 +2436,7 @@
       // sljedećeg kruga
       let krugOd = 0, krugTijek = tijekBez, krugZadnje = -1;
       function tijek(t) {
+        if (tijekSF) return tijekSF.stanje(t);
         if (t < tijekBez.pojava) return tijekBez.stanje(t, -1);
         const u = t - tijekBez.pojava;
         if (u < krugZadnje || krugZadnje < 0) { krugOd = 0; krugTijek = izaberiKrug(); }
@@ -2407,6 +2509,7 @@
         gl.uniform1f(U.uCam, CAM_ZADANO);
         gl.uniform1f(U.uAlphaNax, 0);
         gl.uniform4f(U.uNaxA, 1, 0, 0, 1);
+        gl.uniform1f(U.uUvodFlakon, SF ? 1 : 0);
         gl.disable(gl.DEPTH_TEST);
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE);           // točkice se zbrajaju (svjetlo)
@@ -2431,9 +2534,10 @@
       // Prizor Naxos, logotipi i Penhaligon bočice se računaju zadnji, postupno
       // u stankama preglednika, jedan za drugim redom kojim dolaze u krugu (pa
       // prizor, koji je prvi na redu, dobije sve stanke i stigne najprije);
-      // jednom; ne uz "Smanji pokrete", jer se tada ne prikazuju
+      // jednom; ne uz "Smanji pokrete", jer se tada ne prikazuju, ni u načinu
+      // samo flakon (tada se ni ne učitavaju)
       function trebaDodatke() {
-        if (dodaciTrazeni || MIRNO.matches || !OBLICI) return;
+        if (dodaciTrazeni || SF || MIRNO.matches || !OBLICI) return;
         dodaciTrazeni = true;
         let red = OBLICI;
         if (P.naxos && NAX_MOGUC) red = red.then(function (o) { return pripremiNaxos(o).then(function (nn) { if (nn && !unisteno) dovrsiNaxos(nn); return o; }); });
@@ -2559,7 +2663,7 @@
         priprema = Promise.resolve().then(function () {
           if (unisteno) return false;
           if (!pocniGL()) { dogadaji.bezAnimacije(); return false; }
-          return pripremiOblike().then(function (oblici) {
+          return pripremiOblike(!!SF).then(function (oblici) {
             return cekajShader().then(pauza).then(function () {
               if (unisteno || gl.isContextLost()) return false;      // izgubljen kontekst: vidi webglcontextrestored
               if (!dovrsiGL(oblici)) { dogadaji.bezAnimacije(); return false; }
@@ -2661,7 +2765,8 @@
       function nacrtaj(t) {
         const mirno = MIRNO.matches;
         let st;
-        if (mirno) st = { od: OBLIK.natpis, do: OBLIK.natpis, prog: 0, uvod: 1, A: [0, 0, 0], B: [0, 0, 0], odsjaj: 99, sjaj: 99, podnaslov: true, penKut: 0, stranica: 0 };
+        if (mirno && SF) st = { od: OBLIK.flakon, do: OBLIK.flakon, prog: 0, uvod: 1, A: [KUT_FLAKONA, NAGIB, 0], B: [KUT_FLAKONA, NAGIB, 0], odsjaj: 99, sjaj: 99, podnaslov: false, penKut: 0, stranica: 0 };
+        else if (mirno) st = { od: OBLIK.natpis, do: OBLIK.natpis, prog: 0, uvod: 1, A: [0, 0, 0], B: [0, 0, 0], odsjaj: 99, sjaj: 99, podnaslov: true, penKut: 0, stranica: 0 };
         else st = tijek(t);
         const misKut = nagibX * 0.3, misNagib = nagibY * 0.16;          // lagani nagib prema mišu (prizor Naxos upola manje)
         const mA = st.od === OBLIK.naxos ? NAX_MIS : 1, mB = st.do === OBLIK.naxos ? NAX_MIS : 1;
@@ -2748,6 +2853,7 @@
       });
 
       return {
+        samoFlakon: !!SF,
         pripremi: pripremi,
         velicina: velicina,
         // svako otvaranje: animacija ispočetka
@@ -3252,6 +3358,8 @@
         mjere: function (ispod) { korijen.style.setProperty('--mx-p-ispod', ispod + 'px'); },
         otvoreno: function () { return otvoreno; }
       });
+      // način samo flakon: oznaka za izgled chata (npr. pozadina od mramora samo tada)
+      if (anim.samoFlakon) korijen.classList.add('mx-p-samo-flakon');
 
       const promatracVelicine = typeof ResizeObserver === 'function'
         ? new ResizeObserver(function () { anim.velicina(); })
