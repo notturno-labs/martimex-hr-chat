@@ -1312,12 +1312,28 @@
       }
       ${NAPOMENA} a { color: inherit; }
 
-      /* ═══ KRAJ RAZGOVORA I "NOVI RAZGOVOR?": bijela ploča odozdo ═══ */
-      ${PLOCA_POCETKA}, ${W} .vfrc-prompt {
+      /* ═══ KRAJ RAZGOVORA I "NOVI RAZGOVOR?": bijela ploča odozdo ═══
+         Jedna ploča uz dno prozora, zaobljena gore; donje kutove zaobli sam
+         prozor (na mobitelu je ploča ravna uz rub zaslona). Kad razgovor
+         završi, ploča je Voiceflowov .vfrc-footer__start-button (on je
+         zaobljen sa svih strana i odmaknut od ruba); okvir s gumbom u njoj je
+         samo sadržaj, inače bi bile dvije ploče jedna u drugoj, a unutarnja
+         s oštrim donjim kutovima */
+      ${W} .vfrc-footer__start-button,
+      ${PLOCA_POCETKA}:not(.vfrc-footer__start-button *),
+      ${W} .vfrc-prompt {
         padding: 18px 16px calc(28px + env(safe-area-inset-bottom, 0px));
+        border: 0;
         border-radius: 22px 22px 0 0;
         background: var(--mx-j-papir);
         box-shadow: 0 0 0 1px rgba(60, 40, 30, .05), 0 -18px 40px -24px rgba(40, 26, 18, .45);
+      }
+      ${W} .vfrc-footer__start-button ${'div:has(> ' + START + ')'} {
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+        box-shadow: none;
       }
       /* dok razgovor tek kreće (otvaranjem chata), Voiceflowova ploča s gumbom se ne vidi */
       ${PROZOR}:not(:has(.vfrc-system-response, .vfrc-user-response)) .vfrc-footer__start-button,

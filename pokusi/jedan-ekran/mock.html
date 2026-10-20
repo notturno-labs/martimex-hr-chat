@@ -20,6 +20,9 @@
       mock.html?razgovor=1       → razgovor već postoji (pozornica odmah sklopljena)
       mock.html?klik=2.5         → nakon 2,5 s se sam pritisne prvi ponuđeni odgovor
       mock.html?zatvoreno=1      → chat je zatvoren (gumb u kutu)
+      mock.html?kraj=1           → razgovor je završen (crta "Razgovor je završen" i ploča s gumbom za novi razgovor)
+      mock.html?tipka=6          → Marti "tipka" 6 s (zadano 3,4 s, da se vidi i natpis animacije čekanja)
+    Učitava i animaciju čekanja odgovora (../../cekanje-odgovora.js), kao loader.js u pravom chatu.
   -->
   <div class="stranica"><h1>Martimex</h1><p>Ova stranica glumi webshop; chat je u kutu.</p></div>
   <div id="voiceflow-chat"></div>
@@ -70,8 +73,10 @@
       '.vfrc-typing-indicator>span:nth-child(2){animation-delay:.2s}.vfrc-typing-indicator>span:nth-child(3){animation-delay:.4s}' +
       '@keyframes t{0%,60%,100%{opacity:.3}30%{opacity:1}}' +
       '.vfrc-footer{position:relative}' +
-      '.vfrc-footer__start-button{position:absolute;left:0;right:0;bottom:0;padding:16px;background:#fff;z-index:2}' +
-      '.vfrc-footer__start-button[inert]{display:none}' +
+      '.vfrc-footer__start-button{position:absolute;bottom:0;width:100%;box-sizing:border-box;border-radius:16px;background-color:#fff;box-shadow:0 0 0 1px #0000000f,0 0 32px #00000014;display:flex;flex-direction:column;gap:8px;z-index:300;padding:12px;overflow:hidden}' +
+      '.vfrc-footer__start-button[inert]{transform:translateY(8px);opacity:0;visibility:hidden}' +
+      '.vfrc-chat--status{display:flex;margin:16px 0}.vfrc-chat--status>div{display:flex;align-items:center;width:100%}' +
+      '.vfrc-chat--status>div>div:nth-child(odd){flex:1;height:1px;background:#e2e4e5}.vfrc-chat--status>div>div:nth-child(2){padding:0 8px;font-size:12px;color:#656d75}' +
       '#vfrc-start-chat{width:100%;height:48px;border-radius:10px;background:#000;color:#fff}' +
       '.vfrc-footer__content{padding:0 20px}' +
       '.vfrc-input-container{position:relative;display:flex;align-items:center;min-height:48px;border:1px solid #e2e4e5;border-radius:25px;padding:7px 7px 7px 20px;background:#fff;box-sizing:border-box}' +
@@ -101,6 +106,7 @@
 
     var $ = function (s) { return root.querySelector(s); };
     var dijalog = $('.vfrc-chat-dialog'), razmak = $('.vfrc-chat--bottom-spacer');
+    var TIPKA_MS = (+q.get('tipka') || 3.4) * 1000;   // dulje od 1,5 s, da se vidi natpis animacije čekanja
     var ODGOVORI = ['Provjeri status narudžbe', 'Loyalty Card', 'Prijavi reklamaciju', 'Načini plaćanja', 'Vaš beauty savjetnik'];
 
     function dodaj(html) {
@@ -114,7 +120,7 @@
     }
     function tipka(gotovo) {
       var t = dodaj('<div class="vfrc-typing-indicator--container"><img class="vfrc-avatar" src="' + AVATAR + '"><div class="vfrc-typing-indicator--container-inner"><span class="vfrc-typing-indicator"><span></span><span></span><span></span></span></div></div>');
-      setTimeout(function () { t.remove(); gotovo(); }, 900);
+      setTimeout(function () { t.remove(); gotovo(); }, TIPKA_MS);
     }
     function marti(tekst, odgovori) {
       var h = '<div class="vfrc-system-response--container"><div class="vfrc-system-response"><img class="vfrc-avatar" src="' + AVATAR + '"><div><div><div class="vfrc-message"><div class="markdown"><p>' + tekst + '</p></div></div></div></div></div>';
@@ -133,12 +139,29 @@
         marti('Rado ću pomoći. Koji miris inače nosite i za koju priliku tražite novi? Ako više volite, opišite ukratko što vam se sviđa (npr. svježe, cvjetno, drvenasto).', ['Svježe i citrusno', 'Cvjetno', 'Drvenasto i toplo']);
       });
     }
+    // Kao Voiceflow (widget-next) kad razgovor završi: ploča s gumbom je visoka koliko
+    // treba, dno chata je visoko kao ona, a polje za poruku je skriveno ispod nje
+    var promatracPloce = null;
+    function zavrsi() {
+      var ploca = $('.vfrc-footer__start-button'), dno = $('.vfrc-footer'), sadrzaj = $('.vfrc-footer__content');
+      ploca.removeAttribute('inert');
+      sadrzaj.style.cssText = 'position:absolute;width:100%;visibility:hidden';
+      sadrzaj.setAttribute('inert', '');
+      var mjeri = function () { dno.style.height = ploca.offsetHeight + 'px'; };
+      mjeri();
+      if (window.ResizeObserver) { promatracPloce = new ResizeObserver(mjeri); promatracPloce.observe(ploca); }
+    }
     function pocni() {
+      if (promatracPloce) { promatracPloce.disconnect(); promatracPloce = null; }
       $('.vfrc-footer__start-button').setAttribute('inert', '');
+      $('.vfrc-footer').style.height = '';
+      $('.vfrc-footer__content').style.cssText = '';
+      $('.vfrc-footer__content').removeAttribute('inert');
+      ocisti();
       pozdrav();
     }
     function ocisti() {
-      root.querySelectorAll('.vfrc-system-response--container, .vfrc-user-response, .vfrc-typing-indicator--container').forEach(function (e) { e.remove(); });
+      root.querySelectorAll('.vfrc-system-response--container, .vfrc-user-response, .vfrc-typing-indicator--container, .vfrc-chat--status').forEach(function (e) { e.remove(); });
     }
 
     var otvoren = false;
@@ -171,16 +194,26 @@
     $('.vfrc-chat-input').addEventListener('input', function (e) { $('#vfrc-send-message').disabled = !e.target.value.trim(); });
     $('.vfrc-chat-input').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#vfrc-send-message').click(); } });
 
-    if (q.get('razgovor') === '1') {
+    if (q.get('razgovor') === '1' || q.get('kraj') === '1') {
       $('.vfrc-footer__start-button').setAttribute('inert', '');
       marti('<strong>Bok! Ja sam Marti, Vaš AI beauty asistent.</strong><br>Trebate pomoć pri odabiru proizvoda, imate pitanje o narudžbi ili Vas zanima nešto drugo vezano uz Martimex? Slobodno mi se obratite.');
       dodaj('<div class="vfrc-user-response"><div>Tražim poklon za suprugu</div></div>');
-      marti('Divno! Kakve mirise inače nosi? Ako ne znate, mogu predložiti nekoliko sigurnih izbora.', ['Cvjetno', 'Svježe', 'Ne znam']);
+      marti('Divno! Kakve mirise inače nosi? Ako ne znate, mogu predložiti nekoliko sigurnih izbora.', q.get('kraj') === '1' ? null : ['Cvjetno', 'Svježe', 'Ne znam']);
+    }
+    if (q.get('kraj') === '1') {
+      // kao Voiceflow kad razgovor završi: crta s natpisom i ploča s gumbom za novi razgovor
+      dodaj('<div class="vfrc-user-response"><div>koliko traje dostava</div></div>');
+      marti('Rok za dostavu paketa je <strong>2 do 5 radnih dana</strong> od trenutka kreiranja narudžbe.');
+      dodaj('<div class="vfrc-chat--status"><div><div></div><div>Chat has ended</div><div></div></div></div>');
+      zavrsi();
     }
 
     var s = document.createElement('script');
     s.src = 'jedan-ekran.js?v=' + Date.now();
     s.onload = function () {
+      var c = document.createElement('script');     // animacija čekanja odgovora (u pravom chatu je učita loader.js)
+      c.src = '../../cekanje-odgovora.js?v=' + Date.now();
+      document.head.appendChild(c);
       if (q.get('zatvoreno') !== '1') setTimeout(otvori, 80);
       var klik = +q.get('klik');
       if (klik > 0) setTimeout(function () { var b = root.querySelector('.vfrc-system-response--actions .vfrc-button'); if (b) b.click(); }, klik * 1000);

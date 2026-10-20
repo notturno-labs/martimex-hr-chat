@@ -286,9 +286,14 @@ učitava na martimex.hr.
 - Razgovor u Voiceflowu kreće tek otvaranjem chata (autostart je isključen, modul pritisne Voiceflowov
   skriveni gumb za početak), kao i dosad s „Početak”: samo učitavanje stranice ne troši ništa.
 - „Smanji pokrete”: flakon stoji, pozornica se sklopi bez animacije.
+- Kad razgovor završi, gumb „Započni novi razgovor” je na jednoj bijeloj ploči uz dno prozora,
+  zaobljenoj gore (kao ploča „Novi razgovor?”); donje kutove zaobli prozor.
+- Dok Marti priprema odgovor, oblačić je bijela kartica, a u njoj su perlice na niti iz
+  `cekanje-odgovora.js` (vidi gore; u pravom chatu tek kad je u Voiceflowu odabrano „dots”).
 - Proba s pravim Voiceflowom: `jedan-ekran/proba.html` (isti kod kao webshop; `?izgled=calacatta` je
   dosadašnja proba za usporedbu). Bez Voiceflowa i interneta: `jedan-ekran/mock.html` (glumi
-  Voiceflowov prozor; `?razgovor=1` postojeći razgovor, `?klik=3` sam pritisne ponuđeni odgovor).
+  Voiceflowov prozor i učita i perlice; `?razgovor=1` postojeći razgovor, `?klik=3` sam pritisne
+  ponuđeni odgovor, `?kraj=1` završen razgovor, `?tipka=6` Marti „tipka” 6 s).
 
 ## Pregled i snimanje
 
