@@ -255,16 +255,22 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
 - Gradnja traje oko 2 s na računalu (grubi i točni prolaz brojanja, pa gradnja), u malim koracima,
   pa se prizor pokaže kad je gotov. Konzola ispiše broj točkica i razmak niti.
 
-## Jedan ekran — chat bez početnog ekrana (`jedan-ekran/`)
+## Jedan ekran — chat bez početnog ekrana (`jedan-ekran.js`, probe u `jedan-ekran/`)
 
-Prijedlog drugačijeg rasporeda: nema početnog ekrana ni gumba „Početak”. Kad se chat otvori, razgovor
-je odmah tu (pozdrav, ponuđeni odgovori i polje za poruku), a vrh prozora je mala tamna pozornica s
-flakonom. Ne ide uz `pocetna-chata.js` ni `tema-chata.js` (to je drugi izgled); ništa od toga se ne
-učitava na martimex.hr.
+Novi raspored: nema početnog ekrana ni gumba „Početak”. Kad se chat otvori, razgovor je odmah tu
+(pozdrav, ponuđeni odgovori i polje za poruku), a vrh prozora je mala tamna pozornica s flakonom. Ne
+ide uz `pocetna-chata.js` ni `tema-chata.js` (to je drugi izgled).
 
-- `jedan-ekran/jedan-ekran.js`: cijeli izgled i pozornica u jednom modulu (stil u shadow DOM-u, kao
-  ostali moduli; u prozor umeće samo pozornicu, ispod Voiceflowova zaglavlja). Postavke na vrhu:
-  boje, tekstovi, visina pozornice, flakon (pojava, brzina, odsjaj, broj točkica).
+**Gdje se vidi:** na testnoj stranici `proba.html` s vrha repozitorija (grana `main`:
+`https://notturno-labs.github.io/martimex-hr-chat/proba.html`), s perlicama dok Marti priprema
+odgovor i karticom artikla s popustom (`?popust=1` doda probne popuste). Na martimex.hr se ne
+učitava: kad se odobri, u `loader.js` se makne # ispred `jedan-ekran.js` i stavi ispred
+`pocetna-chata.js` (upute su u `loader.js`).
+
+- `jedan-ekran.js` (vrh repozitorija, uz ostale module): cijeli izgled i pozornica u jednom modulu
+  (stil u shadow DOM-u, kao ostali moduli; u prozor umeće samo pozornicu, ispod Voiceflowova
+  zaglavlja). Postavke na vrhu: boje, tekstovi, visina pozornice, flakon (pojava, brzina, odsjaj,
+  broj točkica).
 - Izgled:
   - gore topla crna traka s natpisom MARTIMEX (Cormorant Garamond) i tankim ikonama (novi razgovor, X)
   - pozornica u istoj boji: Xerjoff flakon s dosadašnjeg početnog ekrana (oblik, mjere i boje prepisani
@@ -289,9 +295,13 @@ učitava na martimex.hr.
 - Kad razgovor završi, gumb „Započni novi razgovor” je na jednoj bijeloj ploči uz dno prozora,
   zaobljenoj gore (kao ploča „Novi razgovor?”); donje kutove zaobli prozor.
 - Dok Marti priprema odgovor, oblačić je bijela kartica, a u njoj su perlice na niti iz
-  `cekanje-odgovora.js` (vidi gore; u pravom chatu tek kad je u Voiceflowu odabrano „dots”).
-- Proba s pravim Voiceflowom: `jedan-ekran/proba.html` (isti kod kao webshop; `?izgled=calacatta` je
-  dosadašnja proba za usporedbu). Bez Voiceflowa i interneta: `jedan-ekran/mock.html` (glumi
+  `cekanje-odgovora.js` (vidi gore; vide se jer je u Voiceflowu probnog projekta za prikaz čekanja
+  odgovora odabrano „dots”).
+- Testna stranica `proba.html` (vrh repozitorija): `?popust=1` probni popusti na karticama,
+  `?izgled=dosadasnji` dosadašnji izgled s početnim ekranom za usporedbu.
+- Proba s pravim Voiceflowom i s kodom s bilo koje grane: `jedan-ekran/proba.html` (učitava
+  `loader.js` i module iz iste grane; `?izgled=calacatta` je dosadašnja proba za usporedbu,
+  `?popust=1` probni popusti). Bez Voiceflowa i interneta: `jedan-ekran/mock.html` (glumi
   Voiceflowov prozor i učita i perlice; `?razgovor=1` postojeći razgovor, `?klik=3` sam pritisne
   ponuđeni odgovor, `?kraj=1` završen razgovor, `?tipka=6` Marti „tipka” 6 s).
 
@@ -319,8 +329,9 @@ kartica bez popusta izgleda točno kao v30.
 - Proba bez Voiceflowa: `akcija/akcija.html` (glumi prozor chata s pet artikala: akcija, promo kod,
   akcija + kod, bez popusta i kod zadan ravnim poljima; „Ponovi pojavu” ponovno pokrene animaciju).
   `akcija/slike/`: nacrtane bočice na bijeloj pozadini.
-- Proba u pravom chatu: `jedan-ekran/proba.html?popust=1` (stranica sama dodaje probne popuste
-  preporukama: 1. kartica kod MRTMX −30 %, 2. akcija, 3. akcija + kod).
+- Proba u pravom chatu: `proba.html?popust=1` s vrha repozitorija ili `jedan-ekran/proba.html?popust=1`
+  (stranica sama dodaje probne popuste preporukama: 1. kartica kod MRTMX −30 %, 2. akcija,
+  3. akcija + kod).
 - Da bi se popust vidio na webshopu, funkcija u Voiceflowu mora početi slati `oldPrice` i/ili `promo`.
 
 ## Pregled i snimanje

@@ -4,10 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Marti – testna stranica</title>
+  <script>
+    // NOVI IZGLED SAMO NA OVOJ TESTNOJ STRANICI: chat na jednom ekranu
+    // (jedan-ekran.js). Na martimex.hr se ništa ne mijenja: loader.js i dalje
+    // učitava dosadašnji početni ekran (pocetna-chata.js); ovdje se on
+    // isključi, a umjesto njega se s GitHuba učita jedan-ekran.js.
+    //   proba.html                     → novi izgled (jedan ekran)
+    //   proba.html?popust=1            → uz to probni popusti na karticama artikla (vidi dolje)
+    //   proba.html?izgled=dosadasnji   → dosadašnji izgled s početnim ekranom, za usporedbu
+    (function () {
+      if (new URLSearchParams(location.search).get('izgled') === 'dosadasnji') return;
+      window.__mxPocetna = true;      // pocetna-chata.js (iz loader.js) se ne pokreće
+      window.__mxTemaChata = true;    // ni tema-chata.js, ako se uključi u loader.js
+      // Voiceflow: razgovor kreće tek otvaranjem chata i pamti se dok je kartica
+      // otvorena (to postavi i jedan-ekran.js; ovdje je da sigurno stigne prije
+      // nego loader.js preda postavke Voiceflowu)
+      window.MartimexVoiceflow = { autostart: false, assistant: { persistence: 'sessionStorage' } };
+      var s = document.createElement('script');
+      s.src = 'https://notturno-labs.github.io/martimex-hr-chat/jedan-ekran.js?v=' + Math.floor(Date.now() / 60000);
+      document.head.appendChild(s);
+    })();
+  </script>
 </head>
 <body>
   <h1>Testna stranica za Marti chat</h1>
-  <p>Ova stranica glumi martimex.hr. Chat bi se trebao pojaviti u kutu ekrana.</p>
+  <p>Ova stranica glumi martimex.hr. Chat je u kutu ekrana, u novom izgledu na jednom ekranu: razgovor kreće sam kad se chat otvori.</p>
+  <p><a href="?">Novi izgled</a> · <a href="?popust=1">Novi izgled s probnim popustima na karticama</a> · <a href="?izgled=dosadasnji">Dosadašnji izgled (početni ekran)</a></p>
 
   <!-- Marti chat (Martimex) – ovaj kod se ne mijenja, sve izmjene rade se na GitHubu -->
   <script>
@@ -79,6 +101,50 @@
     gh.onerror = bezGithuba;
     document.head.appendChild(gh);
     setTimeout(bezGithuba, CEKAJ_GITHUB);
+  })();
+  </script>
+
+  <!-- Samo na testnoj stranici: ?popust=1 → probni popusti na karticama artikla.
+       Voiceflow funkcija još ne šalje akciju ni promo kod, pa se dodaju ovdje:
+       1. kartica u preporuci → promo kod MRTMX −30 %, 2. → akcija (stara cijena
+       25 % viša), 3. → akcija + kod. Kartice koje popust već imaju ostaju kakve jesu. -->
+  <script>
+  (function () {
+    if (new URLSearchParams(location.search).get('popust') !== '1') return;
+    var izvorni = window.__martimexGitHub;
+    if (typeof izvorni !== 'function') return;
+
+    function dodajPopuste(trace) {
+      var p = trace && trace.payload;
+      if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { return trace; } }
+      var lista = p && (p.cards || p.kartice);
+      if (!Array.isArray(lista)) return trace;
+      var kartice = lista.map(function (c, i) {
+        if (!c || c.oldPrice != null || c.promo || c.promoCode) return c;
+        var n = parseFloat(String(c.price).replace(/[^\d.,]/g, '').replace(',', '.'));
+        var k = Object.assign({}, c);
+        var vrsta = i % 3;
+        if (vrsta !== 1) k.promo = { code: 'MRTMX', percent: 30 };
+        if (vrsta !== 0 && isFinite(n)) k.oldPrice = (Math.round(n * 125) / 100).toFixed(2);
+        return k;
+      });
+      return Object.assign({}, trace, { payload: Object.assign({}, p, { cards: kartice }) });
+    }
+
+    // loader.js preda postavke ovoj funkciji; kartica artikla dobije probne popuste
+    window.__martimexGitHub = function (cfg) {
+      var a = cfg && cfg.assistant;
+      if (a && Array.isArray(a.extensions)) {
+        var ekstenzije = a.extensions.map(function (e) {
+          if (!e || e.name !== 'ProductCard') return e;
+          return Object.assign({}, e, {
+            render: function (x) { return e.render(Object.assign({}, x, { trace: dodajPopuste(x.trace) })); }
+          });
+        });
+        cfg = Object.assign({}, cfg, { assistant: Object.assign({}, a, { extensions: ekstenzije }) });
+      }
+      return izvorni(cfg);
+    };
   })();
   </script>
 </body>

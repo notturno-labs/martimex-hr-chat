@@ -13,7 +13,7 @@
     .izbor a[aria-current] { background: #1b1b1d; color: #fff; }
   </style>
   <script>
-    // Koji izgled: zadano "jedan ekran" (jedan-ekran.js iz ove mape, bez
+    // Koji izgled: zadano "jedan ekran" (jedan-ekran.js s vrha repozitorija, bez
     // početnog ekrana); ?izgled=calacatta → dosadašnja proba (početni ekran
     // + tema-chata.js), za usporedbu
     (function () {
@@ -28,7 +28,7 @@
         // Voiceflow: razgovor kreće otvaranjem chata (vidi jedan-ekran.js); postavlja se
         // već ovdje, da sigurno stigne prije nego loader.js preda postavke Voiceflowu
         window.MartimexVoiceflow = { autostart: false, assistant: { persistence: 'sessionStorage' } };
-        s.src = 'jedan-ekran.js?v=' + Math.floor(Date.now() / 60000);
+        s.src = '../../jedan-ekran.js?v=' + Math.floor(Date.now() / 60000);
       }
       document.head.appendChild(s);
     })();

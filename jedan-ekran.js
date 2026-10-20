@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — chat s Marti na JEDNOM ekranu (pokus "Jedan ekran")
+  //  MARTIMEX — chat s Marti na JEDNOM ekranu (izgled "Jedan ekran")
   //
   //  Nema više početnog ekrana ispred chata: kad se chat otvori, razgovor
   //  je odmah tu, a vrh prozora je mala tamna "pozornica" s flakonom.
@@ -50,8 +50,12 @@
   //  "autostart", pa se razgovor pokrene tek otvaranjem chata (modul tada
   //  pritisne Voiceflowov skriveni gumb za početak, kao nekad "Početak").
   //  Ako modul zakaže, chat radi kao Voiceflowov.
-  //  Ne ide uz pocetna-chata.js ni tema-chata.js (oni su drugi izgled);
-  //  proba: pokusi/jedan-ekran/proba.html.
+  //  Ne ide uz pocetna-chata.js ni tema-chata.js (oni su drugi izgled).
+  //  Gdje radi: testna stranica proba.html (vrh repozitorija) učita ovaj
+  //  modul umjesto početnog ekrana; martimex.hr ga ne učitava dok se u
+  //  loader.js ne uključi umjesto pocetna-chata.js (vidi loader.js).
+  //  Probe: pokusi/jedan-ekran/proba.html i, bez Voiceflowa,
+  //  pokusi/jedan-ekran/mock.html.
   // ═════════════════════════════════════════════════════════════════════
 
   if (window.__mxJedanEkran) return;   // zaštita ako se modul učita dvaput
@@ -128,10 +132,10 @@
     const HOST = 'voiceflow-chat';          // element u čiji shadow DOM Voiceflow crta chat
     const START = '#vfrc-start-chat';       // Voiceflowov gumb "Start new chat"
     const OZNAKA = 'data-mx-j';             // atribut na #voiceflow-chat: "sklopljeno", "pokrecem"
-    // adresa mape ove skripte; fontovi su u mapi fonts/ dvije razine više (vrh repozitorija)
-    const MAPA = ((document.currentScript && document.currentScript.src) || 'https://notturno-labs.github.io/martimex-hr-chat/pokusi/jedan-ekran/jedan-ekran.js')
+    // adresa mape ove skripte (vrh repozitorija); fontovi su u njezinoj mapi fonts/
+    const MAPA = ((document.currentScript && document.currentScript.src) || 'https://notturno-labs.github.io/martimex-hr-chat/jedan-ekran.js')
       .replace(/[?#].*$/, '').replace(/[^\/]*$/, '');
-    const KORIJEN = new URL('../../', MAPA).href;
+    const KORIJEN = MAPA;
     const MIRNO = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
     const MOBITEL = !!(window.matchMedia && window.matchMedia('(max-width: 768px), (pointer: coarse)').matches);
     const MIS = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
