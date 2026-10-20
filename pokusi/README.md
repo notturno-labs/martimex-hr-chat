@@ -224,6 +224,38 @@ ima boje s fotografije, predmeti su neprozirni, a svjetlo je kao na fotografiji.
 - Gradnja traje oko 2 s na računalu (grubi i točni prolaz brojanja, pa gradnja), u malim koracima,
   pa se prizor pokaže kad je gotov. Konzola ispiše broj točkica i razmak niti.
 
+## Jedan ekran — chat bez početnog ekrana (`jedan-ekran/`)
+
+Prijedlog drugačijeg rasporeda: nema početnog ekrana ni gumba „Početak”. Kad se chat otvori, razgovor
+je odmah tu (pozdrav, ponuđeni odgovori i polje za poruku), a vrh prozora je mala tamna pozornica s
+flakonom. Ne ide uz `pocetna-chata.js` ni `tema-chata.js` (to je drugi izgled); ništa od toga se ne
+učitava na martimex.hr.
+
+- `jedan-ekran/jedan-ekran.js`: cijeli izgled i pozornica u jednom modulu (stil u shadow DOM-u, kao
+  ostali moduli; u prozor umeće samo pozornicu, ispod Voiceflowova zaglavlja). Postavke na vrhu:
+  boje, tekstovi, visina pozornice, flakon (pojava, brzina, odsjaj, broj točkica).
+- Izgled:
+  - gore topla crna traka s natpisom MARTIMEX (Cormorant Garamond) i tankim ikonama (novi razgovor, X)
+  - pozornica u istoj boji: neutralni flakon bez ičijeg logotipa (staklo zaobljenih rubova, ružičasta
+    tekućina, tanki prsten od ružičastog zlata, visoki čep od crnog laka), od točkica u nitima kao
+    dosadašnja animacija; ispod njega „Marti · AI asistentica”
+  - razgovor na toploj bjelokosti bez teksture: Martine poruke su bijele kartice, kupčeve tamne,
+    ponuđeni odgovori pilule s tankim tamnim obrubom (pod mišem ili prstom se ispune), polje za
+    poruku bijela kapsula; ploča „Započni novi razgovor / Odustani” je bijela, odozdo
+- Animacija: pri svakom otvaranju chata izmaglica iznad flakona se spusti i slegne u staklo (odozdo
+  prema gore, čep zadnji, oko 2,4 s); flakon se zatim vrlo polako okreće (krug za oko 21 s), svakih 7 s
+  preko stakla ukoso prijeđe svjetlo, na računalu se lagano nagne prema mišu.
+- Kad kupac pošalje prvu poruku ili pritisne ponuđeni odgovor, točkice se rasprše kao izmaglica, a
+  pozornica se u 0,9 s sklopi; „Marti · AI asistentica” sjedne u traku ispod natpisa MARTIMEX. Na niskom
+  prozoru (mobitel) pozornica se sklopi već kad kupac dotakne polje za poruku. Novi razgovor (gumb gore)
+  vrati pozornicu; postojeći razgovor (npr. nakon prelaska na stranicu proizvoda) se otvori sklopljen.
+- Razgovor u Voiceflowu kreće tek otvaranjem chata (autostart je isključen, modul pritisne Voiceflowov
+  skriveni gumb za početak), kao i dosad s „Početak”: samo učitavanje stranice ne troši ništa.
+- „Smanji pokrete”: flakon stoji, pozornica se sklopi bez animacije. Bez WebGL-a: tanki obris flakona.
+- Proba s pravim Voiceflowom: `jedan-ekran/proba.html` (isti kod kao webshop; `?izgled=calacatta` je
+  dosadašnja proba za usporedbu). Bez Voiceflowa i interneta: `jedan-ekran/mock.html` (glumi
+  Voiceflowov prozor; `?razgovor=1` postojeći razgovor, `?klik=3` sam pritisne ponuđeni odgovor).
+
 ## Pregled i snimanje
 
 - `proba.html` glumi Voiceflowov prozor chata, pa se početni ekran vidi kao u pravom chatu:
