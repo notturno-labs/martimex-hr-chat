@@ -16,6 +16,7 @@
   var MODULI = `
     kartica-artikla.js
     gumb-chata.js
+    cekanje-odgovora.js
     pocetna-chata.js
   `;
 
