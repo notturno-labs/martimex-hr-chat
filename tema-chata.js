@@ -1,57 +1,56 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — izgled cijelog chata s Marti: "Calacatta" (bijeli mramor)
+  //  MARTIMEX — izgled cijelog chata s Marti
   //
-  //  Chat je uređen kao Martimex poslovnica: glavna je tema polirani
-  //  BIJELI mramor (čista, hladna bijela sa sivo-plavim dimom i sjajnim
-  //  zlatnim žilama), a CRNI mramor sa zlatnim žilama je samo za manje
-  //  detalje. Preko mramora lebdi svijetlo, mliječno staklo:
+  //  Chat prati martimex.hr: čista bijela pozadina, crno i bijelo, a
+  //  CRNI mramor sa zlatnim žilama je za detalje (kao u poslovnici).
+  //  Gumbi, poruke, kartice i polje imaju oblik gumba sa stranice:
+  //  pravokutnik s blago zaobljenim kutovima (KUT_GUMBA, KUT_PLOHE). Zlatom
+  //  je napisan samo natpis MARTIMEX u zaglavlju; sva ostala slova su crna
+  //  ili siva na bijelom, a bijela na crnom:
   //
-  //   - pozadina razgovora: tihi bijeli mramor (mramor/bijeli.webp, na oštrim
-  //     zaslonima bijeli-2x.webp) pod tankim hladnim velom; blijede zlatne
-  //     žile boje šampanjca i meki dim su uz rubove, a sredina iza poruka je
-  //     mirna; preko kamena polako klizi meko svjetlo; pri vrhu i dnu se
-  //     kamen zamagli, pa poruke tiho nestaju ispod zaglavlja i polja za poruku
+  //   - pozadina razgovora je čista bijela; pri vrhu i dnu se poruke tiho
+  //     gube ispod zaglavlja i polja za poruku
   //   - zaglavlje je traka preko cijele širine prozora, kao Voiceflowova
   //     (ista visina i položaj), od crnog mramora sa zlatnim žilama i jedva
-  //     vidljivom toplom linijom na dnu; u sredini je samo natpis MARTIMEX zlatom, isti
-  //     kao na početnom ekranu (bez Voiceflowove slike i naslova), a desno su
-  //     Voiceflowovi gumbi
-  //   - Martine poruke su oblačići od gustog mliječnog stakla s tamnim
-  //     tekstom: tihi dvobojni rub (bijeli odsjaj gore lijevo, tek dašak
-  //     zlata dolje desno), sjaj na vrhu i meka sjena, pa se jasno odvoje od
-  //     kamena. Takav diskretan rub imaju i svi gumbi, pilule, polje za poruku
-  //     i kartica proizvoda (nigdje nema sjajnog zlatnog obruba)
+  //     vidljivom toplom linijom na dnu; u sredini je samo natpis MARTIMEX
+  //     zlatom, isti kao na početnom ekranu (bez Voiceflowove slike i
+  //     naslova), a desno su Voiceflowovi gumbi kao svijetle ikone
+  //   - Martine poruke su bijele, s tamnim tekstom, tihim rubom (bijeli
+  //     odsjaj gore lijevo, tek dašak zlata dolje desno) i mekom sjenom.
+  //     Takav diskretan rub imaju i svi gumbi, polje za poruku i kartica
+  //     proizvoda (nigdje nema sjajnog zlatnog obruba)
   //   - kupčeve poruke su komadići crnog mramora sa zlatnom žilom i istim
-  //     tihim rubom (svijetli odsjaj, dašak zlata), sa svijetlim tekstom
+  //     tihim rubom, s bijelim tekstom
   //   - crni mramor je svugdje zamućen (zaglavlje, kupčeve poruke, gumbi,
   //     gumb chata, početni ekran), pa je tekst preko njega miran i lako
   //     čitljiv
-  //   - ponuđeni odgovori su bijeli gumbi blago zaobljenih kutova; pod
-  //     mišem postanu crni mramor s bijelim slovima
-  //   - polje za poruku je kapsula od mliječnog stakla; gumb za slanje je
-  //     kuglica od zlata čim ima što poslati
+  //   - ponuđeni odgovori su bijeli gumbi; pod mišem postanu crni mramor s
+  //     bijelim slovima
+  //   - polje za poruku je bijelo; gumb za slanje je zlatan čim ima što
+  //     poslati
   //   - kartica proizvoda (kartica-artikla.js) je bijela; bočica stoji ravno
   //     na kartici, bez okvira, kao u izvornoj kartici
   //   - kraj razgovora: tanke zlatne crte; ploča "Započni novi razgovor" je
-  //     mliječno staklo, glavni gumb na njoj je crni mramor sa zlatnim slovima
+  //     bijela, glavni gumb na njoj je crni mramor s bijelim slovima
   //   - prozor ima isti oblik i iste mjere kao Voiceflowov (zaobljeni kutovi
   //     16 px, na mobitelu preko cijelog ekrana); od bijele stranice ga
-  //     odvaja tanka svijetla linija s unutarnje strane i meka sjena
-  //   - početni ekran (pocetna-chata.js) zadrži sve svoje elemente i boje;
-  //     tekst je velik i u prvom planu, a od animacija je samo Xerjoff flakon
-  //     koji se polako okreće (način "samo flakon"), manji i malo prigušen;
-  //     pozadina je tihi crni mramor s prigušenim zlatnim žilama, mekano
-  //     zamućen kao da je izvan fokusa (iza teksta i flakona tiho zatamnjen)
+  //     odvaja meka sjena
+  //   - početni ekran (pocetna-chata.js) zadrži sve svoje elemente; tekst
+  //     je velik, u prvom planu i bijel, a od animacija je samo Xerjoff
+  //     flakon koji se polako okreće (način "samo flakon"), manji i malo
+  //     prigušen; pozadina je tihi crni mramor s prigušenim zlatnim žilama,
+  //     mekano zamućen kao da je izvan fokusa (iza teksta i flakona tiho
+  //     zatamnjen)
   //   - gumb chata u kutu stranice (gumb-chata.js) je komadić crnog mramora
-  //     sa zlatnom žilom, tihim svijetlim rubom, zlatnim natpisom i
+  //     sa zlatnom žilom, tihim svijetlim rubom, bijelim natpisom i
   //     pozlaćenom bočicom
   //   - tekstovi koje Voiceflow piše engleski ("Start new chat", "Cancel",
   //     "Chat has ended") su na hrvatskom
   //
-  //  Ako je na uređaju uključeno "Smanji pokrete", svjetlo na mramoru
-  //  miruje, flakon stoji, a poruke se samo tiho pojave. Ako je uključeno
-  //  "Smanji prozirnost", staklo je gotovo neprozirno, a mramor tiši.
+  //  Ako je na uređaju uključeno "Smanji pokrete", flakon stoji, a poruke se
+  //  samo tiho pojave. Ako je uključeno "Smanji prozirnost", polje i ploča
+  //  su neprozirni.
   //
   //  Učitavanje: velike slike mramora NE usporavaju webshop. Ne učitavaju
   //  se s ostatkom stranice, nego tek kad preglednik nakon učitavanja
@@ -60,9 +59,7 @@
   //  (što bude prije). Do tada su na njihovom mjestu iste boje bez žila
   //  (prozor se ionako prije prvog otvaranja ne vidi); isto ostaje ako se
   //  slika ne učita. Gumb u kutu odmah koristi samo mali komadić crnog
-  //  mramora (nekoliko KB). Na zaslonima visoke gustoće (mobiteli, Retina)
-  //  bijeli mramor se učita u dvostrukoj razlučivosti, inače običan (crni je
-  //  zamućen, pa je dovoljan u jednoj).
+  //  mramora (nekoliko KB).
   //
   //  Tehnički: kao i ostali moduli, ovaj samo ubaci svoj stil u shadow DOM
   //  elementa #voiceflow-chat i u chat ništa ne umeće. Oslanja se na
@@ -85,31 +82,27 @@
   // ─────────────────────────────────────────────────────────────────────
   const MX_TEMA_POSTAVKE = {
     boje: {                       // uvijek u obliku #rrggbb
-      mlijeko:       '#fbfcfc',   // mliječno staklo: Martine poruke, pilule, polje, kartica, ploče
-      mramor:        '#eef0f2',   // bijeli mramor dok se slika ne učita
-      veoMramora:    '#e3e7eb',   // hladni sivi veo preko bijelog mramora (oblačići od stakla se jače odvoje)
-      dim:           '#c9ced4',   // hladni sivo-plavi dim mramora: sjene i rubovi stakla
+      pozadina:      '#ffffff',   // pozadina razgovora: čista bijela, kao martimex.hr
+      mlijeko:       '#fbfcfc',   // Martine poruke, ponuđeni odgovori, polje, ploče (gotovo bijelo)
+      dim:           '#c9ced4',   // hladna siva: sjene i rubovi
       tinta:         '#16181c',   // tekst na svijetlom (gotovo crn, malo hladan)
       tih:           '#4d535b',   // prigušeni tekst (opisi, napomena ispod polja, placeholder)
-      zlato:         '#c39a3e',   // metalno zlato žila: rubovi, crte, točkice
-      zlatoSvijetlo: '#f1d98f',   // odsjaj zlata: natpisi na crnom mramoru
-      zlatoTamno:    '#8e6a1c',   // sjena zlata (dno kuglice, rub metala)
-      zlatoTekst:    '#5f4a12',   // sitni zlatni natpisi na svijetlom (dovoljno tamni za čitanje)
+      zlato:         '#c39a3e',   // metalno zlato žila: crte, točkice, gumb za slanje
+      zlatoSvijetlo: '#f1d98f',   // odsjaj zlata: natpis MARTIMEX u zaglavlju (jedina zlatna slova)
+      zlatoTamno:    '#8e6a1c',   // sjena zlata (dno gumba za slanje)
       crni:          '#0c0c0d',   // crni mramor dok se slika ne učita
-      bjelokost:     '#f6f5f2',   // tekst na crnom mramoru
+      bjelokost:     '#f6f5f2',   // ikone na crnom mramoru
+      naCrnom:       '#ffffff',   // slova na crnom mramoru (gumbi, kupčeve poruke, oznake)
       opisPocetne:   '#cdc3bb'    // opis na početnom ekranu (svjetliji od izvornog, da je tekst u prvom planu)
     },
 
-    // Teksture mramora iz mape mramor/ ('' = bez teksture, samo boja)
+    // Teksture crnog mramora iz mape mramor/ ('' = bez teksture, samo boja)
     mramor: {
-      bijeli:   'mramor/bijeli.webp',     // pozadina razgovora
-      bijeli2x: 'mramor/bijeli-2x.webp',  // isti u dvostrukoj razlučivosti (mobiteli, oštri zasloni)
       crni:     'mramor/crni.webp',       // početni ekran: tihi, mekano zamućen kamen (dovoljan i za oštre zaslone)
       crni2x:   '',                       // nije potreban: crni je zamućen, pa je oštar i u jednoj razlučivosti
       crniMali: 'mramor/crni-mali.webp',  // zamućeni komadić (8 KB) za sve ostalo: zaglavlje, kupčeve poruke, glavni
                                           // gumb, ponuđeni odgovor pod mišem, gumb chata (tekst preko njega je lako čitljiv)
-      gustoca2x: 1.75,                    // od koje gustoće piksela zaslona se uzimaju slike "2x" (1.25–1.5 = računalo sa skaliranjem → obične)
-      veo: .26,                           // 0–1: hladni veo preko bijelog mramora (više = tiše žile, sivlji kamen)
+      gustoca2x: 1.75,                    // od koje gustoće piksela zaslona se uzima slika "2x" (ako je zadana)
       cekaj: 2                            // s: koliko nakon učitavanja stranice (kad preglednik miruje) krenu slike
     },
 
@@ -129,9 +122,7 @@
       razgovorZavrsen: 'Razgovor je završen'     // "Chat has ended"
     },
 
-    zamucenje: 18,            // px: koliko staklo polja za poruku i ploča zamuti ono iza sebe
-    pokretPozadine: 46,       // sekundi za jedan prolaz svjetla preko mramora (0 = svjetlo miruje)
-    odsjaj: .5,               // 0–1: jačina svjetla koje klizi preko mramora; 0 = bez
+    zamucenje: 18,            // px: koliko polje za poruku i ploča zamute poruke iza sebe
 
     // početni ekran: pozadina od crnog mramora i samo Xerjoff flakon koji
     // se polako okreće (false → početni ekran ostaje kakav je bio)
@@ -155,7 +146,7 @@
     const M = P.mramor || {};
     const T = P.tekstovi || {};
     const HOST = 'voiceflow-chat';        // element u čiji shadow DOM Voiceflow crta chat
-    const OZNAKA = 'data-mx-mramor';      // atribut na #voiceflow-chat: koje su slike mramora učitane ("bijeli crni")
+    const OZNAKA = 'data-mx-mramor';      // atribut na #voiceflow-chat: koje su slike mramora učitane ("crni")
     // adresa mape u kojoj je ova skripta (GitHub Pages) — odatle se učitavaju fontovi i mramor
     const BAZA = ((document.currentScript && document.currentScript.src) || 'https://notturno-labs.github.io/martimex-hr-chat/tema-chata.js')
       .replace(/[?#].*$/, '').replace(/[^\/]*$/, '');
@@ -176,13 +167,11 @@
     function izmedju(x, od, doo) { x = +x; return isNaN(x) ? od : Math.min(doo, Math.max(od, x)); }
 
     const BLUR = Math.max(0, +P.zamucenje || 0);
-    const POKRET = +P.pokretPozadine > 0 ? Math.max(12, +P.pokretPozadine) + 's' : '';
-    const ODSJAJ = izmedju(P.odsjaj, 0, 1);
-    const VEO = izmedju(M.veo, 0, 1);
     // zaslon visoke gustoće: slike "2x" (isti uvjet u CSS-u i pri predučitavanju)
     const GUSTO = '(min-resolution: ' + izmedju(M.gustoca2x || 1.75, 1.01, 4) + 'dppx), (-webkit-min-device-pixel-ratio: ' + izmedju(M.gustoca2x || 1.75, 1.01, 4) + ')';
     const MALI = slika(M.crniMali);       // mali komadić crnog mramora: izravno (ne kroz var(), da ga preglednik ne traži iznova)
     const OPIS_POCETNE = B.opisPocetne || '#a89d95';
+    const BIJELA_POCETNE = '#f4ece6';     // slova početnog ekrana (kao prvi red naslova): umjesto ružičastog zlata
 
     // ── STIL ─────────────────────────────────────────────────────────────
     // Svi selektori počinju s ":host .vfrc-widget", pa su jači od
@@ -216,7 +205,8 @@
     const POCETNA_M = WM + ' .mx-p.mx-p-samo-flakon:not(.mx-p-bez-gl)';
 
     const VISINA_ZAGLAVLJA = 56;          // px, mramorna traka gore (kao Voiceflowovo zaglavlje)
-    const KUT_GUMBA = 10;                 // px: zaobljenje gumba (ponuđeni odgovori, "Pogledaj proizvod"); veliki gumbi na ploči +2 px
+    const KUT_GUMBA = 4;                  // px: kutovi gumba, kao gumbi na martimex.hr (ponuđeni odgovori, "Pogledaj proizvod", gumbi na ploči, gumb chata)
+    const KUT_PLOHE = 6;                  // px: kutovi poruka, kartica, polja za poruku i ploče
     const MALI_SIRINA = 630;              // px: koliko je širok zamućeni komadić crnog mramora na svakoj površini (pa je svugdje jednako zamućen)
     const ISPOD_DNA = 84;                 // px: koliko se poruke protežu ispod polja za poruku (najviše visina dna)
     const VELO_VRHA = 30;                 // px: koliko ispod zaglavlja se poruke još mekano gube u mlijeku
@@ -253,10 +243,11 @@
 
     const CSS = `
       :host {
-        --mx-t-mlijeko-0: ${prozirna(B.mlijeko, 0)};
-        --mx-t-mlijeko-60: ${prozirna(B.mlijeko, .6)};
-        --mx-t-mlijeko-90: ${prozirna(B.mlijeko, .9)};
-        --mx-t-mlijeko-97: ${prozirna(B.mlijeko, .97)};
+        --mx-t-magla-0: ${prozirna(B.pozadina, 0)};
+        --mx-t-magla-60: ${prozirna(B.pozadina, .6)};
+        --mx-t-magla-90: ${prozirna(B.pozadina, .9)};
+        --mx-t-magla-97: ${prozirna(B.pozadina, .97)};
+        --mx-t-na-crnom: ${B.naCrnom};
         --mx-t-tinta: ${B.tinta};
         --mx-t-tih: ${B.tih};
         --mx-t-zlato: ${B.zlato};
@@ -267,13 +258,11 @@
         --mx-t-zlato-svijetlo: ${B.zlatoSvijetlo};
         /* zlatna slova (natpis MARTIMEX u zaglavlju): metal, svjetliji gdje pada svjetlo */
         --mx-t-zlato-natpis: linear-gradient(100deg, ${B.zlato} 0%, ${B.zlatoSvijetlo} 28%, #d8b45e 50%, #f6e3a4 72%, ${B.zlato} 100%);
-        --mx-t-zlato-tekst: ${B.zlatoTekst};
         --mx-t-crni: ${B.crni};
         --mx-t-bjelokost: ${B.bjelokost};
         --mx-t-font: ${P.font};
         --mx-t-font-naslova: ${P.fontNaslova};
-        /* slike mramora: dok se ne učitaju, nema ih (ostaje boja kamena) */
-        --mx-t-mramor-bijeli: none;
+        /* slika crnog mramora: dok se ne učita, nema je (ostaje boja kamena) */
         --mx-t-mramor-crni: none;
         /* mliječno staklo: gusto (tekst je uvijek čitljiv, i bez zamućenja), malo
            gušće gore lijevo, odakle pada svjetlo */
@@ -296,30 +285,20 @@
         --mx-t-sjena: var(--mx-t-linija), 0 12px 26px -14px rgba(30, 40, 56, .38), 0 2px 6px -2px rgba(30, 40, 56, .14);
         --mx-t-sjena-crni: 0 12px 26px -14px rgba(8, 10, 14, .6), 0 2px 6px -2px rgba(8, 10, 14, .3);
         --mx-t-linija-tamna: inset 0 0 0 1px rgba(255, 255, 255, .14);   /* tihi rub gumba na crnom */
-        --mx-t-veo: ${prozirna(B.veoMramora, VEO)};
         --mx-t-zamucenje: blur(${BLUR}px) saturate(130%);
         --mx-t-glatko: cubic-bezier(.16, 1, .3, 1);
         --mx-t-meko: cubic-bezier(.45, 0, .2, 1);
       }
-      /* slike mramora tek kad su učitane (vidi ucitajMramor); svaka zasebno,
-         pa ako jedna ne stigne, na njezinom mjestu ostaje boja kamena */
-      ${UCITAN('bijeli')} { --mx-t-mramor-bijeli: ${slika(M.bijeli)}; }
+      /* slika crnog mramora tek kad je učitana (vidi ucitajMramor); ako ne
+         stigne, na njezinom mjestu ostaje boja kamena */
       ${UCITAN('crni')} { --mx-t-mramor-crni: ${slika(M.crni)}; }
-      @media ${GUSTO} {
-        ${M.bijeli2x ? `${UCITAN('bijeli')} { --mx-t-mramor-bijeli: ${slika(M.bijeli2x)}; }` : ''}
-        ${M.crni2x ? `${UCITAN('crni')} { --mx-t-mramor-crni: ${slika(M.crni2x)}; }` : ''}
-      }
+      ${M.crni2x ? `@media ${GUSTO} { ${UCITAN('crni')} { --mx-t-mramor-crni: ${slika(M.crni2x)}; } }` : ''}
 
-      /* ═══ PROZOR: bijeli mramor (oblik i mjere ostaju Voiceflowovi) ═══ */
-      /* slojevi odozgo: tanki hladni veo, mramor, boja kamena (dok se slika
-         ne učita: čista hladna bijela, malo sjenovitija prema dnu) */
+      /* ═══ PROZOR: čista bijela pozadina (oblik i mjere ostaju Voiceflowovi) ═══ */
       ${PROZOR} {
         isolation: isolate;
-        overflow: clip;                   /* svjetlo koje plovi preko ruba ne smije pomaknuti prozor (fokus, skrol) */
-        background:
-          linear-gradient(var(--mx-t-veo), var(--mx-t-veo)),
-          var(--mx-t-mramor-bijeli) center top / cover no-repeat,
-          linear-gradient(180deg, #f6f7f8 0%, ${B.mramor} 55%, #e8ebee 100%);
+        overflow: clip;                   /* ništa što izađe preko ruba ne smije pomaknuti prozor (fokus, skrol) */
+        background: ${B.pozadina};
         color: var(--mx-t-tinta);
         /* Voiceflowova tanka linija i meka sjena, malo jače (bijela stranica webshopa) */
         box-shadow: 0 0 0 1px rgba(22, 26, 30, .08), 0 8px 80px rgba(22, 26, 30, .2), 0 24px 48px -24px rgba(22, 26, 30, .32);
@@ -327,25 +306,7 @@
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
       }
-
-      ${ODSJAJ ? `
-      /* svjetlo na poliranom kamenu: meki bijeli odsjaji i jedva vidljiva
-         hladna sjena polako klize preko mramora */
-      ${PROZOR}::before {
-        content: "";
-        position: absolute;
-        top: -30%; right: -30%; bottom: -30%; left: -30%;
-        z-index: 0;
-        background:
-          radial-gradient(30% 20% at 30% 32%, rgba(255, 255, 255, ${+(ODSJAJ * .9).toFixed(2)}), rgba(255, 255, 255, 0)),
-          radial-gradient(26% 18% at 70% 66%, rgba(255, 255, 255, ${+(ODSJAJ * .8).toFixed(2)}), rgba(255, 255, 255, 0)),
-          linear-gradient(118deg, rgba(255, 255, 255, 0) 42%, rgba(255, 255, 255, ${+(ODSJAJ * .5).toFixed(2)}) 50%, rgba(255, 255, 255, 0) 58%),
-          radial-gradient(34% 24% at 76% 30%, ${prozirna(B.dim, ODSJAJ * .16)}, ${prozirna(B.dim, 0)});
-        pointer-events: none;
-        ${POKRET ? `animation: mx-t-plovi ${POKRET} ease-in-out infinite alternate;` : ''}
-      }` : ''}
-      /* kamen se zamagli na vrhu i dnu: poruke tiho nestaju ispod zaglavlja i
-         polja za poruku; s unutarnje strane ruba prozora je tanka svijetla linija */
+      /* pri vrhu i dnu se poruke tiho gube ispod zaglavlja i polja za poruku */
       ${PROZOR}::after {
         content: "";
         position: absolute;
@@ -353,30 +314,17 @@
         z-index: 2;
         border-radius: inherit;
         background:
-          linear-gradient(180deg, var(--mx-t-mlijeko-60) calc(${VISINA_ZAGLAVLJA}px + env(safe-area-inset-top, 0px)), var(--mx-t-mlijeko-0) calc(${VISINA_ZAGLAVLJA + VELO_VRHA}px + env(safe-area-inset-top, 0px))),
-          linear-gradient(0deg, var(--mx-t-mlijeko-97) 0, var(--mx-t-mlijeko-90) ${ISPOD_DNA - 54}px, var(--mx-t-mlijeko-60) ${ISPOD_DNA - 30}px, var(--mx-t-mlijeko-0) ${ISPOD_DNA + VELO_DNA}px);
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .7);
+          linear-gradient(180deg, var(--mx-t-magla-60) calc(${VISINA_ZAGLAVLJA}px + env(safe-area-inset-top, 0px)), var(--mx-t-magla-0) calc(${VISINA_ZAGLAVLJA + VELO_VRHA}px + env(safe-area-inset-top, 0px))),
+          linear-gradient(0deg, var(--mx-t-magla-97) 0, var(--mx-t-magla-90) ${ISPOD_DNA - 54}px, var(--mx-t-magla-60) ${ISPOD_DNA - 30}px, var(--mx-t-magla-0) ${ISPOD_DNA + VELO_DNA}px);
         pointer-events: none;
-      }
-      @media (max-width: 768px) {
-        ${PROZOR}::after { box-shadow: none; }      /* preko cijelog ekrana: bez linije uz rub */
       }
       /* nizak prozor (npr. mobitel položen vodoravno): kraći prijelazi, više mjesta za poruke */
       @media (max-height: 520px) {
         ${PROZOR}::after {
           background:
-            linear-gradient(180deg, var(--mx-t-mlijeko-60) calc(${VISINA_ZAGLAVLJA}px + env(safe-area-inset-top, 0px)), var(--mx-t-mlijeko-0) calc(${VISINA_ZAGLAVLJA + 14}px + env(safe-area-inset-top, 0px))),
-            linear-gradient(0deg, var(--mx-t-mlijeko-97) 0, var(--mx-t-mlijeko-90) ${ISPOD_DNA - 54}px, var(--mx-t-mlijeko-60) ${ISPOD_DNA - 30}px, var(--mx-t-mlijeko-0) ${ISPOD_DNA + 6}px);
+            linear-gradient(180deg, var(--mx-t-magla-60) calc(${VISINA_ZAGLAVLJA}px + env(safe-area-inset-top, 0px)), var(--mx-t-magla-0) calc(${VISINA_ZAGLAVLJA + 14}px + env(safe-area-inset-top, 0px))),
+            linear-gradient(0deg, var(--mx-t-magla-97) 0, var(--mx-t-magla-90) ${ISPOD_DNA - 54}px, var(--mx-t-magla-60) ${ISPOD_DNA - 30}px, var(--mx-t-magla-0) ${ISPOD_DNA + 6}px);
         }
-      }
-      /* stariji preglednik bez overflow: clip: svjetlo miruje unutar prozora */
-      @supports not (overflow: clip) {
-        ${PROZOR}::before { top: 0; right: 0; bottom: 0; left: 0; animation: none; }
-      }
-      @keyframes mx-t-plovi {
-        0%   { transform: translate3d(-5%, -4%, 0) rotate(0deg); }
-        50%  { transform: translate3d(4%, 5%, 0) rotate(5deg); }
-        100% { transform: translate3d(7%, -3%, 0) rotate(-4deg); }
       }
 
       /* ═══ ZAGLAVLJE: traka od crnog mramora preko cijele širine ═══ */
@@ -460,15 +408,15 @@
         width: 38px;
         height: 38px;
         padding: 9px;
-        border-radius: 50%;
+        border-radius: ${KUT_GUMBA}px;
         color: var(--mx-t-bjelokost);
         background: transparent;
         box-shadow: none;
         transition: background-color .3s var(--mx-t-meko), color .3s var(--mx-t-meko), transform .3s var(--mx-t-glatko);
       }
-      ${ZAGLAVLJE} .vfrc-header--button:hover { color: var(--mx-t-zlato-svijetlo); background: rgba(255, 255, 255, .08); }
+      ${ZAGLAVLJE} .vfrc-header--button:hover { color: var(--mx-t-na-crnom); background: rgba(255, 255, 255, .1); }
       ${ZAGLAVLJE} .vfrc-header--button:active { transform: scale(.94); }
-      ${ZAGLAVLJE} .vfrc-header--button:focus-visible { outline: 1px solid var(--mx-t-zlato-svijetlo); outline-offset: 2px; }
+      ${ZAGLAVLJE} .vfrc-header--button:focus-visible { outline: 1px solid var(--mx-t-na-crnom); outline-offset: 2px; }
 
       /* ═══ PORUKE: klize ispod zaglavlja i ispod polja za poruku ═══ */
       /* u redu s napomenom ("Powered by") se odrežu: tamo ih ne smije biti
@@ -480,21 +428,12 @@
         clip-path: inset(0 0 calc(${ISPOD_NAPOMENE}px + env(safe-area-inset-bottom, 0px)) 0);
       }
 
-      /* uvod na vrhu razgovora: Marti i kratki opis, na mliječnom velu
-         (žile iza njega se utišaju); veo se meko ugasi prema rubovima */
+      /* uvod na vrhu razgovora: Marti i kratki opis */
       ${W} .vfrc-assistant-info {
         position: relative;
         z-index: 0;
         padding: 26px 20px 18px;
         font-family: var(--mx-t-font);
-      }
-      ${W} .vfrc-assistant-info::before {
-        content: "";
-        position: absolute;
-        top: -16px; right: -18px; bottom: -22px; left: -18px;
-        z-index: -1;
-        background: radial-gradient(closest-side at 50% 55%, ${prozirna(B.mlijeko, .9)} 0%, ${prozirna(B.mlijeko, .74)} 62%, ${prozirna(B.mlijeko, 0)} 100%);
-        pointer-events: none;
       }
       ${W} .vfrc-assistant-info .vfrc-avatar {
         width: 76px;
@@ -517,7 +456,7 @@
         line-height: 1.6;
         letter-spacing: .26em;
         text-transform: uppercase;
-        color: var(--mx-t-zlato-tekst);
+        color: var(--mx-t-tih);
       }
 
       /* avatar uz Martine poruke: crni krug s tankom linijom */
@@ -526,12 +465,12 @@
         box-shadow: var(--mx-t-linija), 0 6px 14px -6px rgba(20, 26, 36, .5);
       }
 
-      /* Martina poruka: gusto mliječno staklo s dvobojnim rubom */
+      /* Martina poruka: bijela, s tihim dvobojnim rubom */
       ${MARTI} {
         position: relative;
         background: var(--mx-t-sjaj-stakla), var(--mx-t-staklo);
         color: var(--mx-t-tinta);
-        border-radius: 20px 20px 20px 7px;
+        border-radius: ${KUT_PLOHE}px;
         box-shadow: var(--mx-t-odsjaj), var(--mx-t-sjena);
         font-family: var(--mx-t-font);
         font-size: 14.5px;
@@ -544,17 +483,17 @@
       ${MARTI} > .markdown { padding: 12px 17px 12px; overflow-wrap: anywhere; }   /* duge poveznice se prelome u oblačiću */
       ${MARTI} strong, ${MARTI} b { font-weight: 600; color: var(--mx-t-tinta); }
       ${MARTI} a {
-        color: var(--mx-t-zlato-tekst);
+        color: var(--mx-t-tinta);
         text-decoration: underline;
-        text-decoration-color: var(--mx-t-zlato-70);
+        text-decoration-color: rgba(22, 24, 28, .35);
         text-underline-offset: 3px;
-        transition: color .2s ease, text-decoration-color .2s ease;
+        transition: text-decoration-color .2s ease;
       }
-      ${MARTI} a:hover { color: var(--mx-t-tinta); text-decoration-color: var(--mx-t-zlato); }
-      ${MARTI} code { padding: 1px 5px; border-radius: 6px; background: var(--mx-t-zlato-16); color: var(--mx-t-tinta); }
-      ${MARTI} hr { border: 0; height: 1px; background: linear-gradient(90deg, var(--mx-t-zlato-16), var(--mx-t-zlato-70), var(--mx-t-zlato-16)); }
+      ${MARTI} a:hover { text-decoration-color: var(--mx-t-tinta); }
+      ${MARTI} code { padding: 1px 5px; border-radius: ${KUT_GUMBA}px; background: rgba(30, 38, 50, .06); color: var(--mx-t-tinta); }
+      ${MARTI} hr { border: 0; height: 1px; background: rgba(30, 38, 50, .14); }
       ${MARTI} ul, ${MARTI} ol { padding-left: 1.25em; }
-      ${MARTI} li::marker { color: var(--mx-t-zlato); }
+      ${MARTI} li::marker { color: var(--mx-t-tih); }
 
       /* kupčeva poruka: komadić zamućenog crnog mramora sa zlatnom žilom koja
          prolazi desnim donjim kutom i tihim rubom (kao Martina); iza teksta je
@@ -565,8 +504,8 @@
         background: ${crniMramor('right -40px bottom -56px', MALI_SIRINA, [
           `linear-gradient(180deg, ${prozirna(B.crni, .76)} 0%, ${prozirna(B.crni, .72)} calc(100% - 12px), ${prozirna(B.crni, .3)} 100%)`
         ], MALI)};
-        color: var(--mx-t-bjelokost);
-        border-radius: 20px 20px 7px 20px;
+        color: var(--mx-t-na-crnom);
+        border-radius: ${KUT_PLOHE}px;
         padding: 12px 17px 12px;
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), var(--mx-t-sjena-crni);
         font-family: var(--mx-t-font);
@@ -583,7 +522,7 @@
       ${TIPKA} {
         position: relative;
         background: var(--mx-t-sjaj-stakla), var(--mx-t-staklo);
-        border-radius: 20px 20px 20px 7px;
+        border-radius: ${KUT_PLOHE}px;
         box-shadow: var(--mx-t-odsjaj), var(--mx-t-sjena);
       }
       ${TIPKA}::before { ${RUB} }
@@ -617,19 +556,19 @@
       ${PILULA}::before { ${RUB} }
       ${PILULA}:hover::before { background: var(--mx-t-rub-tamni); }
       ${PILULA}:hover {
-        color: #fff;
+        color: var(--mx-t-na-crnom);
         background: ${crniMramor('left -90px top -110px', MALI_SIRINA, [veo(B.crni, .45), tamaSredine(.62)], MALI)};
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 10px 22px -12px rgba(8, 10, 14, .6);
       }
       ${PILULA}:active { transform: scale(.97); }
-      ${PILULA}:focus-visible { outline: 1px solid var(--mx-t-zlato-tekst); outline-offset: 3px; }
+      ${PILULA}:focus-visible { outline: 1px solid var(--mx-t-tinta); outline-offset: 3px; }
 
       /* Voiceflowove kartice i vrtuljak (ako ih Marti pošalje) */
       ${W} .vfrc-card {
         position: relative;
         background: var(--mx-t-staklo);
         color: var(--mx-t-tinta);
-        border-radius: 20px;
+        border-radius: ${KUT_PLOHE}px;
         box-shadow: var(--mx-t-odsjaj), var(--mx-t-sjena);
         overflow: hidden;
       }
@@ -637,12 +576,12 @@
       ${W} .vfrc-card--header { color: var(--mx-t-tinta); font-family: var(--mx-t-font-naslova); font-size: 18px; font-weight: 600; }
       ${W} .vfrc-card--content, ${W} .vfrc-card--description { color: var(--mx-t-tih); font-family: var(--mx-t-font); }
       ${W} .vfrc-card .vfrc-button { background: #fff; color: var(--mx-t-tinta); border-radius: ${KUT_GUMBA}px; box-shadow: inset 0 1px 0 #fff, var(--mx-t-linija); font-family: var(--mx-t-font); font-size: 13px; font-weight: 500; letter-spacing: .02em; }
-      ${W} .vfrc-card .vfrc-button:hover { background: var(--mx-t-crni); color: var(--mx-t-zlato-svijetlo); }
-      ${W} .vfrc-image { border-radius: 18px; box-shadow: var(--mx-t-sjena); }
+      ${W} .vfrc-card .vfrc-button:hover { background: var(--mx-t-crni); color: var(--mx-t-na-crnom); }
+      ${W} .vfrc-image { border-radius: ${KUT_PLOHE}px; box-shadow: var(--mx-t-sjena); }
       ${W} .vfrc-timestamp { color: var(--mx-t-tih); font-size: 10.5px; letter-spacing: .06em; }
       ${W} .vfrc-feedback button { color: var(--mx-t-tih); }
 
-      /* kraj razgovora: tanke zlatne crte i natpis između njih (na mliječnom velu) */
+      /* kraj razgovora: tanke zlatne crte i sivi natpis između njih */
       ${W} .vfrc-chat--status { margin: 22px 0 8px; }
       ${W} .vfrc-chat--status > div > div:nth-child(odd) {
         height: 1px;
@@ -650,10 +589,8 @@
       }
       ${W} .vfrc-chat--status > div > div:last-child { background: linear-gradient(90deg, ${B.zlatoTamno}, ${B.zlato} 30%, ${prozirna(B.zlato, 0)}); }
       ${W} .vfrc-chat--status > div > div:nth-child(2) {
-        background: ${prozirna(B.mlijeko, .7)};
-        border-radius: 999px;
-        box-shadow: 0 0 10px 6px ${prozirna(B.mlijeko, .7)};
-        color: var(--mx-t-zlato-tekst);
+        background: none;
+        color: var(--mx-t-tih);
         font-family: var(--mx-t-font);
         font-size: 10px;
         font-weight: 500;
@@ -678,7 +615,7 @@
         color: var(--mx-t-tinta);
       }
 
-      /* ═══ DNO: polje za poruku je kapsula od mliječnog stakla s tihim rubom ═══ */
+      /* ═══ DNO: polje za poruku je bijelo, s tihim rubom ═══ */
       ${W} .vfrc-footer {
         position: relative;
         z-index: 3;
@@ -695,9 +632,9 @@
       ${RED_UNOSA}, ${OKO_POLJA}:has(> .vfrc-input-container) { padding: 0 12px; background: none; }
       ${W} .vfrc-input-container {
         min-height: 54px;
-        padding: 8px 8px 8px 20px;
+        padding: 8px 8px 8px 18px;
         border: 0;
-        border-radius: 27px;
+        border-radius: ${KUT_PLOHE}px;
         background: var(--mx-t-sjaj-stakla), var(--mx-t-staklo-ploca);
         -webkit-backdrop-filter: var(--mx-t-zamucenje);
                 backdrop-filter: var(--mx-t-zamucenje);
@@ -718,7 +655,7 @@
       ${W} .vfrc-chat-input {
         background: transparent;
         color: var(--mx-t-tinta);
-        caret-color: var(--mx-t-zlato-tekst);
+        caret-color: var(--mx-t-tinta);
         font-family: var(--mx-t-font);
         font-weight: 400;
         line-height: 22px;
@@ -728,18 +665,19 @@
       ${W} .vfrc-chat-input::selection { background: var(--mx-t-zlato-30); }
       /* ostali gumbi u polju (npr. mikrofon) */
       ${W} .vfrc-input-container button:not(#vfrc-send-message) {
-        border-radius: 50%;
+        border-radius: ${KUT_GUMBA}px;
         color: var(--mx-t-tih);
         background: transparent;
       }
-      ${W} .vfrc-input-container button:not(#vfrc-send-message):hover { color: var(--mx-t-tinta); background: var(--mx-t-zlato-16); }
+      ${W} .vfrc-input-container button:not(#vfrc-send-message):hover { color: var(--mx-t-tinta); background: rgba(30, 38, 50, .06); }
 
-      /* gumb za slanje: kuglica od sjajnog zlata s tamnom strelicom; prazno
-         polje → bijela kuglica s tankom linijom i sivom strelicom */
+      /* gumb za slanje: zlatan s tamnom strelicom; prazno polje → bijeli s
+         tankom linijom i sivom strelicom */
       ${POSALJI} {
         position: relative;
         width: 38px;
         height: 38px;
+        border-radius: ${KUT_GUMBA}px;
         background: radial-gradient(circle at 34% 26%, #fff8dc 0%, #f0d27e 30%, ${B.zlato} 66%, ${B.zlatoTamno} 100%);
         box-shadow: inset 0 1px 1px rgba(255, 255, 255, .8), inset 0 -2px 4px rgba(90, 64, 10, .35), 0 6px 16px -6px ${prozirna(B.zlato, .9)};
         transition: background .35s var(--mx-t-meko), box-shadow .35s var(--mx-t-meko), transform .35s var(--mx-t-glatko), opacity .35s var(--mx-t-meko);
@@ -758,6 +696,7 @@
       /* gumb "na dno razgovora" iznad polja (gusto staklo) */
       ${NA_DNO} {
         border: 0;
+        border-radius: ${KUT_GUMBA}px;
         background: var(--mx-t-staklo);
         color: var(--mx-t-tinta);
         box-shadow: var(--mx-t-odsjaj), var(--mx-t-sjena);
@@ -775,10 +714,10 @@
       ${NAPOMENA} a { color: inherit; }
       ${NAPOMENA} a:hover { color: var(--mx-t-tinta); text-decoration-color: var(--mx-t-zlato); }
 
-      /* ═══ KRAJ RAZGOVORA I "NOVI RAZGOVOR?": ploča od mliječnog stakla ═══ */
+      /* ═══ KRAJ RAZGOVORA I "NOVI RAZGOVOR?": bijela ploča ═══ */
       ${PLOCA_POCETKA}, ${W} .vfrc-prompt {
         padding: 16px 16px calc(32px + env(safe-area-inset-bottom, 0px));
-        border-radius: 26px 26px 0 0;
+        border-radius: ${KUT_PLOHE}px ${KUT_PLOHE}px 0 0;
         background: var(--mx-t-staklo-ploca);
         -webkit-backdrop-filter: var(--mx-t-zamucenje);
                 backdrop-filter: var(--mx-t-zamucenje);
@@ -789,7 +728,7 @@
       ${W} .vfrc-prompt .vfrc-button {
         position: relative;
         min-height: 46px;
-        border-radius: ${KUT_GUMBA + 2}px;
+        border-radius: ${KUT_GUMBA}px;
         font-family: var(--mx-t-font);
         font-size: 11.5px;
         font-weight: 500;
@@ -797,14 +736,14 @@
         text-transform: uppercase;
         transition: background .35s var(--mx-t-meko), color .35s var(--mx-t-meko), transform .35s var(--mx-t-glatko), box-shadow .35s var(--mx-t-meko);
       }
-      /* glavni gumb: zamućeni crni mramor sa zlatnim žilama prema krajevima i zlatnim slovima */
+      /* glavni gumb: zamućeni crni mramor sa zlatnim žilama prema krajevima i bijelim slovima */
       ${GLAVNI.join(',\n      ')} {
         background: ${crniMramor('left -70px top -150px', MALI_SIRINA, [tamaSredine(.74, '62%', '120%')], MALI)};
-        color: var(--mx-t-zlato-svijetlo);
+        color: var(--mx-t-na-crnom);
         box-shadow: var(--mx-t-linija-tamna), inset 0 1px 0 rgba(255, 255, 255, .16), 0 12px 26px -14px rgba(8, 10, 14, .7);
       }
       ${GLAVNI.map(s => s + ':hover').join(',\n      ')} {
-        color: #fbeec4;
+        color: var(--mx-t-na-crnom);
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .24), inset 0 1px 0 rgba(255, 255, 255, .22), 0 14px 30px -12px rgba(8, 10, 14, .75);
       }
       /* sporedni gumb ("Odustani"): bijeli gumb s tihim rubom kao Martina
@@ -824,7 +763,7 @@
       ${GLAVNI.map(s => s + ':active').join(', ')},
       ${W} .vfrc-prompt .vfrc-button:active { transform: scale(.98); }
       ${GLAVNI.map(s => s + ':focus-visible').join(', ')},
-      ${W} .vfrc-prompt .vfrc-button:focus-visible { outline: 1px solid var(--mx-t-zlato-tekst); outline-offset: 3px; }
+      ${W} .vfrc-prompt .vfrc-button:focus-visible { outline: 1px solid var(--mx-t-tinta); outline-offset: 3px; }
       ${T.noviRazgovor ? `
       ${GLAVNI.join(', ')} { font-size: 0; letter-spacing: 0; }
       ${GLAVNI.map(s => s + '::after').join(', ')} {
@@ -842,7 +781,7 @@
         padding-left: .24em;
       }` : ''}
 
-      /* ═══ KARTICA PROIZVODA (kartica-artikla.js): bijela, s tihim rubom kao Martina poruka ═══ */
+      /* ═══ KARTICA PROIZVODA (kartica-artikla.js): bijela, s tihim rubom kao Martina poruka; slova crna ═══ */
       ${W} .mx {
         --mx-tinta: ${B.tinta};
         --mx-dim: ${B.tih};
@@ -855,19 +794,19 @@
         --mx-kartica: #fff;
         --mx-cijena: ${B.tinta};
         --mx-rub-hover: ${prozirna(B.zlato, .8)};
-        --mx-ikona: ${B.zlatoTekst};
+        --mx-ikona: ${B.tih};
       }
       /* kartica je čisto bijela (kao izvorna), pa se s njom potpuno stopi i
          bijela pozadina fotografije koju nije moguće obraditi */
       ${W} .mx-kartica {
         background: #fff;
         border-color: transparent;
-        border-radius: 24px;
+        border-radius: ${KUT_PLOHE}px;
         box-shadow: var(--mx-t-odsjaj), var(--mx-t-linija), 0 22px 44px -26px rgba(30, 40, 56, .5), 0 2px 8px -3px rgba(30, 40, 56, .14);
       }
       /* unutarnji (drugi) rub kartice postane tihi rub kao na Martinoj poruci */
       ${W} .mx-kartica::before, ${W} .mx-kartica:hover::before { ${RUB} border: 0; }
-      ${W} .mx-maglica { border-radius: 24px; }
+      ${W} .mx-maglica { border-radius: ${KUT_PLOHE}px; }
       ${W} .mx-crta { background: linear-gradient(90deg, ${prozirna(B.zlato, 0)} 0%, ${prozirna(B.zlato, .6)} 25%, ${B.zlato} 50%, ${prozirna(B.zlato, .6)} 75%, ${prozirna(B.zlato, 0)} 100%); }
       /* bočica stoji ravno na kartici, bez okvira i bez kutije oko sebe, kao u
          izvornoj kartici */
@@ -877,9 +816,9 @@
         --mx-aura-2: ${prozirna(B.mlijeko, .95)};
       }
       ${W} .mx-naziv { color: var(--mx-t-tinta); font-size: 16px; }
-      ${W} .mx-marka { color: var(--mx-t-zlato-tekst); }
-      ${W} .mx-oznaka { background: var(--mx-t-crni); color: var(--mx-t-zlato-svijetlo); box-shadow: none; }
-      ${W} .mx-popust { background: var(--mx-t-crni); color: var(--mx-t-zlato-svijetlo); }
+      ${W} .mx-marka { color: var(--mx-t-tinta); }
+      ${W} .mx-oznaka { background: var(--mx-t-crni); color: var(--mx-t-na-crnom); box-shadow: none; border-radius: ${KUT_GUMBA - 1}px; }
+      ${W} .mx-popust { background: var(--mx-t-crni); color: var(--mx-t-na-crnom); border-radius: ${KUT_GUMBA - 1}px; }
       ${W} .mx-gumb {
         min-height: 34px;
         border-color: transparent;
@@ -890,19 +829,27 @@
       }
       ${W} .mx-gumb::before { ${RUB} }
       ${W} .mx-gumb:active::before { background: var(--mx-t-rub-tamni); }
-      ${W} .mx-gumb:focus-visible { outline-color: var(--mx-t-zlato-tekst); }
-      ${W} .mx-gumb:active { background: var(--mx-t-crni); color: var(--mx-t-zlato-svijetlo); border-color: var(--mx-t-crni); }
+      ${W} .mx-gumb:focus-visible { outline-color: var(--mx-t-tinta); }
+      ${W} .mx-gumb:active { background: var(--mx-t-crni); color: var(--mx-t-na-crnom); border-color: var(--mx-t-crni); }
       @media (hover: hover) {
-        ${W} .mx-gumb:hover { background: var(--mx-t-crni); color: var(--mx-t-zlato-svijetlo); border-color: var(--mx-t-crni); }
+        ${W} .mx-gumb:hover { background: var(--mx-t-crni); color: var(--mx-t-na-crnom); border-color: var(--mx-t-crni); }
         ${W} .mx-gumb:hover::before { background: var(--mx-t-rub-tamni); }
       }
 
       ${P.pocetniEkran ? `
       /* ═══ POČETNI EKRAN (pocetna-chata.js) ═══ */
-      /* Svi elementi i boje ostaju izvorni. Tekst je velik i u prvom planu, a
+      /* Svi elementi ostaju izvorni. Tekst je velik, u prvom planu i bijel
+         (drugi red naslova, "POČETAK" i crte više nisu ružičasto zlato), a
          flakon manji i tiši: pocetna-chata.js ga crta prema veličini prostora
          .mx-p-animacija. Slobodan prostor se dijeli iznad flakona (3 dijela) i
          iznad "POČETAK" (2 dijela), pa flakon, naslov i opis ostaju skupa. */
+      ${POCETNA} {
+        --mx-p-rose: ${BIJELA_POCETNE};
+        --mx-p-rose-0: ${prozirna(BIJELA_POCETNE, 0)};
+        --mx-p-rose-90: ${prozirna(BIJELA_POCETNE, .55)};
+        --mx-p-rose-25: ${prozirna(BIJELA_POCETNE, .25)};
+        --mx-p-sjaj-poziva: #ffffff;
+      }
       ${POCETNA} .mx-p-scena { flex: 3 1 236px; min-height: 96px; align-items: flex-end; }
       ${POCETNA} .mx-p-animacija { width: 210px; height: 236px; }
       ${POCETNA} .mx-p-tekst { flex: none; gap: 20px; padding: 24px 28px 0; }
@@ -993,7 +940,7 @@
       /* zamućeni komadić mramora (učita se odmah, nekoliko KB): zlatna žila
          prolazi uz donji rub, a iza natpisa je kamen taman */
       ${W} .vfrc-launcher {
-        --mx-g-puder: ${B.zlatoSvijetlo};
+        --mx-g-puder: ${B.naCrnom};                      /* natpis: bijeli */
         --mx-g-rub: rgba(255, 255, 255, .16);             /* tihi svijetli rub (kao na kupčevoj poruci) */
         --mx-g-rub-sjaj: rgba(255, 246, 222, .5);
         --mx-g-magla: ${prozirna(B.zlato, .32)};             /* izmaglica spreja: tamnije zlato od natpisa */
@@ -1010,6 +957,7 @@
         background-size: auto, auto, ${MALI_SIRINA}px auto;
         background-position: 0 0, 0 0, left -100px top -140px;
         background-repeat: no-repeat;
+        border-radius: ${KUT_GUMBA}px;                   /* oblik gumba sa stranice (i otvoren, sa strelicom) */
         -webkit-backdrop-filter: none;
                 backdrop-filter: none;
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), var(--mx-g-sjena);
@@ -1037,18 +985,15 @@
       @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
         :host { --mx-t-staklo-ploca: linear-gradient(160deg, ${prozirna(B.mlijeko, .97)}, ${prozirna(B.mlijeko, .92)}); }
       }
-      /* "Smanji prozirnost": staklo gotovo neprozirno, mramor tiši */
+      /* "Smanji prozirnost": polje i ploča gotovo neprozirni */
       @media (prefers-reduced-transparency: reduce) {
         :host {
-          --mx-t-veo: ${prozirna(B.veoMramora, Math.max(VEO, .6))};
           --mx-t-staklo: linear-gradient(160deg, ${prozirna(B.mlijeko, .99)}, ${prozirna(B.mlijeko, .97)});
           --mx-t-staklo-ploca: linear-gradient(160deg, ${prozirna(B.mlijeko, .99)}, ${prozirna(B.mlijeko, .97)});
         }
-        ${PROZOR}::before { opacity: .4; }
       }
-      /* "Smanji pokrete": svjetlo na mramoru miruje, poruke se samo tiho pojave */
+      /* "Smanji pokrete": poruke se samo tiho pojave */
       @media (prefers-reduced-motion: reduce) {
-        ${PROZOR}::before { animation: none; }
         ${MARTI}, ${KORISNIK} { animation: mx-t-prozirnost .3s linear backwards; }
         ${POCETNA_M}::before, ${POCETNA_M}.mx-p-ulaz::before { animation: none; display: none; }
         ${W} .vfrc-typing-indicator > span { animation: none; opacity: 1; }
@@ -1063,10 +1008,10 @@
     // Stil ide u shadow root chata (jednom; starija verzija se zamijeni)
     function ubaciStil(korijen) {
       const stari = korijen.querySelector('style[data-mx-tema]');
-      if (stari && stari.getAttribute('data-mx-tema') === '8') return;
+      if (stari && stari.getAttribute('data-mx-tema') === '9') return;
       if (stari) stari.remove();
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-tema', '8');
+      stil.setAttribute('data-mx-tema', '9');
       stil.textContent = CSS;
       korijen.appendChild(stil);
     }
@@ -1124,8 +1069,8 @@
     // preglednik nakon učitavanja stranice miruje, ili odmah kad kupac
     // krene prema chatu (miš ili prst na gumbu, tipkovnica, otvaranje).
     // Na zaslonu visoke gustoće uzme se slika "2x" (isti uvjet kao u CSS-u).
-    // Kad pojedina slika stigne (i dekodira se), element chata dobije njezino
-    // ime u atributu data-mx-mramor ("bijeli crni") i tek tada je CSS koristi.
+    // Kad slika stigne (i dekodira se), element chata dobije njezino ime u
+    // atributu data-mx-mramor ("crni") i tek tada je CSS koristi.
     // Ako ne stigne (greška, blokada), atributa nema: ostaje boja kamena, a
     // preglednik je ne traži iznova.
     const MRAMOR = { krenulo: false, ucitano: [], host: null, odjavi: [] };
@@ -1143,7 +1088,7 @@
       // okidači više nisu potrebni
       MRAMOR.odjavi.splice(0).forEach(function (f) { f(); });
       const gusto = !!(window.matchMedia && window.matchMedia(GUSTO).matches);
-      [['bijeli', M.bijeli, M.bijeli2x], ['crni', M.crni, M.crni2x]].forEach(function (s) {
+      [['crni', M.crni, M.crni2x]].forEach(function (s) {
         const put = (gusto && s[2]) || s[1];
         if (!put) return;
         const img = new Image();
@@ -1234,6 +1179,6 @@
   })();
 
   try { MX_TEMA.pokreni(); }
-  catch (e) { console.warn('[Martimex] Izgled chata "Calacatta" nije pokrenut:', e); }
+  catch (e) { console.warn('[Martimex] Izgled chata nije pokrenut:', e); }
 
 })();
