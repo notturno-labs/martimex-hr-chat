@@ -107,7 +107,8 @@
       brzina: 0.3,            // rad/s: okretanje (0.3 = jedan krug za oko 21 s)
       odsjaj: 7,              // s: svakih toliko preko stakla prijeđe svjetlo (0 = bez)
       tocaka: 20000,          // računalo
-      tocakaMobitel: 14000,   // mobitel i tablet
+      tocakaMobitel: 20000,   // mobitel i tablet: isto kao računalo (uz manje točkica čep ima rupe, a
+                              // flakon je na mobitelu čak malo veći, jer je pozornica viša)
       velicina: 0.7,          // visina flakona kao udio visine pozornice
       nagibPremaMisu: true    // na računalu se flakon lagano nagne prema mišu
     },
