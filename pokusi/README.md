@@ -238,7 +238,9 @@ učitava na martimex.hr.
   - gore topla crna traka s natpisom MARTIMEX (Cormorant Garamond) i tankim ikonama (novi razgovor, X)
   - pozornica u istoj boji: Xerjoff flakon s dosadašnjeg početnog ekrana (oblik, mjere i boje prepisani
     iz `pocetna-chata.js`: fasetirano staklo s medenom tekućinom, zlatni prsten, zlatni čep sa šiljkom,
-    zlatna pločica sa znakom X), od točkica u nitima; ispod njega „Marti · AI asistentica”
+    zlatna pločica sa znakom X), od točkica u nitima, s toplom svijetlom aurom iza sebe; ispod njega
+    „Marti · AI asistentica”. Flakon je jednako udaljen od natpisa MARTIMEX iznad i tog natpisa ispod
+    sebe, a kad se složi, prednja strana s pločicom okrenuta je udesno
   - razgovor na toploj bjelokosti bez teksture: Martine poruke su bijele kartice, kupčeve tamne,
     ponuđeni odgovori pilule s tankim tamnim obrubom (pod mišem ili prstom se ispune), polje za
     poruku bijela kapsula; ploča „Započni novi razgovor / Odustani” je bijela, odozdo

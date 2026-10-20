@@ -70,7 +70,8 @@
       tih:       '#7a6d66',     // prigušeni tekst (napomene, "Vaša poruka...")
       linija:    '#e8ddd6',     // tanki topli rubovi na svijetlom
       puder:     '#f3e5de',     // natpis MARTIMEX, tekst na tamnom; odsjaj na znaku X
-      roza:      '#e2c3ba',     // naglasak (Martimexova prašnjava roza): crte, fokus, "Marti · AI asistentica"
+      roza:      '#e2c3ba',     // naglasak (Martimexova prašnjava roza): crte, fokus, "Marti · AI asistentica", aura iza flakona
+      auraJezgra: '#fff0e4',    // topla bijela jezgra aure iza flakona
       // flakon (iste boje kao na dosadašnjem početnom ekranu)
       srebro:    '#e8e6eb',     // točkice stakla
       zlato:     '#e0bb72'      // zlatni čep, prsten i pločica flakona, medena tekućina u njemu
@@ -652,8 +653,23 @@
     `;
     const UNIFORME = ['uVrijeme', 'uKut', 'uNagib', 'uMis', 'uUvod', 'uIzlaz', 'uOdsjaj', 'uPx', 'uSredina', 'uVelicina', 'uJacina',
       'uSrebro', 'uZlato', 'uPuder'];
-    const KUT0 = -0.3;                 // flakon nastane malo okrenut ulijevo (kao na dosadašnjem početnom ekranu)
+    const KUT0 = -0.75;                // kad se flakon složi, prednja strana (pločica sa znakom X) okrenuta je udesno
     const NAGIB = 0.1;                 // gledamo ga malo odozgo
+
+    // Raspored flakona na pozornici: flakon je jednako udaljen od natpisa
+    // MARTIMEX iznad pozornice i od natpisa "Marti · AI asistentica" ispod
+    // flakona. NATPIS_IZNAD: koliko je dno slova MARTIMEX iznad vrha
+    // pozornice (traka je visoka 56 px, a slova od 17 px su u njezinoj
+    // sredini); OZNAKA_ISPOD: koliko je vrh slova "Marti · AI asistentica"
+    // iznad dna pozornice (natpis je 13 px od dna, slova su 10 px).
+    // Vraća sredinu flakona (px od vrha pozornice) i njegovu visinu (px).
+    const NATPIS_IZNAD = 22.6, OZNAKA_ISPOD = 21.5;
+    const VIDNI_POMAK = 0.047;
+    function rasporedFlakona(vis) {
+      const sredina = (vis - OZNAKA_ISPOD - NATPIS_IZNAD) / 2;
+      const visina = Math.min(vis * broj(F.velicina, 0.7, 0.3, 0.9), 2 * (sredina - 4));   // vrh flakona ne smije ispod trake
+      return { sredina: sredina, visina: Math.max(20, visina) };
+    }
     // jačina točkica: 0,7 uz gustoću 26 000 točkica na flakonu visokom 175 px
     // po jedinici (kao u pocetna-chata.js); uz gušće točkice slabije
     const JACINA_FLAKONA = 0.7, GUSTOCA_FLAKONA = 26000 / (175 * 175);
@@ -751,11 +767,15 @@
         }
         if (!gl || !spremno) return;
         gl.viewport(0, 0, platno.width, platno.height);
-        // flakon (visok VISINA jedinica) zauzme zadani udio visine pozornice;
-        // sredina mu je malo iznad sredine (ispod je natpis)
-        const px = vis * broj(F.velicina, 0.7, 0.3, 0.9) / VISINA;
+        // flakon (visok VISINA jedinica) zauzme zadani udio visine pozornice,
+        // jednako udaljen od natpisa iznad i ispod sebe (vidi rasporedFlakona)
+        const r = rasporedFlakona(vis);
+        const px = r.visina / VISINA;
         gl.uniform2f(U.uPx, 2 * px / w, 2 * px / vis);
-        gl.uniform2f(U.uSredina, 0, 1 - 2 * (vis * 0.445) / vis);
+        // flakon je nagnut prema nama, pa je na zaslonu prednji rub dna niže i
+        // bliže (veći): vidljivi flakon je za VIDNI_POMAK jedinica niže od
+        // svoje sredine, pa se za toliko digne
+        gl.uniform2f(U.uSredina, 0, 1 - 2 * (r.sredina - VIDNI_POMAK * px) / vis);
         // veličina i jačina točkica kao u pocetna-chata.js: manji flakon ima
         // gušće točkice na zaslonu, pa su one slabije (ne sasvim razmjerno)
         gl.uniform1f(U.uVelicina, 1.35 * dpr * Math.min(1.25, Math.max(0.8, Math.sqrt(px / 160))));
@@ -768,7 +788,9 @@
         if (!gl || !spremno) return;
         const mirno = MIRNO.matches;
         const uvod = mirno ? 1 : sat(t / pojava);
-        const kut = KUT0 + (mirno ? 0 : brzina * t);
+        // flakon se okreće od samog početka (i dok nastaje), a u položaju
+        // KUT0 je baš kad se složi
+        const kut = KUT0 + (mirno ? 0 : brzina * (t - pojava));
         let odsjaj = 9;
         if (!mirno && svakih > 0 && t > pojava + 0.4) {
           const c = (t - pojava - 0.4) % svakih;
@@ -997,8 +1019,11 @@
         position: relative;
         height: var(--mx-j-visina, 230px);
         overflow: hidden;
+        /* svijetla aura iza flakona: topla bijela jezgra iza stakla i šira
+           ružičasta aura (sredina i veličina prate flakon, vidi mjeri) */
         background:
-          radial-gradient(40% 46% at 50% 44%, ${prozirna(B.roza, .11)}, ${prozirna(B.roza, .035)} 55%, ${prozirna(B.roza, 0)} 100%),
+          radial-gradient(calc(var(--mx-j-flakon, 150px) * .34) calc(var(--mx-j-flakon, 150px) * .5) at 50% var(--mx-j-sredina, 42%), ${prozirna(B.auraJezgra, .14)}, ${prozirna(B.auraJezgra, .05)} 55%, ${prozirna(B.auraJezgra, 0)} 100%),
+          radial-gradient(calc(var(--mx-j-flakon, 150px) * .9) min(calc(var(--mx-j-flakon, 150px) * .8), calc(var(--mx-j-sredina, 80px) - 2px)) at 50% var(--mx-j-sredina, 42%), ${prozirna(B.roza, .2)}, ${prozirna(B.roza, .075)} 48%, ${prozirna(B.roza, 0)} 100%),
           var(--mx-j-tama);
         transition: height .9s var(--mx-j-sklapanje);
       }
@@ -1024,9 +1049,9 @@
         display: none;
         position: absolute;
         left: 50%;
-        top: 44.5%;
-        width: calc(var(--mx-j-visina, 230px) * .74 * .506);
-        height: calc(var(--mx-j-visina, 230px) * .74);
+        top: var(--mx-j-sredina, 42%);
+        width: calc(var(--mx-j-flakon, 150px) * 1.025 * .506);
+        height: calc(var(--mx-j-flakon, 150px) * 1.025);
         transform: translate(-50%, -50%);
         color: ${prozirna(B.puder, .72)};
       }
@@ -1458,6 +1483,9 @@
             // prvo mjerenje bez prijelaza (pozornica ne smije "skočiti" pri otvaranju)
             if (!izmjereno) korijen.classList.add('mx-j-odmah');
             korijen.style.setProperty('--mx-j-visina', v + 'px');
+            const r = rasporedFlakona(v);
+            korijen.style.setProperty('--mx-j-sredina', r.sredina.toFixed(1) + 'px');
+            korijen.style.setProperty('--mx-j-flakon', r.visina.toFixed(1) + 'px');
             if (!izmjereno) {
               void korijen.offsetHeight;
               if (!korijen.classList.contains('mx-j-sklopljeno')) korijen.classList.remove('mx-j-odmah');
