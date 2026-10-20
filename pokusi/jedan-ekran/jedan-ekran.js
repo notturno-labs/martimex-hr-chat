@@ -1096,8 +1096,12 @@
         box-shadow: 0 0 0 1px rgba(60, 40, 30, .05), 0 -18px 40px -24px rgba(40, 26, 18, .45);
       }
       /* dok razgovor tek kreće (otvaranjem chata), Voiceflowova ploča s gumbom se ne vidi */
+      ${PROZOR}:not(:has(.vfrc-system-response, .vfrc-user-response)) .vfrc-footer__start-button,
       ${PROZOR}:not(:has(.vfrc-system-response, .vfrc-user-response)) div:has(> ${START}) { visibility: hidden; }
       ${W} .vfrc-chat--overlay { background-color: rgba(20, 14, 10, .22); }
+      /* zatamnjenje, ploča "Novi razgovor?" i izbornik uvijek iznad trake i pozornice */
+      ${PROZOR} > .vfrc-chat--overlay { z-index: 6; }
+      ${PROZOR} > .vfrc-prompt, ${PROZOR} > .vfrc-more-menu, ${PROZOR} > .vfrc-file-drop-overlay { z-index: 7; }
       ${GLAVNI.join(',\n      ')},
       ${W} .vfrc-prompt .vfrc-button {
         min-height: 48px;
