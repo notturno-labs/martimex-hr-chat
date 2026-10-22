@@ -6,8 +6,8 @@
   //  odmah tu, a vrh prozora je mala tamna "pozornica" s brendovima.
   //
   //   - gore je tamna traka s natpisom "Marti · AI asistentica" u dva
-  //     reda: MARTI (Cormorant Garamond, razmaknuta velika slova, boja
-  //     pudera) i ispod sitno AI ASISTENTICA (prašnjava roza), te
+  //     reda: MARTI (Jost, isti font kao poruke; razmaknuta velika slova,
+  //     boja pudera) i ispod sitno AI ASISTENTICA (prašnjava roza), te
   //     Voiceflowovim gumbima za novi razgovor i zatvaranje (samo tanke
   //     ikone, bez kruga)
   //   - ispod nje, u istoj toploj crnoj boji, je niska pozornica: tri
@@ -26,7 +26,10 @@
   //   - razgovor je na toploj bjelokosti, bez mramora i bez teksture:
   //     Martine poruke su bijele kartice s jedva vidljivom sjenom, kupčeve
   //     su tamne (tinta), ponuđeni odgovori su pilule s tankim tamnim
-  //     obrubom koje se pod mišem (ili prstom) ispune tamnom bojom
+  //     obrubom koje se pod mišem (ili prstom) ispune tamnom bojom; glavni
+  //     odgovori (status narudžbe, Loyalty Card, reklamacija, plaćanje,
+  //     beauty savjetnik) imaju lijevo tanku ikonu (originali u mapi
+  //     ikone/; POSTAVKE: ikoneGumba), koja na ispunjenoj piluli posvijetli
   //   - polje za poruku je bijela kapsula s tankim toplim rubom; gumb za
   //     slanje je taman krug tek kad ima što poslati
   //   - čim kupac pošalje prvu poruku ili pritisne ponuđeni odgovor,
@@ -95,6 +98,17 @@
       noviRazgovor: 'Započni novi razgovor',  // "Start new chat"
       odustani: 'Odustani',                   // "Cancel"
       razgovorZavrsen: 'Razgovor je završen'  // "Chat has ended"
+    },
+
+    // Ikone na ponuđenim odgovorima (pilulama): tekst gumba (isti kao u
+    // Voiceflowu) → ikona. Ikone su: savjetnik, narudzba, loyalty,
+    // reklamacija, placanje. Gumbi kojih tu nema ostaju bez ikone
+    ikoneGumba: {
+      'Vaš beauty savjetnik':     'savjetnik',
+      'Provjeri status narudžbe': 'narudzba',
+      'Loyalty Card':             'loyalty',
+      'Prijavi reklamaciju':      'reklamacija',
+      'Načini plaćanja':          'placanje'
     },
 
     // Pozornica s trakama: visina kao udio visine prozora chata, unutar granica (px); niska, da ne vlada ekranom
@@ -218,6 +232,23 @@
     const PRAZNO = W + ' .vfrc-input-container:has(.vfrc-chat-input:placeholder-shown) #vfrc-send-message';
     const GLAVNI = [W + ' ' + START, W + ' .vfrc-prompt .vfrc-button:first-child'];
     const SPOREDNI = W + ' .vfrc-prompt .vfrc-button:last-child:not(:first-child)';
+    // Ikone ponuđenih odgovora (tanke linije i mali puni krug sa znakom).
+    // "currentColor" je boja linija i kruga, "#fff" boja znaka u krugu; za
+    // svaku ikonu se izrade dvije verzije: tamna (obična pilula) i svijetla
+    // (pilula ispunjena tintom, pod mišem ili prstom)
+    const IKONE_GUMBA = {
+      savjetnik: '<g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M26.14 43 H11 A4 4 0 0 1 7 39 V19.5 A4 4 0 0 1 11 15.5 H27 A4 4 0 0 1 31 19.5 V24.78"/><path d="M17 10.5 V15.5 M21 10.5 V15.5"/><rect x="14" y="3" width="10" height="7.5" rx="1.2"/><path d="M12 21 V29"/></g><circle cx="36.5" cy="36" r="9.5" fill="currentColor"/><path d="M36.5 30.6 C37.05 33.95 38.55 35.45 41.9 36 C38.55 36.55 37.05 38.05 36.5 41.4 C35.95 38.05 34.45 36.55 31.1 36 C34.45 35.45 35.95 33.95 36.5 30.6 Z" fill="#fff"/>',
+      narudzba: '<g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 L21 2.5 L40 11 L22 19.5 Z"/><path d="M3 11 V32 L22 40.5 V19.5"/><path d="M40 11 V24"/><path d="M22 40.5 L24.45 39.34"/><path d="M9.84 14.06 L27.84 5.56 M14.4 16.1 L32.4 7.6"/><path d="M9.84 14.06 V18.66 L14.4 20.7 V16.1"/></g><circle cx="36.5" cy="36" r="9.5" fill="currentColor"/><path d="M32.3 36.3 L35.3 39.2 L40.8 33.3" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+      loyalty: '<g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M24.09 34.5 H6.5 A3.5 3.5 0 0 1 3 31 V13 A3.5 3.5 0 0 1 6.5 9.5 H37.5 A3.5 3.5 0 0 1 41 13 V24.34"/><path d="M13 25.6 C10.2 23.5 8.2 21.8 8.2 19.5 C8.2 17.8 9.5 16.6 11 16.6 C11.9 16.6 12.6 17 13 17.7 C13.4 17 14.1 16.6 15 16.6 C16.5 16.6 17.8 17.8 17.8 19.5 C17.8 21.8 15.8 23.5 13 25.6 Z"/><path d="M23 18.5 H34 M23 23.5 H29.5"/></g><circle cx="36.5" cy="36" r="9.5" fill="currentColor"/><path d="M36.5 31.65 L37.7 34.69 L40.97 34.9 L38.45 36.98 L39.26 40.15 L36.5 38.4 L33.74 40.15 L34.55 36.98 L32.03 34.9 L35.3 34.69 Z" fill="#fff" stroke="#fff" stroke-width="0.9" stroke-linejoin="round"/>',
+      reklamacija: '<g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M26.14 43 H8.5 A2.5 2.5 0 0 1 6 40.5 V5.5 A2.5 2.5 0 0 1 8.5 3 H24 L32 11 V24.34"/><path d="M24 3 V9 A2 2 0 0 0 26 11 H32"/><path d="M12 17 H26 M12 23 H26 M12 29 H20"/></g><circle cx="36.5" cy="36" r="9.5" fill="currentColor"/><path d="M36.5 31.4 V36.8" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/><circle cx="36.5" cy="40.2" r="1.25" fill="#fff"/>',
+      placanje: '<g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.9 11.5 L8 6.4 L30.6 2.4 L32.3 11.5"/><path d="M8.45 8.95 L31.05 4.95"/><path d="M24.09 37.5 H7 A4 4 0 0 1 3 33.5 V15.5 A4 4 0 0 1 7 11.5 H37 A4 4 0 0 1 41 15.5 V24"/><path d="M41 16 H33 A4 4 0 0 0 33 24 H41"/><circle cx="33.4" cy="20" r="1.3" fill="currentColor" stroke="none"/></g><circle cx="36.5" cy="36" r="9.5" fill="currentColor"/><path d="M40.24 32.95 A4.1 4.1 0 1 0 40.24 39.05 M31.7 35 H37 M31.7 37.2 H37" stroke="#fff" stroke-width="1.45" stroke-linecap="round"/>'
+    };
+    // ikona kao data: adresa, u zadanim bojama (linije i krug / znak u krugu)
+    function ikonaGumba(ime, boja, znak) {
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">' +
+        IKONE_GUMBA[ime].replace(/currentColor/g, boja).replace(/#fff/g, znak) + '</svg>';
+      return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
+    }
     const VISINA_TRAKE = 64;              // px, traka s natpisom (Voiceflowovo zaglavlje je 56 px; malo deblja, da dva reda natpisa dišu)
     const VRH_NATPISA = Math.round((VISINA_TRAKE - 37) / 2) - 2;   // natpis u dva reda (24 + 2 + 11 px) optički u sredini trake (slova su niže u svom retku)
 
@@ -300,12 +331,12 @@
         top: calc(env(safe-area-inset-top, 0px) + ${P.podnatpis ? VRH_NATPISA : 0}px);
         left: 50%;
         transform: translateX(-50%);
-        padding-left: .36em;                  /* optički centrira razmaknuta slova */
-        font-family: var(--mx-j-font-natpisa);
-        font-size: ${P.podnatpis ? 19 : 18}px;
+        padding-left: .34em;                  /* optički centrira razmaknuta slova */
+        font-family: var(--mx-j-font);        /* isti font kao poruke (Jost) */
+        font-size: ${P.podnatpis ? 16 : 16}px;
         font-weight: 500;
         line-height: ${P.podnatpis ? 24 : VISINA_TRAKE}px;
-        letter-spacing: .36em;
+        letter-spacing: .34em;
         white-space: nowrap;
         color: var(--mx-j-puder);
         pointer-events: none;
@@ -552,6 +583,20 @@
       }
       ${PILULA}:active { background: var(--mx-j-tinta); color: ${B.puder}; box-shadow: inset 0 0 0 1px var(--mx-j-tinta); transform: scale(.97); }
       ${PILULA}:focus-visible { outline: 1px solid var(--mx-j-tinta); outline-offset: 3px; }
+      /* pilula s ikonom: ikona lijevo, tamna; kad se pilula ispuni tintom, svijetla */
+      ${PILULA}[data-mx-ikona] {
+        padding-left: 41px;
+        background-position: 14px center;
+        background-size: 20px 20px;
+        background-repeat: no-repeat;
+      }
+${Object.keys(IKONE_GUMBA).map(function (k) {
+  const sel = PILULA + '[data-mx-ikona="' + k + '"]';
+  const tamna = ikonaGumba(k, B.tinta, B.papir), svijetla = ikonaGumba(k, B.puder, B.tinta);
+  return '      ' + sel + ' { background-image: ' + tamna + '; }\n' +
+    '      @media (hover: hover) and (pointer: fine) { ' + sel + ':hover { background-image: ' + svijetla + '; } }\n' +
+    '      ' + sel + ':active { background-image: ' + svijetla + '; }';
+}).join('\n')}
 
       /* Voiceflowove kartice i vrtuljak (ako ih Marti pošalje) */
       ${W} .vfrc-card {
@@ -1094,6 +1139,24 @@
 
     // Hrvatski natpisi gumba su u CSS-u (content); čitač zaslona dobije
     // hrvatsko ime (aria-label). Samo atribut, u chat se ništa ne umeće.
+    // Ikone na ponuđenim odgovorima: gumb dobije atribut data-mx-ikona prema
+    // svom tekstu (POSTAVKE: ikoneGumba); samo atribut, DOM se ne mijenja
+    const IKONE_PO_TEKSTU = (function () {
+      const m = {};
+      Object.keys(P.ikoneGumba || {}).forEach(function (t) {
+        const ime = P.ikoneGumba[t];
+        if (IKONE_GUMBA[ime]) m[String(t).replace(/\s+/g, ' ').trim().toLowerCase()] = ime;
+      });
+      return m;
+    })();
+    function ikoneGumba(kor) {
+      kor.querySelectorAll('.vfrc-system-response--actions .vfrc-button').forEach(function (g) {
+        const ime = IKONE_PO_TEKSTU[String(g.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase()] || '';
+        if ((g.getAttribute('data-mx-ikona') || '') === ime) return;
+        if (ime) g.setAttribute('data-mx-ikona', ime); else g.removeAttribute('data-mx-ikona');
+      });
+    }
+
     function imenaGumba(kor) {
       const parovi = [
         [T.noviRazgovor, START + ', .vfrc-prompt .vfrc-button:first-child'],
@@ -1131,9 +1194,10 @@
         ubaciStil(S.kor);
         oznaci(false);
         pratiPolje(S.kor);
-        new MutationObserver(function () { imenaGumba(S.kor); uskladiUskoro(); })
+        new MutationObserver(function () { imenaGumba(S.kor); ikoneGumba(S.kor); uskladiUskoro(); })
           .observe(S.kor, { childList: true, subtree: true });
         uskladi();
+        ikoneGumba(S.kor);
         // sličice logotipa se preuzmu unaprijed, kad preglednik miruje, da su
         // tu kad se chat otvori
         const kasnije = window.requestIdleCallback || function (f) { return setTimeout(f, 1200); };
