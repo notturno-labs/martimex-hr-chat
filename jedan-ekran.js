@@ -19,7 +19,10 @@
   //     prazna: red logotipa se sam ponovi koliko puta treba da je uvijek
   //     širi od pozornice, a brendovi su tu od prvog kadra. Na rubovima
   //     pozornice logotipi tiho izblijede. Pozornica je nenametljiva:
-  //     razgovor je glavna stvar. Ispod traka piše "Marti · AI asistentica"
+  //     razgovor je glavna stvar
+  //   - odmah ispod crne pozornice, na bjelokosti, je natpis "Marti · AI
+  //     asistentica" (razmaknuta velika slova, topla prigušena smeđa), a
+  //     ispod njega tanka roza crta prema razgovoru
   //   - razgovor je na toploj bjelokosti, bez mramora i bez teksture:
   //     Martine poruke su bijele kartice s jedva vidljivom sjenom, kupčeve
   //     su tamne (tinta), ponuđeni odgovori su pilule s tankim tamnim
@@ -27,9 +30,9 @@
   //   - polje za poruku je bijela kapsula s tankim toplim rubom; gumb za
   //     slanje je taman krug tek kad ima što poslati
   //   - čim kupac pošalje prvu poruku ili pritisne ponuđeni odgovor,
-  //     trake izblijede, pozornica se glatko sklopi, a natpis "Marti · AI
-  //     asistentica" sjedne u traku ispod natpisa MARTIMEX; razgovor tada
-  //     dobije cijeli prozor. Na niskom prozoru (mobitel) pozornica se
+  //     trake izblijede i pozornica se glatko sklopi; natpis "Marti · AI
+  //     asistentica" ostaje na bjelokosti odmah ispod crne trake MARTIMEX,
+  //     a razgovor dobije ostatak prozora. Na niskom prozoru (mobitel) pozornica se
   //     sklopi već kad kupac dotakne polje za poruku, da tipkovnica ne
   //     prekrije razgovor
   //   - novi razgovor (gumb gore) vrati pozornicu i trake
@@ -74,6 +77,7 @@
       papir:     '#fffdfb',     // Martine poruke, polje za poruku, ploče
       tinta:     '#1c1715',     // tekst; kupčeve poruke; obrub i ispuna ponuđenih odgovora
       tih:       '#7a6d66',     // prigušeni tekst (napomene, "Vaša poruka...")
+      oznaka:    '#86685d',     // natpis "Marti · AI asistentica" na bjelokosti (topla prigušena smeđa)
       linija:    '#e8ddd6',     // tanki topli rubovi na svijetlom
       puder:     '#f3e5de',     // natpis MARTIMEX, tekst na tamnom
       roza:      '#e2c3ba',     // naglasak (Martimexova prašnjava roza): crte, fokus, "Marti · AI asistentica"
@@ -85,7 +89,7 @@
     fontNatpisa: '"MX Cormorant", "Cormorant Garamond", Garamond, Georgia, "Times New Roman", serif',
 
     natpis: 'Martimex',                       // u traci gore; piše se velikim slovima
-    oznaka: 'Marti · AI asistentica',         // ispod traka, a kad se pozornica sklopi, ispod natpisa
+    oznaka: 'Marti · AI asistentica',         // na bjelokosti, odmah ispod crne pozornice (i ispod trake MARTIMEX kad se pozornica sklopi)
 
     // Voiceflowovi engleski tekstovi ('' = ostaje Voiceflowov tekst)
     tekstovi: {
@@ -95,7 +99,7 @@
     },
 
     // Pozornica s trakama: visina kao udio visine prozora chata, unutar granica (px); niska, da ne vlada ekranom
-    pozornica: { udio: 0.19, min: 124, max: 150 },
+    pozornica: { udio: 0.15, min: 92, max: 116 },
     // Na mobitelu i tabletu, i na prozoru nižem od ovoga (px), pozornica se
     // sklopi čim kupac dotakne polje za poruku, da tipkovnica ne prekrije
     // razgovor (0 = svugdje tek kad pošalje prvu poruku)
@@ -216,7 +220,6 @@
     const GLAVNI = [W + ' ' + START, W + ' .vfrc-prompt .vfrc-button:first-child'];
     const SPOREDNI = W + ' .vfrc-prompt .vfrc-button:last-child:not(:first-child)';
     const VISINA_TRAKE = 56;              // px, traka s natpisom (kao Voiceflowovo zaglavlje)
-    const OZNAKA_ISPOD = 34;              // px od dna pozornice koje zauzima natpis "Marti · AI asistentica" (13 px od dna + 10 px slova + zrak)
 
     // fino zrno (kao na fotografiji), da topla crna ne djeluje plastično
     const ZRNO = 'url("data:image/svg+xml,' + encodeURIComponent(
@@ -307,8 +310,6 @@
         pointer-events: none;
         transition: transform .9s var(--mx-j-sklapanje);
       }
-      /* kad se pozornica sklopi, natpis se malo digne, a ispod njega sjedne "Marti · AI asistentica" */
-      ${SKLOPLJENO} .vfrc-chat > .vfrc-header .vfrc-header--title::after { transform: translate(-50%, -9px); }
       /* gumbi: samo svijetle ikone, bez kruga */
       ${ZAGLAVLJE} .vfrc-header--button {
         position: relative;
@@ -350,17 +351,14 @@
         opacity: .07;
         pointer-events: none;
       }
-      /* trake: stoje u sredini prostora iznad natpisa "Marti · AI asistentica" */
+      /* trake: u sredini pozornice */
       :host .mx-j-trake {
         position: absolute;
-        left: 0; right: 0;
-        top: 0;
-        bottom: ${OZNAKA_ISPOD}px;
+        top: 0; right: 0; bottom: 0; left: 0;
         display: flex;
         flex-direction: column;
         justify-content: center;
         gap: var(--mx-j-razmak-traka, 14px);
-        padding-top: 6px;
         transition: opacity .45s var(--mx-j-meko);
       }
       :host .mx-j-traka {
@@ -420,26 +418,25 @@
         from { transform: translate3d(-50%, 0, 0); }
         to   { transform: translate3d(0, 0, 0); }
       }
-      /* "Marti · AI asistentica": ispod traka; kad se pozornica sklopi, s
-         njom se digne i sjedne u traku ispod natpisa MARTIMEX */
+      /* "Marti · AI asistentica": na bjelokosti, odmah ispod crne pozornice
+         (kad se pozornica sklopi, odmah ispod trake MARTIMEX) */
       :host .mx-j-oznaka {
-        position: absolute;
-        left: 0; right: 0;
-        bottom: 13px;
+        position: relative;
         margin: 0;
+        padding: 13px 0 11px .3em;            /* lijevo: optički centrira razmaknuta slova */
         text-align: center;
-        font-size: 10px;
+        font-size: 12px;
         font-weight: 400;
-        line-height: 10px;
-        letter-spacing: .32em;
-        padding-left: .32em;
+        line-height: 14px;
+        letter-spacing: .3em;
         text-transform: uppercase;
         white-space: nowrap;
-        color: var(--mx-j-roza);
+        color: ${B.oznaka || B.tih};
+        background: var(--mx-j-bjelokost);
         pointer-events: none;
       }
-      /* tanka roza crta na granici tame i bjelokosti; ispod nje poruke koje
-         klize prema gore tiho nestanu u bjelokosti */
+      /* tanka roza crta ispod natpisa; ispod nje poruke koje klize prema
+         gore tiho nestanu u bjelokosti */
       :host .mx-j::after {
         content: "";
         position: absolute;
@@ -460,10 +457,7 @@
           linear-gradient(180deg, var(--mx-j-bjelokost), var(--mx-j-bjelokost-0));
       }
       /* bez prijelaza (chat se otvori na postojećem razgovoru) */
-      :host .mx-j-odmah .mx-j-scena, :host .mx-j-odmah .mx-j-trake,
-      :host([${OZNAKA}~="odmah"]) .vfrc-widget .vfrc-header--title::after { transition: none; }
-      /* pojava pri svakom otvaranju: trake su tu od prvog kadra, samo se natpis tiho pojavi */
-      :host .mx-j-ulaz .mx-j-oznaka { animation: mx-j-pojava 1.2s var(--mx-j-glatko) .4s backwards; }
+      :host .mx-j-odmah .mx-j-scena, :host .mx-j-odmah .mx-j-trake { transition: none; }
 
       /* ═══ PORUKE ═══ */
       ${PORUKE} { padding-top: 14px; }
@@ -764,7 +758,6 @@
       @media (prefers-reduced-motion: reduce) {
         :host .mx-j-scena, :host .mx-j-trake, ${ZAGLAVLJE} .vfrc-header--title::after { transition: none; }
         :host .mx-j-tok { animation: none; }
-        :host .mx-j-ulaz .mx-j-oznaka { animation: mx-j-prozirnost .4s linear backwards; }
         ${MARTI}, ${KORISNIK} { animation: mx-j-prozirnost .3s linear backwards; }
         ${W} .vfrc-typing-indicator > span { animation: none; opacity: 1; }
         ${POSALJI}, ${POSALJI}:hover, ${POSALJI}:active, ${PILULA}:active,
@@ -911,18 +904,18 @@
         mjeri: function (visinaProzora) {
           if (!(visinaProzora > 0)) return;              // prozor se još ne vidi (zatvoren chat)
           const p = P.pozornica || {};
-          const min = broj(p.min, 124, 60, 600), max = Math.max(min, broj(p.max, 150, 60, 800));
-          let v = Math.round(Math.min(max, Math.max(min, visinaProzora * broj(p.udio, 0.19, 0.1, 0.8))));
-          if (visinaProzora < 520) v = Math.round(Math.max(100, visinaProzora * 0.2));    // vrlo nizak prozor (mobitel položen)
+          const min = broj(p.min, 92, 60, 600), max = Math.max(min, broj(p.max, 116, 60, 800));
+          let v = Math.round(Math.min(max, Math.max(min, visinaProzora * broj(p.udio, 0.15, 0.1, 0.8))));
+          if (visinaProzora < 520) v = Math.round(Math.max(76, visinaProzora * 0.16));    // vrlo nizak prozor (mobitel položen)
           if (v !== visina || !izmjereno) {
             visina = v;
             // prvo mjerenje bez prijelaza (pozornica ne smije "skočiti" pri otvaranju)
             if (!izmjereno) korijen.classList.add('mx-j-odmah');
             korijen.style.setProperty('--mx-j-visina', v + 'px');
-            // tri trake moraju stati iznad natpisa: ako ne stanu, logotipi i razmaci se smanje
+            // tri trake moraju stati na pozornicu: ako ne stanu, logotipi i razmaci se smanje
             const n = trake.children.length || 1;
             const h = broj(M.visina, 18, 8, 120), r = broj(M.razmakTraka, 12, 0, 100);
-            const prostor = v - OZNAKA_ISPOD - 6 - 6;
+            const prostor = v - 12;
             const treba = n * h + (n - 1) * r;
             const k = treba > prostor ? Math.max(0.4, prostor / treba) : 1;
             korijen.style.setProperty('--mx-j-logotip', (h * k).toFixed(1) + 'px');

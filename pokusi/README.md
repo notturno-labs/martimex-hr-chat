@@ -314,8 +314,10 @@ bijeli, jedan pokraj drugoga, i polako putuju: gornja traka ulijevo, srednja ude
 svaka malo drugom brzinom, bez kraja (traka je sašivena sama sa sobom, pa nema skoka); uz rubove
 pozornice tiho izblijede. Nijedna traka nikad nije prazna: red logotipa se sam ponovi koliko puta
 treba da je uvijek širi od pozornice, a brendovi su tu od prvog kadra (bez blijeđenja pri pojavi).
-Pozornica je nenametljiva — razgovor je glavna stvar. Sve ostalo (traka MARTIMEX, „Marti · AI asistentica”, sklapanje
-pozornice nakon prve poruke, razgovor na bjelokosti) nepromijenjeno.
+Pozornica je nenametljiva — razgovor je glavna stvar. Natpis „Marti · AI asistentica” nije više na
+crnom, nego odmah ispod pozornice na bjelokosti (12 px, razmaknuta velika slova, topla prigušena
+smeđa `boje.oznaka`), s tankom rozom crtom ispod; kad se pozornica sklopi, ostaje ondje, odmah
+ispod trake MARTIMEX (natpis MARTIMEX se više ne pomiče).
 
 - Trake su običan CSS (bez WebGL-a): `transform` animacija toka s dva ista reda logotipa. Rade
   svugdje; „Smanji pokrete”: trake stoje. Ako se neka sličica ne učita, preskoči se.
@@ -331,7 +333,7 @@ pozornice nakon prve poruke, razgovor na bjelokosti) nepromijenjeno.
 - Postavke (`marke`): raspored po trakama (`trake`: smjer, brzina u sekundama po jednom krugu,
   logotipi), `visina` logotipa (18 px; široki natpisi su niži, `sirina` = najveća širina kao
   višekratnik visine), `razmak`, `razmakTraka`, `prozirnost` (0,55 — diskretno), `rub` (blijeđenje
-  uz rub). Visina pozornice: `pozornica` (19 % prozora, 124–150 px). Na niskom prozoru trake se
+  uz rub). Visina pozornice: `pozornica` (15 % prozora, 92–116 px). Na niskom prozoru trake se
   same smanje da stanu iznad natpisa. Boja logotipa: `boje.logotip` (zadano bijela).
 - Probe: `trake/proba.html` (pravi Voiceflow; sve iz iste grane, pa radi i preko raw.githack.com;
   `?popust=1` probni popusti) i `trake/mock.html` (bez Voiceflowa; parametri kao u
