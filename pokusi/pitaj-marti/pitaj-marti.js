@@ -332,12 +332,20 @@
     return h && h.shadowRoot;
   }
 
+  // Chat je spreman kad postoji prozor i Voiceflowov gumb za početak
+  // razgovora — ili razgovor već traje (tada Voiceflow taj gumb makne)
   function chatSpreman() {
     const kor = korijenChata();
     const vc = window.voiceflow && window.voiceflow.chat;
     if (!kor || !vc || typeof vc.open !== 'function') return null;
-    if (!kor.querySelector(PROZOR) || !kor.querySelector(START)) return null;
+    if (!kor.querySelector(PROZOR)) return null;
+    if (!kor.querySelector(START) && !razgovorTraje(kor)) return null;
     return kor;
+  }
+
+  function razgovorTraje(kor) {
+    const ploca = kor.querySelector('.vfrc-footer__start-button');
+    return !!(ploca && ploca.hasAttribute('inert')) || imaRazgovor(kor);
   }
 
   function cekajChat(ms) {
