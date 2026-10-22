@@ -305,6 +305,41 @@ učitava: kad se odobri, u `loader.js` se makne # ispred `jedan-ekran.js` i stav
   Voiceflowov prozor i učita i perlice; `?razgovor=1` postojeći razgovor, `?klik=3` sam pritisne
   ponuđeni odgovor, `?kraj=1` završen razgovor, `?tipka=6` Marti „tipka” 6 s).
 
+## Monogram, pozdrav i poziv na razgovor (`jedan-ekran.js` v2, `poziv-chata.js`, probe u `monogram/`)
+
+Dorada „Jednog ekrana” (gore) prema odluci da chat ostane na jednom ekranu, svijetao i pristupačan,
+a da se iz probe s crnim početnim ekranom (grana `claude/pocetni-ekran`) preuzme ono dobro:
+
+- **Monogram umjesto Xerjoffova flakona.** Na pozornici je Martimexovo slovo **M** iz natpisa
+  MARTIMEX (Cormorant Garamond, s debljinom), satkano od istih zlatnih niti: prednja i stražnja
+  ploha su vodoravne niti kroz slovo, bokovi kratke niti po dubini na rubovima. Nastane iz
+  izmaglice kao flakon, a zatim se polako njiše lijevo-desno (uvijek čitljivo) s odsjajem svjetla.
+  Ne favorizira nijedan brend. Flakon je i dalje tu: postavka `oblik: 'flakon'` (proba:
+  `?oblik=flakon`). Slovo se crta fontom natpisa u skriveno platno, pa modul prvo pričeka font
+  (fontovi se sada preuzmu unaprijed). Bez WebGL-a: obično slovo M fontom natpisa.
+- **Brže za povratnike.** Drugo i svako sljedeće otvaranje chata u istoj kartici: monogram je
+  odmah složen, samo se meko pojavi (postavka `brzoDrugiPut`, pamti se u sessionStorageu).
+- **Ponuđeni odgovori po važnosti.** Gumbi ispod uvodne poruke slažu se redom iz postavke
+  `brzaPitanja` („Vaš beauty savjetnik” prvi), a prvi je istaknut kao glavni (ispunjena tamna
+  pilula). Radi se preko CSS `order` na Voiceflowovim gumbima, pa se Voiceflowov DOM ne dira;
+  tekstovi gumba moraju biti isti kao u Voiceflowu, nepoznati gumbi idu iza.
+- **Naslov uvodne poruke.** Podebljani prvi red Martine uvodne poruke ispisuje se kao naslov u
+  Cormorantu (postavka `naslovUvoda`), pa pozdrav izgleda kao naslov, a ne kao još jedan odlomak.
+- **Poziv na razgovor** (`poziv-chata.js`, novi modul, u `loader.js` isključen s `#` dok se ne
+  odobri): nekoliko sekundi nakon učitavanja stranice iznad gumba chata izroni mala bijela kartica
+  kao prva Martina poruka (avatar M, „Marti · AI asistentica”, jedna rečenica; na stranici
+  proizvoda rečenica o proizvodu). Pritisak otvori chat, × zatvori; najviše jednom po posjetu i
+  samo ako chat u tom posjetu nije otvaran; nestane čim se chat otvori. Postavke na vrhu modula
+  (tekstovi, `odgoda` 8 s); stranica ih može promijeniti objektom `window.MartimexPoziv`.
+- Stanje chata se usklađuje preko setTimeout (radi i dok je kartica u pozadini).
+
+**Gdje se vidi:** `monogram/proba.html` (pravi Voiceflow; učitava `loader.js`, `jedan-ekran.js` i
+`poziv-chata.js` iz iste grane, pa radi i preko raw.githack.com prije spajanja u `main`; poziv se
+na toj stranici pojavi nakon 3 s, `?poziv=0` bez njega, `?oblik=flakon` flakon, `?popust=1`
+probni popusti). Bez Voiceflowa i interneta: `monogram/mock.html` (`?zatvoreno=1` za poziv uz
+zatvoren chat, ostalo kao u `jedan-ekran/mock.html`). Kad je na grani `main`, i `proba.html` s
+vrha repozitorija pokazuje monogram (poziv tek kad se uključi u `loader.js`).
+
 ## Akcija i promo kod na kartici artikla (`akcija/`)
 
 Popust uz cijenu je u pravoj kartici, `kartica-artikla.js` (v31 = v30 + popust; uputa:

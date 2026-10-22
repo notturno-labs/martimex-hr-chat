@@ -1,22 +1,40 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — chat s Marti na JEDNOM ekranu (izgled "Jedan ekran")
+  //  MARTIMEX — chat s Marti na JEDNOM ekranu (izgled "Jedan ekran", v2)
   //
   //  Nema više početnog ekrana ispred chata: kad se chat otvori, razgovor
-  //  je odmah tu, a vrh prozora je mala tamna "pozornica" s flakonom.
+  //  je odmah tu, a vrh prozora je mala tamna "pozornica" s Martimexovim
+  //  monogramom M (ili, po izboru u POSTAVKAMA, s flakonom).
+  //
+  //  Novo u v2 (listopad 2026):
+  //   - na pozornici je umjesto Xerjoffova flakona Martimexov monogram: slovo
+  //     M iz natpisa MARTIMEX (Cormorant Garamond), s debljinom, satkano od
+  //     istih zlatnih niti; ne favorizira nijedan brend. Nastane iz izmaglice
+  //     kao flakon, a zatim se polako njiše lijevo-desno (uvijek čitljivo), s
+  //     odsjajem svjetla; flakon je i dalje tu (postavka oblik: 'flakon')
+  //   - drugo i svako sljedeće otvaranje chata u istoj kartici: monogram je
+  //     odmah složen (bez čekanja na nastanak), samo se meko pojavi
+  //   - ponuđeni odgovori ispod uvodne poruke slažu se po važnosti iz
+  //     POSTAVKI (brzaPitanja), a prvi je istaknut kao glavni (ispunjena
+  //     tamna pilula); redoslijed i tekstovi gumba inače ostaju Voiceflowovi
+  //   - podebljani prvi red uvodne poruke ("Bok! Ja sam Marti...") ispisuje
+  //     se kao naslov u Cormorantu, kao natpis MARTIMEX
+  //   - stanje se usklađuje i dok je kartica u pozadini
   //
   //   - gore je tamna traka s natpisom MARTIMEX (Cormorant Garamond,
   //     razmaknuta velika slova, boja pudera) i Voiceflowovim gumbima za
   //     novi razgovor i zatvaranje (samo tanke ikone, bez kruga)
-  //   - ispod nje, u istoj toploj crnoj boji, je pozornica: Xerjoff flakon
-  //     s dosadašnjeg početnog ekrana (Xerjoff 1861, Naxos: fasetirano
-  //     staklo s medenom tekućinom, zlatni prsten, zlatni čep sa šiljkom i
-  //     zlatna pločica sa znakom X), satkan od tisuća svjetlećih točkica u
-  //     tankim nitima; oblik i boje su prepisani iz pocetna-chata.js.
-  //     Pri svakom otvaranju chata točkice se iz izmaglice spuste i slegnu
-  //     u flakon (staklo se puni odozdo, čep zadnji); flakon se zatim samo
-  //     vrlo polako okreće, a svakih nekoliko sekundi preko stakla ukoso
-  //     prijeđe svjetlo. Ispod flakona piše "Marti · AI asistentica"
+  //   - ispod nje, u istoj toploj crnoj boji, je pozornica: Martimexov
+  //     monogram M (slovo iz natpisa MARTIMEX, s debljinom) satkan od
+  //     tisuća zlatnih svjetlećih točkica u tankim nitima, s mekom aurom
+  //     iza sebe. Pri prvom otvaranju chata točkice se iz izmaglice spuste
+  //     i slegnu u slovo (odozdo prema gore); slovo se zatim polako njiše
+  //     lijevo-desno, a svakih nekoliko sekundi preko njega ukoso prijeđe
+  //     svjetlo. Po izboru (postavka oblik: 'flakon') je tu umjesto
+  //     monograma dosadašnji Xerjoff flakon (fasetirano staklo s medenom
+  //     tekućinom, zlatni prsten, čep sa šiljkom i pločica sa znakom X;
+  //     oblik i boje prepisani iz pocetna-chata.js), koji se okreće.
+  //     Ispod oblika piše "Marti · AI asistentica"
   //   - razgovor je na toploj bjelokosti, bez mramora i bez teksture:
   //     Martine poruke su bijele kartice s jedva vidljivom sjenom, kupčeve
   //     su tamne (tinta), ponuđeni odgovori su pilule s tankim tamnim
@@ -37,9 +55,9 @@
   //   - Voiceflowovi engleski tekstovi ("Start new chat", "Cancel",
   //     "Chat has ended") su na hrvatskom
   //
-  //  "Smanji pokrete" (postavka uređaja): flakon stoji, bez pojave i
+  //  "Smanji pokrete" (postavka uređaja): oblik stoji, bez pojave i
   //  odsjaja; pozornica se sklopi bez animacije. Bez WebGL-a je umjesto
-  //  točkica tanki obris istog flakona.
+  //  točkica obično slovo M fontom natpisa (ili tanki obris flakona).
   //
   //  Tehnički: kao i ostali moduli, ovaj ubaci svoj stil u shadow DOM
   //  elementa #voiceflow-chat i oslanja se na Voiceflowove službene klase
@@ -86,7 +104,34 @@
     fontNatpisa: '"MX Cormorant", "Cormorant Garamond", Garamond, Georgia, "Times New Roman", serif',
 
     natpis: 'Martimex',                       // u traci gore; piše se velikim slovima
-    oznaka: 'Marti · AI asistentica',         // ispod flakona, a kad se pozornica sklopi, ispod natpisa
+    oznaka: 'Marti · AI asistentica',         // ispod monograma, a kad se pozornica sklopi, ispod natpisa
+
+    // Što je na pozornici: 'monogram' (Martimexovo M od zlatnih niti) ili 'flakon' (Xerjoff flakon kao dosad)
+    oblik: 'monogram',
+    monogram: {
+      slovo: 'M',               // jedno slovo (ili dva) iz fonta natpisa
+      tezina: 500,              // debljina slova u fontu (Cormorant: 500–700)
+      visina: 0.72,             // visina slova kao udio visine koju bi imao flakon (slovo je široko, pa je niže)
+      dubina: 0.16,             // debljina slova (udio njegove visine)
+      njihanje: 0.36,           // rad: koliko se najviše okrene lijevo/desno (0 = miruje ravno)
+      period: 11,               // s: jedan zamah lijevo-desno-lijevo
+      tocaka: 14000             // točkica (rjeđe od flakona, da se vide niti)
+    },
+    brzoDrugiPut: true,         // 2. i svako sljedeće otvaranje u istoj kartici: oblik odmah složen, bez nastanka
+
+    // Ponuđeni odgovori ispod Martine uvodne poruke: ovim redom (ostali iza), a
+    // prvi se istakne kao glavni (ispunjena tamna pilula). Tekst mora biti isti
+    // kao tekst gumba u Voiceflowu; gumbi kojih tu nema ostaju kako Voiceflow
+    // pošalje. [] = ništa se ne mijenja
+    brzaPitanja: [
+      'Vaš beauty savjetnik',
+      'Provjeri status narudžbe',
+      'Loyalty Card',
+      'Prijavi reklamaciju',
+      'Načini plaćanja'
+    ],
+    // podebljani prvi red Martine uvodne poruke ispisuje se kao naslov (Cormorant); false = kao dosad
+    naslovUvoda: true,
 
     // Voiceflowovi engleski tekstovi ('' = ostaje Voiceflowov tekst)
     tekstovi: {
@@ -126,7 +171,9 @@
   const MX_JEDAN = (function () {
     'use strict';
 
-    const P = MX_JEDAN_POSTAVKE;
+    // stranica može neke postavke promijeniti objektom window.MartimexJedanEkran
+    // (prije učitavanja modula), npr. { oblik: 'flakon' } na testnoj stranici
+    const P = Object.assign({}, MX_JEDAN_POSTAVKE, window.MartimexJedanEkran || {});
     const B = P.boje;
     const T = P.tekstovi || {};
     const F = P.flakon || {};
@@ -540,7 +587,141 @@
 
 
     // ═══════════════════════════════════════════════════════════════════
-    //  ANIMACIJA — WebGL platno koje crta točkice flakona
+    //  MONOGRAM — Martimexovo slovo M od točkica u nitima
+    //
+    //  Slovo se nacrta fontom natpisa (Cormorant Garamond) u skriveno platno,
+    //  pa se iz njegove prozirnosti složi slovo s debljinom: prednja i
+    //  stražnja ploha su vodoravne niti kroz slovo (kao niti kroz pločicu
+    //  flakona), a bokovi su kratke niti po dubini na rubu slova (gdje niti
+    //  izlaze iz slova), i to na svim rubovima: kosim, okomitim i vodoravnim
+    //  (vodoravne rubove serifa nađu okomiti prolazi kroz slovo). Sve je
+    //  zlato, kao čep i prsten flakona, pa svjetlo i odsjaj rade isto.
+    //  Mjere su u svjetskim jedinicama kao flakon (visok VISINA); slovo je
+    //  visoko zadani udio toga i stoji u sredini.
+    // ═══════════════════════════════════════════════════════════════════
+    function fontNatpisa(px) { return (+MONO.tezina || 500) + ' ' + px + 'px ' + P.fontNatpisa; }
+    function cekajFontNatpisa() {
+      if (!document.fonts || !document.fonts.load) return Promise.resolve();
+      return Promise.race([
+        document.fonts.load(fontNatpisa(200), String(MONO.slovo || 'M')).catch(function () {}),
+        new Promise(function (r) { setTimeout(r, 2500); })
+      ]);
+    }
+    function gradiMonogram(n) {
+      const slovo = String(MONO.slovo || 'M').trim().slice(0, 2) || 'M';
+      const FPX = 256, PAD = 12;
+      const c = document.createElement('canvas');
+      let ctx = c.getContext('2d');
+      if (!ctx) return null;
+      ctx.font = fontNatpisa(FPX);
+      const m = ctx.measureText(slovo);
+      const lijevo = m.actualBoundingBoxLeft || 0, desno = m.actualBoundingBoxRight || m.width;
+      const gore = m.actualBoundingBoxAscent || FPX * 0.66, dolje = m.actualBoundingBoxDescent || 0;
+      if (!(lijevo + desno > 4) || !(gore + dolje > 4)) return null;
+      const w = Math.ceil(lijevo + desno) + 2 * PAD, h = Math.ceil(gore + dolje) + 2 * PAD;
+      c.width = w; c.height = h;
+      ctx = c.getContext('2d');
+      ctx.font = fontNatpisa(FPX);
+      ctx.fillStyle = '#fff';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(slovo, PAD + lijevo, PAD + gore);
+      const px = ctx.getImageData(0, 0, w, h).data;
+      const A = new Uint8Array(w * h);
+      let ispunjeno = 0;
+      for (let i = 0; i < w * h; i++) { A[i] = px[4 * i + 3]; if (A[i] >= 128) ispunjeno++; }
+      if (ispunjeno < 50) return null;
+      const u = function (i, j) { return i >= 0 && j >= 0 && i < w && j < h && A[j * w + i] >= 128; };
+      // smjer van iz slova na rubu (iz nagiba prozirnosti), u svjetskim smjerovima (y gore)
+      const alfa = function (i, j) { return i < 0 || j < 0 || i >= w || j >= h ? 0 : A[j * w + i]; };
+      function van(i, j) {
+        const gx = alfa(i + 1, j) - alfa(i - 1, j) + 0.5 * (alfa(i + 1, j - 1) - alfa(i - 1, j - 1) + alfa(i + 1, j + 1) - alfa(i - 1, j + 1));
+        const gy = alfa(i, j + 1) - alfa(i, j - 1) + 0.5 * (alfa(i - 1, j + 1) - alfa(i - 1, j - 1) + alfa(i + 1, j + 1) - alfa(i + 1, j - 1));
+        const l = Math.hypot(gx, gy);
+        return l > 1e-6 ? [-gx / l, gy / l] : [0, 0];
+      }
+
+      const VIS = VISINA * broj(MONO.visina, 0.72, 0.3, 1);     // visina slova (svjetske jedinice)
+      const K = VIS / (gore + dolje);                             // piksel platna → svjetska jedinica
+      const DUB = VIS * broj(MONO.dubina, 0.16, 0.02, 0.6);       // debljina slova
+      const cx = PAD + (lijevo + desno) / 2, cy = PAD + (gore + dolje) / 2;
+      const X = function (i) { return (i - cx) * K; }, Y = function (j) { return (cy - j) * K; };
+
+      // razmak niti iz površine (dvije plohe i bokovi) i broja točkica
+      const sirinaSlova = (lijevo + desno) * K;
+      let rub = 0;
+      for (let j = 1; j < h - 1; j++) for (let i = 1; i < w - 1; i++) if (u(i, j) && (!u(i + 1, j) || !u(i - 1, j) || !u(i, j + 1) || !u(i, j - 1))) rub++;
+      const povrsina = 2 * ispunjeno * K * K + rub * K * DUB;
+      const korak = Math.max(0.004, Math.sqrt(povrsina * OMJER / n));
+      const korakPx = Math.max(1, korak / K);
+
+      const L = [];                       // niti: a, b (x, y, z), smjer plohe n, težina
+      function nit(a, b, nx, ny, nz, tezina) {
+        const d = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+        if (d > 1e-6 && tezina > 1e-6) L.push({ a: a, b: b, n: [nx, ny, nz], duljina: d, tezina: tezina });
+      }
+      // vodoravni prolazi: niti prednje i stražnje plohe, a na krajevima niti bokovi
+      for (let jj = PAD * 0.5; jj < h; jj += korakPx) {
+        const j = Math.round(jj), y = Y(jj);
+        let od = -1;
+        for (let i = 0; i <= w; i++) {
+          const unutra = i < w && u(i, j);
+          if (unutra && od < 0) od = i;
+          else if (!unutra && od >= 0) {
+            const x0 = X(od - 0.5), x1 = X(i - 0.5);
+            nit([x0, y, DUB / 2], [x1, y, DUB / 2], 0, 0, 1, x1 - x0);
+            nit([x0, y, -DUB / 2], [x1, y, -DUB / 2], 0, 0, -1, x1 - x0);
+            const vl = van(od, j), vd = van(i - 1, j);
+            nit([x0, y, -DUB / 2], [x0, y, DUB / 2], vl[0], vl[1], 0, DUB * Math.abs(vl[0]));
+            nit([x1, y, -DUB / 2], [x1, y, DUB / 2], vd[0], vd[1], 0, DUB * Math.abs(vd[0]));
+            od = -1;
+          }
+        }
+      }
+      // okomiti prolazi: samo bokovi na vodoravnim rubovima (vrh i dno serifa, prečke)
+      for (let ii = PAD * 0.5; ii < w; ii += korakPx) {
+        const i = Math.round(ii), x = X(ii);
+        let od = -1;
+        for (let j = 0; j <= h; j++) {
+          const unutra = j < h && u(i, j);
+          if (unutra && od < 0) od = j;
+          else if (!unutra && od >= 0) {
+            const y0 = Y(od - 0.5), y1 = Y(j - 0.5);
+            const vg = van(i, od), vd = van(i, j - 1);
+            nit([x, y0, -DUB / 2], [x, y0, DUB / 2], vg[0], vg[1], 0, DUB * Math.abs(vg[1]));
+            nit([x, y1, -DUB / 2], [x, y1, DUB / 2], vd[0], vd[1], 0, DUB * Math.abs(vd[1]));
+            od = -1;
+          }
+        }
+      }
+      if (L.length < 8) return null;
+
+      const r = poLinijama(L.map(function (l) { return l.tezina; }), n);
+      const rnd = slucajno(7319);
+      const podaci = new Float32Array(n * VELICINA_TOCKE);
+      for (let i = 0; i < n; i++) {
+        const l = L[r.linija[i]], t = r.udio[i];
+        const o = i * VELICINA_TOCKE;
+        podaci[o] = lerp(l.a[0], l.b[0], t);
+        podaci[o + 1] = lerp(l.a[1], l.b[1], t);      // slovo je već u sredini (bez pomaka SREDINA)
+        podaci[o + 2] = lerp(l.a[2], l.b[2], t);
+        podaci[o + 3] = l.n[0]; podaci[o + 4] = l.n[1]; podaci[o + 5] = l.n[2];
+        podaci[o + 6] = ZLATO;
+        podaci[o + 7] = rnd(); podaci[o + 8] = rnd(); podaci[o + 9] = rnd(); podaci[o + 10] = rnd();
+      }
+      void sirinaSlova;
+      return podaci;
+    }
+    // bez WebGL-a: isto slovo, obično, fontom natpisa
+    function obrisMonograma() {
+      const slovo = String(MONO.slovo || 'M').trim().slice(0, 2) || 'M';
+      const font = String(P.fontNatpisa).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+      return '<svg viewBox="0 0 100 100" aria-hidden="true"><text x="50" y="52" text-anchor="middle" dominant-baseline="central" font-family="' + font + '" font-weight="' + (+MONO.tezina || 500) + '" font-size="76" fill="currentColor" fill-opacity=".85">' +
+        slovo.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</text></svg>';
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  ANIMACIJA — WebGL platno koje crta točkice oblika na pozornici
     // ═══════════════════════════════════════════════════════════════════
     const VS = `
       precision highp float;
@@ -658,8 +839,10 @@
     `;
     const UNIFORME = ['uVrijeme', 'uKut', 'uNagib', 'uMis', 'uUvod', 'uIzlaz', 'uOdsjaj', 'uPx', 'uSredina', 'uVelicina', 'uJacina',
       'uSrebro', 'uZlato', 'uPuder'];
-    const KUT0 = -0.62;                // kad se flakon složi, prednja strana (pločica sa znakom X) okrenuta je udesno, pa se odatle okreće dalje
+    const KUT0 = -0.62;                // flakon: kad se složi, prednja strana (pločica sa znakom X) okrenuta je udesno, pa se odatle okreće dalje
     const NAGIB = 0.1;                 // gledamo ga malo odozgo
+    const OBLIK = P.oblik === 'flakon' ? 'flakon' : 'monogram';
+    const MONO = P.monogram || {};
 
     // Raspored flakona na pozornici: flakon je jednako udaljen od natpisa
     // MARTIMEX iznad pozornice i od natpisa "Marti · AI asistentica" ispod
@@ -685,8 +868,9 @@
     }
 
     function napraviAnimaciju(platno, scena, dogadaji) {
-      const n = Math.max(3000, Math.round(+(MOBITEL ? F.tocakaMobitel : F.tocaka) || 20000));
+      const n = Math.max(3000, Math.round(OBLIK === 'monogram' ? (+MONO.tocaka || 14000) : (+(MOBITEL ? F.tocakaMobitel : F.tocaka) || 20000)));
       const pojava = broj(F.pojava, 2.4, 0.3, 10), brzina = broj(F.brzina, 0.3, -3, 3), svakih = broj(F.odsjaj, 7, 0, 60);
+      const njihanje = broj(MONO.njihanje, 0.36, 0, 1.4), period = broj(MONO.period, 11, 2, 60);
       let gl = null, program = null, spremnik = null, U = {}, spremno = false, priprema = null, unisteno = false;
       let raf = 0, vrti = false, vrijeme = 0, zadnje = 0, izlazOd = -1, izlazGotov = null, sirina = 0, visina = 0;
       let misX = 0, misY = 0, nagibX = 0, nagibY = 0;
@@ -739,21 +923,26 @@
         return true;
       }
 
-      // oblik i WebGL se pripreme jednom (kad preglednik miruje ili pri otvaranju)
+      // oblik i WebGL se pripreme jednom (kad preglednik miruje ili pri otvaranju);
+      // monogram se crta fontom natpisa, pa se prvo pričeka da font stigne
       function pripremi() {
         if (priprema) return priprema;
-        priprema = new Promise(function (gotovo) { setTimeout(gotovo, 0); }).then(function () {
-          if (unisteno) return false;
-          if (!pocniGL()) { dogadaji.bezAnimacije(); return false; }
-          dovrsiGL(gradiFlakon(n));
-          spremno = true;
-          velicina();
-          return true;
-        }).catch(function (e) {
-          console.warn('[Martimex] Flakon nije pripremljen:', e);
-          dogadaji.bezAnimacije();
-          return false;
-        });
+        priprema = new Promise(function (gotovo) { setTimeout(gotovo, 0); })
+          .then(function () { return OBLIK === 'monogram' ? cekajFontNatpisa() : null; })
+          .then(function () {
+            if (unisteno) return false;
+            if (!pocniGL()) { dogadaji.bezAnimacije(); return false; }
+            const podaci = OBLIK === 'monogram' ? gradiMonogram(n) : gradiFlakon(n);
+            if (!podaci) { dogadaji.bezAnimacije(); return false; }
+            dovrsiGL(podaci);
+            spremno = true;
+            velicina();
+            return true;
+          }).catch(function (e) {
+            console.warn('[Martimex] Oblik na pozornici nije pripremljen:', e);
+            dogadaji.bezAnimacije();
+            return false;
+          });
         return priprema;
       }
 
@@ -785,7 +974,8 @@
         // gušće točkice na zaslonu, pa su one slabije (ne sasvim razmjerno)
         gl.uniform1f(U.uVelicina, 1.35 * dpr * Math.min(1.25, Math.max(0.8, Math.sqrt(px / 160))));
         const gustoca = n / (px * px) / GUSTOCA_FLAKONA;
-        gl.uniform1f(U.uJacina, JACINA_FLAKONA * Math.min(2, Math.max(0.25, Math.pow(gustoca, -0.65))));
+        // monogram je tanak, pa ga "dubina" u sjenčaru (zamišljena za flakon) ne smije prigušiti: svijetli jače
+        gl.uniform1f(U.uJacina, JACINA_FLAKONA * Math.min(2, Math.max(0.25, Math.pow(gustoca, -0.65))) * (OBLIK === 'monogram' ? 1.45 : 1));
         if (!vrti) nacrtaj(vrijeme);
       }
 
@@ -794,8 +984,11 @@
         const mirno = MIRNO.matches;
         const uvod = mirno ? 1 : sat(t / pojava);
         // flakon se okreće od samog početka (i dok nastaje), a u položaju
-        // KUT0 je baš kad se složi
-        const kut = KUT0 + (mirno ? 0 : brzina * (t - pojava));
+        // KUT0 je baš kad se složi; monogram se njiše lijevo-desno oko
+        // položaja prema nama, pa je uvijek čitljiv
+        const kut = OBLIK === 'monogram'
+          ? (mirno ? 0 : njihanje * Math.sin(2 * Math.PI * t / period))
+          : KUT0 + (mirno ? 0 : brzina * (t - pojava));
         let odsjaj = 9;
         if (!mirno && svakih > 0 && t > pojava + 0.4) {
           const c = (t - pojava - 0.4) % svakih;
@@ -850,10 +1043,11 @@
       return {
         pripremi: pripremi,
         velicina: velicina,
-        // pri svakom otvaranju (dok je pozornica otvorena): flakon nastane ispočetka
-        ispocetka: function () {
+        // pri svakom otvaranju (dok je pozornica otvorena): oblik nastane
+        // ispočetka; uz brzo = true je odmah složen (bez nastanka iz izmaglice)
+        ispocetka: function (brzo) {
           stani();
-          vrijeme = 0; izlazOd = -1; izlazGotov = null;
+          vrijeme = brzo ? pojava + 0.5 : 0; izlazOd = -1; izlazGotov = null;
           return pripremi().then(function (ok) { if (ok && dogadaji.ziv()) { velicina(); pokreni(); } return ok; });
         },
         // sklapanje: točkice se rasprše, pa animacija stane
@@ -1061,6 +1255,7 @@
         color: ${prozirna(B.puder, .72)};
       }
       :host .mx-j-rezerva svg { display: block; width: 100%; height: 100%; }
+      :host .mx-j-monogram .mx-j-rezerva { width: calc(var(--mx-j-flakon, 150px) * .9); height: calc(var(--mx-j-flakon, 150px) * .9); }
       :host .mx-j-bez-gl .mx-j-rezerva { display: block; animation: mx-j-prozirnost 1.2s var(--mx-j-meko) .1s backwards; }
       /* "Marti · AI asistentica": ispod flakona; kad se pozornica sklopi, s
          njom se digne i sjedne u traku ispod natpisa MARTIMEX */
@@ -1102,8 +1297,9 @@
       /* bez prijelaza (chat se otvori na postojećem razgovoru) */
       :host .mx-j-odmah .mx-j-scena,
       :host([${OZNAKA}~="odmah"]) .vfrc-widget .vfrc-header--title::after { transition: none; }
-      /* pojava pri svakom otvaranju */
+      /* pojava pri svakom otvaranju (kad je oblik odmah složen, natpis ne čeka) */
       :host .mx-j-ulaz .mx-j-oznaka { animation: mx-j-pojava 1.2s var(--mx-j-glatko) 1.1s backwards; }
+      :host .mx-j-ulaz.mx-j-brzo .mx-j-oznaka { animation-delay: .25s; }
 
       /* ═══ PORUKE ═══ */
       ${PORUKE} { padding-top: 14px; }
@@ -1197,6 +1393,30 @@
       }
       ${PILULA}:active { background: var(--mx-j-tinta); color: ${B.puder}; box-shadow: inset 0 0 0 1px var(--mx-j-tinta); transform: scale(.97); }
       ${PILULA}:focus-visible { outline: 1px solid var(--mx-j-tinta); outline-offset: 3px; }
+      /* glavni ponuđeni odgovor (prvi iz POSTAVKI brzaPitanja): ispunjena tamna pilula */
+      ${W} .vfrc-system-response--actions [data-mx-glavno] .vfrc-button,
+      ${W} .vfrc-system-response--actions .vfrc-button[data-mx-glavno] {
+        background: var(--mx-j-tinta);
+        color: ${B.puder};
+        box-shadow: inset 0 0 0 1px var(--mx-j-tinta), 0 10px 22px -14px rgba(20, 14, 10, .6);
+      }
+      @media (hover: hover) and (pointer: fine) {
+        ${W} .vfrc-system-response--actions [data-mx-glavno] .vfrc-button:hover,
+        ${W} .vfrc-system-response--actions .vfrc-button[data-mx-glavno]:hover { background: #000; color: #fff; box-shadow: inset 0 0 0 1px #000; }
+      }
+      ${P.naslovUvoda !== false ? `
+      /* uvodna poruka: podebljani prvi red kao naslov u Cormorantu */
+      ${W} .vfrc-chat-dialog > .vfrc-system-response--container:first-child ${MARTI.slice(W.length + 1)} .markdown > p:first-child > strong:first-child {
+        display: block;
+        margin: 1px 0 7px;
+        font-family: var(--mx-j-font-natpisa);
+        font-size: 22px;
+        font-weight: 600;
+        line-height: 1.18;
+        letter-spacing: .005em;
+        color: var(--mx-j-tinta);
+      }
+      ${W} .vfrc-chat-dialog > .vfrc-system-response--container:first-child ${MARTI.slice(W.length + 1)} .markdown > p:first-child > strong:first-child + br { display: none; }` : ''}
 
       /* Voiceflowove kartice i vrtuljak (ako ih Marti pošalje) */
       ${W} .vfrc-card {
@@ -1442,6 +1662,17 @@
         }).join('\n');
         document.head.appendChild(stil);
       }
+      // fontovi se preuzmu odmah (a ne tek kad se chat otvori): monogram se crta
+      // fontom natpisa, a naslov uvodne poruke ne smije zatreperiti
+      ['jost-latin', 'jost-latin-ext', 'cormorant-garamond-latin', 'cormorant-garamond-latin-ext'].forEach(function (f) {
+        const l = document.createElement('link');
+        l.rel = 'preload';
+        l.as = 'font';
+        l.type = 'font/woff2';
+        l.crossOrigin = 'anonymous';
+        l.href = KORIJEN + 'fonts/' + f + '.woff2';
+        document.head.appendChild(l);
+      });
       if (!document.getElementById('mx-pocetna-font-300')) dodaj('mx-pocetna-font-300', [['MX Jost', 'jost', '300']]);
       if (document.getElementById('mx-kartice-font') || document.getElementById('mx-pocetna-font') || document.getElementById('mx-tema-font') || document.getElementById('mx-jedan-font')) return;
       dodaj('mx-jedan-font', [['MX Jost', 'jost', '400 600'], ['MX Cormorant', 'cormorant-garamond', '500 700']]);
@@ -1465,7 +1696,8 @@
       const platno = el('canvas', 'mx-j-platno');
       platno.setAttribute('aria-hidden', 'true');
       const rezerva = el('div', 'mx-j-rezerva');
-      rezerva.innerHTML = obrisFlakona();
+      rezerva.innerHTML = OBLIK === 'monogram' ? obrisMonograma() : obrisFlakona();
+      if (OBLIK === 'monogram') korijen.classList.add('mx-j-monogram');
       scena.appendChild(platno);
       scena.appendChild(rezerva);
       korijen.appendChild(scena);
@@ -1515,13 +1747,19 @@
             anim.velicina();
           }
         },
-        // pozornica otvorena: flakon nastane ispočetka
+        // pozornica otvorena: oblik nastane ispočetka; od drugog otvaranja u
+        // istoj kartici je odmah složen (pamti se u sessionStorageu)
         pokazi: function () {
           ziv = true;
-          korijen.classList.remove('mx-j-ulaz', 'mx-j-spremno');
+          let brzo = false;
+          if (P.brzoDrugiPut !== false) {
+            try { brzo = sessionStorage.getItem('mx-j-viden') === '1'; sessionStorage.setItem('mx-j-viden', '1'); } catch (e) { /* bez pamćenja */ }
+          }
+          korijen.classList.remove('mx-j-ulaz', 'mx-j-spremno', 'mx-j-brzo');
           void korijen.offsetWidth;                       // da se pojava ponovi
           korijen.classList.add('mx-j-ulaz');
-          anim.ispocetka().then(function (ok) { if (ok && ziv) korijen.classList.add('mx-j-spremno'); });
+          if (brzo) korijen.classList.add('mx-j-brzo');
+          anim.ispocetka(brzo).then(function (ok) { if (ok && ziv) korijen.classList.add('mx-j-spremno'); });
         },
         // chat zatvoren: animacija stane
         sakrij: function () { ziv = false; anim.stani(); },
@@ -1621,10 +1859,31 @@
         zapocni();
       }
     }
+    // (setTimeout, a ne requestAnimationFrame: radi i dok je kartica u pozadini)
     function uskladiUskoro() {
       if (S.ceka) return;
       S.ceka = true;
-      requestAnimationFrame(uskladi);
+      setTimeout(uskladi, 0);
+    }
+
+    // Ponuđeni odgovori: redoslijed iz POSTAVKI (CSS order, pa se Voiceflowov
+    // DOM ne dira) i oznaka glavnoga. Samo tamo gdje ima barem jedan poznat
+    // gumb (uvodna poruka); ostali ponuđeni odgovori ostaju kako jesu
+    const BRZA = (Array.isArray(P.brzaPitanja) ? P.brzaPitanja : []).map(function (t) { return String(t || '').replace(/\s+/g, ' ').trim().toLowerCase(); }).filter(Boolean);
+    function urediPitanja(kor) {
+      if (!BRZA.length) return;
+      kor.querySelectorAll('.vfrc-chat .vfrc-system-response--actions').forEach(function (skupina) {
+        const gumbi = Array.from(skupina.querySelectorAll('.vfrc-button'));
+        const mjesta = gumbi.map(function (g) { return BRZA.indexOf(String(g.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase()); });
+        if (mjesta.every(function (i) { return i === -1; })) return;
+        gumbi.forEach(function (g, k) {
+          const w = g.parentElement && g.parentElement !== skupina ? g.parentElement : g;   // Voiceflowov omot gumba
+          const red = mjesta[k] === -1 ? String(BRZA.length + k) : String(mjesta[k]);
+          if (w.style.order !== red) w.style.order = red;
+          const glavno = mjesta[k] === 0;
+          if (glavno !== w.hasAttribute('data-mx-glavno')) { if (glavno) w.setAttribute('data-mx-glavno', ''); else w.removeAttribute('data-mx-glavno'); }
+        });
+      });
     }
 
     // Otvaranjem chata razgovor kreće sam (ako još ne postoji)
@@ -1722,7 +1981,7 @@
         ubaciStil(S.kor);
         oznaci(false);
         pratiPolje(S.kor);
-        new MutationObserver(function () { imenaGumba(S.kor); uskladiUskoro(); })
+        new MutationObserver(function () { imenaGumba(S.kor); urediPitanja(S.kor); uskladiUskoro(); })
           .observe(S.kor, { childList: true, subtree: true });
         uskladi();
         // oblik flakona i WebGL se pripreme unaprijed, kad preglednik miruje

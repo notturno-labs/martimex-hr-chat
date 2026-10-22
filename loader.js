@@ -21,6 +21,9 @@
   // tema-chata.js je novi izgled chata "Calacatta" (bijeli i crni mramor
   // sa zlatom; proba: proba-staklo.html); kad se odobri, makne se # ispred
   // njega i izgled vrijedi na martimex.hr.
+  // poziv-chata.js je mala kartica iznad gumba chata koja nekoliko sekundi
+  // nakon učitavanja stranice pozove kupca da pita Marti (proba:
+  // pokusi/monogram/proba.html); kad se odobri, makne se # ispred njega.
   var MODULI = `
     kartica-artikla.js
     gumb-chata.js
@@ -28,6 +31,7 @@
     pocetna-chata.js
     # jedan-ekran.js
     # tema-chata.js
+    # poziv-chata.js
   `;
 
   // Ostale Voiceflow postavke koje želiš dodati s GitHuba (za sada ništa).
