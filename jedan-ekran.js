@@ -33,12 +33,18 @@
   //   - polje za poruku je bijela kapsula s tankim toplim rubom; gumb za
   //     slanje je taman krug tek kad ima što poslati
   //   - čim kupac pošalje prvu poruku ili pritisne ponuđeni odgovor,
-  //     trake izblijede i pozornica se glatko sklopi; ostaje samo crna
-  //     traka s natpisom, a razgovor dobije ostatak prozora. Na niskom
-  //     prozoru (mobitel) pozornica se
-  //     sklopi već kad kupac dotakne polje za poruku, da tipkovnica ne
-  //     prekrije razgovor
-  //   - novi razgovor (gumb gore) vrati pozornicu i trake
+  //     logotipi izblijede (0,4 s) i pozornica se glatko sklopi (0,9 s,
+  //     krene odmah i dugo usporava); ostaje samo crna traka s natpisom, a
+  //     razgovor dobije ostatak prozora. Na niskom prozoru (mobitel)
+  //     pozornica se sklopi već kad kupac dotakne polje za poruku, da
+  //     tipkovnica ne prekrije razgovor; ako polje napusti bez slanja,
+  //     pozornica se vrati
+  //   - novi razgovor (gumb gore, ili "Započni novi razgovor" nakon
+  //     završenog razgovora): čim Voiceflow isprazni razgovor, pozornica se
+  //     raširi i logotipi se vrate (još dok Marti tipka pozdrav), pa
+  //     pozdrav s gumbima kreće ispočetka. Je li pozornica sklopljena, čita
+  //     se iz razgovora (ima li kupčev odgovor), ne pamti se — pa se trake
+  //     vrate i nakon ponovnog otvaranja chata
   //   - ako razgovor već postoji (npr. kupac je s preporuke otišao na
   //     stranicu proizvoda), chat se otvori odmah sklopljen
   //   - razgovor kreće sam kad se chat otvori (nema gumba "Početak"), ali
@@ -279,7 +285,7 @@
         --mx-j-sjena: 0 0 0 1px rgba(60, 40, 30, .05), 0 10px 26px -16px rgba(60, 40, 30, .32), 0 2px 5px -3px rgba(60, 40, 30, .12);
         --mx-j-glatko: cubic-bezier(.16, 1, .3, 1);
         --mx-j-meko: cubic-bezier(.45, 0, .2, 1);
-        --mx-j-sklapanje: cubic-bezier(.65, 0, .25, 1);
+        --mx-j-sklapanje: cubic-bezier(.45, 0, .18, 1);   /* sklapanje i širenje pozornice: krene odmah, dugo usporava */
       }
 
       /* ═══ PROZOR: topla bjelokost (oblik i mjere ostaju Voiceflowovi) ═══ */
@@ -408,7 +414,8 @@
         flex-direction: column;
         justify-content: center;
         gap: var(--mx-j-razmak-traka, 14px);
-        transition: opacity .45s var(--mx-j-meko);
+        /* širenje: logotipi se pojave tek kad se pozornica već malo otvorila */
+        transition: opacity .6s var(--mx-j-meko) .25s;
       }
       :host .mx-j-traka {
         position: relative;
@@ -481,7 +488,8 @@
         pointer-events: none;
       }
       :host .mx-j-sklopljeno .mx-j-scena { height: 0; }
-      :host .mx-j-sklopljeno .mx-j-trake { opacity: 0; }
+      /* sklapanje: logotipi prvo izblijede, pozornica se za njima sklopi */
+      :host .mx-j-sklopljeno .mx-j-trake { opacity: 0; transition: opacity .4s var(--mx-j-meko); }
       :host .mx-j-sklopljeno .mx-j-tok { animation-play-state: paused; }
       :host .mx-j-sklopljeno::after {
         background:
@@ -987,8 +995,10 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
           korijen.classList.add('mx-j-sklopljeno');
           korijen.classList.remove('mx-j-ulaz');
         },
-        rasiri: function () {
-          korijen.classList.remove('mx-j-sklopljeno', 'mx-j-odmah');
+        rasiri: function (odmah) {
+          korijen.classList.toggle('mx-j-odmah', !!odmah);
+          korijen.classList.remove('mx-j-sklopljeno');
+          if (odmah) { void korijen.offsetHeight; korijen.classList.remove('mx-j-odmah'); }
         }
       };
     }
@@ -997,7 +1007,7 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
     // ═══════════════════════════════════════════════════════════════════
     //  VEZA S VOICEFLOWOM
     // ═══════════════════════════════════════════════════════════════════
-    const S = { host: null, kor: null, pozornica: null, sklopljeno: false, otvoren: false, promatracVelicine: null, prozor: null, ceka: false, imaloOdgovora: false };
+    const S = { host: null, kor: null, pozornica: null, sklopljeno: false, otvoren: false, promatracVelicine: null, prozor: null, ceka: false, tipka: false, tipkaCeka: 0 };
 
     function kupacJeOdgovorio(kor) { return !!kor.querySelector('.vfrc-chat .vfrc-user-response'); }
     function imaRazgovor(kor) { return !!kor.querySelector('.vfrc-chat .vfrc-system-response, .vfrc-chat .vfrc-user-response'); }
@@ -1026,12 +1036,27 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       S.pozornica.sklopi(odmah);
     }
 
-    function rasiri() {
+    function rasiri(odmah) {
       if (!S.pozornica || !S.sklopljeno) return;
       S.sklopljeno = false;
       oznaci(false);
-      S.pozornica.rasiri();
+      S.pozornica.rasiri(!!odmah || MIRNO.matches);
       if (S.otvoren) S.pozornica.pokazi();
+    }
+
+    // Treba li pozornica biti sklopljena: čim je kupac odgovorio (razgovor
+    // je glavna stvar), ili dok na niskom prozoru tipka poruku (tipkovnica).
+    // Sve ostalo (novi razgovor, razgovor koji je Voiceflow ispraznio,
+    // ponovno otvaranje) vraća pozornicu i trake — stanje se čita iz
+    // razgovora, ne pamti se
+    function trebaSklopiti(kor) {
+      if (kupacJeOdgovorio(kor)) return true;
+      if (S.tipka && poljeAktivno(kor)) return true;
+      return false;
+    }
+    function poljeAktivno(kor) {
+      const a = kor.activeElement;
+      return !!(a && a.classList && a.classList.contains('vfrc-chat-input'));
     }
 
     // Pozornica mora biti odmah ispod Voiceflowova zaglavlja (ako Voiceflow
@@ -1060,14 +1085,14 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       S.ceka = false;
       const kor = S.kor;
       if (!kor || !prikvaci(kor)) return;
-      if (kupacJeOdgovorio(kor)) {
+      if (trebaSklopiti(kor)) {
         // prvi odgovor kupca: pozornica se sklopi (dok je chat zatvoren, odmah)
-        S.imaloOdgovora = true;
         sklopi(!S.otvoren);
-      } else if (S.sklopljeno && S.imaloOdgovora && imaRazgovor(kor)) {
-        // novi razgovor (gumb gore): pozornica i flakon se vrate
-        S.imaloOdgovora = false;
-        rasiri();
+      } else if (S.sklopljeno) {
+        // novi razgovor (gumb gore ili "Započni novi razgovor" nakon završenog):
+        // Voiceflow isprazni razgovor i pozornica se s trakama odmah vrati,
+        // još dok Marti tipka pozdrav (dok je chat zatvoren, bez animacije)
+        rasiri(!S.otvoren);
       }
       if (S.otvoren) {
         // prozor se pojavio tek nakon otvaranja: flakon i razgovor kreću sad
@@ -1075,10 +1100,11 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
         zapocni();
       }
     }
+    // (setTimeout, a ne requestAnimationFrame: radi i dok je kartica u pozadini)
     function uskladiUskoro() {
       if (S.ceka) return;
       S.ceka = true;
-      requestAnimationFrame(uskladi);
+      setTimeout(uskladi, 0);
     }
 
     // Otvaranjem chata razgovor kreće sam (ako još ne postoji)
@@ -1093,8 +1119,9 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       S.otvoren = true;
       const kor = S.kor;
       if (!kor || !prikvaci(kor)) return;     // prozor još ne postoji: uskladi() nastavi kad se pojavi
-      if (kupacJeOdgovorio(kor)) { S.imaloOdgovora = true; sklopi(true); }
-      else if (!S.sklopljeno) S.pozornica.pokazi();
+      S.tipka = false;                         // polje više nema fokus (prozor se tek otvara)
+      if (trebaSklopiti(kor)) sklopi(true);    // postojeći razgovor: odmah sklopljeno, bez animacije
+      else { rasiri(true); S.pozornica.pokazi(); }
       zapocni();
     }
 
@@ -1132,9 +1159,25 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
         const polje = put.some(function (x) { return x && x.classList && (x.classList.contains('vfrc-chat-input') || x.classList.contains('vfrc-input-container')); });
         if (!polje) return;
         const prozor = kor.querySelector('.vfrc-chat');
-        if (prozor && (MOBITEL || prozor.clientHeight < granica) && S.otvoren && S.pozornica) sklopi(false);
+        if (prozor && (MOBITEL || prozor.clientHeight < granica) && S.otvoren && S.pozornica) {
+          clearTimeout(S.tipkaCeka);
+          S.tipka = true;
+          sklopi(false);
+        }
       }
       kor.addEventListener('pointerdown', dodir, true);
+      // kupac je napustio polje bez slanja (zatvorio tipkovnicu, dotaknuo nešto
+      // drugo): pozornica se vrati — s malim zakašnjenjem, jer pritisak na
+      // ponuđeni odgovor najprije makne fokus, a tek onda pošalje poruku
+      kor.addEventListener('focusout', function (e) {
+        if (!S.tipka || !(e.target && e.target.classList && e.target.classList.contains('vfrc-chat-input'))) return;
+        clearTimeout(S.tipkaCeka);
+        S.tipkaCeka = setTimeout(function () {
+          if (!S.kor || poljeAktivno(S.kor)) return;
+          S.tipka = false;
+          uskladi();
+        }, 350);
+      }, true);
     }
 
     // Hrvatski natpisi gumba su u CSS-u (content); čitač zaslona dobije

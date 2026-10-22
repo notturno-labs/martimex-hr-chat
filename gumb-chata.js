@@ -126,20 +126,27 @@
         box-shadow: var(--mx-g-sjena);
         -webkit-tap-highlight-color: transparent;
         animation: none;
-        transition: box-shadow .3s ease, transform .12s ease, max-width .3s cubic-bezier(.4, 0, .2, 1);
+        text-overflow: clip;                  /* dok se pilula skuplja u krug, natpis se reže, bez "…" */
+        /* pretvorba u gumb za zatvaranje i natrag: širina, rubovi i razmak
+           zajedno, istom krivuljom kao kod Voiceflowa; pritisak kratko */
+        transition: box-shadow .3s ease, transform .15s ease, max-width .3s cubic-bezier(.4, 0, .2, 1), padding .3s cubic-bezier(.4, 0, .2, 1), gap .3s cubic-bezier(.4, 0, .2, 1);
       }
       /* Voiceflow gumb na dodir poveća za 10 % i posivi, a na pritisak smanji za 20 % */
       :host ${GUMB}:hover,
       :host ${GUMB}:active { background-color: var(--mx-g-podloga); transform: none; }
-      :host ${GUMB}:active { transform: scale(.97); }
+      :host ${GUMB}:active { transform: scale(.96); }
       :host ${GUMB}:focus-visible { outline: 2px solid var(--mx-g-tinta); outline-offset: 3px; }
       @media (hover: hover) and (pointer: fine) {
         :host ${GUMB}:hover { box-shadow: var(--mx-g-sjena-gore); }
       }
 
-      /* chat zatvoren: gumb s ikonom i natpisom */
+      /* chat zatvoren: gumb s ikonom i natpisom. Najveća širina je točno
+         izmjerena širina pilule (upisuje je JS), a ne Voiceflowovih 500 px:
+         tako se pri otvaranju pilula skuplja u krug jednoliko kroz cijelih
+         0,3 s, a ne naglo pri kraju */
       ${ZATVOREN} ${GUMB} {
         height: ${H}px;
+        max-width: var(--mx-g-sirina, 500px);
         padding: 0 17px 0 13px;
         gap: 8px;
       }
@@ -159,10 +166,16 @@
         line-height: 18px;
         letter-spacing: ${RAZMAK}em;
         text-transform: uppercase;
+        text-overflow: clip;
         color: var(--mx-g-roza);
+        transition: opacity .18s ease, margin .3s cubic-bezier(.4, 0, .2, 1);
       }
       /* razmak iza zadnjeg slova ne računa se u širinu gumba */
       ${ZATVOREN} ${NATPIS} { margin-right: -${RAZMAK}em; }
+      /* dok se pilula skuplja u gumb za zatvaranje, natpis se brzo utiša (ne reže se vidljivo);
+         pri zatvaranju chata se vrati tek kad se pilula već malo raširila */
+      ${OTVOREN} ${NATPIS} { opacity: 0; }
+      ${ZATVOREN} ${NATPIS} { transition-delay: .1s, 0s; }
 
       /* ── ikona: oblačić s tri točkice umjesto Voiceflowove slike (slika
          se makne iz vidnog polja, a oblačić i točkice su njezina pozadina;
@@ -259,10 +272,49 @@
       })();
     }
 
+    // Širina pilule (chat zatvoren) → --mx-g-sirina na #voiceflow-chat, da se
+    // pretvorba u krug i natrag odvija kroz cijelo trajanje prijelaza. Mjeri
+    // se bez ograničenja (varijabla se nakratko makne), kad se gumb pojavi,
+    // kad se učita font, pri promjeni veličine prozora i nakon zatvaranja chata
+    function pratiSirinu(host, korijen) {
+      let ceka = 0;
+      function izmjeri() {
+        const g = korijen.querySelector(GUMB);
+        if (!g || host.hasAttribute('data-mx-otvoren')) return;
+        host.style.removeProperty('--mx-g-sirina');
+        const w = g.offsetWidth;                 // bez transformacija (pritisak gumb malo smanji)
+        if (w > 0) host.style.setProperty('--mx-g-sirina', w + 'px');
+      }
+      function uskoro(ms) { clearTimeout(ceka); ceka = setTimeout(izmjeri, ms || 0); }
+      izmjeri();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { uskoro(0); });
+      window.addEventListener('resize', function () { uskoro(150); });
+      window.addEventListener('message', function (e) {
+        const d = typeof e.data === 'string' ? e.data : '';
+        if (d.indexOf('voiceflow:close') !== -1) uskoro(450);     // pilula se raširila: izmjeri iznova
+      });
+      // gumb (ili njegov natpis) se promijenio: izmjeri iznova
+      new MutationObserver(function () { uskoro(50); }).observe(korijen, { childList: true, subtree: true, characterData: true });
+    }
+
+    // gumb se pojavi tek kad chat dobije svoje postavke s Voiceflowa
+    function cekajGumb(korijen, gotovo) {
+      if (korijen.querySelector(GUMB)) { gotovo(); return; }
+      const promatrac = new MutationObserver(function () {
+        if (!korijen.querySelector(GUMB)) return;
+        promatrac.disconnect();
+        gotovo();
+      });
+      promatrac.observe(korijen, { childList: true, subtree: true });
+    }
+
     function pokreni() {
       ubaciFont();
       pratiOtvaranje();
-      cekajHost(function (host) { ubaciStil(host.shadowRoot); });
+      cekajHost(function (host) {
+        ubaciStil(host.shadowRoot);
+        cekajGumb(host.shadowRoot, function () { pratiSirinu(host, host.shadowRoot); });
+      });
     }
 
     return { pokreni: pokreni, css: CSS };

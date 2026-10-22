@@ -343,6 +343,15 @@ bez ikone.
   višekratnik visine), `razmak`, `razmakTraka`, `prozirnost` (0,55 — diskretno), `rub` (blijeđenje
   uz rub). Visina pozornice: `pozornica` (15 % prozora, 92–116 px). Na niskom prozoru trake se
   same smanje da stanu iznad natpisa. Boja logotipa: `boje.logotip` (zadano bijela).
+- Animacije (provjereno na pravom Voiceflowu i u `trake/mock.html`): pri prvom kupčevu odgovoru
+  logotipi izblijede (0,4 s) i pozornica se sklopi (0,9 s, krivulja koja krene odmah i dugo
+  usporava); pri novom razgovoru (gumb gore ili „Započni novi razgovor” nakon završenog) pozornica
+  se raširi čim Voiceflow isprazni razgovor, logotipi se pojave s malim zakašnjenjem (0,25 s), a
+  Marti tipka pozdrav ispod nje. Stanje se čita iz razgovora (ima li kupčev odgovor), ne pamti se:
+  zato se trake vrate i nakon ponovnog otvaranja chata ili kad kupac na mobitelu napusti polje bez
+  slanja. Gumb chata (`gumb-chata.js`): pritisak je kratko smanjenje (0,15 s), pretvorba u okrugli
+  gumb za zatvaranje i natrag teče jednoliko kroz 0,3 s (širina pilule se izmjeri, pa se ne skuplja
+  naglo pri kraju), natpis se pritom utiša umjesto da se reže.
 - Probe: `trake/proba.html` (pravi Voiceflow; sve iz iste grane, pa radi i preko raw.githack.com;
   `?popust=1` probni popusti) i `trake/mock.html` (bez Voiceflowa; parametri kao u
   `jedan-ekran/mock.html`). Kad je na grani `main`, i `proba.html` s vrha repozitorija pokazuje trake.

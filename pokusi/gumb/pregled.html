@@ -92,6 +92,10 @@ h1{margin:0 0 10px;font-size:26px;font-weight:400;letter-spacing:-.01em;line-hei
         '</button>';
       var b = root.querySelector('button'), omot = b.children[0], slika = omot.children[0], strelica = omot.children[1];
       strelica.setAttribute('class', '_1bvgniic _1bvgniie');
+      // širina pilule (na stranici je mjeri gumb-chata.js), da se pretvorba u krug odvija kroz cijeli prijelaz
+      var izmjeri = function () { if (host.hasAttribute('data-mx-otvoren')) return; host.style.removeProperty('--mx-g-sirina'); host.style.setProperty('--mx-g-sirina', b.offsetWidth + 'px'); };
+      izmjeri();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(izmjeri);
       var otvoren = false;
       b.addEventListener('click', function () {
         otvoren = !otvoren;
@@ -99,7 +103,7 @@ h1{margin:0 0 10px;font-size:26px;font-weight:400;letter-spacing:-.01em;line-hei
         omot.classList.toggle('_1bvgniil', otvoren); omot.classList.toggle('_1bvgniim', !otvoren);
         slika.classList.toggle('_1bvgniig', otvoren); slika.classList.toggle('_1bvgniih', !otvoren);
         strelica.setAttribute('class', '_1bvgniic ' + (otvoren ? '_1bvgniid' : '_1bvgniie'));
-        if (otvoren) host.setAttribute('data-mx-otvoren', ''); else host.removeAttribute('data-mx-otvoren');
+        if (otvoren) host.setAttribute('data-mx-otvoren', ''); else { host.removeAttribute('data-mx-otvoren'); setTimeout(izmjeri, 450); }
       });
     });
   }
