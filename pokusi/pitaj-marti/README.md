@@ -97,10 +97,15 @@ kao i prije.
 - Voiceflow (nacrt okruženja): pokretanje s artiklom, događaj usred
   razgovora, običan pozdrav kad razgovor nije pokrenut gumbom, pitanja o
   artiklu i promjena artikla usred razgovora.
-- Stranica (Chromium, računalo i mobitel, oba izgleda chata): jedan
-  `launch` po pritisku (i kod dvostrukog klika), ispravni podaci o artiklu
-  (veličina, nijansa, akcija, artikl bez varijanti), ponuđena pitanja,
-  isti artikl → samo otvaranje, druga veličina → događaj, osvježena
-  stranica, završen razgovor, klik prije nego se chat učitao, rezerva kad
-  `launch` stigne bez artikla, i da obični „Start new chat” ostaje običan
-  pozdrav.
+- U pravom pregledniku, s pravim Voiceflow widgetom (webchat 2.207) i
+  nacrtom okruženja: kartica i pitanje nakon prvog pritiska (oko 2 s),
+  Martini odgovori na „Kakav je miris?”, „Koju veličinu odabrati?” i
+  „Koju nijansu odabrati?” s podacima sa stranice, druga veličina usred
+  razgovora, isti artikl (samo se otvori chat), artikl na akciji u izgledu
+  „Jedan ekran”, ruž na mobitelu, te „Pitaj Marti” nakon običnog pozdrava.
+- Automatski testovi (Chromium, računalo i mobitel, oba izgleda chata):
+  jedan `launch` po pritisku (i kod dvostrukog klika), ispravni podaci o
+  artiklu (veličina, nijansa, akcija, artikl bez varijanti), ponuđena
+  pitanja, osvježena stranica, završen razgovor, klik prije nego se chat
+  učitao, rezerva kad `launch` stigne bez artikla, i da obični „Start new
+  chat” ostaje običan pozdrav.

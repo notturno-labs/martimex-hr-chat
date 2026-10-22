@@ -559,16 +559,23 @@
     await posaljiIPrati(kor, artikl);
   }
 
-  // Voiceflow sam pokreće razgovor otvaranjem (autostart): launch nosi artikl
+  // Razgovor kreće otvaranjem chata (Voiceflowov autostart ili izgled
+  // "jedan ekran"): launch nosi artikl
   async function otvoriSArtiklom(kor, artikl) {
     upisiArtikl(artikl);
     const prati = pratiOdgovor(kor);
     const launchGotov = cekajInterakciju('launch', P.cekajOdgovor);
+    zapis('launch s artiklom (otvaranjem chata)');
     otvoriChat();
     await cekajKarticu(prati, launchGotov);
     isprazniArtikl();
     prati.stani();
-    if (prati.kartica || prati.pitanje) { zadnji = { kljuc: kljucArtikla(artikl), kartica: prati.kartica }; return; }
+    if (prati.kartica || prati.pitanje) {
+      zapis('artikl stigao uz launch');
+      zadnji = { kljuc: kljucArtikla(artikl), kartica: prati.kartica };
+      return;
+    }
+    zapis('rezerva: artikl nije stigao uz launch, šaljem događaj');
     await posaljiIPrati(kor, artikl);
   }
 
