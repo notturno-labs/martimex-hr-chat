@@ -1801,12 +1801,12 @@
       });
 
       if (F.nagibPremaMisu !== false && MIS) {
-        korijen.addEventListener('pointermove', function (e) {
+        scena.addEventListener('pointermove', function (e) {
           const r = scena.getBoundingClientRect();
           if (!r.width || !r.height) return;
           anim.mis(sat((e.clientX - r.left) / r.width) * 2 - 1, sat((e.clientY - r.top) / r.height) * 2 - 1);
         });
-        korijen.addEventListener('pointerleave', function () { anim.mis(0, 0); });
+        scena.addEventListener('pointerleave', function () { anim.mis(0, 0); });
       }
 
       // veličina prostora s flakonom (mijenja se s prozorom i tipkovnicom)
