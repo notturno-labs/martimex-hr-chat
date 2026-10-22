@@ -1,22 +1,33 @@
-# Izradi zasebne sličice logotipa za trake na pozornici chata (jedan-ekran.js):
-# iz slike izvor.webp (bijeli logotipi na crnoj podlozi, 3 stupca × 8 redova)
+# Izradi sličice logotipa za trake na pozornici chata (jedan-ekran.js): iz
+# slike izvor.webp (bijeli logotipi na crnoj podlozi, 3 stupca × 8 redova)
 # svaki logotip se izreže (najmanji okvir oko njega, s malim rubom) i spremi
 # kao PNG s prozirnom pozadinom: logotip je bijel, a prozirnost dolazi iz
 # svjetline piksela (crno = prozirno), pa se logotipi mogu obojiti i slagati
-# na bilo kakvu tamnu podlogu. Sličice idu u mapu marke/trake/, nazvane po
-# brendu (vidi SLIKE), kako ih navodi postavka "marke" u jedan-ekran.js.
+# na bilo kakvu tamnu podlogu.
+#
+# Dva izlaza:
+#  1. marke/trake/<brend>.png — sličice u punoj veličini (za pregled i druge
+#     namjene; chat ih koristi samo ako ugrađenih nema)
+#  2. u jedan-ekran.js, između redaka "// ── SLIČICE LOGOTIPA" i "// ── kraj
+#     sličica", upiše male sličice (visoke VISINA px, dovoljno za 2× zaslon)
+#     kao data: adrese — tako su logotipi u chatu dostupni odmah, bez
+#     čekanja na mrežu, pa traka nikad nije prazna
 #
 #   python3 marke/izradi-trake.py        (iz mape repozitorija; treba Pillow i NumPy)
 #
 # Logotipi se mijenjaju kao za marke.js: zamijeni izvor.webp, upiši imena u
 # SLIKE redom kao na slici (red po red, slijeva nadesno) i pokreni skriptu.
-import os
+import base64, io, os, re
 from PIL import Image
 import numpy as np
 
 MAPA = os.path.dirname(os.path.abspath(__file__))
 IZVOR = os.path.join(MAPA, 'izvor.webp')
 IZLAZ = os.path.join(MAPA, 'trake')
+MODUL = os.path.join(os.path.dirname(MAPA), 'jedan-ekran.js')
+VISINA = 40              # px: visina ugrađenih sličica (u chatu su visoke 18 px, na 2× zaslonu 36 px)
+POCETAK = '    // ── SLIČICE LOGOTIPA'
+KRAJ = '    // ── kraj sličica'
 
 # ime datoteke (bez .png), redom kao na slici
 SLIKE = [
@@ -56,6 +67,7 @@ def main():
     gr = [0] + [(stupci[i][1] + stupci[i + 1][0]) // 2 for i in range(STUPACA - 1)] + [a.shape[1]]
     os.makedirs(IZLAZ, exist_ok=True)
     alfa = np.clip((a - CRNO) / (BIJELO - CRNO), 0, 1)
+    ugradjene = []
     k = 0
     for (y0, y1) in redovi:
         for s in range(STUPACA):
@@ -70,9 +82,27 @@ def main():
             slika[..., :3] = 255
             slika[..., 3] = al
             ime = SLIKE[k]
-            Image.fromarray(slika, 'RGBA').save(os.path.join(IZLAZ, ime + '.png'), optimize=True)
-            print('%-26s %3d x %3d px' % (ime, X1 - X0, Y1 - Y0))
+            puna = Image.fromarray(slika, 'RGBA')
+            puna.save(os.path.join(IZLAZ, ime + '.png'), optimize=True)
+            # mala sličica za ugradnju: siva + prozirnost, visoka VISINA px
+            w = max(1, round(puna.width * VISINA / puna.height))
+            mala = puna.resize((w, VISINA), Image.LANCZOS).convert('LA')
+            b = io.BytesIO()
+            mala.save(b, 'PNG', optimize=True)
+            url = 'data:image/png;base64,' + base64.b64encode(b.getvalue()).decode('ascii')
+            ugradjene.append("      '%s': '%s'" % (ime, url))
+            print('%-26s %3d x %3d px   (ugrađeno %d x %d, %d B)' % (ime, X1 - X0, Y1 - Y0, w, VISINA, len(b.getvalue())))
             k += 1
+
+    # upiši ugrađene sličice u jedan-ekran.js (između oznaka)
+    js = open(MODUL, encoding='utf-8').read()
+    i = js.index(POCETAK)
+    j = js.index(KRAJ)
+    i = js.index('\n', i) + 1
+    blok = '    const SLICICE = {\n' + ',\n'.join(ugradjene) + '\n    };\n'
+    js = js[:i] + blok + js[j:]
+    open(MODUL, 'w', encoding='utf-8').write(js)
+    print('ugrađeno u jedan-ekran.js: %d sličica, %d KB' % (len(ugradjene), sum(len(u) for u in ugradjene) // 1024))
 
 
 if __name__ == '__main__':

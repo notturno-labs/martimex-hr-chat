@@ -319,9 +319,15 @@ pozornice nakon prve poruke, razgovor na bjelokosti) nepromijenjeno.
 
 - Trake su običan CSS (bez WebGL-a): `transform` animacija toka s dva ista reda logotipa. Rade
   svugdje; „Smanji pokrete”: trake stoje. Ako se neka sličica ne učita, preskoči se.
-- Sličice: `marke/trake/<brend>.png` (bijeli logotip na prozirnoj podlozi, 24 datoteke, ukupno
-  oko 180 KB), izrezane iz `marke/izvor.webp` skriptom `marke/izradi-trake.py` (Pillow + NumPy).
-  Novi brend: dodaj sličicu u mapu i ime u postavku `marke.trake` na vrhu `jedan-ekran.js`.
+- Sličice: male verzije (40 px visoke, oko 100 KB ukupno) **ugrađene su u `jedan-ekran.js`** kao
+  `data:` adrese, pa su na pozornici odmah, bez čekanja na mrežu (zato traka nikad nije prazna);
+  pune sličice su u `marke/trake/<brend>.png` (bijeli logotip na prozirnoj podlozi) i koriste se
+  samo ako ugrađene nema. Oboje izrađuje `marke/izradi-trake.py` (Pillow + NumPy) iz
+  `marke/izvor.webp` i sam upiše ugrađene sličice u `jedan-ekran.js` (između oznaka
+  `// ── SLIČICE LOGOTIPA` i `// ── kraj sličica`). Novi brend: nova slika u `izvor.webp`
+  (ili ručno sličica), ime u `SLIKE` u skripti, pokreni skriptu, pa ime u postavku `marke.trake`.
+- Blijeđenje uz rubove radi se prijelazom boje pozornice preko rubova (ne CSS maskom, koju iOS
+  uz animaciju zna nacrtati prazno); svaki red je barem dvostruko širi od pozornice.
 - Postavke (`marke`): raspored po trakama (`trake`: smjer, brzina u sekundama po jednom krugu,
   logotipi), `visina` logotipa (18 px; široki natpisi su niži, `sirina` = najveća širina kao
   višekratnik visine), `razmak`, `razmakTraka`, `prozirnost` (0,55 — diskretno), `rub` (blijeđenje
