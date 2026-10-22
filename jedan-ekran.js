@@ -8,17 +8,17 @@
   //   - gore je tamna traka s natpisom MARTIMEX (Cormorant Garamond,
   //     razmaknuta velika slova, boja pudera) i Voiceflowovim gumbima za
   //     novi razgovor i zatvaranje (samo tanke ikone, bez kruga)
-  //   - ispod nje, u istoj toploj crnoj boji, je pozornica: tri crne trake
-  //     s logotipima parfemskih i modnih kuća koje Martimex prodaje
-  //     (Chanel, Hermès, Guerlain ... Lancôme, Estée Lauder; sličice su u
-  //     mapi marke/trake/, izrezane iz marke/izvor.webp skriptom
-  //     marke/izradi-trake.py). Logotipi su bijeli, jedan pokraj drugoga, i
-  //     polako putuju: gornja traka ulijevo, srednja udesno, donja ulijevo,
+  //   - ispod nje, u istoj toploj crnoj boji, je niska pozornica: dvije
+  //     tanke, diskretne trake s malim logotipima parfemskih i modnih kuća
+  //     koje Martimex prodaje (Chanel, Hermès, Guerlain ... Lancôme, Estée
+  //     Lauder; sličice su u mapi marke/trake/, izrezane iz marke/izvor.webp
+  //     skriptom marke/izradi-trake.py). Logotipi su prigušeno bijeli, jedan
+  //     pokraj drugoga, i polako putuju: gornja traka ulijevo, donja udesno,
   //     svaka malo drugom brzinom, bez kraja (traka se sašije sama sa
   //     sobom, pa nema skoka). Na rubovima pozornice logotipi tiho
-  //     izblijede. Pri svakom otvaranju chata trake se pojave jedna za
-  //     drugom, a svakih nekoliko sekundi preko pozornice ukoso prijeđe
-  //     meko svjetlo. Ispod traka piše "Marti · AI asistentica"
+  //     izblijede. Pri svakom otvaranju chata trake se tiho pojave jedna za
+  //     drugom. Pozornica je nenametljiva: razgovor je glavna stvar. Ispod
+  //     traka piše "Marti · AI asistentica"
   //   - razgovor je na toploj bjelokosti, bez mramora i bez teksture:
   //     Martine poruke su bijele kartice s jedva vidljivom sjenom, kupčeve
   //     su tamne (tinta), ponuđeni odgovori su pilule s tankim tamnim
@@ -39,8 +39,8 @@
   //   - Voiceflowovi engleski tekstovi ("Start new chat", "Cancel",
   //     "Chat has ended") su na hrvatskom
   //
-  //  "Smanji pokrete" (postavka uređaja): trake stoje, bez svjetla;
-  //  pozornica se sklopi bez animacije. Trake su običan CSS (bez WebGL-a),
+  //  "Smanji pokrete" (postavka uređaja): trake stoje; pozornica se sklopi
+  //  bez animacije. Trake su običan CSS (bez WebGL-a),
   //  pa rade svugdje; ako se neka sličica ne učita, preskoči se.
   //
   //  Tehnički: kao i ostali moduli, ovaj ubaci svoj stil u shadow DOM
@@ -75,8 +75,7 @@
       tih:       '#7a6d66',     // prigušeni tekst (napomene, "Vaša poruka...")
       linija:    '#e8ddd6',     // tanki topli rubovi na svijetlom
       puder:     '#f3e5de',     // natpis MARTIMEX, tekst na tamnom
-      roza:      '#e2c3ba',     // naglasak (Martimexova prašnjava roza): crte, fokus, "Marti · AI asistentica", aura na pozornici
-      auraJezgra: '#fff0e4',    // topla bijela jezgra aure na pozornici i svjetla koje prelazi preko traka
+      roza:      '#e2c3ba',     // naglasak (Martimexova prašnjava roza): crte, fokus, "Marti · AI asistentica"
       logotip:   '#ffffff'      // logotipi na trakama (sličice su bijele; drugom bojom se oboje)
     },
 
@@ -94,8 +93,8 @@
       razgovorZavrsen: 'Razgovor je završen'  // "Chat has ended"
     },
 
-    // Pozornica s flakonom: visina kao udio visine prozora chata, unutar granica (px)
-    pozornica: { udio: 0.27, min: 150, max: 224 },
+    // Pozornica s trakama: visina kao udio visine prozora chata, unutar granica (px); niska, da ne vlada ekranom
+    pozornica: { udio: 0.17, min: 104, max: 136 },
     // Na mobitelu i tabletu, i na prozoru nižem od ovoga (px), pozornica se
     // sklopi čim kupac dotakne polje za poruku, da tipkovnica ne prekrije
     // razgovor (0 = svugdje tek kad pošalje prvu poruku)
@@ -106,17 +105,15 @@
     // brzina: koliko sekundi treba da cijeli red prođe (veće = sporije)
     marke: {
       trake: [
-        { smjer: 'lijevo', brzina: 70, logotipi: ['chanel', 'dolce-gabbana', 'guerlain', 'tom-ford', 'hermes', 'elie-saab', 'versace', 'estee-lauder'] },
-        { smjer: 'desno',  brzina: 86, logotipi: ['giorgio-armani', 'carolina-herrera', 'prada', 'chloe', 'valentino', 'yves-saint-laurent', 'lancome', 'van-cleef-arpels'] },
-        { smjer: 'lijevo', brzina: 76, logotipi: ['xerjoff', 'penhaligons', 'chopard', 'maison-francis-kurkdjian', 'tiziana-terenzi', 'memo-paris', 'the-merchant-of-venice', 'brunello-cucinelli'] }
+        { smjer: 'lijevo', brzina: 110, logotipi: ['chanel', 'dolce-gabbana', 'guerlain', 'tom-ford', 'hermes', 'elie-saab', 'versace', 'estee-lauder', 'giorgio-armani', 'prada', 'lancome', 'chloe'] },
+        { smjer: 'desno',  brzina: 130, logotipi: ['carolina-herrera', 'valentino', 'yves-saint-laurent', 'van-cleef-arpels', 'xerjoff', 'penhaligons', 'chopard', 'maison-francis-kurkdjian', 'tiziana-terenzi', 'memo-paris', 'the-merchant-of-venice', 'brunello-cucinelli'] }
       ],
-      visina: 36,             // px: visina logotipa (okomiti, npr. Chanel); široki natpisi su niži, da stanu u širinu
-      sirina: 3.2,            // najveća širina logotipa, kao višekratnik visine (Dolce & Gabbana, Elie Saab...)
-      razmak: 46,             // px između logotipa u traci
+      visina: 20,             // px: visina logotipa (okomiti, npr. Chanel); široki natpisi su niži, da stanu u širinu
+      sirina: 3.4,            // najveća širina logotipa, kao višekratnik visine (Dolce & Gabbana, Elie Saab...)
+      razmak: 34,             // px između logotipa u traci
       razmakTraka: 14,        // px između traka
-      prozirnost: 0.88,       // jačina logotipa (1 = potpuno bijeli)
-      rub: 56,                // px: koliko logotipi blijede uz lijevi i desni rub pozornice
-      svjetlo: 7              // s: svakih toliko preko pozornice ukoso prijeđe meko svjetlo (0 = bez)
+      prozirnost: 0.55,       // jačina logotipa (1 = potpuno bijeli; manje = diskretnije)
+      rub: 48                 // px: koliko logotipi blijede uz lijevi i desni rub pozornice
     },
 
     // Koliko dugo Voiceflow pamti razgovor (kao u pocetna-chata.js):
@@ -303,10 +300,7 @@
         position: relative;
         height: var(--mx-j-visina, 230px);
         overflow: hidden;
-        /* meka topla aura u sredini pozornice, iza traka */
-        background:
-          radial-gradient(60% 70% at 50% 46%, ${prozirna(B.auraJezgra, .07)}, ${prozirna(B.roza, .05)} 45%, ${prozirna(B.roza, 0)} 100%),
-          var(--mx-j-tama);
+        background: var(--mx-j-tama);
         transition: height .9s var(--mx-j-sklapanje);
       }
       /* zrno preko cijele pozornice */
@@ -328,7 +322,7 @@
         flex-direction: column;
         justify-content: center;
         gap: var(--mx-j-razmak-traka, 14px);
-        padding-top: 8px;
+        padding-top: 6px;
         transition: opacity .45s var(--mx-j-meko);
       }
       :host .mx-j-traka {
@@ -380,23 +374,6 @@
         from { transform: translate3d(-50%, 0, 0); }
         to   { transform: translate3d(0, 0, 0); }
       }
-      /* svjetlo koje svakih nekoliko sekundi ukoso prijeđe preko pozornice */
-      :host .mx-j-svjetlo {
-        position: absolute;
-        top: -20%;
-        left: 0;
-        width: 60%;
-        height: 140%;
-        background: linear-gradient(100deg, ${prozirna(B.auraJezgra, 0)} 20%, ${prozirna(B.auraJezgra, .09)} 50%, ${prozirna(B.auraJezgra, 0)} 80%);
-        transform: translate3d(-120%, 0, 0);
-        pointer-events: none;
-      }
-      :host .mx-j-spremno .mx-j-svjetlo { animation: mx-j-svjetlo var(--mx-j-svjetlo, 7s) linear 1.6s infinite; }
-      @keyframes mx-j-svjetlo {
-        0%   { transform: translate3d(-120%, 0, 0); }
-        34%  { transform: translate3d(280%, 0, 0); }
-        100% { transform: translate3d(280%, 0, 0); }
-      }
       /* "Marti · AI asistentica": ispod traka; kad se pozornica sklopi, s
          njom se digne i sjedne u traku ispod natpisa MARTIMEX */
       :host .mx-j-oznaka {
@@ -430,7 +407,7 @@
       }
       :host .mx-j-sklopljeno .mx-j-scena { height: 0; }
       :host .mx-j-sklopljeno .mx-j-trake { opacity: 0; }
-      :host .mx-j-sklopljeno .mx-j-tok, :host .mx-j-sklopljeno .mx-j-svjetlo { animation-play-state: paused; }
+      :host .mx-j-sklopljeno .mx-j-tok { animation-play-state: paused; }
       :host .mx-j-sklopljeno::after {
         background:
           linear-gradient(90deg, var(--mx-j-roza-0), var(--mx-j-roza-35) 50%, var(--mx-j-roza-0)) top / 100% 1px no-repeat,
@@ -741,7 +718,7 @@
       /* "Smanji pokrete": ništa ne klizi, sve se samo tiho pojavi */
       @media (prefers-reduced-motion: reduce) {
         :host .mx-j-scena, :host .mx-j-trake, ${ZAGLAVLJE} .vfrc-header--title::after { transition: none; }
-        :host .mx-j-tok, :host .mx-j-spremno .mx-j-svjetlo { animation: none; }
+        :host .mx-j-tok { animation: none; }
         :host .mx-j-ulaz .mx-j-traka, :host .mx-j-ulaz .mx-j-oznaka { animation: mx-j-prozirnost .4s linear backwards; }
         ${MARTI}, ${KORISNIK} { animation: mx-j-prozirnost .3s linear backwards; }
         ${W} .vfrc-typing-indicator > span { animation: none; opacity: 1; }
@@ -830,21 +807,17 @@
         trake.appendChild(traka);
       });
       scena.appendChild(trake);
-      scena.appendChild(el('div', 'mx-j-svjetlo'));
       korijen.appendChild(scena);
       const oznaka = el('p', 'mx-j-oznaka', P.oznaka);
       korijen.appendChild(oznaka);
 
       // mjere traka iz postavki
-      korijen.style.setProperty('--mx-j-logotip', broj(M.visina, 36, 12, 120) + 'px');
-      korijen.style.setProperty('--mx-j-sirina', broj(M.sirina, 3.2, 1, 10));
-      korijen.style.setProperty('--mx-j-razmak', broj(M.razmak, 46, 0, 300) + 'px');
+      korijen.style.setProperty('--mx-j-logotip', broj(M.visina, 20, 8, 120) + 'px');
+      korijen.style.setProperty('--mx-j-sirina', broj(M.sirina, 3.4, 1, 10));
+      korijen.style.setProperty('--mx-j-razmak', broj(M.razmak, 34, 0, 300) + 'px');
       korijen.style.setProperty('--mx-j-razmak-traka', broj(M.razmakTraka, 14, 0, 100) + 'px');
-      korijen.style.setProperty('--mx-j-prozirnost', broj(M.prozirnost, 0.88, 0.1, 1));
-      korijen.style.setProperty('--mx-j-rub', broj(M.rub, 56, 0, 300) + 'px');
-      const svjetlo = broj(M.svjetlo, 7, 0, 60);
-      if (svjetlo > 0) korijen.style.setProperty('--mx-j-svjetlo', svjetlo + 's');
-      else korijen.classList.add('mx-j-bez-svjetla');
+      korijen.style.setProperty('--mx-j-prozirnost', broj(M.prozirnost, 0.55, 0.1, 1));
+      korijen.style.setProperty('--mx-j-rub', broj(M.rub, 48, 0, 300) + 'px');
       if (B.logotip && String(B.logotip).toLowerCase() !== '#ffffff' && String(B.logotip).toLowerCase() !== '#fff') {
         // bijela sličica → zadana boja: potamni do crne pa oboji (SVG filter u data: adresi)
         const c = rgb(B.logotip).map(function (v) { return (v / 255).toFixed(3); });
@@ -863,9 +836,9 @@
         mjeri: function (visinaProzora) {
           if (!(visinaProzora > 0)) return;              // prozor se još ne vidi (zatvoren chat)
           const p = P.pozornica || {};
-          const min = broj(p.min, 150, 60, 600), max = Math.max(min, broj(p.max, 224, 60, 800));
-          let v = Math.round(Math.min(max, Math.max(min, visinaProzora * broj(p.udio, 0.27, 0.1, 0.8))));
-          if (visinaProzora < 520) v = Math.round(Math.max(110, visinaProzora * 0.24));   // vrlo nizak prozor (mobitel položen)
+          const min = broj(p.min, 104, 60, 600), max = Math.max(min, broj(p.max, 136, 60, 800));
+          let v = Math.round(Math.min(max, Math.max(min, visinaProzora * broj(p.udio, 0.17, 0.1, 0.8))));
+          if (visinaProzora < 520) v = Math.round(Math.max(90, visinaProzora * 0.18));    // vrlo nizak prozor (mobitel položen)
           if (v !== visina || !izmjereno) {
             visina = v;
             // prvo mjerenje bez prijelaza (pozornica ne smije "skočiti" pri otvaranju)
@@ -873,8 +846,8 @@
             korijen.style.setProperty('--mx-j-visina', v + 'px');
             // tri trake moraju stati iznad natpisa: ako ne stanu, logotipi i razmaci se smanje
             const n = trake.children.length || 1;
-            const h = broj(M.visina, 36, 12, 120), r = broj(M.razmakTraka, 14, 0, 100);
-            const prostor = v - OZNAKA_ISPOD - 8 - 6;
+            const h = broj(M.visina, 20, 8, 120), r = broj(M.razmakTraka, 14, 0, 100);
+            const prostor = v - OZNAKA_ISPOD - 6 - 6;
             const treba = n * h + (n - 1) * r;
             const k = treba > prostor ? Math.max(0.4, prostor / treba) : 1;
             korijen.style.setProperty('--mx-j-logotip', (h * k).toFixed(1) + 'px');
