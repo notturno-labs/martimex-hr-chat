@@ -1,10 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none" aria-hidden="true">
   <g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M26.14 43 H11 A4 4 0 0 1 7 39 V19.5 A4 4 0 0 1 11 15.5 H27 A4 4 0 0 1 31 19.5 V24.78"/>
-    <path d="M17 10.5 V15.5 M21 10.5 V15.5"/>
-    <rect x="14" y="3" width="10" height="7.5" rx="1.2"/>
-    <path d="M12 21 V29"/>
+    <path d="M11.5 17 H36.5 L41 21.5 V41 L36.5 45.5 H11.5 L7 41 V21.5 Z"/>
+    <path d="M14 22 H34 L36 24 V38.5 L34 40.5 H14 L12 38.5 V24 Z"/>
+    <path d="M20.5 17 V13 H27.5 V17"/>
+    <path d="M19.5 3 H28.5 A1.5 1.5 0 0 1 30 4.5 V11.5 A1.5 1.5 0 0 1 28.5 13 H19.5 A1.5 1.5 0 0 1 18 11.5 V4.5 A1.5 1.5 0 0 1 19.5 3 Z"/>
   </g>
-  <circle cx="36.5" cy="36" r="9.5" fill="currentColor"/>
-  <path d="M36.5 30.6 C37.05 33.95 38.55 35.45 41.9 36 C38.55 36.55 37.05 38.05 36.5 41.4 C35.95 38.05 34.45 36.55 31.1 36 C34.45 35.45 35.95 33.95 36.5 30.6 Z" fill="#fff"/>
 </svg>
