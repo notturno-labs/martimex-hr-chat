@@ -381,7 +381,7 @@ kartica bez popusta izgleda točno kao v30.
 ## Gumb chata: oblačić s točkicama (`gumb-chata.js` v4, pregled u `gumb/`)
 
 Gumb u kutu stranice (crta ga Voiceflow, izgled mu daje `gumb-chata.js`): crna pilula visoka 44 px
-s tankim rubom ružičastog zlata, lijevo oblačić (tanki rozi obrub, crna unutrašnjost, repić dolje
+s tankim rubom ružičastog zlata (širok oko 132 px), lijevo oblačić (tanki rozi obrub, crna unutrašnjost, repić dolje
 lijevo) s tri svijetle točkice, desno natpis ASISTENT velikim razmaknutim slovima u Jostu (isti font
 kao poruke), u prašnjavoj rozoj `#e3c1ac`. **Jedina animacija:** točkice u oblačiću se jedna za
 drugom lagano podignu i spuste (kao kad netko tipka), pa miruju; ponavlja se svakih 5 s. Nema svjetla po

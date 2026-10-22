@@ -49,7 +49,7 @@
     // isti font kao poruke u chatu (Jost iz mape fonts/)
     font: '"MX Jost", "Jost", "Futura", "Century Gothic", "Avenir Next", Avenir, sans-serif',
     velicinaNatpisa: 12,      // px
-    razmakSlova: 0.34,        // em
+    razmakSlova: 0.22,        // em (bilo 0,34; manje = uži gumb)
 
     visina: 44,               // px, visina gumba
     tockice: 5                // svakih koliko sekundi se točkice pomaknu (val traje oko 1 s, ostatak miruju); 0 = miruju
@@ -140,8 +140,8 @@
       /* chat zatvoren: gumb s ikonom i natpisom */
       ${ZATVOREN} ${GUMB} {
         height: ${H}px;
-        padding: 0 22px 0 16px;
-        gap: 10px;
+        padding: 0 17px 0 13px;
+        gap: 8px;
       }
       /* chat otvoren: okrugli gumb za zatvaranje iste visine */
       ${OTVOREN} ${GUMB} {
