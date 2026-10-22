@@ -305,6 +305,28 @@ učitava: kad se odobri, u `loader.js` se makne # ispred `jedan-ekran.js` i stav
   Voiceflowov prozor i učita i perlice; `?razgovor=1` postojeći razgovor, `?klik=3` sam pritisne
   ponuđeni odgovor, `?kraj=1` završen razgovor, `?tipka=6` Marti „tipka” 6 s).
 
+## Jednostavni izgled (`jedan-ekran.js` na grani `claude/jednostavno`, probe u `jednostavno/`)
+
+Najjednostavnija verzija „Jednog ekrana”: **bez pozornice i traka s brendovima**. Gore je samo crna
+traka s natpisom MARTI / AI ASISTENTICA (64 px) i tankom rozom crtom ispod; sve ostalo je na svijetloj
+bjelokosti.
+
+- **Uvodna poruka kao naslov:** prva Martina poruka nije oblačić — bez avatara i kartice, u sredini;
+  podebljani prvi red („Bok! Ja sam Marti…”) je velik naslov u Cormorantu (27 px), a ostatak kratki
+  prigušeni opis ispod njega. Kupac odmah vidi o čemu se radi.
+- **Ponuđene opcije kao izbornik:** gumbi iz Voiceflowa ispod uvodne poruke su redovi jedan ispod
+  drugoga (bijela ploha, tanki topli rub, tekst lijevo, tanka strelica desno), redom iz postavke
+  `brzaPitanja` („Vaš beauty savjetnik” prvi); tekst mora biti isti kao u Voiceflowu, ostali gumbi
+  idu iza. Pritisak na red radi kao Voiceflowov gumb; razgovor se zatim nastavlja ispod naslova kao
+  dosad (oblačići, pilule u razgovoru, polje za poruku).
+- Tehnički: modul samo označi prvu Martinu poruku (`data-mx-uvod`) i njezine gumbe
+  (`data-mx-uvod-izbor`) — najveći omot u kojem je samo ta poruka, pa se nikad ne označi cijeli
+  razgovor; gumbi se slažu CSS `order`om. Voiceflowov DOM se ne mijenja. Tekst naslova i opisa
+  dolazi iz Voiceflowa (prvi red uvodne poruke treba biti podebljan).
+- Probe: `jednostavno/proba.html` (pravi Voiceflow, sve iz iste grane) i `jednostavno/mock.html`
+  (bez Voiceflowa; parametri kao u `jedan-ekran/mock.html`). Trake s brendovima ostaju na grani
+  `claude/trake-marki`.
+
 ## Trake s brendovima na pozornici (`jedan-ekran.js`, probe u `trake/`)
 
 „Jedan ekran” (gore) ostaje kakav jest, samo je pozornica niža i na njoj su umjesto Xerjoffova

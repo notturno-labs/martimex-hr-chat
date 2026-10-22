@@ -96,6 +96,9 @@ def main():
 
     # upiši ugrađene sličice u jedan-ekran.js (između oznaka)
     js = open(MODUL, encoding='utf-8').read()
+    if POCETAK not in js or KRAJ not in js:
+        print('jedan-ekran.js nema traka s logotipima (nema oznaka): sličice su samo u marke/trake/')
+        return
     i = js.index(POCETAK)
     j = js.index(KRAJ)
     i = js.index('\n', i) + 1
