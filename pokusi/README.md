@@ -311,8 +311,7 @@ Najjednostavnija verzija „Jednog ekrana”: **bez pozornice i traka s brendovi
 traka s natpisom MARTI / AI ASISTENTICA (64 px) i tankom rozom crtom ispod; sve ostalo je na svijetloj
 bjelokosti.
 
-- **Uvod na vrhu razgovora:** u sredini okrugli crni znak M (kao Martin avatar, s tankim rozim
-  prstenom), naslov „Bok, ja sam *Marti.*” (Cormorant; „Marti.” kurzivom u dubljoj prašnjavoj rozoj
+- **Uvod na vrhu razgovora:** u sredini (bez okruglog znaka M) naslov „Bok, ja sam *Marti.*” (Cormorant; „Marti.” kurzivom u dubljoj prašnjavoj rozoj
   `boje.naglasak`), kratka roza crta i kratki prigušeni opis. Tekstovi su u postavci `uvod`
   (`naslov: ''` → umjesto uvoda se Martina uvodna poruka prikaže kao naslov). Martina uvodna poruka
   iz Voiceflowa se ne prikazuje (uvod je gore), a dok ne stigne, ne vide se ni točkice „Marti tipka”.

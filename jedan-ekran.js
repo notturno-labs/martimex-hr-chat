@@ -12,8 +12,7 @@
   //     Voiceflowovim gumbima za novi razgovor i zatvaranje (samo tanke
   //     ikone, bez kruga); ispod trake tanka roza crta
   //   - na vrhu razgovora je uvod umjesto Martine uvodne poruke (oblačića):
-  //     u sredini okrugli crni znak sa slovom M (kao Martin avatar, s
-  //     tankim rozim prstenom), naslov "Bok, ja sam Marti." (Cormorant
+  //     u sredini naslov "Bok, ja sam Marti." (Cormorant
   //     Garamond; "Marti." kurzivom u prašnjavoj rozoj), kratka roza crta i
   //     kratki prigušeni opis (tko je Marti i u čemu pomaže). Tekstovi su u
   //     POSTAVKAMA (uvod). Martina uvodna poruka iz Voiceflowa se ne
@@ -96,7 +95,6 @@
     // uvoda). naslov: '' = bez uvoda, a Martina uvodna poruka se prikaže kao
     // naslov (njezin podebljani prvi red)
     uvod: {
-      znak: 'M',                                // slovo u okruglom znaku iznad naslova ('' = bez znaka)
       naslov: 'Bok, ja sam',                    // naslov, 1. dio
       naglasak: 'Marti.',                       // naslov, 2. dio (kurziv, roza)
       opis: 'Vaša AI beauty savjetnica u Martimexu. Pomažem pri odabiru parfema i njege, provjeravam status narudžbe i odgovaram na pitanja o kupnji.',
@@ -440,24 +438,6 @@
         font-family: var(--mx-j-font);
         -webkit-user-select: none;
                 user-select: none;
-      }
-      :host .mx-j-uvod-znak {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 52px;
-        height: 52px;
-        margin: 0 auto 18px;
-        border-radius: 50%;
-        background: var(--mx-j-tama);
-        color: var(--mx-j-puder);
-        font-family: var(--mx-j-font-natpisa);
-        font-size: 25px;
-        font-weight: 600;
-        line-height: 1;
-        /* tanki rozi prsten oko znaka i meka sjena */
-        box-shadow: 0 0 0 4px var(--mx-j-bjelokost), 0 0 0 5px ${prozirna(B.roza, .75)}, 0 16px 28px -14px rgba(30, 20, 14, .55);
-        animation: mx-j-pojava .8s var(--mx-j-glatko) backwards;
       }
       :host .mx-j-uvod-naslov {
         margin: 0;
@@ -834,7 +814,7 @@ ${Object.keys(IKONE).filter(function (k) { return k !== 'poruka'; }).map(functio
 
       /* "Smanji pokrete": ništa ne klizi, sve se samo tiho pojavi */
       @media (prefers-reduced-motion: reduce) {
-        ${MARTI}, ${KORISNIK}, ${IZBOR}, :host .mx-j-uvod-znak, :host .mx-j-uvod-naslov, :host .mx-j-uvod-opis { animation: mx-j-prozirnost .3s linear backwards; }
+        ${MARTI}, ${KORISNIK}, ${IZBOR}, :host .mx-j-uvod-naslov, :host .mx-j-uvod-opis { animation: mx-j-prozirnost .3s linear backwards; }
         ${W} .vfrc-typing-indicator > span { animation: none; opacity: 1; }
         ${POSALJI}, ${POSALJI}:hover, ${POSALJI}:active, ${PILULA}:active,
         ${ZAGLAVLJE} .vfrc-header--button:active { transform: none; }
@@ -899,17 +879,10 @@ ${Object.keys(IKONE).filter(function (k) { return k !== 'poruka'; }).map(functio
     const IZB = (Array.isArray(P.izbornik) ? P.izbornik : []).filter(function (o) { return o && o.tekst; });
     const IZB_KLJUCEVI = IZB.map(function (o) { return kljuc(o.tekst); });
 
-    // Uvod (znak, naslov, crta, opis) na vrh dijela s porukama
+    // Uvod (naslov, crta, opis) na vrh dijela s porukama
     function napraviUvod() {
       const e = document.createElement('div');
       e.className = 'mx-j-uvod';
-      if (U.znak) {
-        const z = document.createElement('div');
-        z.className = 'mx-j-uvod-znak';
-        z.setAttribute('aria-hidden', 'true');
-        z.textContent = String(U.znak).trim().charAt(0);
-        e.appendChild(z);
-      }
       const h = document.createElement('h2');
       h.className = 'mx-j-uvod-naslov';
       h.appendChild(document.createTextNode(String(U.naslov || '').trim() + (U.naslov && U.naglasak ? ' ' : '')));
