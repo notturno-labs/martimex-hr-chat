@@ -320,10 +320,6 @@ slova, boja pudera) i ispod sitno AI ASISTENTICA (prašnjava roza) — u jednom 
 između gumba. Postavke `natpis` i `podnatpis`; traka je visoka 64 px (Voiceflowova 56 px). Kad se
 pozornica sklopi, ostaje samo ta traka.
 
-Prozor chata je na računalu uži: 360 px umjesto Voiceflowovih 400 (postavka `sirinaProzora`; 0 =
-Voiceflowova širina). Suzi se samo kad ga Voiceflow ne prikazuje preko cijelog ekrana, pa je na
-mobitelu i dalje preko cijelog ekrana (provjeri se i kad se promijeni veličina prozora preglednika).
-
 Ponuđeni odgovori u pozdravu (Provjeri status narudžbe, Loyalty Card, Prijavi reklamaciju,
 Načini plaćanja, Vaš beauty savjetnik) imaju lijevo tanku ikonu (20 px). Originalne ikone su u
 mapi `ikone/` (SVG 48 × 48), a u `jedan-ekran.js` su ugrađene u `IKONE_GUMBA`; koja ikona ide uz

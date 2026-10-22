@@ -138,11 +138,7 @@
     // Koliko dugo Voiceflow pamti razgovor (kao u pocetna-chata.js):
     // 'sessionStorage' → dok je kartica preglednika otvorena; 'localStorage' →
     // trajno; 'memory' → do sljedećeg učitavanja stranice; '' → kako je u Voiceflowu
-    pamcenje: 'sessionStorage',
-
-    // Širina prozora chata na računalu (px; Voiceflowova je 400). Na mobitelu
-    // je chat i dalje preko cijelog ekrana. 0 = kako je u Voiceflowu
-    sirinaProzora: 360
+    pamcenje: 'sessionStorage'
   };
 
 
@@ -286,13 +282,7 @@
         --mx-j-sklapanje: cubic-bezier(.65, 0, .25, 1);
       }
 
-${+P.sirinaProzora > 0 ? `      /* ═══ ŠIRINA PROZORA na računalu (atribut data-mx-j-uski postavi JS samo
-         kad prozor nije preko cijelog ekrana, tj. nije mobitel) ═══ */
-      :host([data-mx-j-uski]) .vfrc-widget .vfrc-chat__container { width: ${Math.round(+P.sirinaProzora)}px; }
-      :host([data-mx-j-uski]) .vfrc-widget .vfrc-chat__container-inner,
-      :host([data-mx-j-uski]) .vfrc-widget .vfrc-chat { max-width: 100%; }
-` : ''}
-      /* ═══ PROZOR: topla bjelokost (boja i font; oblik ostaje Voiceflowov) ═══ */
+      /* ═══ PROZOR: topla bjelokost (oblik i mjere ostaju Voiceflowovi) ═══ */
       ${PROZOR} {
         background: var(--mx-j-bjelokost);
         color: var(--mx-j-tinta);
@@ -1065,27 +1055,10 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       return true;
     }
 
-    // Uži prozor na računalu: prozor se suzi samo ako ga Voiceflow ne
-    // prikazuje preko cijelog ekrana (mobitel). Voiceflowova širina se izmjeri
-    // bez suženja (u istom trenutku, pa ništa ne trepne)
-    function sirina(kor, uvijek) {
-      const zeljena = Math.round(+P.sirinaProzora || 0);
-      const k = zeljena > 0 && S.host && kor.querySelector('.vfrc-chat__container');
-      if (!k || (!uvijek && k === S.kontejner && k.getBoundingClientRect().width > 0)) return;
-      S.kontejner = k;
-      const imao = S.host.hasAttribute('data-mx-j-uski');
-      if (imao) S.host.removeAttribute('data-mx-j-uski');
-      const w = k.getBoundingClientRect().width;
-      const uski = w > zeljena && w < window.innerWidth - 40;
-      if (uski) S.host.setAttribute('data-mx-j-uski', '');
-      if (uski !== imao && S.pozornica && S.prozor) S.pozornica.mjeri(S.prozor.clientHeight);
-    }
-
     // Stanje prozora: pri svakoj promjeni u chatu (poruke, novi razgovor...)
     function uskladi() {
       S.ceka = false;
       const kor = S.kor;
-      if (kor) sirina(kor);
       if (!kor || !prikvaci(kor)) return;
       if (kupacJeOdgovorio(kor)) {
         // prvi odgovor kupca: pozornica se sklopi (dok je chat zatvoren, odmah)
@@ -1119,7 +1092,6 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
     function otvoreno() {
       S.otvoren = true;
       const kor = S.kor;
-      if (kor) sirina(kor, true);
       if (!kor || !prikvaci(kor)) return;     // prozor još ne postoji: uskladi() nastavi kad se pojavi
       if (kupacJeOdgovorio(kor)) { S.imaloOdgovora = true; sklopi(true); }
       else if (!S.sklopljeno) S.pozornica.pokazi();
@@ -1226,7 +1198,6 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
           .observe(S.kor, { childList: true, subtree: true });
         uskladi();
         ikoneGumba(S.kor);
-        window.addEventListener('resize', function () { if (S.kor) sirina(S.kor, true); });
         // sličice logotipa se preuzmu unaprijed, kad preglednik miruje, da su
         // tu kad se chat otvori
         const kasnije = window.requestIdleCallback || function (f) { return setTimeout(f, 1200); };
