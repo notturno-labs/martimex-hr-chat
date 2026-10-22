@@ -66,9 +66,9 @@
   //  pritisne Voiceflowov skriveni gumb za početak, kao nekad "Početak").
   //  Ako modul zakaže, chat radi kao Voiceflowov.
   //  Ne ide uz pocetna-chata.js ni tema-chata.js (oni su drugi izgled).
-  //  Gdje radi: testna stranica proba.html (vrh repozitorija) učita ovaj
-  //  modul umjesto početnog ekrana; martimex.hr ga ne učitava dok se u
-  //  loader.js ne uključi umjesto pocetna-chata.js (vidi loader.js).
+  //  Gdje radi: loader.js ga učitava umjesto pocetna-chata.js (dosadašnjeg
+  //  početnog ekrana), pa vrijedi na martimex.hr i na testnoj stranici
+  //  proba.html (vrh repozitorija); povratak na stari izgled: vidi loader.js.
   //  Probe: pokusi/trake/proba.html i, bez Voiceflowa, pokusi/trake/mock.html.
   // ═════════════════════════════════════════════════════════════════════
 

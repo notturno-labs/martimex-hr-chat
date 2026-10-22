@@ -13,20 +13,22 @@
 
   // Skripte koje se učitavaju prije pokretanja chata – jedno ime po retku.
   // Redak koji počinje s # se preskače (tako privremeno isključiš modul).
-  // jedan-ekran.js je novi izgled "Jedan ekran" (chat bez početnog ekrana;
-  // vidi se na testnoj stranici proba.html). Kad se odobri za martimex.hr:
-  // makne se # ispred jedan-ekran.js, a stavi # ispred pocetna-chata.js. Da
+  // jedan-ekran.js je izgled "Jedan ekran": chat bez početnog ekrana, s crnom
+  // trakom MARTI, pozornicom s logotipima brendova i Martinim pozdravom s
+  // ikonama na gumbima (vidi proba.html). Zamijenio je pocetna-chata.js
+  // (dosadašnji početni ekran), koji ostaje ovdje isključen za povratak:
+  // stavi # ispred jedan-ekran.js, a makni ga ispred pocetna-chata.js. Da
   // se vide i perlice iz cekanje-odgovora.js, u Voiceflowu projekta s
   // webshopa za prikaz čekanja odgovora odabere se "dots" (pa Publish).
-  // tema-chata.js je novi izgled chata "Calacatta" (bijeli i crni mramor
-  // sa zlatom; proba: proba-staklo.html); kad se odobri, makne se # ispred
+  // tema-chata.js je izgled chata "Calacatta" (bijeli i crni mramor sa
+  // zlatom; proba: proba-staklo.html); kad se odobri, makne se # ispred
   // njega i izgled vrijedi na martimex.hr.
   var MODULI = `
     kartica-artikla.js
     gumb-chata.js
     cekanje-odgovora.js
-    pocetna-chata.js
-    # jedan-ekran.js
+    jedan-ekran.js
+    # pocetna-chata.js
     # tema-chata.js
   `;
 

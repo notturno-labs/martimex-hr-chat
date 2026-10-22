@@ -263,9 +263,11 @@ ide uz `pocetna-chata.js` ni `tema-chata.js` (to je drugi izgled).
 
 **Gdje se vidi:** na testnoj stranici `proba.html` s vrha repozitorija (grana `main`:
 `https://notturno-labs.github.io/martimex-hr-chat/proba.html`), s perlicama dok Marti priprema
-odgovor i karticom artikla s popustom (`?popust=1` doda probne popuste). Na martimex.hr se ne
-učitava: kad se odobri, u `loader.js` se makne # ispred `jedan-ekran.js` i stavi ispred
-`pocetna-chata.js` (upute su u `loader.js`).
+odgovor i karticom artikla s popustom (`?popust=1` doda probne popuste). Od spajanja grane
+`claude/trake-marki` `loader.js` učitava `jedan-ekran.js` umjesto `pocetna-chata.js`, pa isti
+izgled vrijedi i na martimex.hr; `proba.html` sve učitava iz svoje mape, pa se grana može
+pogledati i preko raw.githack.com prije spajanja (`?izgled=dosadasnji` pokaže stari početni
+ekran za usporedbu). Povratak na stari izgled: u `loader.js` zamijeni # (upute su ondje).
 
 - `jedan-ekran.js` (vrh repozitorija, uz ostale module): cijeli izgled i pozornica u jednom modulu
   (stil u shadow DOM-u, kao ostali moduli; u prozor umeće samo pozornicu, ispod Voiceflowova
