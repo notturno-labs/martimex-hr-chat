@@ -311,18 +311,22 @@ Najjednostavnija verzija „Jednog ekrana”: **bez pozornice i traka s brendovi
 traka s natpisom MARTI / AI ASISTENTICA (64 px) i tankom rozom crtom ispod; sve ostalo je na svijetloj
 bjelokosti.
 
-- **Uvodna poruka kao naslov:** prva Martina poruka nije oblačić — bez avatara i kartice, u sredini;
-  podebljani prvi red („Bok! Ja sam Marti…”) je velik naslov u Cormorantu (27 px), a ostatak kratki
-  prigušeni opis ispod njega. Kupac odmah vidi o čemu se radi.
-- **Ponuđene opcije kao izbornik:** gumbi iz Voiceflowa ispod uvodne poruke su redovi jedan ispod
-  drugoga (bijela ploha, tanki topli rub, tekst lijevo, tanka strelica desno), redom iz postavke
-  `brzaPitanja` („Vaš beauty savjetnik” prvi); tekst mora biti isti kao u Voiceflowu, ostali gumbi
-  idu iza. Pritisak na red radi kao Voiceflowov gumb; razgovor se zatim nastavlja ispod naslova kao
-  dosad (oblačići, pilule u razgovoru, polje za poruku).
-- Tehnički: modul samo označi prvu Martinu poruku (`data-mx-uvod`) i njezine gumbe
-  (`data-mx-uvod-izbor`) — najveći omot u kojem je samo ta poruka, pa se nikad ne označi cijeli
-  razgovor; gumbi se slažu CSS `order`om. Voiceflowov DOM se ne mijenja. Tekst naslova i opisa
-  dolazi iz Voiceflowa (prvi red uvodne poruke treba biti podebljan).
+- **Uvod na vrhu razgovora:** u sredini okrugli crni znak M (kao Martin avatar, s tankim rozim
+  prstenom), naslov „Bok, ja sam *Marti.*” (Cormorant; „Marti.” kurzivom u dubljoj prašnjavoj rozoj
+  `boje.naglasak`), kratka roza crta i kratki prigušeni opis. Tekstovi su u postavci `uvod`
+  (`naslov: ''` → umjesto uvoda se Martina uvodna poruka prikaže kao naslov). Martina uvodna poruka
+  iz Voiceflowa se ne prikazuje (uvod je gore), a dok ne stigne, ne vide se ni točkice „Marti tipka”.
+- **Izbornik:** gumbi uvodne poruke su jedna bijela kartica s redovima odijeljenim tankim
+  linijama; svaki red ima ikonu u rozom krugu, naziv, sitni opis ispod njega i strelicu desno.
+  Iznad kartice natpis „KAKO VAM MOGU POMOĆI?” s tankim crtama (samo dok je izbornik tu).
+  Redoslijed, ikone (savjet, narudzba, loyalty, reklamacija, placanje, poruka) i opisi su u postavci
+  `izbornik`; tekst mora biti isti kao u Voiceflowu, ostali gumbi idu iza. Pritisak na red radi
+  kao Voiceflowov gumb; razgovor se zatim nastavlja ispod uvoda kao dosad.
+- Tehnički: uvod je element ispred Voiceflowova popisa poruka; prvu Martinu poruku i njezine gumbe
+  modul samo označi (`data-mx-uvod`, `data-mx-uvod-izbor`, `data-mx-ikona`, `data-mx-opis`) — uvijek
+  najveći omot u kojem je samo ta poruka, pa se nikad ne označi cijeli razgovor; gumbi se slažu CSS
+  `order`om, opis i ikona su CSS (`attr()`, SVG). Voiceflowov DOM se ne mijenja. Dodan kurziv
+  Cormoranta (`fonts/cormorant-garamond-italic-*.woff2`, OFL).
 - Probe: `jednostavno/proba.html` (pravi Voiceflow, sve iz iste grane) i `jednostavno/mock.html`
   (bez Voiceflowa; parametri kao u `jedan-ekran/mock.html`). Trake s brendovima ostaju na grani
   `claude/trake-marki`.

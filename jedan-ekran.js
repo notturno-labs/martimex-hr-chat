@@ -11,14 +11,19 @@
   //     pudera) i ispod sitno AI ASISTENTICA (prašnjava roza), te
   //     Voiceflowovim gumbima za novi razgovor i zatvaranje (samo tanke
   //     ikone, bez kruga); ispod trake tanka roza crta
-  //   - Martina uvodna poruka nije oblačić nego naslov stranice: bez
-  //     avatara i kartice, u sredini; podebljani prvi red poruke ("Bok! Ja
-  //     sam Marti...") je velik naslov u Cormorantu, a ostatak kratki
-  //     prigušeni opis ispod njega. Ispod opisa su ponuđene opcije (gumbi
-  //     iz Voiceflowa) kao uredni redovi jedan ispod drugoga: bijela
-  //     ploha s tankim toplim rubom, tekst lijevo, tanka strelica desno;
-  //     redoslijed iz POSTAVKI (brzaPitanja). Kad kupac odabere opciju ili
-  //     napiše poruku, razgovor se nastavlja ispod naslova kao dosad
+  //   - na vrhu razgovora je uvod umjesto Martine uvodne poruke (oblačića):
+  //     u sredini okrugli crni znak sa slovom M (kao Martin avatar, s
+  //     tankim rozim prstenom), naslov "Bok, ja sam Marti." (Cormorant
+  //     Garamond; "Marti." kurzivom u prašnjavoj rozoj), kratka roza crta i
+  //     kratki prigušeni opis (tko je Marti i u čemu pomaže). Tekstovi su u
+  //     POSTAVKAMA (uvod). Martina uvodna poruka iz Voiceflowa se ne
+  //     prikazuje, ali njezini gumbi da: ispod uvoda, ispod natpisa "Kako
+  //     Vam mogu pomoći?", kao izbornik — jedna bijela kartica s redovima
+  //     odijeljenim tankim linijama; svaki red ima ikonu u rozom krugu,
+  //     naziv opcije, sitni opis ispod njega i tanku strelicu desno.
+  //     Redoslijed, ikone i opisi su u POSTAVKAMA (izbornik). Kad kupac
+  //     odabere opciju ili napiše poruku, razgovor se nastavlja ispod uvoda
+  //     kao dosad
   //   - ostale poruke: Martine su bijele kartice s jedva vidljivom sjenom,
   //     kupčeve su tamne (tinta), ponuđeni odgovori u razgovoru su pilule s
   //     tankim tamnim obrubom koje se pod mišem (ili prstom) ispune tamnom
@@ -36,9 +41,11 @@
   //  elementa #voiceflow-chat i oslanja se na Voiceflowove službene klase
   //  (.vfrc-chat, .vfrc-header, .vfrc-message, .vfrc-user-response,
   //  .vfrc-footer, .vfrc-input-container...). U prozor umeće samo jedan
-  //  element bez visine (tanku crtu ispod trake); prvu Martinu poruku i
-  //  njezine gumbe samo označi atributom (data-mx-uvod, data-mx-uvod-izbor),
-  //  a stil ih iscrta kao naslov i izbornik. Voiceflowu se isključi
+  //  element bez visine (tanku crtu ispod trake) i uvod na vrh dijela s
+  //  porukama (ispred Voiceflowova popisa poruka); prvu Martinu poruku i
+  //  njezine gumbe samo označi atributima (data-mx-uvod, data-mx-uvod-izbor,
+  //  data-mx-ikona, data-mx-opis), a stil sakrije poruku i gumbe iscrta
+  //  kao izbornik. Voiceflowu se isključi
   //  "autostart", pa se razgovor pokrene tek otvaranjem chata (modul tada
   //  pritisne Voiceflowov skriveni gumb za početak, kao nekad "Početak").
   //  Ako modul zakaže, chat radi kao Voiceflowov.
@@ -66,7 +73,8 @@
       tih:       '#7a6d66',     // prigušeni tekst (napomene, "Vaša poruka...")
       linija:    '#e8ddd6',     // tanki topli rubovi na svijetlom
       puder:     '#f3e5de',     // natpis MARTI u traci gore, tekst na tamnom
-      roza:      '#e2c3ba'      // naglasak (Martimexova prašnjava roza): crte, fokus, "AI asistentica"
+      roza:      '#e2c3ba',     // naglasak (Martimexova prašnjava roza): crte, fokus, "AI asistentica", krugovi ikona
+      naglasak:  '#a87c6e'      // dublja prašnjava roza za tekst na svijetlom: "Marti." u naslovu uvoda
     },
 
     // Fontovi iz mape fonts/ (učitavaju ih i ostali moduli)
@@ -83,15 +91,28 @@
       razgovorZavrsen: 'Razgovor je završen'  // "Chat has ended"
     },
 
-    // Ponuđene opcije ispod uvodne poruke (naslova): ovim redom, a gumbi kojih
-    // tu nema idu iza njih kako ih Voiceflow pošalje. Tekst mora biti isti
-    // kao tekst gumba u Voiceflowu. [] = redoslijed kako je u Voiceflowu
-    brzaPitanja: [
-      'Vaš beauty savjetnik',
-      'Provjeri status narudžbe',
-      'Loyalty Card',
-      'Prijavi reklamaciju',
-      'Načini plaćanja'
+    // Uvod na vrhu razgovora (umjesto Martine uvodne poruke iz Voiceflowa,
+    // koja se tada ne prikazuje; njezini gumbi ostaju, kao izbornik ispod
+    // uvoda). naslov: '' = bez uvoda, a Martina uvodna poruka se prikaže kao
+    // naslov (njezin podebljani prvi red)
+    uvod: {
+      znak: 'M',                                // slovo u okruglom znaku iznad naslova ('' = bez znaka)
+      naslov: 'Bok, ja sam',                    // naslov, 1. dio
+      naglasak: 'Marti.',                       // naslov, 2. dio (kurziv, roza)
+      opis: 'Vaša AI beauty savjetnica u Martimexu. Pomažem pri odabiru parfema i njege, provjeravam status narudžbe i odgovaram na pitanja o kupnji.',
+      pitanje: 'Kako Vam mogu pomoći?'          // natpis iznad izbornika ('' = bez)
+    },
+
+    // Izbornik: gumbi iz Voiceflowa ispod uvoda, ovim redom (gumbi kojih tu
+    // nema idu iza, kako ih Voiceflow pošalje). "tekst" mora biti isti kao
+    // tekst gumba u Voiceflowu; "opis" je sitni redak ispod naziva; "ikona"
+    // je jedna od: savjet, narudzba, loyalty, reklamacija, placanje, poruka
+    izbornik: [
+      { tekst: 'Vaš beauty savjetnik',     ikona: 'savjet',      opis: 'Preporuke parfema i njege po Vašem ukusu' },
+      { tekst: 'Provjeri status narudžbe', ikona: 'narudzba',    opis: 'Gdje je moja narudžba i kada stiže' },
+      { tekst: 'Loyalty Card',             ikona: 'loyalty',     opis: 'Bodovi, pogodnosti i učlanjenje' },
+      { tekst: 'Prijavi reklamaciju',      ikona: 'reklamacija', opis: 'Problem s artiklom ili narudžbom' },
+      { tekst: 'Načini plaćanja',          ikona: 'placanje',    opis: 'Kako možete platiti narudžbu' }
     ],
 
     // Koliko dugo Voiceflow pamti razgovor (kao u pocetna-chata.js):
@@ -157,7 +178,21 @@
     function strelica(boja) {
       return 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="' + boja + '" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5"/></svg>') + '")';
     }
-    const STRELICA = strelica(B.tih), STRELICA_SVIJETLA = strelica(B.puder);
+    const STRELICA = strelica(B.tih);
+    // ikone izbornika (tanke linije, 20 × 20)
+    const IKONE = {
+      savjet: '<path d="M10 3.2l1.5 4.1 4.1 1.5-4.1 1.5-1.5 4.1-1.5-4.1-4.1-1.5 4.1-1.5z"/><path d="M15.4 13.4l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z"/>',
+      narudzba: '<path d="M3.5 6.6 10 3.5l6.5 3.1v6.8L10 16.5l-6.5-3.1z"/><path d="M3.5 6.6 10 9.7l6.5-3.1M10 9.7v6.8"/>',
+      loyalty: '<path d="M10 16s-6-3.7-6-8.1A3.3 3.3 0 0 1 10 6a3.3 3.3 0 0 1 6 1.9C16 12.3 10 16 10 16z"/>',
+      reklamacija: '<path d="M7.2 4.6 4 7.8 7.2 11"/><path d="M4.2 7.8h7.3a4.3 4.3 0 0 1 0 8.6H8.6"/>',
+      placanje: '<rect x="3" y="5.2" width="14" height="9.8" rx="2"/><path d="M3 8.4h14M6 12.1h3"/>',
+      poruka: '<path d="M4.2 4.8h11.6A1.7 1.7 0 0 1 17.5 6.5v6a1.7 1.7 0 0 1-1.7 1.7H9.4l-3.6 2.8v-2.8H4.2a1.7 1.7 0 0 1-1.7-1.7v-6a1.7 1.7 0 0 1 1.7-1.7z"/>'
+    };
+    function ikona(ime) {
+      return 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="' + B.tinta + '" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">' + (IKONE[ime] || IKONE.poruka) + '</svg>') + '")';
+    }
+    const U = P.uvod || {};
+    const VLASTITI_UVOD = !!(U.naslov || U.naglasak);   // uvod iz POSTAVKI (inače Martina poruka kao naslov)
     const VISINA_TRAKE = 64;              // px, traka s natpisom (Voiceflowovo zaglavlje je 56 px; malo deblja, da dva reda natpisa dišu)
     const VRH_NATPISA = Math.round((VISINA_TRAKE - 37) / 2) - 2;   // natpis u dva reda (24 + 2 + 11 px) optički u sredini trake (slova su niže u svom retku)
 
@@ -398,13 +433,95 @@
       ${PILULA}:active { background: var(--mx-j-tinta); color: ${B.puder}; box-shadow: inset 0 0 0 1px var(--mx-j-tinta); transform: scale(.97); }
       ${PILULA}:focus-visible { outline: 1px solid var(--mx-j-tinta); outline-offset: 3px; }
 
-      /* ═══ UVOD: prva Martina poruka kao naslov, njezini gumbi kao izbornik ═══
-         (modul označi prvu poruku s data-mx-uvod, a njezine gumbe s
-         data-mx-uvod-izbor) */
+      /* ═══ UVOD na vrhu razgovora (umetnut ispred Voiceflowova popisa poruka) ═══ */
+      :host .mx-j-uvod {
+        margin: 28px 18px 0;
+        text-align: center;
+        font-family: var(--mx-j-font);
+        -webkit-user-select: none;
+                user-select: none;
+      }
+      :host .mx-j-uvod-znak {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 52px;
+        margin: 0 auto 18px;
+        border-radius: 50%;
+        background: var(--mx-j-tama);
+        color: var(--mx-j-puder);
+        font-family: var(--mx-j-font-natpisa);
+        font-size: 25px;
+        font-weight: 600;
+        line-height: 1;
+        /* tanki rozi prsten oko znaka i meka sjena */
+        box-shadow: 0 0 0 4px var(--mx-j-bjelokost), 0 0 0 5px ${prozirna(B.roza, .75)}, 0 16px 28px -14px rgba(30, 20, 14, .55);
+        animation: mx-j-pojava .8s var(--mx-j-glatko) backwards;
+      }
+      :host .mx-j-uvod-naslov {
+        margin: 0;
+        font-family: var(--mx-j-font-natpisa);
+        font-size: 31px;
+        font-weight: 500;
+        line-height: 1.12;
+        letter-spacing: .003em;
+        color: var(--mx-j-tinta);
+        text-wrap: balance;
+        animation: mx-j-pojava .8s var(--mx-j-glatko) .08s backwards;
+      }
+      :host .mx-j-uvod-naslov em { font-style: italic; font-weight: 500; color: ${B.naglasak || B.tinta}; }
+      :host .mx-j-uvod-crta {
+        display: block;
+        width: 36px;
+        height: 1px;
+        margin: 15px auto 13px;
+        background: var(--mx-j-roza);
+        animation: mx-j-prozirnost .8s var(--mx-j-meko) .16s backwards;
+      }
+      :host .mx-j-uvod-opis {
+        margin: 0 auto;
+        max-width: 300px;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.62;
+        letter-spacing: .01em;
+        color: var(--mx-j-tih);
+        text-wrap: pretty;
+        animation: mx-j-pojava .8s var(--mx-j-glatko) .2s backwards;
+      }
+      /* dok Martina uvodna poruka ne stigne, točkice "Marti tipka" se ne vide (uvod je već tu) */
+      ${W} [data-mx-skriveno] { display: none; }
+${VLASTITI_UVOD ? `
+      /* Martina uvodna poruka se ne prikazuje (uvod je gore); ostaju njezini gumbi */
+      ${UVOD} { display: block; margin: 0; padding: 0; }
+      ${UVOD} ${MARTI_U}, ${UVOD} .vfrc-avatar, ${UVOD} .vfrc-timestamp { display: none; }
+      ${UVOD}.vfrc-system-response, ${UVOD} .vfrc-system-response { min-height: 0; margin: 0; padding: 0; }
+${U.pitanje ? `      /* natpis iznad izbornika (samo dok je izbornik tu), s tankim crtama lijevo i desno */
+      ${UVOD}[data-mx-ima-izbor]::before {
+        content: ${tekst(String(U.pitanje).toUpperCase())};
+        display: block;
+        width: max-content;
+        max-width: 100%;
+        box-sizing: border-box;
+        margin: 26px auto 12px;
+        padding: 0 44px 0 calc(44px + .24em);
+        font-family: var(--mx-j-font);
+        font-size: 10.5px;
+        font-weight: 400;
+        line-height: 12px;
+        letter-spacing: .24em;
+        white-space: nowrap;
+        color: var(--mx-j-tih);
+        background:
+          linear-gradient(var(--mx-j-linija), var(--mx-j-linija)) left center / 30px 1px no-repeat,
+          linear-gradient(var(--mx-j-linija), var(--mx-j-linija)) right center / 30px 1px no-repeat;
+        animation: mx-j-prozirnost .6s var(--mx-j-meko) backwards;
+      }` : ''}` : `
+      /* Martina uvodna poruka kao naslov: bez avatara i kartice, u sredini */
       ${UVOD} { margin-top: 22px; margin-bottom: 0; }
       ${UVOD}.vfrc-system-response, ${UVOD} .vfrc-system-response { display: block; margin: 0; padding: 0; }
-      ${UVOD} .vfrc-avatar,
-      ${UVOD} .vfrc-timestamp { display: none; }
+      ${UVOD} .vfrc-avatar, ${UVOD} .vfrc-timestamp { display: none; }
       ${UVOD} .vfrc-system-response div:has(.vfrc-message) { width: 100%; max-width: none; margin-left: 0; margin-right: 0; }
       ${UVOD} ${MARTI_U} {
         width: 100%;
@@ -416,79 +533,102 @@
         color: var(--mx-j-tih);
         font-size: 14px;
         line-height: 1.62;
-        letter-spacing: .01em;
         text-wrap: pretty;
-        animation: mx-j-prozirnost .7s var(--mx-j-meko) backwards;
       }
       ${UVOD} ${MARTI_U} > .markdown { padding: 0 10px; }
       ${UVOD} ${MARTI_U} p { margin: 0; }
-      ${UVOD} ${MARTI_U} p + p { margin-top: 0; }
-      /* podebljani prvi red: naslov */
       ${UVOD} ${MARTI_U} .markdown > p:first-child > strong:first-child {
         display: block;
         margin: 0 auto 12px;
         max-width: 320px;
         font-family: var(--mx-j-font-natpisa);
-        font-size: 27px;
+        font-size: 29px;
         font-weight: 500;
-        line-height: 1.16;
-        letter-spacing: .005em;
+        line-height: 1.14;
         color: var(--mx-j-tinta);
         text-wrap: balance;
       }
       ${UVOD} ${MARTI_U} .markdown > p:first-child > strong:first-child + br,
-      ${UVOD} ${MARTI_U} .markdown > p:first-child > strong:first-child + br + br { display: none; }
-      /* izbornik: redovi jedan ispod drugoga */
+      ${UVOD} ${MARTI_U} .markdown > p:first-child > strong:first-child + br + br { display: none; }`}
+
+      /* ═══ IZBORNIK: gumbi uvodne poruke kao jedna bijela kartica s redovima ═══ */
       ${IZBOR} {
         display: flex;
         flex-direction: column;
         align-items: stretch;
-        gap: 8px;
-        margin: 22px 0 6px;
+        gap: 0;
+        margin: ${VLASTITI_UVOD ? 0 : '22px'} 0 8px;
         padding: 0;
+        background: var(--mx-j-papir);
+        border-radius: 18px;
+        box-shadow: var(--mx-j-sjena);
+        overflow: hidden;
+        animation: mx-j-pojava .7s var(--mx-j-glatko) .05s backwards;
       }
-      ${IZBOR} > * { width: 100%; max-width: none; margin: 0; }
+      /* redovi: svaki ima tanku liniju na vrhu; prva (gore) je skrivena ispod ruba kartice */
+      ${IZBOR} > * { width: 100%; max-width: none; margin: -1px 0 0; padding: 0; }
       ${IZBOR} .vfrc-button {
         position: relative;
         display: block;
         box-sizing: border-box;
         width: 100%;
-        min-height: 50px;
+        min-height: 62px;
         margin: 0;
-        padding: 14px 44px 14px 18px;
+        padding: 12px 42px 12px 64px;
         border: 0;
-        border-radius: 14px;
-        background: var(--mx-j-papir) ${STRELICA} right 16px center / 16px 16px no-repeat;
+        border-radius: 0;
+        background: transparent ${STRELICA} right 16px center / 15px 15px no-repeat;
         color: var(--mx-j-tinta);
-        box-shadow: 0 0 0 1px var(--mx-j-linija), 0 8px 20px -16px rgba(60, 40, 30, .35);
+        box-shadow: inset 0 1px 0 var(--mx-j-linija);
         font-family: var(--mx-j-font);
         font-size: 14.5px;
-        font-weight: 400;
-        line-height: 20px;
+        font-weight: 500;
+        line-height: 19px;
         letter-spacing: .01em;
         text-align: left;
-        animation: mx-j-pojava .6s var(--mx-j-glatko) backwards;
-        transition: box-shadow .3s var(--mx-j-meko), transform .3s var(--mx-j-glatko), background-color .3s var(--mx-j-meko), color .3s var(--mx-j-meko);
+        transform: none;
+        transition: background-color .25s var(--mx-j-meko);
       }
-      ${IZBOR} > :nth-child(2) .vfrc-button, ${IZBOR} > .vfrc-button:nth-child(2) { animation-delay: .05s; }
-      ${IZBOR} > :nth-child(3) .vfrc-button, ${IZBOR} > .vfrc-button:nth-child(3) { animation-delay: .1s; }
-      ${IZBOR} > :nth-child(4) .vfrc-button, ${IZBOR} > .vfrc-button:nth-child(4) { animation-delay: .15s; }
-      ${IZBOR} > :nth-child(n+5) .vfrc-button, ${IZBOR} > .vfrc-button:nth-child(n+5) { animation-delay: .2s; }
+      /* ikona u rozom krugu lijevo */
+      ${IZBOR} .vfrc-button::before {
+        content: "";
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        width: 36px;
+        height: 36px;
+        margin-top: -18px;
+        border-radius: 50%;
+        background: ${prozirna(B.roza, .38)} ${ikona('poruka')} center / 18px 18px no-repeat;
+      }
+${Object.keys(IKONE).filter(function (k) { return k !== 'poruka'; }).map(function (k) {
+  return '      ' + IZBOR + ' .vfrc-button[data-mx-ikona="' + k + '"]::before { background-image: ' + ikona(k) + '; }';
+}).join('\n')}
+      /* sitni opis ispod naziva */
+      ${IZBOR} .vfrc-button[data-mx-opis]::after {
+        content: attr(data-mx-opis);
+        display: block;
+        margin-top: 2px;
+        font-size: 12.5px;
+        font-weight: 400;
+        line-height: 17px;
+        letter-spacing: .005em;
+        color: var(--mx-j-tih);
+      }
       @media (hover: hover) and (pointer: fine) {
         ${IZBOR} .vfrc-button:hover {
-          background-color: var(--mx-j-papir);
+          background-color: var(--mx-j-bjelokost);
           color: var(--mx-j-tinta);
-          box-shadow: 0 0 0 1px var(--mx-j-tinta-30), 0 12px 24px -16px rgba(60, 40, 30, .45);
-          transform: translateY(-1px);
+          box-shadow: inset 0 1px 0 var(--mx-j-linija);
         }
       }
       ${IZBOR} .vfrc-button:active {
-        background: var(--mx-j-tinta) ${STRELICA_SVIJETLA} right 16px center / 16px 16px no-repeat;
-        color: ${B.puder};
-        box-shadow: 0 0 0 1px var(--mx-j-tinta);
-        transform: scale(.99);
+        background-color: ${prozirna(B.roza, .22)};
+        color: var(--mx-j-tinta);
+        box-shadow: inset 0 1px 0 var(--mx-j-linija);
+        transform: none;
       }
-      ${IZBOR} .vfrc-button:focus-visible { outline: 1px solid var(--mx-j-tinta); outline-offset: 3px; }
+      ${IZBOR} .vfrc-button:focus-visible { outline: 1px solid var(--mx-j-tinta-30); outline-offset: -4px; }
 
       /* Voiceflowove kartice i vrtuljak (ako ih Marti pošalje) */
       ${W} .vfrc-card {
@@ -694,8 +834,7 @@
 
       /* "Smanji pokrete": ništa ne klizi, sve se samo tiho pojavi */
       @media (prefers-reduced-motion: reduce) {
-        ${MARTI}, ${KORISNIK}, ${IZBOR} .vfrc-button { animation: mx-j-prozirnost .3s linear backwards; }
-        ${IZBOR} .vfrc-button:hover, ${IZBOR} .vfrc-button:active { transform: none; }
+        ${MARTI}, ${KORISNIK}, ${IZBOR}, :host .mx-j-uvod-znak, :host .mx-j-uvod-naslov, :host .mx-j-uvod-opis { animation: mx-j-prozirnost .3s linear backwards; }
         ${W} .vfrc-typing-indicator > span { animation: none; opacity: 1; }
         ${POSALJI}, ${POSALJI}:hover, ${POSALJI}:active, ${PILULA}:active,
         ${ZAGLAVLJE} .vfrc-header--button:active { transform: none; }
@@ -728,12 +867,14 @@
         stil.textContent = fontovi.map(function (f) {
           return Object.keys(rasponi).map(function (r) {
             return '@font-face{font-family:"' + f[0] + '";src:url("' + KORIJEN + 'fonts/' + f[1] + '-' + r + '.woff2") format("woff2");' +
-              'font-weight:' + f[2] + ';font-style:normal;font-display:swap;unicode-range:' + rasponi[r] + '}';
+              'font-weight:' + f[2] + ';font-style:' + (f[3] || 'normal') + ';font-display:swap;unicode-range:' + rasponi[r] + '}';
           }).join('\n');
         }).join('\n');
         document.head.appendChild(stil);
       }
       if (!document.getElementById('mx-pocetna-font-300')) dodaj('mx-pocetna-font-300', [['MX Jost', 'jost', '300']]);
+      // kurziv Cormoranta ("Marti." u naslovu uvoda) učitava samo ovaj modul
+      if (!document.getElementById('mx-jedan-font-kurziv')) dodaj('mx-jedan-font-kurziv', [['MX Cormorant', 'cormorant-garamond-italic', '500 700', 'italic']]);
       if (document.getElementById('mx-kartice-font') || document.getElementById('mx-pocetna-font') || document.getElementById('mx-tema-font') || document.getElementById('mx-jedan-font')) return;
       dodaj('mx-jedan-font', [['MX Jost', 'jost', '400 600'], ['MX Cormorant', 'cormorant-garamond', '500 700']]);
     }
@@ -753,8 +894,40 @@
     // ═══════════════════════════════════════════════════════════════════
     //  VEZA S VOICEFLOWOM
     // ═══════════════════════════════════════════════════════════════════
-    const S = { host: null, kor: null, crta: null, otvoren: false, ceka: false };
-    const BRZA = (Array.isArray(P.brzaPitanja) ? P.brzaPitanja : []).map(function (t) { return String(t || '').replace(/\s+/g, ' ').trim().toLowerCase(); }).filter(Boolean);
+    const S = { host: null, kor: null, crta: null, uvod: null, otvoren: false, ceka: false };
+    function kljuc(t) { return String(t || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+    const IZB = (Array.isArray(P.izbornik) ? P.izbornik : []).filter(function (o) { return o && o.tekst; });
+    const IZB_KLJUCEVI = IZB.map(function (o) { return kljuc(o.tekst); });
+
+    // Uvod (znak, naslov, crta, opis) na vrh dijela s porukama
+    function napraviUvod() {
+      const e = document.createElement('div');
+      e.className = 'mx-j-uvod';
+      if (U.znak) {
+        const z = document.createElement('div');
+        z.className = 'mx-j-uvod-znak';
+        z.setAttribute('aria-hidden', 'true');
+        z.textContent = String(U.znak).trim().charAt(0);
+        e.appendChild(z);
+      }
+      const h = document.createElement('h2');
+      h.className = 'mx-j-uvod-naslov';
+      h.appendChild(document.createTextNode(String(U.naslov || '').trim() + (U.naslov && U.naglasak ? ' ' : '')));
+      if (U.naglasak) { const em = document.createElement('em'); em.textContent = U.naglasak; h.appendChild(em); }
+      e.appendChild(h);
+      if (U.opis) {
+        const c = document.createElement('span');
+        c.className = 'mx-j-uvod-crta';
+        e.appendChild(c);
+        const o = document.createElement('p');
+        o.className = 'mx-j-uvod-opis';
+        // bez "udovice": zadnje dvije riječi zajedno
+        const t = String(U.opis).trim(), i = t.lastIndexOf(' ');
+        o.textContent = i > 0 ? t.slice(0, i) + '\u00a0' + t.slice(i + 1) : t;
+        e.appendChild(o);
+      }
+      return e;
+    }
 
     function imaRazgovor(kor) { return !!kor.querySelector('.vfrc-chat .vfrc-system-response, .vfrc-chat .vfrc-user-response'); }
 
@@ -795,6 +968,18 @@
       while (uvod && uvod.parentElement && uvod.parentElement !== dijalog &&
              uvod.parentElement.querySelectorAll('.vfrc-system-response, .vfrc-user-response').length === 1) uvod = uvod.parentElement;
       dijalog.querySelectorAll('[data-mx-uvod]').forEach(function (e) { if (e !== uvod) oznaka(e, 'data-mx-uvod', false); });
+      // uvod iz POSTAVKI: na vrhu dijela s porukama, ispred Voiceflowova popisa
+      if (VLASTITI_UVOD && dijalog.parentElement) {
+        if (!S.uvod) S.uvod = napraviUvod();
+        if (S.uvod.nextElementSibling !== dijalog) dijalog.parentElement.insertBefore(S.uvod, dijalog);
+      }
+      // dok uvodna poruka ne stigne, točkice "Marti tipka" se ne vide
+      dijalog.querySelectorAll('.vfrc-typing-indicator').forEach(function (t) {
+        let e = t;
+        while (e.parentElement && e.parentElement !== dijalog && !e.parentElement.querySelector('.vfrc-message, .vfrc-user-response')) e = e.parentElement;
+        oznaka(e, 'data-mx-skriveno', VLASTITI_UVOD && !poruka);
+      });
+      if (poruka) dijalog.querySelectorAll('[data-mx-skriveno]').forEach(function (e) { oznaka(e, 'data-mx-skriveno', false); });
       if (!uvod) return;
       oznaka(uvod, 'data-mx-uvod', true);
       // gumbi: unutar istog odlomka, ili odmah iza njega (ovisno o verziji Voiceflowa)
@@ -806,15 +991,21 @@
         }
       }
       dijalog.querySelectorAll('[data-mx-uvod-izbor]').forEach(function (e) { if (e !== izbor) oznaka(e, 'data-mx-uvod-izbor', false); });
+      oznaka(uvod, 'data-mx-ima-izbor', !!(izbor && izbor.querySelector('.vfrc-button')));
       if (!izbor) return;
       oznaka(izbor, 'data-mx-uvod-izbor', true);
-      if (!BRZA.length) return;
+      // redoslijed (CSS order na Voiceflowovu omotu gumba), ikona i opis iz POSTAVKI
       Array.from(izbor.querySelectorAll('.vfrc-button')).forEach(function (g, k) {
         let w = g;                                         // Voiceflowov omot gumba (izravno dijete izbornika)
         while (w.parentElement && w.parentElement !== izbor) w = w.parentElement;
-        const i = BRZA.indexOf(String(g.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase());
-        const red = String(i === -1 ? BRZA.length + k : i);
+        const i = IZB_KLJUCEVI.indexOf(kljuc(g.textContent));
+        const red = String(i === -1 ? IZB.length + k : i);
         if (w.style.order !== red) w.style.order = red;
+        const o = i === -1 ? null : IZB[i];
+        const ik = o && o.ikona && IKONE[o.ikona] ? o.ikona : '';
+        if ((g.getAttribute('data-mx-ikona') || '') !== ik) { if (ik) g.setAttribute('data-mx-ikona', ik); else g.removeAttribute('data-mx-ikona'); }
+        const op = o && o.opis ? String(o.opis) : '';
+        if ((g.getAttribute('data-mx-opis') || '') !== op) { if (op) g.setAttribute('data-mx-opis', op); else g.removeAttribute('data-mx-opis'); }
       });
     }
 
