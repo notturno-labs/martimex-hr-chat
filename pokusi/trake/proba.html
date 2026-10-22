@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marti – proba: trake s brendovima</title>
+  <style>
+    body { margin: 0; padding: 32px 24px; font-family: Georgia, "Times New Roman", serif; color: #1b1b1d; background: #fff; }
+    h1 { margin: 0 0 8px; font-weight: 400; }
+    p { max-width: 560px; line-height: 1.5; }
+  </style>
+  <script>
+    // "Jedan ekran" s trakama logotipa (jedan-ekran.js iz ove grane). Sve se
+    // učitava relativno (../../), pa stranica radi i kad se grana gleda preko
+    // raw.githack.com, prije nego je spojena u main.
+    (function () {
+      window.__mxPocetna = true;      // pocetna-chata.js (iz loader.js) se ne pokreće
+      window.__mxTemaChata = true;    // ni tema-chata.js, ako je uključena u loader.js
+      // Voiceflow: razgovor kreće otvaranjem chata (vidi jedan-ekran.js); postavlja se
+      // već ovdje, da sigurno stigne prije nego loader.js preda postavke Voiceflowu
+      window.MartimexVoiceflow = { autostart: false, assistant: { persistence: 'sessionStorage' } };
+      var s = document.createElement('script');
+      s.src = '../../jedan-ekran.js?v=' + Math.floor(Date.now() / 60000);
+      document.head.appendChild(s);
+    })();
+  </script>
+</head>
+<body>
+  <!--
+    Proba chata na jednom ekranu s trakama logotipa brendova na pozornici (jedan-ekran.js)
+    prije nego išta ide na martimex.hr. Stranica glumi martimex.hr: chat je isti kao na
+    webshopu (isti kod, loader.js i moduli iz iste grane), samo se umjesto početnog ekrana
+    učita jedan-ekran.js.
+      pokusi/trake/proba.html             → chat na jednom ekranu s trakama
+      pokusi/trake/proba.html?popust=1    → probni popusti na preporukama (vidi dolje)
+    Bez Voiceflowa i interneta: pokusi/trake/mock.html
+  -->
+  <h1>Proba: trake s brendovima na pozornici chata</h1>
+  <p>Ova stranica glumi martimex.hr. Chat je u kutu ekrana; otvori ga i razgovaraj s Marti kao na webshopu (razgovor kreće sam kad se chat otvori).</p>
+
+  <!-- Marti chat (Martimex) – isti kod kao na martimex.hr, samo se loader.js učitava s vrha ovog repozitorija -->
+  <script>
+  (function () {
+    // Zaštita ako je kod slučajno zalijepljen dvaput
+    if (window.__martimexChat) return;
+    window.__martimexChat = true;
+
+    var GITHUB_LOADER = new URL('../../loader.js', location.href).href;
+    var CEKAJ_GITHUB  = 5000;  // ms – nakon toga chat kreće bez dodataka s GitHuba
+
+    // Osnovne Voiceflow postavke – s njima chat radi i kad GitHub ne radi
+    var osnovno = {
+      verify: { projectID: '6abcf8b2128a6fc786128cca' },
+      url: 'https://general-runtime.voiceflow.com',
+      voice: { url: 'https://runtime-api.voiceflow.com' }
+    };
+
+    var vfSpreman = false, githubGotov = false, domSpreman = false, pokrenut = false, dodatno = {};
+
+    // ?popust=1 → probni popusti na karticama artikla (samo na ovoj stranici).
+    // Voiceflow funkcija još ne šalje akciju ni promo kod, pa se dodaju ovdje:
+    // 1. kartica u preporuci → promo kod MRTMX −30 %, 2. → akcija (stara cijena
+    // 25 % viša), 3. → akcija + kod. Kartice koje popust već imaju ostaju kakve jesu.
+    var PROBNI_POPUSTI = new URLSearchParams(location.search).get('popust') === '1';
+    function dodajPopuste(trace) {
+      var p = trace && trace.payload;
+      if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { return trace; } }
+      var lista = p && (p.cards || p.kartice);
+      if (!Array.isArray(lista)) return trace;
+      var kartice = lista.map(function (c, i) {
+        if (!c || c.oldPrice != null || c.promo || c.promoCode) return c;
+        var n = parseFloat(String(c.price).replace(/[^\d.,]/g, '').replace(',', '.'));
+        var k = Object.assign({}, c);
+        var vrsta = i % 3;
+        if (vrsta !== 1) k.promo = { code: 'MRTMX', percent: 30 };
+        if (vrsta !== 0 && isFinite(n)) k.oldPrice = (Math.round(n * 125) / 100).toFixed(2);
+        return k;
+      });
+      return Object.assign({}, trace, { payload: Object.assign({}, p, { cards: kartice }) });
+    }
+    function sProbnimPopustima(cfg) {
+      var a = cfg && cfg.assistant;
+      if (!PROBNI_POPUSTI || !a || !Array.isArray(a.extensions)) return cfg;
+      var ekstenzije = a.extensions.map(function (e) {
+        if (!e || e.name !== 'ProductCard') return e;
+        return Object.assign({}, e, {
+          render: function (x) { return e.render(Object.assign({}, x, { trace: dodajPopuste(x.trace) })); }
+        });
+      });
+      return Object.assign({}, cfg, { assistant: Object.assign({}, a, { extensions: ekstenzije }) });
+    }
+
+    function ucitajChat(cfg) {
+      return Promise.resolve().then(function () { return window.voiceflow.chat.load(cfg); });
+    }
+
+    // Chat kreće tek kad su spremni Voiceflow, stranica i GitHub (ili je GitHub otpisan)
+    function pokreni() {
+      if (pokrenut || !vfSpreman || !githubGotov || !domSpreman) return;
+      pokrenut = true;
+      ucitajChat(Object.assign({}, osnovno, dodatno))
+        .catch(function (e) {
+          console.error('[Martimex] Chat se nije pokrenuo s GitHub postavkama – pokrećem osnovni', e);
+          return ucitajChat(osnovno);
+        })
+        .catch(function (e) { console.error('[Martimex] Chat se nije pokrenuo', e); });
+    }
+
+    function bezGithuba() {
+      if (githubGotov) return;
+      console.warn('[Martimex] GitHub nije odgovorio – chat kreće bez dodataka s GitHuba');
+      githubGotov = true;
+      pokreni();
+    }
+
+    // loader.js s GitHuba javlja se ovdje kad je spreman
+    window.__martimexGitHub = function (cfg) {
+      if (githubGotov) return;  // stiglo prekasno – chat već radi bez toga
+      dodatno = sProbnimPopustima(cfg || {});
+      githubGotov = true;
+      pokreni();
+    };
+
+    // 1) Stranica
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { domSpreman = true; pokreni(); });
+    } else {
+      domSpreman = true;
+    }
+
+    // 2) Voiceflow widget – uvijek izravno s Voiceflowa
+    var vf = document.createElement('script');
+    vf.src = 'https://cdn.voiceflow.com/widget-next/bundle.mjs';
+    vf.onload = function () { vfSpreman = true; pokreni(); };
+    vf.onerror = function () { console.error('[Martimex] Voiceflow widget se nije učitao'); };
+    document.head.appendChild(vf);
+
+    // 3) Ekstenzije s GitHuba – učitava se istovremeno s Voiceflowom
+    var gh = document.createElement('script');
+    gh.src = GITHUB_LOADER + '?v=' + Math.floor(Date.now() / 60000);
+    gh.onerror = bezGithuba;
+    document.head.appendChild(gh);
+    setTimeout(bezGithuba, CEKAJ_GITHUB);
+  })();
+  </script>
+</body>
+</html>

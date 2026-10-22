@@ -305,6 +305,33 @@ učitava: kad se odobri, u `loader.js` se makne # ispred `jedan-ekran.js` i stav
   Voiceflowov prozor i učita i perlice; `?razgovor=1` postojeći razgovor, `?klik=3` sam pritisne
   ponuđeni odgovor, `?kraj=1` završen razgovor, `?tipka=6` Marti „tipka” 6 s).
 
+## Trake s brendovima na pozornici (`jedan-ekran.js`, probe u `trake/`)
+
+„Jedan ekran” (gore) ostaje kakav jest, samo je na pozornici umjesto Xerjoffova flakona od točkica
+**tri crne trake s logotipima brendova** (iste kuće kao na slici `marke/izvor.webp`: Chanel, Hermès,
+Guerlain … Lancôme, Estée Lauder). Logotipi su bijeli, jedan pokraj drugoga, i polako putuju: gornja
+traka ulijevo, srednja udesno, donja ulijevo, svaka malo drugom brzinom, bez kraja (traka je sašivena
+sama sa sobom, pa nema skoka); uz rubove pozornice tiho izblijede. Pri otvaranju chata trake se
+pojave jedna za drugom, a svakih 7 s preko pozornice ukoso prijeđe meko svjetlo. Sve ostalo (traka
+MARTIMEX, „Marti · AI asistentica”, sklapanje pozornice nakon prve poruke, razgovor na bjelokosti)
+nepromijenjeno.
+
+- Trake su običan CSS (bez WebGL-a): `transform` animacija toka s dva ista reda logotipa. Rade
+  svugdje; „Smanji pokrete”: trake stoje. Ako se neka sličica ne učita, preskoči se.
+- Sličice: `marke/trake/<brend>.png` (bijeli logotip na prozirnoj podlozi, 24 datoteke, ukupno
+  oko 180 KB), izrezane iz `marke/izvor.webp` skriptom `marke/izradi-trake.py` (Pillow + NumPy).
+  Novi brend: dodaj sličicu u mapu i ime u postavku `marke.trake` na vrhu `jedan-ekran.js`.
+- Postavke (`marke`): raspored po trakama (`trake`: smjer, brzina u sekundama po jednom krugu,
+  logotipi), `visina` logotipa (36 px; široki natpisi su niži, `sirina` = najveća širina kao
+  višekratnik visine), `razmak`, `razmakTraka`, `prozirnost`, `rub` (blijeđenje uz rub), `svjetlo`
+  (0 = bez). Na niskom prozoru trake se same smanje da stanu iznad natpisa. Boja logotipa:
+  `boje.logotip` (zadano bijela).
+- Probe: `trake/proba.html` (pravi Voiceflow; sve iz iste grane, pa radi i preko raw.githack.com;
+  `?popust=1` probni popusti) i `trake/mock.html` (bez Voiceflowa; parametri kao u
+  `jedan-ekran/mock.html`). Kad je na grani `main`, i `proba.html` s vrha repozitorija pokazuje trake.
+- Prethodni flakon od točkica ostaje u gitu (grana `main` prije ove promjene) i na granama
+  `claude/pocetni-ekran` i `claude/monogram`.
+
 ## Akcija i promo kod na kartici artikla (`akcija/`)
 
 Popust uz cijenu je u pravoj kartici, `kartica-artikla.js` (v31 = v30 + popust; uputa:
