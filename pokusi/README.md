@@ -344,7 +344,8 @@ Postavke `natpis` i `podnatpis`; traka je visoka 64 px (Voiceflowova 56 px). Kad
 ## Trake i uvod u jednom prozoru (`jedan-ekran.js` na grani `claude/trake-uvod`, probe u `trake-uvod/`)
 
 Spoj „Trake s brendovima” (gore) i jednostavnog izgleda (grana `claude/jednostavno`): gore crna
-traka MARTI · AI ASISTENTICA i ispod nje crna pozornica s tri trake logotipa; ispod pozornice, na
+traka sa samo natpisom MARTI (u ravnini s gumbima; bez „AI asistentica”) i ispod nje crna pozornica
+s tri trake logotipa; ispod pozornice, na
 bjelokosti, **uvod** („Bok, ja sam *Marti.*” i ispod njega kratki opis tko je Marti i u čemu
 pomaže) i **izbornik** (uža bijela kartica u sredini s redovima: ikona u rozom krugu, naziv,
 sitni opis i strelica). Bez natpisa iznad izbornika i bez ukrasne crte ispod naslova. Bez okruglog znaka M: uvod počinje odmah

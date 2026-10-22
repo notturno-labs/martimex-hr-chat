@@ -7,9 +7,9 @@
   //  prozoru — gore crna pozornica s brendovima, ispod nje na svijetlom uvod
   //  i izbornik, a razgovor se nastavlja ispod njih.
   //
-  //   - gore je tamna traka s natpisom "Marti · AI asistentica" u dva
-  //     reda: MARTI (Cormorant Garamond, razmaknuta velika slova, boja
-  //     pudera) i ispod sitno AI ASISTENTICA (prašnjava roza), te
+  //   - gore je tamna traka sa samo natpisom MARTI (Cormorant Garamond,
+  //     razmaknuta velika slova, boja pudera), u ravnini s ikonama gumba
+  //     (podnatpis, npr. AI ASISTENTICA, može se vratiti u POSTAVKAMA), te
   //     Voiceflowovim gumbima za novi razgovor i zatvaranje (samo tanke
   //     ikone, bez kruga)
   //   - ispod nje, u istoj toploj crnoj boji, je niska pozornica: tri
@@ -104,7 +104,7 @@
     fontNatpisa: '"MX Cormorant", "Cormorant Garamond", Garamond, Georgia, "Times New Roman", serif',
 
     natpis: 'Marti',                          // u traci gore, 1. red (Cormorant, velika slova)
-    podnatpis: 'AI asistentica',              // u traci gore, 2. red (sitno, roza); '' = samo 1. red
+    podnatpis: '',                            // u traci gore, 2. red (sitno, roza), npr. 'AI asistentica'; '' = samo MARTI, u sredini trake
 
     // Voiceflowovi engleski tekstovi ('' = ostaje Voiceflowov tekst)
     tekstovi: {
@@ -366,12 +366,12 @@
         content: ${tekst(String(P.natpis || '').toUpperCase())};
         content: ${tekst(String(P.natpis || '').toUpperCase())} / "";
         position: absolute;
-        top: calc(env(safe-area-inset-top, 0px) + ${P.podnatpis ? VRH_NATPISA : 0}px);
+        top: calc(env(safe-area-inset-top, 0px) + ${P.podnatpis ? VRH_NATPISA : -3}px);   /* sam MARTI: 3 px gore, u ravnini s ikonama gumba */
         left: 50%;
         transform: translateX(-50%);
         padding-left: .36em;                  /* optički centrira razmaknuta slova */
         font-family: var(--mx-j-font-natpisa);
-        font-size: ${P.podnatpis ? 19 : 18}px;
+        font-size: ${P.podnatpis ? 19 : 20}px;
         font-weight: 500;
         line-height: ${P.podnatpis ? 24 : VISINA_TRAKE}px;
         letter-spacing: .36em;
