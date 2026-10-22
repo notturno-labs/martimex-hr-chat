@@ -1703,6 +1703,17 @@
         }).join('\n');
         document.head.appendChild(stil);
       }
+      // fontovi početnog ekrana se preuzmu odmah (a ne tek kad se chat otvori),
+      // da naslov "Bok, ja sam Marti." ne zatreperi u zamjenskom fontu
+      ['jost-latin', 'jost-latin-ext', 'cormorant-garamond-latin', 'cormorant-garamond-italic-latin'].forEach(function (f) {
+        const l = document.createElement('link');
+        l.rel = 'preload';
+        l.as = 'font';
+        l.type = 'font/woff2';
+        l.crossOrigin = 'anonymous';
+        l.href = KORIJEN + 'fonts/' + f + '.woff2';
+        document.head.appendChild(l);
+      });
       if (!document.getElementById('mx-pocetna-font-300')) dodaj('mx-pocetna-font-300', [['MX Jost', 'jost', '300']]);
       // kurziv Cormoranta ("Marti." u naslovu) učitava samo ovaj modul
       if (!document.getElementById('mx-jedan-font-kurziv')) dodaj('mx-jedan-font-kurziv', [['MX Cormorant', 'cormorant-garamond-italic', '500 700', 'italic']]);
