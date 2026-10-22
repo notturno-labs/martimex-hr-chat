@@ -345,11 +345,13 @@ Postavke `natpis` i `podnatpis`; traka je visoka 64 px (Voiceflowova 56 px). Kad
 
 Spoj „Trake s brendovima” (gore) i jednostavnog izgleda (grana `claude/jednostavno`): gore crna
 traka sa samo natpisom MARTI (u ravnini s gumbima; bez „AI asistentica”) i ispod nje crna pozornica
-s tri trake logotipa; ispod pozornice, na
-bjelokosti, **uvod** („Bok, ja sam *Marti.*” i ispod njega kratki opis tko je Marti i u čemu
-pomaže) i **izbornik** (uža bijela kartica u sredini s redovima: ikona u rozom krugu, naziv,
-sitni opis i strelica). Bez natpisa iznad izbornika i bez ukrasne crte ispod naslova. Bez okruglog znaka M: uvod počinje odmah
-ispod pozornice, naslovom.
+s tri trake logotipa (visoka 84–116 px, ovisno o visini prozora); ispod pozornice, na
+bjelokosti, **jedna uža bijela kartica u sredini**: gore **uvod** („Bok, ja sam *Marti.*” i ispod
+njega kratki opis tko je Marti i u čemu pomaže), pa ispod tanke linije **izbornik** (redovi: ikona
+u rozom krugu, naziv, sitni opis i strelica). Uvod i izbornik su tako jedna cjelina, a ne naslov
+koji lebdi između crne pozornice i kartice. Bez natpisa iznad izbornika, bez ukrasne crte ispod
+naslova i bez okruglog znaka M. Kad razgovor krene i izbornik nestane, uvod ostane na vrhu
+razgovora kao običan naslov bez kartice.
 
 - Martina uvodna poruka iz Voiceflowa se ne prikazuje (umjesto nje je uvod), a njezini gumbi
   su izbornik; redoslijed, ikone i opisi su u postavci `izbornik`, tekstovi uvoda u `uvod`.
@@ -358,11 +360,10 @@ ispod pozornice, naslovom.
 - Čim kupac odabere opciju ili pošalje poruku, trake izblijede i pozornica se sklopi; uvod
   (naslov i opis) ostaje na vrhu razgovora, koji se nastavlja ispod njega. Novi razgovor vrati
   pozornicu i izbornik; postojeći razgovor se otvori odmah sklopljen.
-- Sve stane u prozor bez pomicanja: pozornica je niža na nižem prozoru (`pozornica`: 98 px na
-  prozoru od 800 px, 66 px na 600 px i nižem), a uvod i izbornik se u koracima zbiju (atribut
-  `data-mx-j-prostor` na `#voiceflow-chat`): ispod 700 px manji razmaci i redovi, ispod 640 px
-  bez sitnih opisa opcija, ispod 600 px i bez opisa ispod
-  naslova.
+- Sve stane u prozor bez pomicanja: pozornica je niža na nižem prozoru (`pozornica`: 116 px na
+  prozoru od 800 px, 84 px na 600 px i nižem), a uvod i izbornik se u koracima zbiju (atribut
+  `data-mx-j-prostor` na `#voiceflow-chat`): ispod 675 px manji razmaci i redovi, ispod 615 px
+  bez sitnih opisa opcija, ispod 592 px i bez opisa ispod naslova.
 - Probe: `trake-uvod/proba.html` (pravi Voiceflow; sve iz iste grane, pa radi i preko
   raw.githack.com; `?popust=1` probni popusti) i `trake-uvod/mock.html` (bez Voiceflowa;
   parametri kao u `jedan-ekran/mock.html`).
