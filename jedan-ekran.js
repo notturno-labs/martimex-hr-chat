@@ -26,11 +26,11 @@
   //     crta prema svijetlom dijelu
   //   - ispod pozornice je uvod umjesto Martine uvodne poruke (oblačića):
   //     naslov "Bok, ja sam Marti." (Cormorant Garamond; "Marti." kurzivom u
-  //     prašnjavoj rozoj), kratka roza crta i kratki prigušeni opis (tko je
+  //     prašnjavoj rozoj) i ispod njega kratki prigušeni opis (tko je
   //     Marti i u čemu pomaže). Tekstovi su u POSTAVKAMA (uvod). Martina
   //     uvodna poruka iz Voiceflowa se ne prikazuje, ali njezini gumbi da:
-  //     ispod natpisa "Kako Vam mogu pomoći?", kao izbornik — jedna bijela
-  //     kartica s redovima odijeljenim tankim linijama; svaki red ima ikonu
+  //     ispod opisa, kao izbornik — jedna uža bijela kartica u sredini, s
+  //     redovima odijeljenim tankim linijama; svaki red ima ikonu
   //     u rozom krugu, naziv opcije, sitni opis ispod njega i tanku
   //     strelicu desno. Redoslijed, ikone i opisi su u POSTAVKAMA (izbornik)
   //   - ostale poruke: Martine su bijele kartice s jedva vidljivom sjenom,
@@ -120,8 +120,7 @@
     uvod: {
       naslov: 'Bok, ja sam',                    // naslov, 1. dio
       naglasak: 'Marti.',                       // naslov, 2. dio (kurziv, roza)
-      opis: 'Vaša AI beauty savjetnica u Martimexu. Pomažem pri odabiru parfema i njege, provjeravam status narudžbe i odgovaram na pitanja o kupnji.',
-      pitanje: 'Kako Vam mogu pomoći?'          // natpis iznad izbornika ('' = bez)
+      opis: 'Vaša AI beauty savjetnica u Martimexu. Pomažem pri odabiru parfema i njege, provjeravam status narudžbe i odgovaram na pitanja o kupnji.'
     },
 
     // Izbornik: gumbi iz Voiceflowa ispod uvoda, ovim redom (gumbi kojih tu
@@ -140,7 +139,7 @@
     // na prozoru visokom 800 px i više, "min" na 600 px i nižem, između
     // razmjerno; niska je, da uvod i izbornik stanu ispod nje. Na nižem
     // prozoru (laptop, mobitel) i uvod i izbornik su malo zbijeniji, na
-    // niskom bez natpisa iznad izbornika i bez sitnih opisa opcija, a na
+    // niskom bez sitnih opisa opcija, a na
     // najnižem i bez opisa ispod naslova
     pozornica: { min: 66, max: 98 },
     // Na mobitelu i tabletu, i na prozoru nižem od ovoga (px), pozornica se
@@ -648,16 +647,8 @@
         animation: mx-j-pojava .8s var(--mx-j-glatko) .12s backwards;
       }
       :host .mx-j-uvod-naslov em { font-style: italic; font-weight: 500; color: ${B.naglasak || B.tinta}; }
-      :host .mx-j-uvod-crta {
-        display: block;
-        width: 36px;
-        height: 1px;
-        margin: 13px auto 11px;
-        background: var(--mx-j-roza);
-        animation: mx-j-prozirnost .8s var(--mx-j-meko) .2s backwards;
-      }
       :host .mx-j-uvod-opis {
-        margin: 0 auto;
+        margin: 10px auto 0;
         max-width: 300px;
         font-size: 14px;
         font-weight: 400;
@@ -674,27 +665,7 @@ ${VLASTITI_UVOD ? `
       ${UVOD} { display: block; margin: 0; padding: 0; }
       ${UVOD} ${MARTI_U}, ${UVOD} .vfrc-avatar, ${UVOD} .vfrc-timestamp { display: none; }
       ${UVOD}.vfrc-system-response, ${UVOD} .vfrc-system-response { min-height: 0; margin: 0; padding: 0; }
-${U.pitanje ? `      /* natpis iznad izbornika (samo dok je izbornik tu), s tankim crtama lijevo i desno */
-      ${UVOD}[data-mx-ima-izbor]::before {
-        content: ${tekst(String(U.pitanje).toUpperCase())};
-        display: block;
-        width: max-content;
-        max-width: 100%;
-        box-sizing: border-box;
-        margin: 22px auto 12px;
-        padding: 0 44px 0 calc(44px + .24em);
-        font-family: var(--mx-j-font);
-        font-size: 10.5px;
-        font-weight: 400;
-        line-height: 12px;
-        letter-spacing: .24em;
-        white-space: nowrap;
-        color: var(--mx-j-tih);
-        background:
-          linear-gradient(var(--mx-j-linija), var(--mx-j-linija)) left center / 30px 1px no-repeat,
-          linear-gradient(var(--mx-j-linija), var(--mx-j-linija)) right center / 30px 1px no-repeat;
-        animation: mx-j-prozirnost .6s var(--mx-j-meko) backwards;
-      }` : ''}` : `
+` : `
       /* Martina uvodna poruka kao naslov: bez avatara i kartice, u sredini */
       ${UVOD} { margin-top: 22px; margin-bottom: 0; }
       ${UVOD}.vfrc-system-response, ${UVOD} .vfrc-system-response { display: block; margin: 0; padding: 0; }
@@ -734,7 +705,11 @@ ${U.pitanje ? `      /* natpis iznad izbornika (samo dok je izbornik tu), s tank
         flex-direction: column;
         align-items: stretch;
         gap: 0;
-        margin: ${VLASTITI_UVOD ? 0 : '22px'} 0 8px;
+        /* uža kartica u sredini (ne preko cijele širine razgovora) */
+        width: calc(100% - 24px);
+        max-width: 316px;
+        box-sizing: border-box;
+        margin: 22px auto 8px;
         padding: 0;
         background: var(--mx-j-papir);
         border-radius: 18px;
@@ -749,16 +724,16 @@ ${U.pitanje ? `      /* natpis iznad izbornika (samo dok je izbornik tu), s tank
         display: block;
         box-sizing: border-box;
         width: 100%;
-        min-height: 58px;
+        min-height: 52px;
         margin: 0;
-        padding: 10px 42px 10px 64px;
+        padding: 8px 36px 8px 56px;
         border: 0;
         border-radius: 0;
-        background: transparent ${STRELICA} right 16px center / 15px 15px no-repeat;
+        background: transparent ${STRELICA} right 13px center / 14px 14px no-repeat;
         color: var(--mx-j-tinta);
         box-shadow: inset 0 1px 0 var(--mx-j-linija);
         font-family: var(--mx-j-font);
-        font-size: 14.5px;
+        font-size: 14px;
         font-weight: 500;
         line-height: 19px;
         letter-spacing: .01em;
@@ -770,13 +745,13 @@ ${U.pitanje ? `      /* natpis iznad izbornika (samo dok je izbornik tu), s tank
       ${IZBOR} .vfrc-button::before {
         content: "";
         position: absolute;
-        left: 14px;
+        left: 12px;
         top: 50%;
-        width: 36px;
-        height: 36px;
-        margin-top: -18px;
+        width: 32px;
+        height: 32px;
+        margin-top: -16px;
         border-radius: 50%;
-        background: ${prozirna(B.roza, .38)} ${ikona('poruka')} center / 18px 18px no-repeat;
+        background: ${prozirna(B.roza, .38)} ${ikona('poruka')} center / 16px 16px no-repeat;
       }
 ${Object.keys(IKONE).filter(function (k) { return k !== 'poruka'; }).map(function (k) {
   return '      ' + IZBOR + ' .vfrc-button[data-mx-ikona="' + k + '"]::before { background-image: ' + ikona(k) + '; }';
@@ -785,10 +760,10 @@ ${Object.keys(IKONE).filter(function (k) { return k !== 'poruka'; }).map(functio
       ${IZBOR} .vfrc-button[data-mx-opis]::after {
         content: attr(data-mx-opis);
         display: block;
-        margin-top: 2px;
-        font-size: 12.5px;
+        margin-top: 1px;
+        font-size: 12px;
         font-weight: 400;
-        line-height: 17px;
+        line-height: 16px;
         letter-spacing: .005em;
         color: var(--mx-j-tih);
       }
@@ -809,19 +784,15 @@ ${Object.keys(IKONE).filter(function (k) { return k !== 'poruka'; }).map(functio
 
       /* ═══ NIŽI PROZOR (laptop, mobitel): uvod i izbornik malo zbijeniji ═══ */
       ${ZBIJENO} .mx-j-uvod-naslov { font-size: 28px; }
-      ${ZBIJENO} .mx-j-uvod-crta { margin: 11px auto 9px; }
-      ${ZBIJENO} .mx-j-uvod-opis { font-size: 13.5px; line-height: 1.52; }
-      ${ZBIJENO} [data-mx-uvod][data-mx-ima-izbor]::before { margin: 16px auto 10px; }
-      ${ZBIJENO} [data-mx-uvod-izbor] .vfrc-button { min-height: 50px; padding: 7px 40px 7px 60px; }
-      ${ZBIJENO} [data-mx-uvod-izbor] .vfrc-button::before { left: 13px; width: 34px; height: 34px; margin-top: -17px; }
-      ${ZBIJENO} [data-mx-uvod-izbor] .vfrc-button[data-mx-opis]::after { margin-top: 1px; font-size: 12px; line-height: 16px; }
-      /* nizak prozor: bez natpisa iznad izbornika i bez sitnih opisa opcija */
-      ${NISKO} [data-mx-uvod][data-mx-ima-izbor]::before { content: none; }
-      ${NISKO} [data-mx-uvod-izbor] { margin-top: ${U.pitanje ? 16 : 0}px; }
-      ${NISKO} [data-mx-uvod-izbor] .vfrc-button { min-height: 46px; }
+      ${ZBIJENO} .mx-j-uvod-opis { margin-top: 8px; font-size: 13.5px; line-height: 1.52; }
+      ${ZBIJENO} [data-mx-uvod-izbor] { margin-top: 18px; }
+      ${ZBIJENO} [data-mx-uvod-izbor] .vfrc-button { min-height: 48px; padding-top: 6px; padding-bottom: 6px; }
+      /* nizak prozor: bez sitnih opisa opcija */
+      ${NISKO} [data-mx-uvod-izbor] { margin-top: 14px; }
+      ${NISKO} [data-mx-uvod-izbor] .vfrc-button { min-height: 42px; }
       ${NISKO} [data-mx-uvod-izbor] .vfrc-button[data-mx-opis]::after { content: none; }
       /* najniži prozor (npr. laptop s niskim ekranom): samo naslov i izbornik */
-      ${NAJNIZE} .mx-j-uvod-crta, ${NAJNIZE} .mx-j-uvod-opis { display: none; }
+      ${NAJNIZE} .mx-j-uvod-opis { display: none; }
 
       /* Voiceflowove kartice i vrtuljak (ako ih Marti pošalje) */
       ${W} .vfrc-card {
@@ -1288,15 +1259,15 @@ ${Object.keys(IKONE).filter(function (k) { return k !== 'poruka'; }).map(functio
     }
 
     // Koliko je mjesta za uvod i izbornik (visina prozora): na nižem prozoru
-    // su zbijeniji, na niskom bez natpisa iznad izbornika i sitnih opisa, a
+    // su zbijeniji, na niskom bez sitnih opisa opcija, a
     // na najnižem i bez opisa ispod naslova
     function prostor(v) {
       if (!S.host || !(v > 0)) return;
-      const r = v < 640 ? 'zbijeno nisko najnize' : v < 680 ? 'zbijeno nisko' : v < 790 ? 'zbijeno' : 'puno';
+      const r = v < 600 ? 'zbijeno nisko najnize' : v < 640 ? 'zbijeno nisko' : v < 700 ? 'zbijeno' : 'puno';
       if (S.host.getAttribute(PROSTOR) !== r) S.host.setAttribute(PROSTOR, r);
     }
 
-    // Uvod (naslov, crta, opis) na vrh dijela s porukama
+    // Uvod (naslov i opis) na vrh dijela s porukama
     function napraviUvod() {
       const e = document.createElement('div');
       e.className = 'mx-j-uvod';
@@ -1306,9 +1277,6 @@ ${Object.keys(IKONE).filter(function (k) { return k !== 'poruka'; }).map(functio
       if (U.naglasak) { const em = document.createElement('em'); em.textContent = U.naglasak; h.appendChild(em); }
       e.appendChild(h);
       if (U.opis) {
-        const c = document.createElement('span');
-        c.className = 'mx-j-uvod-crta';
-        e.appendChild(c);
         const o = document.createElement('p');
         o.className = 'mx-j-uvod-opis';
         // bez "udovice": zadnje dvije riječi zajedno

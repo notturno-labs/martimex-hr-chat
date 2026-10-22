@@ -345,9 +345,9 @@ Postavke `natpis` i `podnatpis`; traka je visoka 64 px (Voiceflowova 56 px). Kad
 
 Spoj „Trake s brendovima” (gore) i jednostavnog izgleda (grana `claude/jednostavno`): gore crna
 traka MARTI · AI ASISTENTICA i ispod nje crna pozornica s tri trake logotipa; ispod pozornice, na
-bjelokosti, **uvod** („Bok, ja sam *Marti.*”, kratka roza crta i opis tko je Marti i u čemu
-pomaže) i **izbornik** (bijela kartica s redovima: ikona u rozom krugu, naziv, sitni opis i
-strelica; ispod natpisa „KAKO VAM MOGU POMOĆI?”). Bez okruglog znaka M: uvod počinje odmah
+bjelokosti, **uvod** („Bok, ja sam *Marti.*” i ispod njega kratki opis tko je Marti i u čemu
+pomaže) i **izbornik** (uža bijela kartica u sredini s redovima: ikona u rozom krugu, naziv,
+sitni opis i strelica). Bez natpisa iznad izbornika i bez ukrasne crte ispod naslova. Bez okruglog znaka M: uvod počinje odmah
 ispod pozornice, naslovom.
 
 - Martina uvodna poruka iz Voiceflowa se ne prikazuje (umjesto nje je uvod), a njezini gumbi
@@ -359,8 +359,8 @@ ispod pozornice, naslovom.
   pozornicu i izbornik; postojeći razgovor se otvori odmah sklopljen.
 - Sve stane u prozor bez pomicanja: pozornica je niža na nižem prozoru (`pozornica`: 98 px na
   prozoru od 800 px, 66 px na 600 px i nižem), a uvod i izbornik se u koracima zbiju (atribut
-  `data-mx-j-prostor` na `#voiceflow-chat`): ispod 790 px manji razmaci i redovi, ispod 680 px
-  bez natpisa iznad izbornika i bez sitnih opisa opcija, ispod 640 px i bez opisa ispod
+  `data-mx-j-prostor` na `#voiceflow-chat`): ispod 700 px manji razmaci i redovi, ispod 640 px
+  bez sitnih opisa opcija, ispod 600 px i bez opisa ispod
   naslova.
 - Probe: `trake-uvod/proba.html` (pravi Voiceflow; sve iz iste grane, pa radi i preko
   raw.githack.com; `?popust=1` probni popusti) i `trake-uvod/mock.html` (bez Voiceflowa;
