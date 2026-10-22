@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Početni ekran – pregled bez Voiceflowa</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #f4f1ee; font-family: Georgia, serif; }
+    .stranica { padding: 28px; color: #333; max-width: 520px; }
+  </style>
+</head>
+<body>
+  <!--
+    Pregled bez Voiceflowa: glumi Voiceflowov prozor chata (isti elementi i
+    klase kao widget-next: #voiceflow-chat sa shadow rootom, .vfrc-chat,
+    .vfrc-header, poruke, ponuđeni odgovori, polje za poruku, gumb za
+    početak), pa se jedan-ekran.js (početni ekran + razgovor) vidi kao u
+    pravom chatu, bez interneta. Odgovori su izmišljeni (samo za izgled).
+      mock.html                  → chat se otvori odmah (na uskom prozoru preko cijelog ekrana)
+      mock.html?razgovor=1       → razgovor već postoji (odmah 2. korak, bez početnog ekrana)
+      mock.html?klik=2.5         → nakon 2,5 s se sam pritisne prvi red izbornika na početnom ekranu
+      mock.html?zatvoreno=1      → chat je zatvoren (gumb u kutu)
+      mock.html?kraj=1           → razgovor je završen (crta "Razgovor je završen" i ploča s gumbom za novi razgovor)
+      mock.html?tipka=6          → Marti "tipka" 6 s (zadano 3,4 s, da se vidi i natpis animacije čekanja)
+      mock.html?kasni=3          → Martina uvodna poruka (i gumbi) stignu tek nakon 3 s (zadano 1,2 s)
+    Učitava i animaciju čekanja odgovora (../../cekanje-odgovora.js), kao loader.js u pravom chatu.
+  -->
+  <div class="stranica"><h1>Martimex</h1><p>Ova stranica glumi webshop; chat je u kutu.</p></div>
+  <div id="voiceflow-chat"></div>
+  <script>
+  (function () {
+    var q = new URLSearchParams(location.search);
+    var host = document.getElementById('voiceflow-chat');
+    var root = host.attachShadow({ mode: 'open' });
+    var IKONA_NOVI = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 5a7 7 0 1 1-6.32 4.01l1.36.64A5.5 5.5 0 1 0 12 6.5v2L8.5 5.75 12 3z" fill="currentColor"/></svg>';
+    var IKONA_X = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M6.7 6.7a.75.75 0 0 1 1.06 0L12 10.94l4.24-4.24a.75.75 0 1 1 1.06 1.06L13.06 12l4.24 4.24a.75.75 0 1 1-1.06 1.06L12 13.06l-4.24 4.24a.75.75 0 0 1-1.06-1.06L10.94 12 6.7 7.76a.75.75 0 0 1 0-1.06z" fill="currentColor"/></svg>';
+    var IKONA_SALJI = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="vfrc-chat-input__send-icon"><path d="M12.5 16.25a.75.75 0 0 1-1.5 0V9.35l-1.77 1.48a.75.75 0 1 1-.96-1.16l3-2.5a.75.75 0 0 1 .96 0l3 2.5a.75.75 0 1 1-.96 1.16L12.5 9.35v6.9z" fill="currentColor"/></svg>';
+    var AVATAR = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="32" cy="32" r="32" fill="#000"/><text x="32" y="43" font-family="Georgia,serif" font-size="30" font-weight="700" fill="#fff" text-anchor="middle">M</text></svg>');
+
+    root.innerHTML =
+      '<style>' +
+      '.vfrc-widget{font-family:"UCity Pro","Open Sans",Arial,sans-serif;color:#1a1e23}' +
+      '.vfrc-launcher__container{position:fixed;right:20px;bottom:20px;z-index:10}' +
+      '.vfrc-launcher{display:flex;align-items:center;gap:8px;height:48px;padding:0 18px 0 12px;border:0;border-radius:24px;background:#000;color:#fff;cursor:pointer;font:600 16px Arial}' +
+      '.vfrc-chat__container{position:fixed;right:20px;bottom:84px;width:400px;height:min(720px,calc(100vh - 104px));border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 8px 80px rgba(0,0,0,.18);display:none;z-index:11}' +
+      '.vfrc-chat__container.otvoren{display:block}' +
+      '@media (max-width:768px){.vfrc-chat__container{right:0;bottom:0;width:100%;height:100%;border-radius:0}}' +
+      '.vfrc-chat__container-inner{height:100%}' +
+      '.vfrc-chat{position:relative;display:flex;flex-direction:column;height:100%;overflow:hidden;background:#fff}' +
+      '.vfrc-header{display:flex;align-items:center;height:56px;padding:12px 12px 12px 20px;box-sizing:border-box;background:#000;flex:0 1 auto}' +
+      '.vfrc-header>.vfrc-avatar{width:32px;height:32px;border-radius:50%}' +
+      '.vfrc-header--container-inner{display:flex;flex:1;align-items:center;justify-content:space-between;margin-left:12px}' +
+      '.vfrc-header--title{color:#fff;font-weight:600;font-size:16px}' +
+      '.vfrc-header--actions{display:flex;gap:4px}' +
+      '.vfrc-header--button{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:#fff;cursor:pointer;padding:4px}' +
+      '.vfrc-chat-dialog__container{position:relative;flex:1 1 auto;overflow-y:auto;padding:0 20px 20px}' +
+      '.vfrc-assistant-info{display:flex;flex-direction:column;align-items:center;padding:40px 0 16px}' +
+      '.vfrc-assistant-info .vfrc-avatar{width:64px;height:64px;border-radius:50%}' +
+      '.vfrc-assistant-info--title{font-weight:600;font-size:20px;margin-top:12px}' +
+      '.vfrc-system-response--container{margin:16px 0}' +
+      '.vfrc-system-response{display:flex;align-items:flex-end;margin:0 0 4px}' +
+      '.vfrc-system-response>.vfrc-avatar{flex:none;width:32px;height:32px;border-radius:50%;margin:0 12px 4px 0}' +
+      '.vfrc-message{background:#f1f2f2;border-radius:10px;font-size:14px;line-height:20px;max-width:100%}' +
+      '.vfrc-message .markdown{padding:10px 14px}.vfrc-message p{margin:0}' +
+      '.vfrc-system-response--actions{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px;padding-left:44px}' +
+      '.vfrc-button{border:0;cursor:pointer;font:inherit}' +
+      '.vfrc-system-response--action .vfrc-button{background:#FDF0E9;color:#000;border-radius:8px;padding:7px 12px 6px;font-size:14px;line-height:20px}' +
+      '.vfrc-user-response{display:flex;justify-content:flex-end;margin:16px 0}' +
+      '.vfrc-user-response>div{background:#000;color:#fff;border-radius:10px;padding:10px 14px;max-width:80%;font-size:14px;line-height:20px}' +
+      '.vfrc-typing-indicator--container{display:flex;align-items:flex-end;margin:16px 0}' +
+      '.vfrc-typing-indicator--container>.vfrc-avatar{width:32px;height:32px;border-radius:50%;margin-right:12px}' +
+      '.vfrc-typing-indicator--container-inner{background:#f1f2f2;border-radius:10px;padding:14px 16px}' +
+      '.vfrc-typing-indicator{display:flex;gap:4px}.vfrc-typing-indicator>span{width:6px;height:6px;border-radius:50%;background:#999;animation:t 1.2s infinite}' +
+      '.vfrc-typing-indicator>span:nth-child(2){animation-delay:.2s}.vfrc-typing-indicator>span:nth-child(3){animation-delay:.4s}' +
+      '@keyframes t{0%,60%,100%{opacity:.3}30%{opacity:1}}' +
+      '.vfrc-footer{position:relative}' +
+      '.vfrc-footer__start-button{position:absolute;bottom:0;width:100%;box-sizing:border-box;border-radius:16px;background-color:#fff;box-shadow:0 0 0 1px #0000000f,0 0 32px #00000014;display:flex;flex-direction:column;gap:8px;z-index:300;padding:12px;overflow:hidden}' +
+      '.vfrc-footer__start-button[inert]{transform:translateY(8px);opacity:0;visibility:hidden}' +
+      '.vfrc-chat--status{display:flex;margin:16px 0}.vfrc-chat--status>div{display:flex;align-items:center;width:100%}' +
+      '.vfrc-chat--status>div>div:nth-child(odd){flex:1;height:1px;background:#e2e4e5}.vfrc-chat--status>div>div:nth-child(2){padding:0 8px;font-size:12px;color:#656d75}' +
+      '#vfrc-start-chat{width:100%;height:48px;border-radius:10px;background:#000;color:#fff}' +
+      '.vfrc-footer__content{padding:0 20px}' +
+      '.vfrc-input-container{position:relative;display:flex;align-items:center;min-height:48px;border:1px solid #e2e4e5;border-radius:25px;padding:7px 7px 7px 20px;background:#fff;box-sizing:border-box}' +
+      '.vfrc-chat-focus-ring{position:absolute;inset:-1px;border-radius:25px;pointer-events:none}' +
+      '.vfrc-input-container>div:nth-child(2){display:flex;flex:1;align-items:center;gap:8px}.vfrc-chat-input__container-inner{flex:1;display:flex}' +
+      '.vfrc-chat-input{flex:1;border:0;outline:0;resize:none;font:16px/21px inherit;height:21px;background:transparent;padding:1px 0 0}' +
+      '.vfrc-chat-input__send{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:100px;border:0;background:#f1f2f2;color:#656d75;padding:0}' +
+      '.vfrc-footer__links{height:24px}' +
+      '.vfrc-prompt{position:absolute;left:0;right:0;bottom:0;display:none;flex-direction:column;gap:8px;padding:16px;background:#fff;z-index:5}' +
+      '.vfrc-prompt.vidi{display:flex}' +
+      '.vfrc-chat--overlay{position:absolute;inset:0;background:rgba(0,0,0,.2);display:none;z-index:4}.vfrc-chat--overlay.vidi{display:block}' +
+      '</style>' +
+      '<div class="vfrc-widget">' +
+        '<div class="vfrc-launcher__container"><button class="vfrc-button vfrc-launcher"><img class="vfrc-launcher--media-icon" width="24" height="24" src="' + AVATAR + '"><div class="vfrc-launcher__label">Asistent</div></button></div>' +
+        '<div class="vfrc-chat__container"><div class="vfrc-chat__container-inner"><div class="vfrc-chat">' +
+          '<div class="vfrc-header"><img class="vfrc-avatar" src="' + AVATAR + '"><div class="vfrc-header--container-inner"><div class="vfrc-header--title">Vaš AI beauty asistent</div>' +
+            '<div class="vfrc-header--actions"><button class="vfrc-button vfrc-header--button" data-radnja="novi"><div class="vfrc-icon vfrc-header--icon">' + IKONA_NOVI + '</div></button><button class="vfrc-button vfrc-header--button" data-radnja="zatvori"><div class="vfrc-icon vfrc-header--icon">' + IKONA_X + '</div></button></div></div></div>' +
+          '<div class="vfrc-chat-dialog__container"><div class="vfrc-assistant-info"><div class="vfrc-assistant-info--avatar-container"><img class="vfrc-avatar vfrc-assistant-info--avatar" src="' + AVATAR + '"></div><div class="vfrc-assistant-info--title">Vaš AI beauty asistent</div><div class="vfrc-assistant-info--description"></div></div>' +
+            '<div class="vfrc-chat--dialog vfrc-chat-dialog"><div class="vfrc-chat--bottom-spacer"></div></div></div>' +
+          '<div class="vfrc-footer"><div class="vfrc-footer__start-button"><div><button id="vfrc-start-chat" class="vfrc-button">Start new chat</button></div></div>' +
+            '<div class="vfrc-footer__content"><div><div class="vfrc-input-container"><div class="vfrc-chat-focus-ring"></div><div><div class="vfrc-chat-input__container-inner"><textarea placeholder="Vaša poruka..." class="vfrc-chat-input"></textarea></div>' +
+            '<div class="vfrc-chat-input__actions"><span><button id="vfrc-send-message" class="vfrc-chat-input__send" disabled>' + IKONA_SALJI + '</button></span></div></div></div><div class="vfrc-footer__links"></div></div></div></div>' +
+          '<div class="vfrc-chat--overlay"></div>' +
+          '<div class="vfrc-prompt"><button class="vfrc-button" data-radnja="potvrdi">Start new chat</button><button class="vfrc-button" data-radnja="odustani">Cancel</button></div>' +
+        '</div></div></div>' +
+      '</div>';
+
+    var $ = function (s) { return root.querySelector(s); };
+    var dijalog = $('.vfrc-chat-dialog'), razmak = $('.vfrc-chat--bottom-spacer');
+    var TIPKA_MS = (+q.get('tipka') || 3.4) * 1000;   // dulje od 1,5 s, da se vidi natpis animacije čekanja
+    var ODGOVORI = ['Provjeri status narudžbe', 'Loyalty Card', 'Prijavi reklamaciju', 'Načini plaćanja', 'Vaš beauty savjetnik'];
+
+    function dodaj(html) {
+      var d = document.createElement('div');
+      d.innerHTML = html;
+      var e = d.firstChild;
+      dijalog.insertBefore(e, razmak);
+      var c = $('.vfrc-chat-dialog__container');
+      c.scrollTop = c.scrollHeight;
+      return e;
+    }
+    function tipka(gotovo) {
+      var t = dodaj('<div class="vfrc-typing-indicator--container"><img class="vfrc-avatar" src="' + AVATAR + '"><div class="vfrc-typing-indicator--container-inner"><span class="vfrc-typing-indicator"><span></span><span></span><span></span></span></div></div>');
+      setTimeout(function () { t.remove(); gotovo(); }, TIPKA_MS);
+    }
+    function marti(tekst, odgovori) {
+      var h = '<div class="vfrc-system-response--container"><div class="vfrc-system-response"><img class="vfrc-avatar" src="' + AVATAR + '"><div><div><div class="vfrc-message"><div class="markdown"><p>' + tekst + '</p></div></div></div></div></div>';
+      if (odgovori) h += '<div class="vfrc-system-response--actions">' + odgovori.map(function (o) { return '<div class="vfrc-system-response--action"><button class="vfrc-button">' + o + '</button></div>'; }).join('') + '</div>';
+      dodaj(h + '</div>');
+    }
+    var KASNI_MS = (+q.get('kasni') || 1.2) * 1000;   // uvodna poruka stigne nakon toliko (u pravom chatu oko sekundu)
+    function pozdrav() {
+      setTimeout(function () {
+        marti('<strong>Bok! Ja sam Marti, Vaš AI beauty asistent.</strong><br>Trebate pomoć pri odabiru proizvoda, imate pitanje o narudžbi ili Vas zanima nešto drugo vezano uz Martimex? Slobodno mi se obratite.', ODGOVORI);
+      }, KASNI_MS);
+    }
+    function kupac(tekst) {
+      root.querySelectorAll('.vfrc-system-response--actions').forEach(function (a) { a.remove(); });
+      dodaj('<div class="vfrc-user-response"><div>' + tekst + '</div></div>');
+      tipka(function () {
+        marti('Rado ću pomoći. Koji miris inače nosite i za koju priliku tražite novi? Ako više volite, opišite ukratko što vam se sviđa (npr. svježe, cvjetno, drvenasto).', ['Svježe i citrusno', 'Cvjetno', 'Drvenasto i toplo']);
+      });
+    }
+    // Kao Voiceflow (widget-next) kad razgovor završi: ploča s gumbom je visoka koliko
+    // treba, dno chata je visoko kao ona, a polje za poruku je skriveno ispod nje
+    var promatracPloce = null;
+    function zavrsi() {
+      var ploca = $('.vfrc-footer__start-button'), dno = $('.vfrc-footer'), sadrzaj = $('.vfrc-footer__content');
+      ploca.removeAttribute('inert');
+      sadrzaj.style.cssText = 'position:absolute;width:100%;visibility:hidden';
+      sadrzaj.setAttribute('inert', '');
+      var mjeri = function () { dno.style.height = ploca.offsetHeight + 'px'; };
+      mjeri();
+      if (window.ResizeObserver) { promatracPloce = new ResizeObserver(mjeri); promatracPloce.observe(ploca); }
+    }
+    function pocni() {
+      if (promatracPloce) { promatracPloce.disconnect(); promatracPloce = null; }
+      $('.vfrc-footer__start-button').setAttribute('inert', '');
+      $('.vfrc-footer').style.height = '';
+      $('.vfrc-footer__content').style.cssText = '';
+      $('.vfrc-footer__content').removeAttribute('inert');
+      ocisti();
+      pozdrav();
+    }
+    function ocisti() {
+      root.querySelectorAll('.vfrc-system-response--container, .vfrc-user-response, .vfrc-typing-indicator--container, .vfrc-chat--status').forEach(function (e) { e.remove(); });
+    }
+
+    var otvoren = false;
+    function otvori() {
+      if (otvoren) return;
+      otvoren = true;
+      $('.vfrc-chat__container').classList.add('otvoren');
+      window.postMessage('{"type":"voiceflow:open"}', '*');
+    }
+    function zatvori() {
+      if (!otvoren) return;
+      otvoren = false;
+      $('.vfrc-chat__container').classList.remove('otvoren');
+      window.postMessage('{"type":"voiceflow:close"}', '*');
+    }
+    window.voiceflow = { chat: { open: otvori, close: zatvori, interact: function () {} } };
+
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      if (b.id === 'vfrc-start-chat') pocni();
+      else if (b.classList.contains('vfrc-launcher')) { if (otvoren) zatvori(); else otvori(); }
+      else if (b.dataset.radnja === 'zatvori') zatvori();
+      else if (b.dataset.radnja === 'novi') { $('.vfrc-prompt').classList.add('vidi'); $('.vfrc-chat--overlay').classList.add('vidi'); }
+      else if (b.dataset.radnja === 'odustani') { $('.vfrc-prompt').classList.remove('vidi'); $('.vfrc-chat--overlay').classList.remove('vidi'); }
+      else if (b.dataset.radnja === 'potvrdi') { $('.vfrc-prompt').classList.remove('vidi'); $('.vfrc-chat--overlay').classList.remove('vidi'); ocisti(); pozdrav(); }
+      else if (b.closest('.vfrc-system-response--actions')) kupac(b.textContent);
+      else if (b.id === 'vfrc-send-message') { var p = $('.vfrc-chat-input'); if (p.value.trim()) { kupac(p.value.trim()); p.value = ''; b.disabled = true; } }
+    });
+    $('.vfrc-chat-input').addEventListener('input', function (e) { $('#vfrc-send-message').disabled = !e.target.value.trim(); });
+    $('.vfrc-chat-input').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#vfrc-send-message').click(); } });
+
+    if (q.get('razgovor') === '1' || q.get('kraj') === '1') {
+      $('.vfrc-footer__start-button').setAttribute('inert', '');
+      marti('<strong>Bok! Ja sam Marti, Vaš AI beauty asistent.</strong><br>Trebate pomoć pri odabiru proizvoda, imate pitanje o narudžbi ili Vas zanima nešto drugo vezano uz Martimex? Slobodno mi se obratite.');
+      dodaj('<div class="vfrc-user-response"><div>Tražim poklon za suprugu</div></div>');
+      marti('Divno! Kakve mirise inače nosi? Ako ne znate, mogu predložiti nekoliko sigurnih izbora.', q.get('kraj') === '1' ? null : ['Cvjetno', 'Svježe', 'Ne znam']);
+    }
+    if (q.get('kraj') === '1') {
+      // kao Voiceflow kad razgovor završi: crta s natpisom i ploča s gumbom za novi razgovor
+      dodaj('<div class="vfrc-user-response"><div>koliko traje dostava</div></div>');
+      marti('Rok za dostavu paketa je <strong>2 do 5 radnih dana</strong> od trenutka kreiranja narudžbe.');
+      dodaj('<div class="vfrc-chat--status"><div><div></div><div>Chat has ended</div><div></div></div></div>');
+      zavrsi();
+    }
+
+    var s = document.createElement('script');
+    s.src = '../../jedan-ekran.js?v=' + Date.now();
+    s.onload = function () {
+      var c = document.createElement('script');     // animacija čekanja odgovora (u pravom chatu je učita loader.js)
+      c.src = '../../cekanje-odgovora.js?v=' + Date.now();
+      document.head.appendChild(c);
+      if (q.get('zatvoreno') !== '1') setTimeout(otvori, 80);
+      var klik = +q.get('klik');
+      if (klik > 0) setTimeout(function () { var b = root.querySelector('.mx-j-stavka') || root.querySelector('.vfrc-system-response--actions .vfrc-button'); if (b) b.click(); }, klik * 1000);
+    };
+    document.head.appendChild(s);
+  })();
+  </script>
+</body>
+</html>

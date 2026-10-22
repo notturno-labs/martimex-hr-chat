@@ -305,6 +305,42 @@ učitava: kad se odobri, u `loader.js` se makne # ispred `jedan-ekran.js` i stav
   Voiceflowov prozor i učita i perlice; `?razgovor=1` postojeći razgovor, `?klik=3` sam pritisne
   ponuđeni odgovor, `?kraj=1` završen razgovor, `?tipka=6` Marti „tipka” 6 s).
 
+## Početni ekran — dva koraka (`jedan-ekran.js` v2, probe u `pocetni-ekran/`)
+
+Nadogradnja „Jednog ekrana”: chat ima dva koraka. **1. korak (početni ekran)** je cijeli prozor u
+toploj crnoj: gore traka MARTIMEX (samo s gumbom za zatvaranje), ispod nje Xerjoff flakon od točkica
+(isti kao dosad, samo veći, s aurom), uvod „Bok, ja sam *Marti.*” (Cormorant Garamond, „Marti.”
+kurzivom u prašnjavoj rozoj) s kratkim opisom (podrška kupcima i savjetnica pri kupnji), izbornik
+brzih pitanja (redovi s tankim linijama, tekst u sredini, desno tanka roza strelica) i na dnu polje
+za poruku u tamnom ruhu. **2. korak (razgovor)** je dosadašnji „Jedan ekran” bez pozornice: samo crna
+traka gore (MARTIMEX, „Marti · AI asistentica”, gumbi za novi razgovor i zatvaranje) i razgovor na
+bjelokosti. Ne ide uz `pocetna-chata.js` ni `tema-chata.js`.
+
+**Gdje se vidi:** `pocetni-ekran/proba.html` (pravi Voiceflow; učitava `loader.js`, `jedan-ekran.js`
+i module iz iste grane, pa radi i kad se grana gleda preko raw.githack.com prije spajanja u `main`;
+`?popust=1` probni popusti na karticama). Bez Voiceflowa i interneta: `pocetni-ekran/mock.html`
+(`?razgovor=1` postojeći razgovor → odmah 2. korak, `?klik=3` sam pritisne prvi red izbornika,
+`?kasni=5` uvodna poruka stigne tek nakon 5 s, `?kraj=1` završen razgovor, `?tipka=6`,
+`?zatvoreno=1`). Kad je na grani `main`, i `proba.html` s vrha repozitorija pokazuje ovaj izgled.
+
+- `jedan-ekran.js`: postavke na vrhu — `pocetni` (naslov, naglasak, opis, `izbornik` = redovi brzih
+  pitanja; tekst reda mora biti isti kao tekst Voiceflowova gumba ispod uvodne poruke, jer pritisak
+  na red pritisne baš taj gumb, a red bez takvog gumba pošalje tekst kao poruku; `cekajGumb`,
+  `diziNajkasnije`), `flakon.velicina` (udio prostora iznad uvoda), boje (`opis`).
+- Kako radi: početni ekran je sloj preko razgovora, ispod Voiceflowova polja za poruku (polje je
+  jedno te isto u oba koraka, samo mijenja ruho). Razgovor u Voiceflowu kreće otvaranjem chata, pa
+  uvodna poruka i gumbi stignu dok je početni ekran još gore. Čim se u razgovoru pojavi kupčev odabir
+  ili poruka: uvod i izbornik izblijede (0,45 s), točkice se rasprše, crna ploha se kao zastor digne
+  u traku (0,9 s, počne nakon 0,35 s), polje prijeđe iz tamnog u bijelo, u traku sjedne „Marti · AI
+  asistentica” i pojavi se gumb za novi razgovor. Novi razgovor spusti zastor i početni ekran se
+  pojavi ispočetka (flakon, pa naslov, opis, redovi jedan za drugim, polje). Postojeći razgovor se
+  otvori odmah u 2. koraku. Na niskom ekranu (tipkovnica) se raspored stisne (`@container`), a
+  početni ekran se može pomicati.
+- Fontovi: dodan kurziv Cormoranta (`fonts/cormorant-garamond-italic-*.woff2`, OFL), učitava ga
+  samo ovaj modul.
+- „Smanji pokrete”: flakon stoji, zastor se ne diže nego početni ekran izblijedi, sve se pojavi bez
+  pomaka. Bez WebGL-a: tanki obris flakona.
+
 ## Akcija i promo kod na kartici artikla (`akcija/`)
 
 Popust uz cijenu je u pravoj kartici, `kartica-artikla.js` (v31 = v30 + popust; uputa:
