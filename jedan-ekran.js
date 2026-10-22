@@ -1126,6 +1126,7 @@
         z-index: 2;                           /* ispod trake (3) i polja za poruku (3), iznad razgovora */
         overflow: hidden;
         container: mx-j-pocetni / size;       /* za @container: na niskom ekranu se raspored stisne */
+        will-change: transform;               /* vlastiti grafički sloj: ništa ispod ne može proviriti (iOS) */
         background: var(--mx-j-tama);
         color: var(--mx-j-puder);
         font-family: var(--mx-j-font);
@@ -1306,13 +1307,20 @@
       ${POCETNI} .vfrc-footer div:has(> .vfrc-input-container) > .vfrc-input-container ~ div { color: var(--mx-j-puder-45); }
       /* gumb "na dno razgovora" na početnom ekranu nema smisla (razgovor je ispod zastora) */
       ${POCETNI} .vfrc-footer__content-scroll-to-bottom { display: none; }
+      /* dok je početni ekran gore, razgovor ispod njega se uopće ne crta: Martina
+         uvodna poruka i gumbi stižu s animacijom, a iOS takve elemente na tren
+         crta iznad početnog ekrana, pa bi provirili kroz njega. Prozor je k tome
+         crn već u prvom kadru nakon otvaranja, prije nego se početni ekran umetne
+         (inače na tren bljesne bjelokost) */
+      ${POCETNI} .vfrc-chat { background: var(--mx-j-tama); }
+      ${POCETNI} .vfrc-chat > div:has(> .vfrc-chat-dialog) { visibility: hidden; }
 
       /* ── pojava pri svakom otvaranju: flakon nastane, pa naslov, opis, redovi jedan za drugim i polje ── */
-      ${ULAZ} .mx-j-naslov { animation: mx-j-pojava .9s var(--mx-j-glatko) .5s backwards; }
-      ${ULAZ} .mx-j-opis { animation: mx-j-pojava .9s var(--mx-j-glatko) .7s backwards; }
-      ${ULAZ} .mx-j-izbornik::before { animation: mx-j-prozirnost .8s var(--mx-j-meko) .85s backwards; }
-      ${ULAZ} .mx-j-stavka { animation: mx-j-pojava .8s var(--mx-j-glatko) backwards; animation-delay: calc(.9s + var(--mx-j-i, 0) * .07s); }
-      ${ULAZ} .vfrc-input-container { animation: mx-j-pojava .9s var(--mx-j-glatko) 1.25s backwards; }
+      ${ULAZ} .mx-j-naslov { animation: mx-j-pojava .9s var(--mx-j-glatko) .75s backwards; }
+      ${ULAZ} .mx-j-opis { animation: mx-j-pojava .9s var(--mx-j-glatko) .95s backwards; }
+      ${ULAZ} .mx-j-izbornik::before { animation: mx-j-prozirnost .8s var(--mx-j-meko) 1.1s backwards; }
+      ${ULAZ} .mx-j-stavka { animation: mx-j-pojava .8s var(--mx-j-glatko) backwards; animation-delay: calc(1.15s + var(--mx-j-i, 0) * .07s); }
+      ${ULAZ} .vfrc-input-container { animation: mx-j-pojava .9s var(--mx-j-glatko) 1.5s backwards; }
 
       /* ── zastor: čim kupac odabere, uvod i izbornik izblijede, a crna ploha
             se digne u traku; ispod nje ostane razgovor ── */
