@@ -11,7 +11,7 @@
   //     razmaknutim slovima, istim fontom kao poruke u chatu (Jost), u
   //     prašnjavoj rozoj
   //   - JEDINA animacija: tri točkice u oblačiću se jedna za drugom lagano
-  //     podignu i spuste, kao kad netko tipka u chatu, pa kratko miruju.
+  //     podignu i spuste, kao kad netko tipka u chatu, svakih 5 sekundi.
   //     Nema svjetla po rubu, nema bočice, nema pojave pri učitavanju
   //   - miš iznad gumba: rub malo posvijetli (bez pomicanja); pritisak:
   //     gumb se tek malo stisne; fokus s tipkovnice: vidljiv obrub
@@ -52,7 +52,7 @@
     razmakSlova: 0.34,        // em
 
     visina: 44,               // px, visina gumba
-    tockice: 2.2              // sekundi za jedan krug točkica (podignu se jedna za drugom, pa miruju); 0 = miruju
+    tockice: 5                // svakih koliko sekundi se točkice pomaknu (val traje oko 1 s, ostatak miruju); 0 = miruju
   };
 
 
@@ -97,7 +97,10 @@
     function polozaj(d) {          // d = [pomak 1., 2. i 3. točkice prema gore]
       return d.map(function (p, i) { return X[i] + 'px ' + (Y - p).toFixed(2) + 'px'; }).join(', ') + ', 0 0';
     }
-    const TOCKICE = +P.tockice > 0 ? Math.max(.8, +P.tockice) + 's' : '';
+    const KRUG = +P.tockice > 0 ? Math.max(1.2, +P.tockice) : 0;      // s, jedan krug
+    const TOCKICE = KRUG ? KRUG + 's' : '';
+    // val točkica traje uvijek isto (oko 1 s), bez obzira na duljinu kruga
+    function u(s) { return (KRUG ? Math.min(100, s / KRUG * 100) : 0).toFixed(2) + '%'; }
     const H = broj(P.visina, 44, 32, 64);
     const VEL = broj(P.velicinaNatpisa, 12, 9, 20);
     const RAZMAK = broj(P.razmakSlova, .34, 0, 1);
@@ -178,13 +181,12 @@
         background-position: ${polozaj([0, 0, 0])};
         ${TOCKICE ? `animation: mx-g-tockice ${TOCKICE} ease-in-out infinite;` : ''}
       }
-      /* točkice se podignu jedna za drugom (kao kad netko tipka), pa miruju */
+      /* točkice se podignu jedna za drugom (kao kad netko tipka, oko 1 s), pa miruju do kraja kruga */
       @keyframes mx-g-tockice {
-        0%, 62%, 100% { background-position: ${polozaj([0, 0, 0])}; }
-        12% { background-position: ${polozaj([GORE, 0, 0])}; }
-        24% { background-position: ${polozaj([0, GORE, 0])}; }
-        36% { background-position: ${polozaj([0, 0, GORE])}; }
-        48% { background-position: ${polozaj([0, 0, 0])}; }
+        0%, ${u(1.05)}, 100% { background-position: ${polozaj([0, 0, 0])}; }
+        ${u(.26)} { background-position: ${polozaj([GORE, 0, 0])}; }
+        ${u(.52)} { background-position: ${polozaj([0, GORE, 0])}; }
+        ${u(.78)} { background-position: ${polozaj([0, 0, GORE])}; }
       }
 
       /* ako sustav sam određuje boje (visoki kontrast), točkice miruju */

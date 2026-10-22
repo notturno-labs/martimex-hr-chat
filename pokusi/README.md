@@ -384,7 +384,7 @@ Gumb u kutu stranice (crta ga Voiceflow, izgled mu daje `gumb-chata.js`): crna p
 s tankim rubom ružičastog zlata, lijevo oblačić (tanki rozi obrub, crna unutrašnjost, repić dolje
 lijevo) s tri svijetle točkice, desno natpis ASISTENT velikim razmaknutim slovima u Jostu (isti font
 kao poruke), u prašnjavoj rozoj `#e3c1ac`. **Jedina animacija:** točkice u oblačiću se jedna za
-drugom lagano podignu i spuste (kao kad netko tipka), pa kratko miruju (krug 2,2 s). Nema svjetla po
+drugom lagano podignu i spuste (kao kad netko tipka), pa miruju; ponavlja se svakih 5 s. Nema svjetla po
 rubu, nema bočice parfema, nema pojave pri učitavanju. Miš: rub malo posvijetli; dok je chat otvoren,
 gumb je okrugli gumb za zatvaranje (rozom strelicom). „Smanji pokrete”: točkice miruju.
 
