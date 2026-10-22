@@ -378,6 +378,24 @@ kartica bez popusta izgleda točno kao v30.
   3. akcija + kod).
 - Da bi se popust vidio na webshopu, funkcija u Voiceflowu mora početi slati `oldPrice` i/ili `promo`.
 
+## Gumb chata: oblačić s točkicama (`gumb-chata.js` v4, pregled u `gumb/`)
+
+Gumb u kutu stranice (crta ga Voiceflow, izgled mu daje `gumb-chata.js`): crna pilula visoka 44 px
+s tankim rubom ružičastog zlata, lijevo oblačić (tanki rozi obrub, crna unutrašnjost, repić dolje
+lijevo) s tri svijetle točkice, desno natpis ASISTENT velikim razmaknutim slovima u Jostu (isti font
+kao poruke), u prašnjavoj rozoj `#e3c1ac`. **Jedina animacija:** točkice u oblačiću se jedna za
+drugom lagano podignu i spuste (kao kad netko tipka), pa kratko miruju (krug 2,2 s). Nema svjetla po
+rubu, nema bočice parfema, nema pojave pri učitavanju. Miš: rub malo posvijetli; dok je chat otvoren,
+gumb je okrugli gumb za zatvaranje (rozom strelicom). „Smanji pokrete”: točkice miruju.
+
+- Oblačić i točkice su pozadina Voiceflowove slike ikone (slika se makne iz vidnog polja), pa je
+  Voiceflow i dalje sam skriva kad se chat otvori; u gumb se ništa ne umeće.
+- Postavke: boje (`podloga`, `roza`, `tockice`), font, `velicinaNatpisa`, `razmakSlova`, `visina`,
+  `tockice` (sekundi za krug; 0 = miruju). Izvornik ikone: `ikone/oblacic.svg`.
+- Pregled bez Voiceflowa: `gumb/pregled.html` (stvarna veličina i uvećano; klik pokaže otvoreni
+  chat). Pravi chat: `trake/proba.html` (učita `gumb-chata.js` iz iste grane preko `loader.js`).
+- Prethodni gumb (v3, bočica s raspršivačem) ostaje u gitu (grana `main`).
+
 ## Pregled i snimanje
 
 - `proba.html` glumi Voiceflowov prozor chata, pa se početni ekran vidi kao u pravom chatu:
