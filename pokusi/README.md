@@ -317,7 +317,7 @@ treba da je uvijek širi od pozornice, a brendovi su tu od prvog kadra (bez blij
 Pozornica je nenametljiva — razgovor je glavna stvar. U crnoj traci gore umjesto natpisa MARTIMEX
 stoji „Marti · AI asistentica” u dva reda: MARTI (Cormorant Garamond, razmaknuta velika slova, boja
 pudera) i ispod sitno AI ASISTENTICA (prašnjava roza) — u jednom redu ne bi stalo između gumba.
-Postavke `natpis` i `podnatpis`. Kad se pozornica sklopi, ostaje samo ta traka.
+Postavke `natpis` i `podnatpis`; traka je visoka 64 px (Voiceflowova 56 px). Kad se pozornica sklopi, ostaje samo ta traka.
 
 - Trake su običan CSS (bez WebGL-a): `transform` animacija toka s dva ista reda logotipa. Rade
   svugdje; „Smanji pokrete”: trake stoje. Ako se neka sličica ne učita, preskoči se.

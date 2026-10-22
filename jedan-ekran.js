@@ -218,7 +218,8 @@
     const PRAZNO = W + ' .vfrc-input-container:has(.vfrc-chat-input:placeholder-shown) #vfrc-send-message';
     const GLAVNI = [W + ' ' + START, W + ' .vfrc-prompt .vfrc-button:first-child'];
     const SPOREDNI = W + ' .vfrc-prompt .vfrc-button:last-child:not(:first-child)';
-    const VISINA_TRAKE = 56;              // px, traka s natpisom (kao Voiceflowovo zaglavlje)
+    const VISINA_TRAKE = 64;              // px, traka s natpisom (Voiceflowovo zaglavlje je 56 px; malo deblja, da dva reda natpisa dišu)
+    const VRH_NATPISA = Math.round((VISINA_TRAKE - 37) / 2) - 2;   // natpis u dva reda (24 + 2 + 11 px) optički u sredini trake (slova su niže u svom retku)
 
     // fino zrno (kao na fotografiji), da topla crna ne djeluje plastično
     const ZRNO = 'url("data:image/svg+xml,' + encodeURIComponent(
@@ -296,7 +297,7 @@
         content: ${tekst(String(P.natpis || '').toUpperCase())};
         content: ${tekst(String(P.natpis || '').toUpperCase())} / "";
         position: absolute;
-        top: calc(env(safe-area-inset-top, 0px) + ${P.podnatpis ? 9 : 0}px);
+        top: calc(env(safe-area-inset-top, 0px) + ${P.podnatpis ? VRH_NATPISA : 0}px);
         left: 50%;
         transform: translateX(-50%);
         padding-left: .36em;                  /* optički centrira razmaknuta slova */
@@ -314,7 +315,7 @@
         content: ${tekst(String(P.podnatpis).toUpperCase())};
         content: ${tekst(String(P.podnatpis).toUpperCase())} / "";
         position: absolute;
-        top: calc(env(safe-area-inset-top, 0px) + 35px);
+        top: calc(env(safe-area-inset-top, 0px) + ${VRH_NATPISA + 26}px);
         left: 50%;
         transform: translateX(-50%);
         padding-left: .34em;
