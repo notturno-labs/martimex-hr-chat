@@ -154,7 +154,7 @@
       odsjaj: 7,              // s: svakih toliko preko stakla prijeđe svjetlo (0 = bez)
       tocaka: 20000,          // računalo
       tocakaMobitel: 20000,   // mobitel i tablet: isto kao računalo (uz manje točkica čep ima rupe)
-      velicina: 0.74,         // visina flakona kao udio visine prostora iznad uvoda (najviše: koliko stane u širinu)
+      velicina: 0.8,          // visina flakona kao udio visine prostora iznad uvoda (najviše: koliko stane u širinu)
       nagibPremaMisu: true    // na računalu se flakon lagano nagne prema mišu
     },
 
@@ -715,8 +715,8 @@
     // prostora) i njegovu visinu (px).
     const VIDNI_POMAK = 0.047;
     function rasporedFlakona(vis, sir) {
-      const rub = Math.max(14, Math.min(28, vis * 0.09));
-      let visina = vis * broj(F.velicina, 0.74, 0.3, 0.95);
+      const rub = Math.max(12, Math.min(24, vis * 0.08));
+      let visina = vis * broj(F.velicina, 0.8, 0.3, 0.95);
       visina = Math.min(visina, vis - 2 * rub, (sir || 400) * 0.56 / 0.5);
       return { sredina: vis * 0.5 - rub * 0.15, visina: Math.max(20, visina) };
     }
@@ -1304,7 +1304,8 @@
       ${POCETNI} .vfrc-input-container:has(.vfrc-chat-input:placeholder-shown) #vfrc-send-message { background: transparent; box-shadow: inset 0 0 0 1px ${prozirna(B.roza, .55)}; }
       ${POCETNI} .vfrc-input-container:has(.vfrc-chat-input:placeholder-shown) #vfrc-send-message svg { color: var(--mx-j-roza); }
       ${POCETNI} .vfrc-footer div:has(> .vfrc-input-container) > .vfrc-input-container ~ div { color: var(--mx-j-puder-45); }
-      ${POCETNI} .vfrc-footer button:not(.vfrc-button):not(.vfrc-input-container button) { background: var(--mx-j-tama); color: var(--mx-j-puder); box-shadow: 0 0 0 1px ${prozirna(B.puder, .18)}; }
+      /* gumb "na dno razgovora" na početnom ekranu nema smisla (razgovor je ispod zastora) */
+      ${POCETNI} .vfrc-footer__content-scroll-to-bottom { display: none; }
 
       /* ── pojava pri svakom otvaranju: flakon nastane, pa naslov, opis, redovi jedan za drugim i polje ── */
       ${ULAZ} .mx-j-naslov { animation: mx-j-pojava .9s var(--mx-j-glatko) .5s backwards; }
@@ -1849,7 +1850,7 @@
     // ═══════════════════════════════════════════════════════════════════
     //  VEZA S VOICEFLOWOM
     // ═══════════════════════════════════════════════════════════════════
-    const S = { host: null, kor: null, pocetni: null, nosac: null, sklopljeno: false, otvoren: false, ulaz: false,
+    const S = { host: null, kor: null, pocetni: null, nosac: null, sklopljeno: false, odmah: false, otvoren: false, ulaz: false,
       prozor: null, dno: null, promatracDna: null, ceka: false, imaloOdgovora: false, spustanje: 0, diziDo: 0 };
 
     function kupacJeOdgovorio(kor) { return !!kor.querySelector('.vfrc-chat .vfrc-user-response'); }
@@ -1893,7 +1894,7 @@
     // zastor se diže: razgovor dobije cijeli prozor
     function sklopi(odmah) {
       if (!S.pocetni || S.sklopljeno) return;
-      odmah = !!odmah || MIRNO.matches;
+      odmah = !!odmah;                        // uz "Smanji pokrete" početni ekran samo izblijedi (CSS)
       S.spustanje++;                          // ako se zastor baš spuštao, taj se korak prekine
       S.sklopljeno = true;
       S.odmah = odmah;
@@ -2006,10 +2007,11 @@
         zapocni();
       }
     }
+    // (setTimeout, a ne requestAnimationFrame: radi i dok je kartica u pozadini)
     function uskladiUskoro() {
       if (S.ceka) return;
       S.ceka = true;
-      requestAnimationFrame(uskladi);
+      setTimeout(uskladi, 0);
     }
 
     // Otvaranjem chata razgovor kreće sam (ako još ne postoji)
