@@ -1406,7 +1406,7 @@
       }
       ${P.naslovUvoda !== false ? `
       /* uvodna poruka: podebljani prvi red kao naslov u Cormorantu */
-      ${W} .vfrc-chat-dialog > .vfrc-system-response--container:first-child ${MARTI.slice(W.length + 1)} .markdown > p:first-child > strong:first-child {
+      ${W} .vfrc-chat-dialog > .vfrc-system-response--container:is(:first-child, :nth-child(1 of .vfrc-system-response--container)) ${MARTI.slice(W.length + 1)} .markdown > p:first-child > strong:first-child {
         display: block;
         margin: 1px 0 7px;
         font-family: var(--mx-j-font-natpisa);
@@ -1416,7 +1416,7 @@
         letter-spacing: .005em;
         color: var(--mx-j-tinta);
       }
-      ${W} .vfrc-chat-dialog > .vfrc-system-response--container:first-child ${MARTI.slice(W.length + 1)} .markdown > p:first-child > strong:first-child + br { display: none; }` : ''}
+      ${W} .vfrc-chat-dialog > .vfrc-system-response--container:is(:first-child, :nth-child(1 of .vfrc-system-response--container)) ${MARTI.slice(W.length + 1)} .markdown > p:first-child > strong:first-child + br { display: none; }` : ''}
 
       /* Voiceflowove kartice i vrtuljak (ako ih Marti pošalje) */
       ${W} .vfrc-card {
