@@ -115,11 +115,15 @@
     return el ? String(el.textContent || '').replace(/\s+/g, ' ').trim() : '';
   }
 
-  // "1.299,50 €" → 1299.5; "88.5" → 88.5
+  // "1.299,50 €" → 1299.5; "88.5" → 88.5; "54.717" (data-var-price) → 54.717
   function uBroj(v) {
     if (typeof v === 'number') return isFinite(v) ? v : null;
     if (v === undefined || v === null) return null;
-    let s = String(v).replace(/[^\d.,]/g, '');
+    // strojni zapis (atributi i JSON, npr. data-var-price="54.717"): točka je
+    // decimalna, koliko god znamenki iza nje bilo
+    const t = String(v).trim();
+    if (/^\d+(?:\.\d+)?$/.test(t)) { const n = parseFloat(t); return isFinite(n) ? Math.round(n * 100) / 100 : null; }
+    let s = t.replace(/[^\d.,]/g, '');
     if (!s) return null;
     const d = Math.max(s.lastIndexOf(','), s.lastIndexOf('.'));
     if (d !== -1 && s.length - d - 1 <= 2) s = s.slice(0, d).replace(/[.,]/g, '') + '.' + s.slice(d + 1);
@@ -220,6 +224,66 @@
     return lista;
   }
 
+  // Tekst elementa po retcima: svaki odlomak, redak (<br>) i stavka popisa
+  // je zaseban redak. Ne ovisi o tome je li element vidljiv (skrivene
+  // kartice opisa), za razliku od innerText.
+  const BLOK = /^(P|DIV|LI|UL|OL|H[1-6]|TR|TABLE|TBODY|SECTION|ARTICLE|BLOCKQUOTE|DL|DT|DD|FIGCAPTION|HEADER|FOOTER|PRE)$/;
+  function retciTeksta(el) {
+    const retci = [];
+    let red = '';
+    function novi() { retci.push(red); red = ''; }
+    (function hodaj(n) {
+      for (let c = n.firstChild; c; c = c.nextSibling) {
+        if (c.nodeType === 3) { red += c.nodeValue; continue; }
+        if (c.nodeType !== 1) continue;
+        const t = String(c.tagName).toUpperCase();
+        if (/^(SCRIPT|STYLE|TEMPLATE|NOSCRIPT|BUTTON|SVG|IMG|IFRAME)$/.test(t)) continue;
+        if (c.classList && c.classList.contains('product__show-description')) continue;   // "Prikaži više"
+        if (t === 'BR') { novi(); continue; }
+        const blok = BLOK.test(t);
+        if (blok) novi();
+        hodaj(c);
+        if (blok) novi();
+      }
+    })(el);
+    novi();
+    return retci.map(function (r) { return r.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+  }
+
+  // Opis proizvoda kao popis redaka. Na martimex.hr postoje dva rasporeda:
+  //  - jedan blok "Opis proizvoda" (.product__description)
+  //  - kartice "Opis / Prednosti / Upotreba..." (.product__description-tabs;
+  //    na mobitelu iste kartice kao harmonika) — tada svaki dio dobije naslov
+  function opisSaStranice(sekcija) {
+    const blok = sekcija.querySelector('.product__description .post-content') || sekcija.querySelector('.product__description');
+    if (blok) return retciTeksta(blok);
+    const kartice = sekcija.querySelector('.product__description-tabs');
+    if (!kartice) return [];
+    let retci = [];
+    const gumbi = kartice.querySelectorAll('.product__description-tabs-nav-btn');
+    for (let i = 0; i < gumbi.length; i++) {
+      const id = gumbi[i].getAttribute('data-tab-id');
+      const dio = id && kartice.querySelector('.product__description-tabs-content-item[id="' + id + '"]');
+      if (!dio) continue;
+      const tekstDijela = retciTeksta(dio.querySelector('.post-content') || dio);
+      if (!tekstDijela.length) continue;
+      const naslov = tekst(gumbi[i]).replace(/[:\s]+$/, '');
+      retci = retci.concat(naslov ? [naslov + ':'] : [], tekstDijela);
+    }
+    if (retci.length) return retci;
+    // samo harmonika (bez gumba kartica)
+    const dijelovi = kartice.querySelectorAll('.product__description-tabs-faq');
+    for (let j = 0; j < dijelovi.length; j++) {
+      const sadrzaj = dijelovi[j].querySelector('.product__description-tabs-faq-content');
+      const tekstDijela = sadrzaj ? retciTeksta(sadrzaj.querySelector('.post-content') || sadrzaj) : [];
+      if (!tekstDijela.length) continue;
+      const naslov = tekst(dijelovi[j].querySelector('.product__description-tabs-faq-header h4, .product__description-tabs-faq-header')).replace(/[:\s]+$/, '');
+      retci = retci.concat(naslov ? [naslov + ':'] : [], tekstDijela);
+    }
+    if (retci.length) return retci;
+    return retciTeksta(kartice);
+  }
+
   function procitajArtikl() {
     const sekcija = sekcijaProizvoda();
     if (!sekcija) return null;
@@ -285,11 +349,8 @@
       apsolutno(proizvod.image) || apsolutno(typeof ld.image === 'string' ? ld.image : (ld.image && ld.image[0]));
 
     // opis: odlomci i retci (<p>, <br>, popisi) ostaju odvojeni, da se ne slijepe
-    const opisEl = sekcija.querySelector('.product__description .post-content') || sekcija.querySelector('.product__description');
-    let opis = opisEl ? String(opisEl.innerText || opisEl.textContent || '').split(/\n+/)
-      .map(function (r) { return r.replace(/\s+/g, ' ').trim(); })
-      .filter(Boolean)
-      .reduce(function (s, r) { return !s ? r : s + (/[.!?:;,]$/.test(s) ? ' ' : '; ') + r; }, '') : '';
+    let opis = opisSaStranice(sekcija)
+      .reduce(function (s, r) { return !s ? r : s + (/[.!?:;,]$/.test(s) ? ' ' : '; ') + r; }, '');
     if (opis.length > P.maxOpis) opis = opis.slice(0, P.maxOpis);
 
     const pogodnosti = [].map.call(sekcija.querySelectorAll('.product__benefits-single h5, .product__benefits-single'), tekst)
@@ -416,6 +477,33 @@
 
   function otvoriChat() {
     try { window.voiceflow.chat.open(); } catch (e) { console.warn('[Martimex] Pitaj Marti: chat se nije otvorio', e); }
+  }
+
+  // Je li Voiceflowov chat uopće na stranici (npr. blokator oglasa ga može
+  // blokirati ili se nije učitao)
+  function chatPostoji() {
+    const vc = window.voiceflow && window.voiceflow.chat;
+    return !!(vc && typeof vc.open === 'function' && document.getElementById(HOST));
+  }
+
+  // Bez chata gumb nema smisla: sakrije se, a vrati se ako se chat ipak
+  // učita (spora veza) — provjera svake 2 s, najviše 3 minute
+  let pratiChat = 0;
+  function sakrijDokNemaChata() {
+    if (!omotGumba || pratiChat) return;
+    omotGumba.style.display = 'none';
+    zapis('chata nema — gumb skriven');
+    const pocetak = Date.now();
+    pratiChat = setInterval(function () {
+      if (chatPostoji()) {
+        clearInterval(pratiChat); pratiChat = 0;
+        omotGumba.style.display = '';
+        uskladiSaKosaricom(omotGumba, sekcijaProizvoda() || omotGumba.parentNode);
+        zapis('chat se učitao — gumb vraćen');
+      } else if (Date.now() - pocetak > 180000) {
+        clearInterval(pratiChat); pratiChat = 0;
+      }
+    }, 2000);
   }
 
   // Početni ekran (pocetna-chata.js) se preskače: sakrije se odmah i
@@ -598,6 +686,7 @@
       if (!kor) {
         console.warn('[Martimex] Pitaj Marti: chat se nije učitao');
         otvoriChat();
+        if (!chatPostoji()) sakrijDokNemaChata();
         return;
       }
       // isti artikl (ista varijanta) već je u razgovoru: chat se samo otvori
@@ -650,18 +739,23 @@
         letter-spacing: var(--mx-pm-razmak, .06em);
         text-transform: var(--mx-pm-velika, uppercase);
         line-height: 1.2;
+        text-align: center;
         cursor: pointer;
+        -webkit-appearance: none; appearance: none;
         -webkit-tap-highlight-color: transparent;
         transition: background-color .2s ease, color .2s ease;
       }
-      .mx-pm-gumb:hover { background: var(--mx-pm-tinta); color: #fff; }
+      /* zatamnjenje samo uz miša (na mobitelu bi nakon dodira ostalo tamno) */
+      @media (hover: hover) {
+        .mx-pm-gumb:hover { background: var(--mx-pm-tinta); color: #fff; }
+        .mx-pm-gumb:hover .mx-pm-iskra { fill: ${B.ikonaSvijetla}; }
+      }
       .mx-pm-gumb:active { transform: translateY(1px); }
       .mx-pm-gumb:focus-visible { outline: 2px solid var(--mx-pm-tinta); outline-offset: 3px; }
       .mx-pm-ikona { display: inline-flex; flex: none; width: 18px; height: 18px; }
       .mx-pm-ikona svg { display: block; width: 100%; height: 100%; overflow: visible; }
       .mx-pm-iskra { fill: ${B.ikona}; transform-origin: 12px 12px; transition: fill .2s ease; }
       .mx-pm-iskra-mala { transform-origin: 19px 5px; }
-      .mx-pm-gumb:hover .mx-pm-iskra { fill: ${B.ikonaSvijetla}; }
       .mx-pm-tekst { white-space: nowrap; }
       .mx-pm-opis {
         font-size: .82em; font-weight: 400; letter-spacing: .02em; text-transform: none;
@@ -685,7 +779,8 @@
   // dio stranice ide od ruba do ruba ekrana (mobitel), gumb se lijevim i
   // desnim rubom poravna s redom u kojem je gumb za košaricu.
   function uskladiSaKosaricom(omot, sekcija) {
-    const kosarica = sekcija.querySelector('.js-add-to-cart');
+    // uzor: gumb za košaricu, a kad artikla nema na stanju gumb "Obavijesti me"
+    const kosarica = sekcija.querySelector('.js-add-to-cart') || sekcija.querySelector('.js-notify-me-btn');
     if (!kosarica || !omot.isConnected) return;
     try {
       const red = kosarica.closest('.product__add-to-cart-btn-quantity-wrapper') || kosarica;
@@ -757,7 +852,10 @@
     if (omotGumba && omotGumba.isConnected) return true;
     ubaciStil();
     if (!omotGumba) omotGumba = napraviGumb();
+    // ispod gumba "Dodaj u košaricu"; kad artikla nema na stanju, ispod
+    // gumba "Obavijesti me kada bude dostupan"
     const iza = sekcija.querySelector('.product__add-to-cart-wrap') ||
+      sekcija.querySelector('.product__out-of-stock') ||
       sekcija.querySelector('.product__variations') ||
       sekcija.querySelector('.product__price-wrap');
     if (iza && iza.parentNode) iza.parentNode.insertBefore(omotGumba, iza.nextSibling);
@@ -780,6 +878,8 @@
     // fontovi stranice se možda još učitavaju, a raspored se mijenja s
     // veličinom prozora: uskladi se ponovno
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { uskladiSaKosaricom(omotGumba, sekcija); });
+    // ako se chat ne pojavi (blokator oglasa, Voiceflow ne radi), gumb se sakrije
+    setTimeout(function () { if (!chatPostoji()) sakrijDokNemaChata(); }, P.cekajChat);
     let okvir = 0;
     window.addEventListener('resize', function () {
       cancelAnimationFrame(okvir);
