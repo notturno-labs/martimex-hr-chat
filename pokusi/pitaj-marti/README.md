@@ -29,23 +29,30 @@ Stranica: **https://notturno-labs.github.io/martimex-hr-chat/pokusi/pitaj-marti/
 Probna traka na vrhu stranice:
 
 - **artikl**: Dylan Blue (kao na martimex.hr), Crystal Noir (na akciji),
-  Eros Parfum (bez veličina), ruž Creamy Delight (nijanse),
+  Eros Parfum (bez veličina), ruž Creamy Delight (nijanse), Purple Stain
+  (nije na stanju, opis u karticama „Opis / Uporaba / Sastojci...”),
 - **Novi razgovor**: obriše razgovor iz preglednika i učita stranicu ispočetka.
 
-Chat na probnoj stranici je isti kao na martimex.hr: stranica ima isti kod
-za chat, a `loader.js` s vrha repozitorija učita iste module kao na
-webshopu — izgled „Jedan ekran” (`jedan-ekran.js`: tamna traka „MARTI / AI
+Chat na probnoj stranici ima kod za chat iz repozitorija (kao u „Za
+martimex.hr (cisti)”), a `loader.js` s vrha repozitorija učita module —
+izgled „Jedan ekran” (`jedan-ekran.js`: tamna traka „MARTI / AI
 ASISTENTICA”, trake s brendovima, ikone na gumbima pozdrava), gumb chata
 (`gumb-chata.js`), kartice artikala i čekanje odgovora. Kad se ti moduli
-promijene, promijeni se i chat na probnoj stranici. Samo za usporedbu,
-`&izgled=dosadasnji` na kraju adrese učita dosadašnji početni ekran
-(`pocetna-chata.js`).
+promijene, promijeni se i chat na probnoj stranici.
+
+Dodaci na kraju adrese:
+
+- `&kolacici=ceka` — kao na martimex.hr: chat se učita tek kad se
+  prihvate kolačići (u traci se pojavi gumb „Prihvati kolačiće”); do tada
+  ni gumba „Pitaj Marti” nema,
+- `&izgled=dosadasnji` — dosadašnji početni ekran (`pocetna-chata.js`), samo
+  za usporedbu,
+- `&pitajmarti=debug` — modul zapisuje što radi u konzolu preglednika.
 
 Vrijedi probati: odabrati drugu veličinu ili nijansu pa opet „Pitaj Marti”,
 prvo otvoriti chat običnim gumbom pa tek onda „Pitaj Marti”, osvježiti
 stranicu usred razgovora, u chatu pokrenuti novi razgovor (tada je običan
-pozdrav, bez artikla). Uz `&pitajmarti=debug` na kraju adrese modul
-zapisuje što radi u konzolu preglednika.
+pozdrav, bez artikla).
 
 Chat na probnoj stranici razgovara s Voiceflow projektom **V2 - Martimex -
 Live**, okruženje **„Radim gumb na webu”** (nacrt), a ne s Marti na webshopu.
@@ -56,7 +63,8 @@ Live**, okruženje **„Radim gumb na webu”** (nacrt), a ne s Marti na webshop
 trenutku pritiska, bez ikakvog dodatnog učitavanja (traje djelić
 milisekunde): naziv, marka, vrsta, kategorija, odabrana varijanta, cijene
 svih varijanti, stara cijena i najniža cijena u 30 dana, dostupnost, slika,
-opis i pogodnosti. Izvori su podaci stranice (Alpine `x-data`
+opis (i kad je u karticama „Opis / Prednosti / Upotreba...”, sa
+naslovima) i pogodnosti. Izvori su podaci stranice (Alpine `x-data`
 „singleProduct”), oznake gumba varijanti i JSON-LD.
 
 - Razgovor još ne postoji → chat se otvori kao i inače, a podaci o artiklu
@@ -69,7 +77,12 @@ opis i pogodnosti. Izvori su podaci stranice (Alpine `x-data`
 - Ako Voiceflow ipak ne pošalje podatke uz pokretanje razgovora, modul ih
   sam pošalje događajem (rezerva).
 
-Gumb preuzme visinu, zaobljenje i slova gumba „Dodaj u košaricu”. Postavke
+Gumb preuzme visinu, zaobljenje i slova gumba „Dodaj u košaricu” (kad
+artikla nema na stanju, gumba „Obavijesti me kada bude dostupan”, ispod
+kojeg tada stoji). Gumb se vidi samo kad chat postoji ili se upravo
+učitava: dok kupac ne prihvati kolačiće (pa se chat ne učitava) ili kad
+blokator oglasa blokira Voiceflow, gumba nema; pojavi se čim se chat
+učita. Postavke
 (natpis, sitni opis u gumbu, boje iskrice...) su na vrhu `pitaj-marti.js`
 u `MX_PM_POSTAVKE`.
 
@@ -88,7 +101,18 @@ u `MX_PM_POSTAVKE`.
 
 ## Na martimex.hr (kad se odobri)
 
-Redoslijed je važan — **prvo Voiceflow, pa tek onda GitHub**:
+**Stanje na martimex.hr (provjereno 23. 10. 2026.):** na stranici je
+običan Voiceflow kod (projekt „Martimex - Live”, bez `loader.js` s
+GitHuba), i chat se učita tek kad kupac na traci s kolačićima prihvati sve
+(kolačić `cookiesAccepted=allCookies`, odnosno događaj
+`martimex:cookies-accepted`). Dakle ni „Jedan ekran” ni ostali moduli s
+GitHuba još nisu na webshopu. Da bi „Pitaj Marti” radio na martimex.hr,
+na stranici mora biti kod koji učitava `loader.js` (kao „Za martimex.hr
+(cisti)”), spojen na projekt V2 — i taj kod mora zadržati čekanje na
+pristanak za kolačiće kakvo je sada na stranici. Gumb „Pitaj Marti” je na
+to spreman (vidi gore).
+
+Zatim redoslijed — **prvo Voiceflow, pa tek onda GitHub**:
 
 1. **Voiceflow**: okruženje „Radim gumb na webu” spojiti u Main (merge) i
    objaviti (Publish). Pažnja: ako se Main u međuvremenu mijenjao, merge te
@@ -117,11 +141,20 @@ kao i prije.
   Martini odgovori na „Kakav je miris?”, „Koju veličinu odabrati?” i „Koju
   nijansu odabrati?” s podacima sa stranice, isti artikl (samo se otvori
   chat), ruž na mobitelu, te „Pitaj Marti” nakon običnog pozdrava.
-- Automatski testovi (Chromium, računalo i mobitel, 11 scenarija: deset s
-  izgledom „Jedan ekran” i jedan s dosadašnjim): jedan `launch` po
-  pritisku (i kod dvostrukog klika), ispravni podaci o artiklu (veličina,
-  nijansa, akcija, artikl bez varijanti), ponuđena pitanja, isti artikl,
-  druga veličina usred razgovora, osvježena stranica, završen razgovor,
-  klik prije nego se chat učitao, rezerva kad `launch` stigne bez artikla,
-  stranica bez stila s martimex.hr, i da obični „Start new chat” ostaje
-  običan pozdrav.
+- Automatski testovi (Chromium, računalo i mobitel, 15 scenarija): jedan
+  `launch` po pritisku (i kod dvostrukog klika), ispravni podaci o artiklu
+  (veličina, nijansa, akcija, artikl bez varijanti, nije na stanju, opis u
+  karticama), ponuđena pitanja, isti artikl, druga veličina usred
+  razgovora, osvježena stranica, završen razgovor, klik prije nego se chat
+  učitao, rezerva kad `launch` stigne bez artikla, stranica bez stila s
+  martimex.hr, blokiran chat (gumb se sakrije), chat koji se učita tek
+  nakon 20 s, kolačići koji još nisu prihvaćeni, i da obični „Start new
+  chat” ostaje običan pozdrav.
+- Čitanje artikla na pravim stranicama martimex.hr: 439 nasumičnih
+  artikala iz svih 141 kategorije (od toga 347 pravih stranica, ostalo su
+  skriveni artikli koji vode na naslovnicu). Gumb se postavi na svima, uz
+  ispravnu marku, sliku, cijene svih varijanti i dostupnost. Tako su nađene
+  i popravljene četiri stvari: opis u karticama se nije čitao, cijene
+  varijanti s tri decimale (npr. `54.717`) čitale su se kao tisuće, gumb je
+  kod artikala kojih nema na stanju stajao iznad „Obavijesti me”, a Marti je
+  dobivala samo 12 nijansi (sada do 40) i 1400 znakova opisa (sada 2500).

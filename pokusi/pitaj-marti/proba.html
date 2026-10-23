@@ -24,6 +24,8 @@
       proba.html?artikl=crystal-noir      → parfem na akciji (stara cijena, NC u 30 dana)
       proba.html?artikl=eros-parfum       → artikl bez varijanti
       proba.html?artikl=creamy-delight    → ruž s nijansama
+      proba.html?artikl=purple-stain      → nije na stanju ("Obavijesti me"), opis u karticama
+      &kolacici=ceka                      → kao martimex.hr: chat se učita tek kad se prihvate kolačići (gumb u traci)
       &pitajmarti=debug                   → zapisi modula u konzoli preglednika
       &izgled=dosadasnji                  → dosadašnji početni ekran (pocetna-chata.js), samo za usporedbu
   -->
@@ -141,6 +143,16 @@
     .mx-bez-stila .notice-banner__text p { margin: 0 0 10px; font-size: 13px; opacity: .9; }
     .mx-bez-stila .notice-banner .btn { display: inline-block; padding: 7px 14px; border: 1px solid #f9f9f9; color: #f9f9f9; text-decoration: none; font-size: 13px; }
     .mx-bez-stila .product__description h3 { font: 400 22px/1.2 Georgia, serif; margin: 28px 0 12px; }
+    .mx-bez-stila .product__description-tabs { margin: 28px 0; }
+    .mx-bez-stila .product__description-tabs-nav { display: flex; flex-wrap: wrap; gap: 4px 18px; border-bottom: 1px solid #ddd; margin-bottom: 14px; }
+    .mx-bez-stila .product__description-tabs-nav-btn { padding: 8px 0; border: 0; border-bottom: 2px solid transparent; background: none; cursor: pointer; font: inherit; }
+    .mx-bez-stila .product__description-tabs-nav-btn h5 { margin: 0; font-size: 14px; }
+    .mx-bez-stila .product__description-tabs-nav-btn.active { border-bottom-color: #171717; }
+    .mx-bez-stila .product__description-tabs-content-item { display: none; }
+    .mx-bez-stila .product__description-tabs-content-item.active { display: block; }
+    .mx-bez-stila .product__description-tabs-faq { display: none; }
+    .mx-bez-stila .product__out-of-stock { margin: 18px 0 6px; }
+    .mx-bez-stila .product__out-of-stock .btn { width: 100%; min-height: 48px; border: 0; background: #171717; color: #fff; font: 600 14px/1.2 Arial, sans-serif; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; }
     .mx-bez-stila .post-content p { margin: 0 0 10px; color: #333; }
     @media (max-width: 900px) {
       .mx-bez-stila .product__outter { grid-template-columns: 1fr; gap: 24px; }
@@ -174,6 +186,7 @@
     <b>Proba „Pitaj Marti”</b>
     <span class="mxp-izbor" id="mxp-artikli" aria-label="Artikl"></span>
     <button type="button" id="mxp-novi" title="Obriše razgovor iz preglednika i učita stranicu ispočetka">Novi razgovor</button>
+    <button type="button" id="mxp-kolacici" hidden title="Kao „Prihvati sve” na traci s kolačićima na martimex.hr">Prihvati kolačiće</button>
     <button type="button" class="mxp-zatvori" aria-label="Sakrij traku" onclick="this.parentNode.remove()">✕</button>
   </div>
 
@@ -256,6 +269,21 @@
         }),
         opis: ['Kremasta, super hidratantna tekstura', 'Intenzivna boja', 'Izniman osjećaj/ugodan miris', 'Izglađivajuće djelovanje',
           'Aktivni sastojci: ARGANOVO ULJE (njega i zaštita); SHEA MASLAC (hidratacija i umirenje); LIPIDNI POLIMERI (izglađivanje)', 'BEZ PARABENA!']
+      },
+      // nije na stanju (umjesto košarice "Obavijesti me") i opis u karticama — kao na martimex.hr
+      'purple-stain': {
+        id: 54073, adresa: STR + 'proizvod/parfemi/parfemski-ekstrakti/purple-stain-extrait-extreme-50-ml-parfum/',
+        naziv: 'Purple Stain Extrait Extreme 50 ml Parfum', marka: 'BORNTOSTANDOUT\u00ae', markaSlug: 'borntostandout', logo: U + '2025/06/BORNTOSTANDOUT.svg',
+        vrsta: 'Parfemski ekstrakt', glavna: 'Parfemi', sku: 'BTS77246', cijena: 300, nijeNaStanju: true,
+        putanja: [['Parfemi', 'kategorija/parfemi/'], ['Parfemski ekstrakti', 'kategorija/parfemi/parfemski-ekstrakti/']],
+        slika: U + '2025/09/Borntostandout_Purple-Stain-Extrait-Extreme-50-ml-1.jpg',
+        varijante: [],
+        kartice: [
+          ['Opis', '<p>Zariti zube u savršeno zreli mango, njegov zlatni sok kaplje vam niz prste, preplavljujući vaša osjetila tropskom slatkoćom – to je jedan od najjednostavnijih, najčišćih užitaka u životu. Za mene je mango više od voća – on je opsesija. Onaj trenutak kada dođeš do srži, gdje slatkoća nestaje Nešto sirovo i iskonsko, a ipak žudite za svakim posljednjim zalogajem – to je nezaboravno. Black mango bilježi točno to iskustvo.</p><p>Baza: Mango, Naranča<br> Srce: Burbon vanilija, Mango<br> Glava: Cipriol, Oud, Sandalovina</p>'],
+          ['Uporaba', '<p>Nanesite parfem na pulsne točke – zapešće, vrat, dekolte i unutarnju stranu laktova. Eksperimentirajte kombinirajući različita područja nanošenja. Kako biste dulje uživali u mirisu, koristite proizvode za njegu tijela s istim mirisom.<br> Ne prskajte u oči ili na oštećenu kožu. Prekinite s upotrebom ako se pojavi iritacija kože. Samo za vanjsku upotrebu.</p>'],
+          ['Sastojci', '<p>FRAGRANCE, ALCOHOL DENAT., WATER, LIMONENE, BENZYL BENZOATE, LINALOOL, CITRAL, BENZYL CINNAMATE, HYDROXYCITRONELLAL, BENZYL ALCOHOL, CINNAMAL, ISOEUGENOL.</p>'],
+          ['Sigurnosne informacije', '<p>Opasnost: Vrlo lako zapaljiva tekućina i para.<br> Toksično za vodeni život s dugotrajnim učinkom.<br> Upozorenje: Može izazvati iritaciju kože.<br> Upozorenje: Može izazvati alergijsku reakciju na koži.</p>']
+        ]
       }
     };
 
@@ -297,7 +325,7 @@
     var prva = V[0] || null;
     var xData = {
       product: {
-        id: A.id, inStock: true, onSale: V.some(function (v) { return !!v.stara; }), salePercentage: Math.max.apply(null, [0].concat(V.map(function (v) { return v.postotak || 0; }))),
+        id: A.id, inStock: !A.nijeNaStanju, onSale: V.some(function (v) { return !!v.stara; }), salePercentage: Math.max.apply(null, [0].concat(V.map(function (v) { return v.postotak || 0; }))),
         image: A.slika, name: A.naziv, price: prva ? String(prva.cijena) : String(A.cijena), currency: 'EUR',
         brandName: A.marka, categoryMain: A.glavna, category: A.vrsta
       },
@@ -365,7 +393,28 @@
       A.putanja.map(function (p) { return '<li class="breadcrumbs__item"> <a href="' + STR + p[1] + '" class="h6">' + esc(p[0]) + '</a> ' + STRELICA + '</li>'; }).join('') +
       '<li class="breadcrumbs__item"> <span class="h6" aria-current="page">' + esc(A.naziv) + '</span></li>';
 
-    var opis = A.opisHtml || A.opis.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
+    var opis = A.opisHtml || (A.opis || []).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
+    var STRELICA_DOLJE = '<div class="arrow"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> <polyline points="6,9 12,15 18,9"></polyline> </svg></div>';
+    var blokOpisa = A.kartice
+      ? '<div class="product__description-tabs" x-data="productTabs(\'tab-1\')"><div class="product__description-tabs-nav">' +
+          A.kartice.map(function (k, i) {
+            var id = 'tab-' + (i + 1);
+            return ' <button type="button" class="product__description-tabs-nav-btn ' + (i ? '' : 'active') + '" data-tab-id="' + id + '" :class="{ active: isTab(\'' + id + '\') }" @click="showTab(\'' + id + '\')"><h5>' + esc(k[0]) + '</h5> </button>';
+          }).join('') + '</div><div class="product__description-tabs-content">' +
+          A.kartice.map(function (k, i) {
+            var id = 'tab-' + (i + 1);
+            return '<div class="product__description-tabs-content-item ' + (i ? '' : 'active') + '" id="' + id + '" :class="{ active: isTab(\'' + id + '\') }"><div class="product__description-tabs-content-item-text"><div class="post-content ">' + k[1] + '</div></div></div>';
+          }).join('') + '</div>' +
+          A.kartice.map(function (k, i) {
+            var id = 'tab-' + (i + 1);
+            return '<div class="product__description-tabs-faq"><div class="product__description-tabs-faq-header" data-faq-id="' + id + '" :class="{ active: isOpen(\'' + id + '\') }" @click="toggle(\'' + id + '\')"><h4>' + esc(k[0]) + '</h4>' + STRELICA_DOLJE + '</div>' +
+              '<div class="product__description-tabs-faq-content" id="faq-' + id + '" :class="{ active: isOpen(\'' + id + '\') }"><div class="product__description-tabs-content-item-text"><div class="post-content ">' + k[1] + '</div></div></div></div>';
+          }).join('') + '</div>'
+      : '<div class="product__description base-product-description "><h3 class="t-500">Opis proizvoda</h3><div class="post-content ">' + opis + '</div>' +
+          '<div class="product__show-description" x-data="productDescription" x-ref="toggle"> <span\n class="btn btn--secondary btn--sm js-show-content"\n > <span class="btn__label " >Pročitaj više</span> </span></div></div>';
+    var blokKosarice = A.nijeNaStanju
+      ? '<div class="product__out-of-stock"><div class="product__out-of-stock-notice"><h5>Proizvod trenutno nije na stanju</h5></div> <button class="btn btn--primary js-notify-me-btn" data-no-stock-product-id="' + A.id + '" @click="$store.notifyMe.show(' + A.id + ')" type="button"> <span class="btn__label ">Obavijesti me kada bude dostupan</span> </button></div>'
+      : null;
 
     var html =
       '<section class="product  "\n x-data="singleProduct(' + jsonParse(xData) + ')"\n @click.window="dismissNotice($event)"><div class="container"><div class="product__outter">' +
@@ -378,19 +427,20 @@
             '<h1 class="h2">' + esc(A.naziv) + '</h1><div class="product__sku-wrap"><h5>' + esc(A.vrsta) + '</h5> <span class="product__sku-wrap-line"></span>' + skuovi + '</div>' +
             '<div class="product__price-wrap">' + cijene + '</div></div>' +
           varijante +
+          (blokKosarice || (
           '<div class="product__add-to-cart-wrap"><div class="product__add-to-cart"><div class="product__variations-no-variation-stock-notice d-none" :class="{ \'d-none\': inStock }"> <span></span> <span>Proizvod trenutno nije na stanju</span></div>' +
             '<div class="product__add-to-cart-btn-quantity-wrapper"><div class="product__add-to-cart-btn"> <button\n class="btn btn--primary js-add-to-cart in-stock" x-ref="addButton" @click="press()"\n type="button"         > <span class="btn__label h5 t-600"  x-text="addToCartLabel" >Dodaj u košaricu</span> </button>' +
               '<div class="product__add-to-cart-notice js-cart-notice" x-ref="notice" :class="{ show: added }"> <span class="product__add-to-cart-notice-checkmark"></span><h5 class="t-600">Dodano!</h5> <button\n class="btn btn--secondary btn--md js-open-cart" type="button"> <span class="btn__label " >Proba: košarica ne radi</span> </button></div>' +
               '<div class="product__add-to-cart-error" :class="{ show: error }"><h6 class="js-cart-error" x-html="error"></h6></div></div>' +
             '<div class="product__quantity" :class="{ \'d-none\': ! inStock }"> <button\n class="btn btn--ghost btn--icon disabled js-qty" data-value="-" type="button" aria-label="Manje"> <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <path fill-rule="evenodd" clip-rule="evenodd" d="M18.6001 12.5999L5.4001 12.5999L5.4001 11.3999L18.6001 11.3999L18.6001 12.5999Z" fill="#171717"/> </svg> </button>' +
-              ' <input id="productQuantity" class="input-field" type="text" value="1" inputmode="numeric" aria-label="Količina"/> <button\n class="btn btn--ghost btn--icon js-qty" data-value="+" type="button" aria-label="Više"> <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <path fill-rule="evenodd" clip-rule="evenodd" d="M12.5999 5.3999L12.5999 18.5999L11.3999 18.5999L11.3999 5.3999L12.5999 5.3999Z" fill="#171717"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M18.6001 12.5999L5.4001 12.5999L5.4001 11.3999L18.6001 11.3999L18.6001 12.5999Z" fill="#171717"/> </svg> </button></div></div></div></div>' +
+              ' <input id="productQuantity" class="input-field" type="text" value="1" inputmode="numeric" aria-label="Količina"/> <button\n class="btn btn--ghost btn--icon js-qty" data-value="+" type="button" aria-label="Više"> <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <path fill-rule="evenodd" clip-rule="evenodd" d="M12.5999 5.3999L12.5999 18.5999L11.3999 18.5999L11.3999 5.3999L12.5999 5.3999Z" fill="#171717"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M18.6001 12.5999L5.4001 12.5999L5.4001 11.3999L18.6001 11.3999L18.6001 12.5999Z" fill="#171717"/> </svg> </button></div></div></div></div>'
+          )) +
           '<div class="product__benefits"> <span class="product__benefits-single"> <img src="' + U + '2024/10/shipping-icon-black.svg" alt="Dostava 2-5 radnih dana" referrerpolicy="no-referrer" /><h5>Dostava 2-5 radnih dana</h5> </span>' +
             ' <span class="product__benefits-single"> <img src="' + U + '2024/10/gift-icon-black.svg" alt="Poklon uz svaku kupnju" referrerpolicy="no-referrer" /><h5>Poklon uz svaku kupnju</h5> </span>' +
             ' <span class="product__benefits-single"> <img src="' + U + '2024/10/package-icon-black.svg" alt="Besplatna dostava iznad 75€" referrerpolicy="no-referrer" /><h5>Besplatna dostava iznad 75€</h5> </span></div>' +
           '<div class="notice-banners notice-banner-container "><div class="notice-banner" style="background-color: #111218"><div class="notice-banner__inner"><div class="notice-banner__image-wrap"> <picture class="notice-banner__image" > <img alt="" decoding="async" src="' + U + '2026/10/living-proof-mini-banner-img.png" referrerpolicy="no-referrer"> </picture></div>' +
             '<div class="notice-banner__text-wrap"><h2 class="notice-banner__title" style="color: #f9f9f9">Living Proof</h2><div class="notice-banner__text"><p style="color: #f9f9f9">Od borbe protiv neposlušnog kovrčanja i frizza, preko zaštite od štetnih utjecaja iz okoliša, do poboljšanja sjaja i teksture kose.</p> <a\n class="btn btn--secondary btn--md" href="' + STR + 'brand/living-proof/"\n > <span class="btn__label " >Istražite ponudu</span> </a></div></div></div></div></div>' +
-          '<div class="product__description base-product-description "><h3 class="t-500">Opis proizvoda</h3><div class="post-content ">' + opis + '</div>' +
-            '<div class="product__show-description" x-data="productDescription" x-ref="toggle"> <span\n class="btn btn--secondary btn--sm js-show-content"\n > <span class="btn__label " >Pročitaj više</span> </span></div></div>' +
+          blokOpisa +
         '</div></div></div></section>';
     document.getElementById('main').innerHTML = html;
 
@@ -417,7 +467,7 @@
       var s = q.toString();
       return location.pathname + (s ? '?' + s : '');
     }
-    var natpisi = { 'dylan-blue': 'Dylan Blue', 'crystal-noir': 'Crystal Noir (akcija)', 'eros-parfum': 'Eros Parfum (bez varijanti)', 'creamy-delight': 'Ruž (nijanse)' };
+    var natpisi = { 'dylan-blue': 'Dylan Blue', 'crystal-noir': 'Crystal Noir (akcija)', 'eros-parfum': 'Eros Parfum (bez varijanti)', 'creamy-delight': 'Ruž (nijanse)', 'purple-stain': 'Nije na stanju (opis u karticama)' };
     document.getElementById('mxp-artikli').innerHTML = Object.keys(natpisi).map(function (k) {
       return '<a href="' + esc(adresa({ artikl: k === 'dylan-blue' ? '' : k })) + '"' + (k === kljuc ? ' aria-current="page"' : '') + '>' + esc(natpisi[k]) + '</a>';
     }).join('');
@@ -496,6 +546,24 @@
         if (manje) manje.classList.toggle('disabled', n <= 1);
         return;
       }
+      // kartice opisa (na računalu) i harmonika (na mobitelu), kao productTabs na martimex.hr
+      var kartica = e.target.closest('.product__description-tabs-nav-btn');
+      if (kartica) {
+        var id = kartica.getAttribute('data-tab-id');
+        sekcija.querySelectorAll('.product__description-tabs-nav-btn').forEach(function (b) { b.classList.toggle('active', b === kartica); });
+        sekcija.querySelectorAll('.product__description-tabs-content-item').forEach(function (c) { c.classList.toggle('active', c.id === id); });
+        return;
+      }
+      var harmonika = e.target.closest('.product__description-tabs-faq-header');
+      if (harmonika) {
+        var otvorena = !harmonika.classList.contains('active');
+        harmonika.classList.toggle('active', otvorena);
+        var sadrzaj = harmonika.nextElementSibling;
+        if (sadrzaj) sadrzaj.classList.toggle('active', otvorena);
+        var strelica = harmonika.querySelector('.arrow');
+        if (strelica) strelica.classList.toggle('active', otvorena);
+        return;
+      }
       if (e.target.closest('.js-add-to-cart')) {
         var obavijest = sekcija.querySelector('.js-cart-notice');
         if (obavijest) { obavijest.classList.add('show'); setTimeout(function () { obavijest.classList.remove('show'); }, 2500); }
@@ -565,19 +633,44 @@
       domSpreman = true;
     }
 
-    // 2) Voiceflow widget – uvijek izravno s Voiceflowa
-    var vf = document.createElement('script');
-    vf.src = 'https://cdn.voiceflow.com/widget-next/bundle.mjs';
-    vf.onload = function () { vfSpreman = true; pokreni(); };
-    vf.onerror = function () { console.error('[Martimex] Voiceflow widget se nije učitao'); };
-    document.head.appendChild(vf);
+    function ucitajSve() {
+      // 2) Voiceflow widget – uvijek izravno s Voiceflowa
+      var vf = document.createElement('script');
+      vf.src = 'https://cdn.voiceflow.com/widget-next/bundle.mjs';
+      vf.onload = function () { vfSpreman = true; pokreni(); };
+      vf.onerror = function () { console.error('[Martimex] Voiceflow widget se nije učitao'); };
+      document.head.appendChild(vf);
 
-    // 3) Ekstenzije (i kasnije dizajn) s GitHuba – učitava se istovremeno s Voiceflowom
-    var gh = document.createElement('script');
-    gh.src = GITHUB_LOADER + '?v=' + Math.floor(Date.now() / 60000);
-    gh.onerror = bezGithuba;
-    document.head.appendChild(gh);
-    setTimeout(bezGithuba, CEKAJ_GITHUB);
+      // 3) Ekstenzije (i kasnije dizajn) s GitHuba – učitava se istovremeno s Voiceflowom
+      var gh = document.createElement('script');
+      gh.src = GITHUB_LOADER + '?v=' + Math.floor(Date.now() / 60000);
+      gh.onerror = bezGithuba;
+      document.head.appendChild(gh);
+      setTimeout(bezGithuba, CEKAJ_GITHUB);
+    }
+
+    // Samo na probi: ?kolacici=ceka oponaša martimex.hr, gdje se chat učita
+    // tek kad kupac na traci s kolačićima prihvati sve (događaj
+    // "martimex:cookies-accepted" s detail "allCookies")
+    var kolacici = new URLSearchParams(location.search).get('kolacici') === 'ceka';
+    var prihvaceno = false;
+    try { prihvaceno = sessionStorage.getItem('mxp-kolacici') === 'allCookies'; } catch (e) { /* nije bitno */ }
+    if (!kolacici || prihvaceno) { ucitajSve(); return; }
+    var ucitano = false;
+    document.addEventListener('martimex:cookies-accepted', function (e) {
+      if (e.detail !== 'allCookies' || ucitano) return;
+      ucitano = true;
+      try { sessionStorage.setItem('mxp-kolacici', 'allCookies'); } catch (x) { /* nije bitno */ }
+      ucitajSve();
+    });
+    var gumbKolacici = document.getElementById('mxp-kolacici');
+    if (gumbKolacici) {
+      gumbKolacici.hidden = false;
+      gumbKolacici.addEventListener('click', function () {
+        gumbKolacici.hidden = true;
+        document.dispatchEvent(new CustomEvent('martimex:cookies-accepted', { detail: 'allCookies' }));
+      });
+    }
   })();
   </script>
 </body>

@@ -63,7 +63,7 @@
     cekajChat: 15000,             // ms: koliko se najduže čeka da se chat učita
     cekajOdgovor: 15000,          // ms: koliko se najduže čeka kartica/pitanje prije rezerve
     maxOpis: 2500,                // znakova opisa sa stranice
-    maxVarijanti: 30,
+    maxVarijanti: 40,
 
     boje: {
       ikona: '#c99a8d',           // iskrica u gumbu (Martimexova ružičasto-zlatna)
@@ -486,24 +486,40 @@
     return !!(vc && typeof vc.open === 'function' && document.getElementById(HOST));
   }
 
-  // Bez chata gumb nema smisla: sakrije se, a vrati se ako se chat ipak
-  // učita (spora veza) — provjera svake 2 s, najviše 3 minute
-  let pratiChat = 0;
-  function sakrijDokNemaChata() {
-    if (!omotGumba || pratiChat) return;
-    omotGumba.style.display = 'none';
-    zapis('chata nema — gumb skriven');
-    const pocetak = Date.now();
-    pratiChat = setInterval(function () {
-      if (chatPostoji()) {
-        clearInterval(pratiChat); pratiChat = 0;
-        omotGumba.style.display = '';
-        uskladiSaKosaricom(omotGumba, sekcijaProizvoda() || omotGumba.parentNode);
-        zapis('chat se učitao — gumb vraćen');
-      } else if (Date.now() - pocetak > 180000) {
-        clearInterval(pratiChat); pratiChat = 0;
-      }
-    }, 2000);
+  // Gumb se vidi samo kad chat postoji ili se upravo učitava:
+  //  - Voiceflowova skripta još nije ni zatražena (na martimex.hr se chat
+  //    učita tek kad kupac prihvati kolačiće) → gumb je skriven, pa se
+  //    pojavi čim se chat počne učitavati
+  //  - skripta se učitava → gumb se vidi (pritisak pričeka chat)
+  //  - chata nema ni nakon P.cekajChat ms (blokator oglasa, Voiceflow ne
+  //    radi) → gumb se sakrije; vrati se ako se chat ipak učita
+  const VF_SKRIPTA = 'script[src*="cdn.voiceflow.com/widget"]';
+  let pratiChat = 0, skriptaOd = 0;
+  function pokaziGumb(da) {
+    if (!omotGumba) return;
+    const skriven = omotGumba.style.display === 'none';
+    if (da && skriven) {
+      omotGumba.style.display = '';
+      uskladiSaKosaricom(omotGumba, sekcijaProizvoda() || omotGumba.parentNode);
+      zapis('gumb prikazan');
+    } else if (!da && !skriven) {
+      omotGumba.style.display = 'none';
+      zapis('chata nema — gumb skriven');
+    }
+  }
+  function provjeriChat() {
+    if (chatPostoji()) {
+      pokaziGumb(true);
+      clearInterval(pratiChat); pratiChat = 0;   // chat je tu i ostaje
+      return;
+    }
+    if (!document.querySelector(VF_SKRIPTA)) { skriptaOd = 0; pokaziGumb(false); return; }
+    if (!skriptaOd) skriptaOd = Date.now();
+    pokaziGumb(Date.now() - skriptaOd < P.cekajChat);
+  }
+  function pratiDostupnostChata() {
+    provjeriChat();
+    if (!pratiChat && !chatPostoji()) pratiChat = setInterval(provjeriChat, 1000);
   }
 
   // Početni ekran (pocetna-chata.js) se preskače: sakrije se odmah i
@@ -686,7 +702,7 @@
       if (!kor) {
         console.warn('[Martimex] Pitaj Marti: chat se nije učitao');
         otvoriChat();
-        if (!chatPostoji()) sakrijDokNemaChata();
+        provjeriChat();
         return;
       }
       // isti artikl (ista varijanta) već je u razgovoru: chat se samo otvori
@@ -725,9 +741,11 @@
         --mx-pm-tinta: #171717;
         position: relative;
         display: flex; align-items: center; justify-content: center; gap: 10px;
-        width: 100%;
+        width: var(--mx-pm-sirina, 100%);
+        vertical-align: top;
+        min-width: var(--mx-pm-min, 0);
         min-height: var(--mx-pm-visina, 52px);
-        margin: 0; padding: 0 18px;
+        margin: 0; padding: 0 var(--mx-pm-uvlaka, 18px);
         box-sizing: border-box;
         border: 1px solid var(--mx-pm-tinta);
         border-radius: var(--mx-pm-radijus, 0);
@@ -767,6 +785,9 @@
       .mx-pm-gumb[aria-busy="true"] .mx-pm-iskra-mala { animation-delay: .3s; }
       @keyframes mx-pm-treptaj { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.55); opacity: .45; } }
       @media (max-width: 420px) { .mx-pm-opis { display: none; } }
+      /* artikla nema na stanju: gumb je kao "Obavijesti me" iznad njega */
+      .mx-pm[data-uz="obavijest"] .mx-pm-opis { display: none; }
+      .mx-pm[data-uz="obavijest"] .mx-pm-gumb { display: inline-flex; }
       @media (prefers-reduced-motion: reduce) {
         .mx-pm-gumb, .mx-pm-iskra { transition: none; }
         .mx-pm-gumb[aria-busy="true"] .mx-pm-iskra { animation: none; opacity: .5; }
@@ -783,6 +804,20 @@
     const kosarica = sekcija.querySelector('.js-add-to-cart') || sekcija.querySelector('.js-notify-me-btn');
     if (!kosarica || !omot.isConnected) return;
     try {
+      // uz "Obavijesti me" (nije puna širina): gumb je širok barem kao on,
+      // poravnat lijevo, s istim unutarnjim razmakom
+      if (kosarica.classList.contains('js-notify-me-btn')) {
+        const ss = getComputedStyle(kosarica), sir = kosarica.getBoundingClientRect().width;
+        omot.setAttribute('data-uz', 'obavijest');
+        omot.style.setProperty('--mx-pm-sirina', 'auto');
+        if (sir > 0) omot.style.setProperty('--mx-pm-min', Math.round(sir) + 'px');
+        if (parseFloat(ss.paddingLeft) > 0) omot.style.setProperty('--mx-pm-uvlaka', ss.paddingLeft);
+      } else {
+        omot.removeAttribute('data-uz');
+        omot.style.removeProperty('--mx-pm-sirina');
+        omot.style.removeProperty('--mx-pm-min');
+        omot.style.removeProperty('--mx-pm-uvlaka');
+      }
       const red = kosarica.closest('.product__add-to-cart-btn-quantity-wrapper') || kosarica;
       omot.style.paddingLeft = omot.style.paddingRight = '';
       const o = omot.getBoundingClientRect(), r = red.getBoundingClientRect();
@@ -801,7 +836,7 @@
       if (ns.fontFamily) omot.style.setProperty('--mx-pm-font', ns.fontFamily);
       if (ns.fontSize) omot.style.setProperty('--mx-pm-velicina', ns.fontSize);
       if (ns.fontWeight) omot.style.setProperty('--mx-pm-debljina', ns.fontWeight);
-      if (ns.letterSpacing && ns.letterSpacing !== 'normal') omot.style.setProperty('--mx-pm-razmak', ns.letterSpacing);
+      if (ns.letterSpacing) omot.style.setProperty('--mx-pm-razmak', ns.letterSpacing);
       if (ns.textTransform) omot.style.setProperty('--mx-pm-velika', ns.textTransform);
       // boja ruba i teksta = boja gumba za košaricu, ali samo ako je tamna
       const rgb = (cs.backgroundColor || '').match(/\d+(\.\d+)?/g);
@@ -878,8 +913,8 @@
     // fontovi stranice se možda još učitavaju, a raspored se mijenja s
     // veličinom prozora: uskladi se ponovno
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { uskladiSaKosaricom(omotGumba, sekcija); });
-    // ako se chat ne pojavi (blokator oglasa, Voiceflow ne radi), gumb se sakrije
-    setTimeout(function () { if (!chatPostoji()) sakrijDokNemaChata(); }, P.cekajChat);
+    // gumb se vidi samo kad chat postoji ili se upravo učitava (vidi gore)
+    pratiDostupnostChata();
     let okvir = 0;
     window.addEventListener('resize', function () {
       cancelAnimationFrame(okvir);
