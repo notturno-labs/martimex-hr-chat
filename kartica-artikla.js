@@ -1,8 +1,11 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v31)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v32)
   //
   //  ProductCardExtension → trace "ext_product_card"
+  //  v32: Voiceflowov carousel koji funkcije šalju uz karticu (da se artikli
+  //  vide u Voiceflow transcriptu) u chatu se sakrije — vidi postavku
+  //  sakrijVoiceflowCarousel
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
   //  prikazuje se istaknuta kartica (ista kartica, samo smije biti šira).
   //
@@ -156,7 +159,17 @@
 
     // Popust: true → voštani pečat s postotkom pokraj cijene
     pecat: true,
-    tekstUzKod: 'uz kod'      // ispod cijene s kodom: "uz kod MRTMX"
+    tekstUzKod: 'uz kod',     // ispod cijene s kodom: "uz kod MRTMX"
+
+    // Zapis za Voiceflow transcript: funkcije uz karticu šalju i Voiceflowov
+    // ugrađeni carousel s istim artiklima (naziv, cijena, opis), jer jedino
+    // njega Voiceflow sprema u razgovor transcripta. Na stranici ga kupac ne
+    // treba vidjeti dvaput, pa se ovdje sakrije.
+    // true → Voiceflowov carousel se ne prikazuje u chatu (Marti ga inače ne
+    //        koristi; ako se ova skripta ne učita, kupac vidi taj carousel
+    //        umjesto kartice)
+    // false → prikazuje se i Voiceflowov carousel
+    sakrijVoiceflowCarousel: true
   };
 
 
@@ -1923,5 +1936,37 @@
   // ═════════════════════════════════════════════════════════════════════
   window.MartimexExtensions = window.MartimexExtensions || [];
   window.MartimexExtensions.push(ProductCardExtension);
+
+
+  // ═════════════════════════════════════════════════════════════════════
+  //  CAROUSEL ZA TRANSCRIPT — u chatu se ne prikazuje
+  //  Stil ide u shadow DOM widgeta čim se widget pojavi, prije prve poruke,
+  //  pa se carousel ne vidi ni na trenutak (ni kad se povijest razgovora
+  //  ponovno učita).
+  // ═════════════════════════════════════════════════════════════════════
+  (function () {
+    if (!MX_POSTAVKE.sakrijVoiceflowCarousel) return;
+    const HOST = 'voiceflow-chat';          // element u čiji shadow DOM Voiceflow crta chat
+    // carousel i njegov omot (omot ima donji razmak, pa bi inače ostao prazan prostor)
+    const CSS_SKRIJ =
+      '.vfrc-carousel { display: none !important; }\n' +
+      '.vfrc-system-response:has(> .vfrc-carousel) { display: none !important; }';
+
+    function ubaci(korijen) {
+      if (!korijen || korijen.querySelector('style[data-mx-skrij-carousel]')) return;
+      const stil = document.createElement('style');
+      stil.setAttribute('data-mx-skrij-carousel', '1');
+      stil.textContent = CSS_SKRIJ;
+      korijen.appendChild(stil);
+    }
+
+    // Voiceflow se učitava usporedo s ovim modulom: pričeka se njegov element
+    const pocetak = Date.now();
+    (function trazi() {
+      const h = document.getElementById(HOST);
+      if (h && h.shadowRoot) { ubaci(h.shadowRoot); return; }
+      if (Date.now() - pocetak < 60000) setTimeout(trazi, 100);
+    })();
+  })();
 
 })();
