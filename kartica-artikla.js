@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v31)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v32)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -24,17 +24,20 @@
   //
   //  Raspored kartice:
   //   ┌────────────────────────────┐
-  //   │ ┌───────┐   MARKA          │
-  //   │ │ SLIKA │   Naziv          │
-  //   │ │       │   Eau de Parfum  │
-  //   │ │       │   ──             │
-  //   │ └───────┘   CIJENA         │
+  //   │    ┌───────┐  MARKA        │
+  //   │    │ SLIKA │  Naziv        │
+  //   │    │       │  Eau de Toil. │
+  //   │    │       │  ──           │
+  //   │    └───────┘  CIJENA       │
   //   │ ────────────────────────── │
   //   │    Opis artikla, malo      │
   //   │    uži od kartice          │
   //   │     [ Pogledaj proizvod ]  │
   //   └────────────────────────────┘
   //   Na proizvod vodi samo gumb, i to u istom prozoru (bez novih kartica).
+  //   Slika i tekst pokraj nje centrirani su kao cjelina: bočica je od lijevog
+  //   ruba kartice jednako daleko kao najdulji redak teksta od desnog, pa i
+  //   kratak naziv (Versace Eros) stoji na sredini, a ne uz lijevi rub.
   //
   //  Marka i naziv složeni su kao natpis na etiketi bočice:
   //   - marka sitnim, razmaknutim velikim slovima (XERJOFF)
@@ -85,6 +88,11 @@
   //     po hrvatskim pravilima, da među riječima ne ostanu rupe
   //   - opis je uvučen od rubova kartice, a marka i naziv gore ne smiju ići
   //     desnije od opisa: tekst cijele kartice ima isti desni rub (--mx-uvlaka)
+  //   - gornji dio se centrira po stvarnim recima teksta (i kad se naziv
+  //     prelomi) i po stvarnoj širini bočice izrezane iz fotografije, a ne po
+  //     prozirnom prostoru oko nje; ponovno se centrira kad se promijeni
+  //     širina chata ili se učitaju fontovi. Kad stigne bočica, gornji dio
+  //     klizne na mjesto zajedno s njezinim dizanjem
   //   - gumb je mala prozirna pilula s tankim tamnim obrubom i sitnim
   //     razmaknutim velikim slovima; kad je miš iznad njega (a na mobitelu samo
   //     dok je prst na njemu) ispuni se tamnom bojom, a tekst postane bijel
@@ -183,6 +191,11 @@
     // Kadar obrađene bočice (udio visine/širine prostora slike): bočica stoji
     // na "podlozi" na 90 % visine, najviše do 3 % od vrha, najviše 84 % širine.
     const KADAR = { vrh: 0.03, pod: 0.90, sirina: 0.84 };
+    // Koliko je vidljiva bočica široka (udio širine prostora slike) kad je nije
+    // moguće izrezati iz fotografije (slika s druge domene), pa se to ne zna
+    const PROCJENA_BOCE = 0.55;
+    // Ikona bočice kad proizvod nema sliku: nacrtana bočica široka je ~24 px
+    const SIRINA_IKONE = 24;
 
     // Miješanje boja u JS-u (umjesto CSS color-mix) da izgled radi i u starijim preglednicima
     function rgb(hex) {
@@ -289,7 +302,10 @@
         transition: border-color .5s var(--mx-meko);
       }
 
-      /* gornji dio: slika lijevo, marka / naziv / cijena desno */
+      /* gornji dio: slika lijevo, marka / naziv / cijena desno. Cijeli je
+         centriran u kartici: centrirajVrh() izmjeri tekst i pomakne sliku
+         udesno (margin-left na .mx-izlog), pa je bočica od lijevog ruba
+         jednako daleko kao tekst od desnog */
       .mx-vrh {
         display: flex;
         align-items: center;
@@ -304,6 +320,7 @@
       .mx-izlog {
         position: relative;
         flex: none;
+        transition: margin-left .9s var(--mx-glatko);   /* kad stigne bočica, gornji dio klizne na sredinu zajedno s njezinim dizanjem */
       }
       .mx-nisa {
         --mx-aura: ${prozirna(B.roza, .55)};
@@ -1051,7 +1068,7 @@
         .mx-pojava .mx-kartica { animation: mx-samo-prozirnost .35s linear backwards; animation-delay: 0s; }
         .mx-pojava .mx-stara::after, .mx-pojava .mx-nova, .mx-pojava .mx-uz-kod,
         .mx-pojava .mx-pecat, .mx-pojava .mx-pecat::after { animation: none; }
-        .mx-kartica, .mx-kartica::before, .mx-nisa, .mx-boca, .mx-aura, .mx-aura-slika, .mx-aura-podloga, .mx-sjena { transition-duration: .01s !important; }
+        .mx-kartica, .mx-kartica::before, .mx-izlog, .mx-nisa, .mx-boca, .mx-aura, .mx-aura-slika, .mx-aura-podloga, .mx-sjena { transition-duration: .01s !important; }
         .mx-gumb { transition: none; }
         .mx-lebdi, .mx-sjena { animation: none !important; }
       }
@@ -1063,11 +1080,11 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '31');
+      stil.setAttribute('data-mx-kartice', '32');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '31') return;
+      if (stari && stari.getAttribute('data-mx-kartice') === '32') return;
       if (stari) stari.remove();                              // stara verzija stila (npr. v2)
       cilj.appendChild(stil);
     }
@@ -1113,6 +1130,100 @@
     function pratiVidljivost(kartica) {
       if (PROMATRAC) PROMATRAC.observe(kartica);
       else kartica.classList.add('mx-vidljivo');
+    }
+
+    // ── CENTRIRANJE GORNJEG DIJELA ───────────────────────────────────────
+    // Bočica i tekst pokraj nje centrirani su kao cjelina: vidljiva bočica je
+    // od lijevog ruba kartice jednako daleko kao najdulji redak teksta od
+    // desnog. Tekst pritom nikad ne ide desnije od opisa (--mx-uvlaka): kad za
+    // punu simetriju nema mjesta, slika se pomakne koliko smije, a uz dug tekst
+    // ostaje uz lijevi rub, kao i dosad. Mjere se stvarni reci (i kad se marka
+    // ili naziv prelome), pa ovo ne može sam CSS.
+
+    // koliko je vidljiva bočica uvučena od lijevog ruba prostora slike (CSS px)
+    function rubBocice(nisa) {
+      if (nisa.classList.contains('mx-foto')) return 0;           // fotografija ispunjava cijeli okvir
+      if (nisa.classList.contains('mx-bez-slike')) return (VITRINA[0] - SIRINA_IKONE) / 2;
+      const udio = parseFloat(nisa.style.getPropertyValue('--mx-sirina-boce'));
+      return (1 - (nisa.classList.contains('mx-prozirno') && udio > 0 ? udio : PROCJENA_BOCE)) / 2 * VITRINA[0];
+    }
+
+    // glatko = true: pomak klizi (kad stigne bočica), inače je odmah na mjestu
+    function centrirajVrh(vrh, glatko) {
+      const izlog = vrh.querySelector('.mx-izlog');
+      const glava = vrh.querySelector('.mx-glava');
+      if (!izlog || !glava || !vrh.isConnected) return;
+      // mjeri se u osnovnom rasporedu (slika uz lijevi rub)
+      const prije = izlog.style.marginLeft;
+      izlog.style.transition = 'none';
+      izlog.style.marginLeft = '';
+      const g = glava.getBoundingClientRect();
+      if (!g.width) { izlog.style.marginLeft = prije; izlog.style.transition = ''; return; }
+      const mjera = glava.offsetWidth / g.width;   // kartica je pri pojavi malo umanjena (transform): sve u CSS px
+      // od lijevog ruba glave do kraja najduljeg retka (CSS px): sirina je ono što se
+      // vidi, a zauzeto uključuje i razmak iza zadnjeg slova, koji se ne vidi, ali
+      // zauzima mjesto u retku
+      let sirina = 0, zauzeto = 0;
+      const raspon = document.createRange();
+      const setac = document.createTreeWalker(glava, NodeFilter.SHOW_TEXT);
+      while (setac.nextNode()) {
+        const n = setac.currentNode, roditelj = n.parentElement;
+        if (!n.nodeValue.trim() || roditelj.closest('.mx-skriveno')) continue;
+        const razmak = parseFloat(getComputedStyle(roditelj).letterSpacing) || 0;
+        raspon.selectNodeContents(n);
+        const reci = raspon.getClientRects();
+        for (let i = 0; i < reci.length; i++) {
+          const kraj = (reci[i].right - g.left) * mjera;
+          zauzeto = Math.max(zauzeto, kraj);
+          sirina = Math.max(sirina, kraj - razmak);
+        }
+      }
+      // oznaka i pečat po rasporedu (offset), ne po onome što se vidi: pečat se
+      // pri pojavi utiskuje s povećanjem. Oboje se mjeri od kartice, kao i glava
+      const desniRub = function (e) { return e ? e.offsetLeft + e.offsetWidth - glava.offsetLeft : 0; };
+      const oznakaDo = desniRub(glava.querySelector('.mx-oznaka'));
+      sirina = Math.max(sirina, oznakaDo);
+      zauzeto = Math.max(zauzeto, oznakaDo);
+      const pecatDo = desniRub(glava.querySelector('.mx-pecat'));
+      const uvlaka = parseFloat(getComputedStyle(glava).paddingRight) || 0;
+      // pola slobodnog prostora (umanjenog za prazninu lijevo od bočice) ide lijevo
+      // od slike. Granica: tekst ne ide desnije od opisa, a pečat (ukras) smije i u
+      // uvlaku, kao i dosad; 1 px rezerve, da se redak ne prelomi zbog zaokruživanja
+      const slobodno = glava.clientWidth - Math.max(sirina, pecatDo);
+      const granica = Math.min(glava.clientWidth - uvlaka - zauzeto, glava.clientWidth - pecatDo) - 1;
+      const pomak = Math.max(0, Math.min(Math.round((slobodno - rubBocice(izlog.firstElementChild)) / 2), Math.floor(granica)));
+      const novi = pomak ? pomak + 'px' : '';
+      if (glatko) {
+        izlog.style.marginLeft = prije;
+        void izlog.offsetWidth;
+        izlog.style.transition = '';
+        izlog.style.marginLeft = novi;
+      } else {
+        izlog.style.marginLeft = novi;
+        void izlog.offsetWidth;
+        izlog.style.transition = '';
+      }
+    }
+
+    // ponovno centriranje kad se promijeni širina kartice i kad se učitaju fontovi
+    const VRHOVI = new Set();
+    const PROMATRAC_SIRINE = typeof ResizeObserver === 'function'
+      ? new ResizeObserver(function (zapisi) {
+          zapisi.forEach(function (z) {
+            if (z.target.isConnected) centrirajVrh(z.target, false);
+            else { PROMATRAC_SIRINE.unobserve(z.target); VRHOVI.delete(z.target); }   // kartica je uklonjena
+          });
+        })
+      : null;
+    function pratiSirinu(vrh) {
+      if (!PROMATRAC_SIRINE) return;              // stariji preglednik: slika ostaje uz lijevi rub
+      VRHOVI.add(vrh);
+      PROMATRAC_SIRINE.observe(vrh);
+    }
+    if (PROMATRAC_SIRINE && document.fonts && document.fonts.addEventListener) {
+      document.fonts.addEventListener('loadingdone', function () {
+        VRHOVI.forEach(function (vrh) { centrirajVrh(vrh, false); });
+      });
     }
 
     // ── PODACI ───────────────────────────────────────────────────────────
@@ -1527,6 +1638,7 @@
       // sjena široka kao bočica, aura centrirana na bočicu
       const sirina = Math.max(0.3, Math.min(0.62, (bw * k / cw) * 1.15));
       nisa.style.setProperty('--mx-sjena-x', ((1 - sirina) / 2 * 100).toFixed(1) + '%');
+      nisa.style.setProperty('--mx-sirina-boce', (bw * k / cw).toFixed(3));   // za centriranje gornjeg dijela
       nisa.style.setProperty('--mx-sredina', ((KADAR.pod - bh * k / ch / 2) * 100).toFixed(1) + '%');
       // pola širine bočice, u postotcima polumjera ovalne maske (pola širine prostora):
       // od tuda se računa "rupa" u masci svijetle bočice, da sjaj počne odmah uz staklo
@@ -1708,7 +1820,10 @@
         const gotovo = function () {
           if (spremno || !img.naturalWidth) return;
           spremno = true;
-          obradiFotografiju(img, nisa, velicina, function () { nisa.classList.add('mx-ucitano'); });
+          obradiFotografiju(img, nisa, velicina, function () {
+            nisa.classList.add('mx-ucitano');
+            centrirajVrh(vrh, true);    // sad se zna koliko je bočica široka
+          });
         };
         img.addEventListener('load', gotovo, { once: true });
         img.addEventListener('error', function () {
@@ -1718,6 +1833,7 @@
             nisa.classList.remove('mx-aura-iz-slike');
           }
           prazanIzlog(nisa);
+          centrirajVrh(vrh, true);
         }, { once: true });
         img.src = k.slika;
         if (aura) { aura.src = k.slika; sjaj.src = k.slika; }   // tek nakon bočice: zajedničko preuzimanje ostaje visokog prioriteta
@@ -1785,6 +1901,7 @@
       }
       vrh.appendChild(glava);
       kartica.appendChild(vrh);
+      pratiSirinu(vrh);               // centrira se čim je kartica na stranici
 
       // LINIJA + OPIS
       const opis = skrati(k.opis, P.opisZnakova);
