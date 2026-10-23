@@ -21,6 +21,10 @@
   //              kodom, a ispod nje diskretno piše "uz kod MRTMX".
   //              Kad su i akcija i kod: precrtana je redovna cijena, nova je
   //              cijena s kodom, a pečat pokazuje ukupni popust
+  //   hideDescription: true → kartica bez crte i opisa: gornji dio (slika,
+  //              marka, naziv, cijena) i gumb ostaju isti. Može za cijeli
+  //              prikaz ({ cards: [...], hideDescription: true }, tako šalje
+  //              playbook "Trazilica") ili za pojedinu karticu
   //
   //  Raspored kartice:
   //   ┌────────────────────────────┐
@@ -1284,7 +1288,7 @@
         const promo = (c.promo && typeof c.promo === 'object') ? c.promo : {};
         return {
           naziv: tekst(c.title || c.name),
-          opis: tekst(c.description),
+          opis: (p.hideDescription === true || c.hideDescription === true) ? '' : tekst(c.description),
           cijena: c.price,
           stara: c.oldPrice != null ? c.oldPrice : (c.regularPrice != null ? c.regularPrice : c.regular_price),
           slika: c.imageUrl || c.image || '',
@@ -1931,7 +1935,7 @@
       kartica.appendChild(vrh);
       pratiSirinu(vrh);               // centrira se čim je kartica na stranici
 
-      // LINIJA + OPIS
+      // LINIJA + OPIS (bez opisa, npr. hideDescription, nema ni crte)
       const opis = skrati(k.opis, P.opisZnakova);
       if (opis) {
         const crta = el('div', 'mx-crta');
