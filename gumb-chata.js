@@ -208,7 +208,7 @@
         opacity: 1;
         rotate: 0deg;
         scale: 1;
-        transition: opacity .15s ease-out .03s, scale .26s ${ULAZ}, rotate .38s ${OKRET} .1s;
+        transition: opacity .14s ease-out .02s, scale .26s ${ULAZ}, rotate .38s ${OKRET} .1s;
       }
 
       /* ── natpis: velika razmaknuta slova, isti font kao poruke ── */
@@ -258,7 +258,7 @@
          (vidljivost u mirovanju određuje Voiceflow, npr. dok se chat učitava) */
       ${ZATVOREN} ${IKONA} {
         scale: 1;
-        transition: opacity .2s ease .26s, scale .3s ${ULAZ} .24s;
+        transition: opacity .2s ease .22s, scale .3s ${ULAZ} .2s;
       }
       ${OTVOREN} ${IKONA} {
         opacity: 0;
