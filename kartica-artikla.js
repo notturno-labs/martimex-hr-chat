@@ -35,9 +35,10 @@
   //   │     [ Pogledaj proizvod ]  │
   //   └────────────────────────────┘
   //   Na proizvod vodi samo gumb, i to u istom prozoru (bez novih kartica).
-  //   Slika i tekst pokraj nje centrirani su kao cjelina: bočica je od lijevog
-  //   ruba kartice jednako daleko kao najdulji redak teksta od desnog, pa i
-  //   kratak naziv (Versace Eros) stoji na sredini, a ne uz lijevi rub.
+  //   Kratak naziv (Versace Eros): gornji dio je podijeljen na dvije jednake
+  //   polovice (širine opisa); tekst počinje na desnoj, poravnat ulijevo, a
+  //   bočica je na sredini lijeve. Dulji naziv: slika i tekst centrirani su
+  //   kao cjelina (bočica je od lijevog ruba jednako daleko kao tekst od desnog).
   //
   //  Marka i naziv složeni su kao natpis na etiketi bočice:
   //   - marka sitnim, razmaknutim velikim slovima (XERJOFF)
@@ -88,11 +89,11 @@
   //     po hrvatskim pravilima, da među riječima ne ostanu rupe
   //   - opis je uvučen od rubova kartice, a marka i naziv gore ne smiju ići
   //     desnije od opisa: tekst cijele kartice ima isti desni rub (--mx-uvlaka)
-  //   - gornji dio se centrira po stvarnim recima teksta (i kad se naziv
-  //     prelomi) i po stvarnoj širini bočice izrezane iz fotografije, a ne po
-  //     prozirnom prostoru oko nje; ponovno se centrira kad se promijeni
-  //     širina chata ili se učitaju fontovi. Kad stigne bočica, gornji dio
-  //     klizne na mjesto zajedno s njezinim dizanjem
+  //   - raspored gornjeg dijela računa se po stvarnim recima teksta (i kad se
+  //     naziv prelomi), a centriranje duljeg naziva po stvarnoj širini bočice
+  //     izrezane iz fotografije, ne po prozirnom prostoru oko nje; ponovno se
+  //     računa kad se promijeni širina chata ili se učitaju fontovi. Kad stigne
+  //     bočica, gornji dio klizne na mjesto zajedno s njezinim dizanjem
   //   - gumb je mala prozirna pilula s tankim tamnim obrubom i sitnim
   //     razmaknutim velikim slovima; kad je miš iznad njega (a na mobitelu samo
   //     dok je prst na njemu) ispuni se tamnom bojom, a tekst postane bijel
@@ -302,10 +303,10 @@
         transition: border-color .5s var(--mx-meko);
       }
 
-      /* gornji dio: slika lijevo, marka / naziv / cijena desno. Cijeli je
-         centriran u kartici: centrirajVrh() izmjeri tekst i pomakne sliku
-         udesno (margin-left na .mx-izlog), pa je bočica od lijevog ruba
-         jednako daleko kao tekst od desnog */
+      /* gornji dio: slika lijevo, marka / naziv / cijena desno. centrirajVrh()
+         izmjeri tekst i namjesti margine slike (.mx-izlog): kratak naziv dijeli
+         gornji dio na dvije polovice (slika na sredini lijeve, tekst od početka
+         desne), a dulji je centriran kao cjelina */
       .mx-vrh {
         display: flex;
         align-items: center;
@@ -320,7 +321,7 @@
       .mx-izlog {
         position: relative;
         flex: none;
-        transition: margin-left .9s var(--mx-glatko);   /* kad stigne bočica, gornji dio klizne na sredinu zajedno s njezinim dizanjem */
+        transition: margin-left .9s var(--mx-glatko), margin-right .9s var(--mx-glatko);   /* kad stigne bočica, gornji dio klizne na mjesto zajedno s njezinim dizanjem */
       }
       .mx-nisa {
         --mx-aura: ${prozirna(B.roza, .55)};
@@ -1132,13 +1133,18 @@
       else kartica.classList.add('mx-vidljivo');
     }
 
-    // ── CENTRIRANJE GORNJEG DIJELA ───────────────────────────────────────
-    // Bočica i tekst pokraj nje centrirani su kao cjelina: vidljiva bočica je
-    // od lijevog ruba kartice jednako daleko kao najdulji redak teksta od
-    // desnog. Tekst pritom nikad ne ide desnije od opisa (--mx-uvlaka): kad za
-    // punu simetriju nema mjesta, slika se pomakne koliko smije, a uz dug tekst
-    // ostaje uz lijevi rub, kao i dosad. Mjere se stvarni reci (i kad se marka
-    // ili naziv prelome), pa ovo ne može sam CSS.
+    // ── RASPORED GORNJEG DIJELA ──────────────────────────────────────────
+    // Gornji dio (bočica + tekst) složi se po stvarnim recima teksta (i kad se
+    // marka ili naziv prelome), pa ovo ne može sam CSS:
+    //  - kratak naziv: gornji dio se dijeli na dvije jednake polovice širine
+    //    opisa. Tekst počinje na desnoj polovici, poravnat ulijevo, a bočica je
+    //    na sredini lijeve polovice
+    //  - dulji naziv (ne stane u desnu polovicu): bočica i tekst centrirani su
+    //    kao cjelina, vidljiva bočica je od lijevog ruba kartice jednako daleko
+    //    kao najdulji redak teksta od desnog
+    // Tekst nikad ne ide desnije od opisa (--mx-uvlaka): kad za to nema mjesta,
+    // slika se pomakne koliko smije, a uz dug tekst ostaje uz lijevi rub, kao i
+    // dosad. Pečat popusta (ukras) smije i u uvlaku, kao i dosad.
 
     // koliko je vidljiva bočica uvučena od lijevog ruba prostora slike (CSS px)
     function rubBocice(nisa) {
@@ -1154,11 +1160,17 @@
       const glava = vrh.querySelector('.mx-glava');
       if (!izlog || !glava || !vrh.isConnected) return;
       // mjeri se u osnovnom rasporedu (slika uz lijevi rub)
-      const prije = izlog.style.marginLeft;
+      const prije = [izlog.style.marginLeft, izlog.style.marginRight];
       izlog.style.transition = 'none';
       izlog.style.marginLeft = '';
+      izlog.style.marginRight = '';
       const g = glava.getBoundingClientRect();
-      if (!g.width) { izlog.style.marginLeft = prije; izlog.style.transition = ''; return; }
+      if (!g.width) {
+        izlog.style.marginLeft = prije[0];
+        izlog.style.marginRight = prije[1];
+        izlog.style.transition = '';
+        return;
+      }
       const mjera = glava.offsetWidth / g.width;   // kartica je pri pojavi malo umanjena (transform): sve u CSS px
       // od lijevog ruba glave do kraja najduljeg retka (CSS px): sirina je ono što se
       // vidi, a zauzeto uključuje i razmak iza zadnjeg slova, koji se ne vidi, ali
@@ -1186,20 +1198,36 @@
       zauzeto = Math.max(zauzeto, oznakaDo);
       const pecatDo = desniRub(glava.querySelector('.mx-pecat'));
       const uvlaka = parseFloat(getComputedStyle(glava).paddingRight) || 0;
-      // pola slobodnog prostora (umanjenog za prazninu lijevo od bočice) ide lijevo
-      // od slike. Granica: tekst ne ide desnije od opisa, a pečat (ukras) smije i u
-      // uvlaku, kao i dosad; 1 px rezerve, da se redak ne prelomi zbog zaokruživanja
-      const slobodno = glava.clientWidth - Math.max(sirina, pecatDo);
-      const granica = Math.min(glava.clientWidth - uvlaka - zauzeto, glava.clientWidth - pecatDo) - 1;
-      const pomak = Math.max(0, Math.min(Math.round((slobodno - rubBocice(izlog.firstElementChild)) / 2), Math.floor(granica)));
-      const novi = pomak ? pomak + 'px' : '';
+
+      // sve od lijevog ruba gornjeg dijela (CSS px); 1 px rezerve posvuda, da se
+      // redak ne prelomi zbog zaokruživanja
+      const W = vrh.clientWidth;
+      const slika = izlog.offsetWidth;
+      const razmak = glava.offsetLeft - izlog.offsetLeft - slika;   // između slike i teksta (gap)
+      let lijevo, desno = 0;                                       // margine slike
+      // 1) kratak naziv: polovice opisa (od uvlake do uvlake), granica je sredina
+      //    kartice, a razmak između slike i teksta dijele napola
+      const tekstOd = Math.round(W / 2 + razmak / 2);
+      if (tekstOd + zauzeto <= W - uvlaka - 1 && tekstOd + pecatDo <= W - 1) {
+        lijevo = Math.max(0, Math.round((uvlaka + W / 2 - razmak / 2) / 2 - slika / 2));
+        desno = tekstOd - lijevo - slika - razmak;
+      } else {
+        // 2) dulji naziv: pola slobodnog prostora (umanjenog za prazninu lijevo od
+        //    bočice) ide lijevo od slike, koliko granica dopušta
+        const slobodno = glava.clientWidth - Math.max(sirina, pecatDo);
+        const granica = Math.min(glava.clientWidth - uvlaka - zauzeto, glava.clientWidth - pecatDo) - 1;
+        lijevo = Math.max(0, Math.min(Math.round((slobodno - rubBocice(izlog.firstElementChild)) / 2), Math.floor(granica)));
+      }
+      const novi = [lijevo ? lijevo + 'px' : '', desno ? desno + 'px' : ''];
       if (glatko) {
-        izlog.style.marginLeft = prije;
+        izlog.style.marginLeft = prije[0];
+        izlog.style.marginRight = prije[1];
         void izlog.offsetWidth;
         izlog.style.transition = '';
-        izlog.style.marginLeft = novi;
-      } else {
-        izlog.style.marginLeft = novi;
+      }
+      izlog.style.marginLeft = novi[0];
+      izlog.style.marginRight = novi[1];
+      if (!glatko) {
         void izlog.offsetWidth;
         izlog.style.transition = '';
       }
