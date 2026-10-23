@@ -29,8 +29,10 @@
   //     ostaju, a kartica i pitanje dođu na dno razgovora
   //   - ako isti artikl (ista varijanta) već stoji u razgovoru, chat se samo
   //     otvori
-  //  Početni ekran (pocetna-chata.js) se pri tome preskoči, a s izgledom
-  //  "jedan ekran" (jedan-ekran.js) chat se otvara kao i inače.
+  //  S izgledom "Jedan ekran" (jedan-ekran.js, kakav je na martimex.hr)
+  //  chat se otvori kao i inače, samo umjesto pozdrava dođu kartica i
+  //  pitanje; s dosadašnjim početnim ekranom (pocetna-chata.js) taj se
+  //  ekran preskoči.
   //
   //  Tehnički: modul dodaje Voiceflowu postavku launch.event (preko
   //  window.MartimexVoiceflow, koji loader.js preda Voiceflowu). Njezin

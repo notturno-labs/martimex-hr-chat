@@ -13,8 +13,10 @@
     JSON-LD), stil se učitava izravno s martimex.hr, a slike također. Ispod
     gumba "Dodaj u košaricu" je gumb "Pitaj Marti".
 
-    Chat je isti kao na martimex.hr (isti kod, loader.js i moduli s vrha
-    repozitorija), samo je spojen na Voiceflow okruženje "Radim gumb na
+    Chat je isti kao na martimex.hr: isti kod na stranici, a loader.js s
+    vrha repozitorija učita iste module (izgled "Jedan ekran" iz
+    jedan-ekran.js, gumb chata iz gumb-chata.js, kartica artikla...).
+    Jedina razlika: chat je spojen na Voiceflow okruženje "Radim gumb na
     webu" (nacrt), u kojem je napravljen Voiceflow dio za "Pitaj Marti".
     Na martimex.hr se ništa ne mijenja.
 
@@ -22,8 +24,8 @@
       proba.html?artikl=crystal-noir      → parfem na akciji (stara cijena, NC u 30 dana)
       proba.html?artikl=eros-parfum       → artikl bez varijanti
       proba.html?artikl=creamy-delight    → ruž s nijansama
-      &izgled=jedan-ekran                 → chat u novom izgledu "Jedan ekran" (zadano: kao na martimex.hr)
       &pitajmarti=debug                   → zapisi modula u konzoli preglednika
+      &izgled=dosadasnji                  → dosadašnji početni ekran (pocetna-chata.js), samo za usporedbu
   -->
   <!-- stil izravno s martimex.hr; ako se ne učita (npr. promijeni se ime datoteke), uključi se rezervni stil niže -->
   <link media="all" rel="stylesheet" href="https://martimex.hr/martimex-content/cache/autoptimize/css/autoptimize_b1540327174d6f6032786febaffceffc.css">
@@ -149,16 +151,16 @@
     }
   </style>
   <script>
-    // Izgled chata: zadano kao na martimex.hr (početni ekran, pocetna-chata.js
-    // iz loader.js); ?izgled=jedan-ekran → novi izgled "Jedan ekran" (kao na
-    // testnoj stranici proba.html na vrhu repozitorija)
+    // Izgled chata je onaj iz loader.js, kao na martimex.hr ("Jedan ekran").
+    // Samo za usporedbu: ?izgled=dosadasnji → dosadašnji početni ekran
+    // (pocetna-chata.js), isto kao na testnoj stranici proba.html na vrhu repozitorija
     (function () {
-      if (new URLSearchParams(location.search).get('izgled') !== 'jedan-ekran') return;
-      window.__mxPocetna = true;      // pocetna-chata.js (iz loader.js) se ne pokreće
+      if (new URLSearchParams(location.search).get('izgled') !== 'dosadasnji') return;
+      window.__mxJedanEkran = true;   // jedan-ekran.js (iz loader.js) se ne pokreće
       window.__mxTemaChata = true;    // ni tema-chata.js, ako se uključi u loader.js
       window.MartimexVoiceflow = Object.assign(window.MartimexVoiceflow || {}, { autostart: false, assistant: { persistence: 'sessionStorage' } });
       var s = document.createElement('script');
-      s.src = '../../jedan-ekran.js?v=' + Math.floor(Date.now() / 60000);
+      s.src = '../../pocetna-chata.js?v=' + Math.floor(Date.now() / 60000);
       document.head.appendChild(s);
     })();
   </script>
@@ -171,7 +173,6 @@
   <div class="mxp-traka" id="mxp-traka">
     <b>Proba „Pitaj Marti”</b>
     <span class="mxp-izbor" id="mxp-artikli" aria-label="Artikl"></span>
-    <span class="mxp-izbor" id="mxp-izgledi" aria-label="Izgled chata"></span>
     <button type="button" id="mxp-novi" title="Obriše razgovor iz preglednika i učita stranicu ispočetka">Novi razgovor</button>
     <button type="button" class="mxp-zatvori" aria-label="Sakrij traku" onclick="this.parentNode.remove()">✕</button>
   </div>
@@ -409,8 +410,7 @@
     });
     document.head.appendChild(ld);
 
-    // probna traka: izbor artikla i izgleda chata
-    var p = new URLSearchParams(location.search);
+    // probna traka: izbor artikla
     function adresa(promjena) {
       var q = new URLSearchParams(location.search);
       Object.keys(promjena).forEach(function (k) { if (promjena[k]) q.set(k, promjena[k]); else q.delete(k); });
@@ -421,10 +421,6 @@
     document.getElementById('mxp-artikli').innerHTML = Object.keys(natpisi).map(function (k) {
       return '<a href="' + esc(adresa({ artikl: k === 'dylan-blue' ? '' : k })) + '"' + (k === kljuc ? ' aria-current="page"' : '') + '>' + esc(natpisi[k]) + '</a>';
     }).join('');
-    var jedan = p.get('izgled') === 'jedan-ekran';
-    document.getElementById('mxp-izgledi').innerHTML =
-      '<a href="' + esc(adresa({ izgled: '' })) + '"' + (!jedan ? ' aria-current="page"' : '') + '>Chat kao na martimex.hr</a>' +
-      '<a href="' + esc(adresa({ izgled: 'jedan-ekran' })) + '"' + (jedan ? ' aria-current="page"' : '') + '>Chat „Jedan ekran”</a>';
     document.getElementById('mxp-novi').addEventListener('click', function () {
       [window.sessionStorage, window.localStorage].forEach(function (sp) {
         try {
