@@ -59,6 +59,14 @@
     // po njoj (ili po kartici artikla) modul zna da je Marti dobila artikl
     pitanje: 'Kako Vam mogu pomoći oko ovog artikla?',
 
+    // Stranica Kontakt: u okviru "Kontakt podaci" redak s gumbom koji samo
+    // otvori chat (isto kao gumb chata u donjem desnom kutu)
+    kontakt: {
+      naslov: 'AI asistentica',                                   // '' = bez naslova
+      tekst: 'Marti odgovara odmah, i izvan radnog vremena.',     // '' = bez teksta
+      gumb: 'Pitaj Marti'
+    },
+
     dogadaj: 'pitaj_marti',       // ime događaja u Voiceflowu
     cekajChat: 15000,             // ms: koliko se najduže čeka da se chat učita
     cekajOdgovor: 15000,          // ms: koliko se najduže čeka kartica/pitanje prije rezerve
@@ -741,6 +749,11 @@
       .mx-pm { margin: 16px 0 4px; box-sizing: border-box; }
       /* u sivoj ploči s gumbom za košaricu: razmak daje sama ploča */
       .mx-pm[data-uz="kosarica"] { margin: 0; }
+      /* stranica Kontakt: redak kao Email / Telefon / Radno vrijeme */
+      .mx-pm[data-uz="kontakt"] { margin: 0; }
+      .mx-pm-kontakt-ikona { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 24px; height: 24px; color: ${B.pozadinaMis}; }
+      .mx-pm-kontakt-ikona svg { width: 20px; height: 20px; overflow: visible; }
+      .mx-pm[data-uz="kontakt"] .mx-pm-gumb { align-self: flex-start; margin-top: 12px; text-transform: none; }
       .mx-pm-gumb {
         position: relative;
         display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -792,6 +805,7 @@
   // stanju, kao "Obavijesti me kada bude dostupan"), s istim slovima i
   // zaobljenjem, i poravnat s njim lijevo.
   function uskladiSaKosaricom(omot, sekcija) {
+    if (!sekcija || !omot) return;
     const uzor = sekcija.querySelector('.js-add-to-cart') || sekcija.querySelector('.js-notify-me-btn');
     if (!uzor || !omot.isConnected) return;
     try {
@@ -852,6 +866,76 @@
 
   let omotGumba = null;
 
+  // ── 7. STRANICA KONTAKT ────────────────────────────────────────────────
+  // Gumb samo otvori chat, isto kao gumb chata u donjem desnom kutu
+  // (razgovor se nastavi ili, ako ga nema, počne običnim pozdravom).
+  function napraviKontakt() {
+    const K = P.kontakt || {};
+    const red = document.createElement('div');
+    red.className = 'contact-page__info-line mx-pm';
+    red.setAttribute('data-uz', 'kontakt');
+    const ikona = document.createElement('span');
+    ikona.className = 'mx-pm-kontakt-ikona';
+    ikona.innerHTML = IKONA;
+    red.appendChild(ikona);
+    const tekst = document.createElement('div');
+    tekst.className = 'contact-page__info-line-text';
+    if (K.naslov) {
+      const h = document.createElement('h5');
+      h.className = 't-700';
+      h.textContent = K.naslov;
+      tekst.appendChild(h);
+    }
+    if (K.tekst) {
+      const t = document.createElement('span');
+      t.className = 'h5';
+      t.textContent = K.tekst;
+      tekst.appendChild(t);
+    }
+    const gumb = document.createElement('button');
+    gumb.type = 'button';
+    gumb.className = 'mx-pm-gumb';
+    gumb.setAttribute('aria-label', (K.gumb || P.tekstGumba) + ' — otvori chat s AI asistenticom');
+    gumb.innerHTML = '<span class="mx-pm-ikona">' + IKONA + '</span>';
+    const natpis = document.createElement('span');
+    natpis.className = 'mx-pm-tekst';
+    natpis.textContent = K.gumb || P.tekstGumba;
+    gumb.appendChild(natpis);
+    gumb.addEventListener('click', function (e) {
+      e.preventDefault();
+      otvoriSKontakta(gumb);
+    });
+    tekst.appendChild(gumb);
+    red.appendChild(tekst);
+    return red;
+  }
+
+  async function otvoriSKontakta(gumb) {
+    if (radi) return;
+    radi = true;
+    oznaciGumb(gumb, true);
+    try {
+      // ako se chat još učitava, pričeka ga
+      if (!chatPostoji()) await cekajUvjet(chatPostoji, P.cekajChat);
+      if (chatPostoji()) { zapis('kontakt: otvaram chat'); otvoriChat(); }
+      else { console.warn('[Martimex] Pitaj Marti: chat se nije učitao'); provjeriChat(); }
+    } finally {
+      radi = false;
+      oznaciGumb(gumb, false);
+    }
+  }
+
+  function postaviKontakt() {
+    const popis = document.querySelector('.contact-page__info-wrap');
+    if (!popis) return false;
+    if (omotGumba && omotGumba.isConnected) return true;
+    ubaciStil();
+    if (!omotGumba) omotGumba = napraviKontakt();
+    popis.appendChild(omotGumba);
+    zapis('gumb na stranici Kontakt postavljen');
+    return true;
+  }
+
   function postaviGumb() {
     const sekcija = sekcijaProizvoda();
     if (!sekcija || !procitajArtikl()) return false;
@@ -881,7 +965,11 @@
   }
 
   function pokreni() {
-    if (!postaviGumb()) return;
+    if (!postaviGumb()) {
+      // nije stranica proizvoda: možda je stranica Kontakt
+      if (postaviKontakt()) pratiDostupnostChata();
+      return;
+    }
     // ako stranica iznova iscrta dio s gumbom, gumb se vrati
     const sekcija = sekcijaProizvoda();
     let ceka = false;

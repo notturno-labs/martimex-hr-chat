@@ -12,6 +12,11 @@ Ispod gumba **„Dodaj u košaricu”** na stranici proizvoda pojavi se gumb
 4. Marti zna o kojem je artiklu riječ, pa kupac može odmah pitati što god
    želi o njemu.
 
+Na stranici **Kontakt**, u okviru „Kontakt podaci”, ispod radnog vremena je
+redak „AI asistentica” s gumbom **„Pitaj Marti”**, koji samo otvori chat —
+isto kao gumb chata u donjem desnom kutu (razgovor se nastavi, a ako ga nema,
+počne običnim pozdravom).
+
 Ovo je **proba**: na martimex.hr se ništa ne mijenja dok se modul ne doda u
 `loader.js` (vidi dolje).
 
@@ -19,12 +24,16 @@ Ovo je **proba**: na martimex.hr se ništa ne mijenja dok se modul ne doda u
 
 | Datoteka | Što je |
 |---|---|
-| `pitaj-marti.js` | modul: gumb, čitanje artikla sa stranice i slanje Marti |
+| `pitaj-marti.js` | modul: gumb na stranici proizvoda (čitanje artikla i slanje Marti) i na stranici Kontakt |
 | `proba.html` | kopija stranice proizvoda s martimex.hr (isti HTML i stil kao webshop) s gumbom i chatom |
+| `kontakt.html` | kopija stranice Kontakt s martimex.hr s gumbom i chatom |
+| `okvir.js` | zaglavlje i podnožje kao na martimex.hr, za obje probne stranice |
 
 ## Kako isprobati
 
-Stranica: **https://notturno-labs.github.io/martimex-hr-chat/pokusi/pitaj-marti/proba.html**
+Stranice: **https://notturno-labs.github.io/martimex-hr-chat/pokusi/pitaj-marti/proba.html**
+i **https://notturno-labs.github.io/martimex-hr-chat/pokusi/pitaj-marti/kontakt.html**
+(u probnoj traci i u zaglavlju je poveznica „Kontakt”).
 
 Probna traka na vrhu stranice:
 
@@ -85,8 +94,15 @@ stanju, stoji ispod gumba „Obavijesti me kada bude dostupan” i iste je
 učitava: dok kupac ne prihvati kolačiće (pa se chat ne učitava) ili kad
 blokator oglasa blokira Voiceflow, gumba nema; pojavi se čim se chat
 učita. Postavke
-(natpis, opis za miš i čitače ekrana, boje...) su na vrhu `pitaj-marti.js`
-u `MX_PM_POSTAVKE`.
+(natpis, opis za miš i čitače ekrana, boje, tekstovi retka na stranici
+Kontakt u `kontakt`...) su na vrhu `pitaj-marti.js` u `MX_PM_POSTAVKE`.
+
+**Stranica Kontakt**: modul je prepozna po okviru „Kontakt podaci”
+(`.contact-page__info-wrap`) i na kraj doda redak u istom obliku kao Email,
+Telefon i Radno vrijeme (iskrica, „AI asistentica”, kratki tekst i gumb).
+Gumb pozove `voiceflow.chat.open()` — isto što radi gumb chata — pa
+izgled „Jedan ekran” sam pokrene razgovor ako ga još nema. I ovdje se gumb
+vidi samo kad chat postoji.
 
 **U Voiceflowu (okruženje „Radim gumb na webu”)**
 
@@ -125,8 +141,8 @@ Zatim redoslijed — **prvo Voiceflow, pa tek onda GitHub**:
 3. **GitHub**: `pitaj-marti.js` premjestiti na vrh repozitorija i u
    `loader.js` u popis `MODULI` dodati redak `pitaj-marti.js`.
 
-Na stranicama koje nisu stranica proizvoda gumb se ne pojavi, a chat radi
-kao i prije.
+Na stranicama koje nisu stranica proizvoda ni Kontakt gumb se ne pojavi, a
+chat radi kao i prije.
 
 ## Što je provjereno
 
@@ -143,15 +159,17 @@ kao i prije.
   Martini odgovori na „Kakav je miris?”, „Koju veličinu odabrati?” i „Koju
   nijansu odabrati?” s podacima sa stranice, isti artikl (samo se otvori
   chat), ruž na mobitelu, te „Pitaj Marti” nakon običnog pozdrava.
-- Automatski testovi (Chromium, računalo i mobitel, 15 scenarija): jedan
+- Automatski testovi (Chromium, računalo i mobitel, 18 scenarija): jedan
   `launch` po pritisku (i kod dvostrukog klika), ispravni podaci o artiklu
   (veličina, nijansa, akcija, artikl bez varijanti, nije na stanju, opis u
   karticama), ponuđena pitanja, isti artikl, druga veličina usred
   razgovora, osvježena stranica, završen razgovor, klik prije nego se chat
   učitao, rezerva kad `launch` stigne bez artikla, stranica bez stila s
   martimex.hr, blokiran chat (gumb se sakrije), chat koji se učita tek
-  nakon 20 s, kolačići koji još nisu prihvaćeni, i da obični „Start new
-  chat” ostaje običan pozdrav.
+  nakon 20 s, kolačići koji još nisu prihvaćeni, da obični „Start new
+  chat” ostaje običan pozdrav, da je gumb širok i poravnat kao „Dodaj u
+  košaricu”, te stranica Kontakt (gumb samo otvori chat s običnim pozdravom,
+  drugi put samo otvori isti razgovor, i čeka kolačiće).
 - Čitanje artikla na pravim stranicama martimex.hr: 439 nasumičnih
   artikala iz svih 141 kategorije (od toga 347 pravih stranica, ostalo su
   skriveni artikli koji vode na naslovnicu). Gumb se postavi na svima, uz
