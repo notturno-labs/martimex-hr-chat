@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — gumb koji otvara chat s Marti: "oblačić s točkicama" (v4)
+  //  MARTIMEX — gumb koji otvara chat s Marti: "oblačić s točkicama" (v5)
   //
   //  Gumb u kutu ekrana i dalje crta Voiceflow; ovaj modul mu daje izgled:
   //
@@ -10,15 +10,20 @@
   //   - natpis ("Asistent", kako je upisan u Voiceflowu) velikim,
   //     razmaknutim slovima, istim fontom kao poruke u chatu (Jost), u
   //     prašnjavoj rozoj
-  //   - JEDINA animacija: tri točkice u oblačiću se jedna za drugom lagano
-  //     podignu i spuste, kao kad netko tipka u chatu, svakih 5 sekundi.
-  //     Nema svjetla po rubu, nema bočice, nema pojave pri učitavanju
+  //   - u mirovanju JEDINA animacija: tri točkice u oblačiću se jedna za
+  //     drugom lagano podignu i spuste, kao kad netko tipka u chatu, svakih
+  //     5 sekundi. Nema svjetla po rubu, nema bočice, nema pojave pri učitavanju
   //   - miš iznad gumba: rub malo posvijetli (bez pomicanja); pritisak:
   //     gumb se tek malo stisne; fokus s tipkovnice: vidljiv obrub
   //
   //  Dok je chat otvoren, gumb je okrugli gumb za zatvaranje (Voiceflowova
-  //  strelica, u rozoj) iste visine i s istim rubom. Ako je na uređaju
-  //  uključeno "Smanji pokrete", točkice miruju.
+  //  strelica, u rozoj) iste visine i s istim rubom. Pretvorba je jedan
+  //  pokret: na klik se oblačić odmah pretopi u strelicu okrenutu udesno,
+  //  natpis se utiša, pa se pilula skupi u krug dok se strelica okreće
+  //  prema dolje. Pri zatvaranju chata sve ide unatrag (strelica se okrene
+  //  udesno i pretopi natrag u oblačić dok se pilula širi). Ako je na
+  //  uređaju uključeno "Smanji pokrete", točkice miruju, a strelica i
+  //  oblačić se samo pretope, bez okretanja.
   //
   //  Tehnički: Voiceflow crta chat u shadow DOM-u elementa #voiceflow-chat.
   //  Modul onamo ubaci svoj stil i u gumb ništa ne umeće: oblačić i
@@ -94,8 +99,14 @@
     const TOCKA = 'radial-gradient(circle at center, ' + B.tockice + ' 0 1.3px, ' + prozirna(B.tockice, 0) + ' 1.8px)';
     // sredine točkica: x = 8, 12, 16; y = 10 (u oblačiću 24 × 24) → lijevi gornji kut kvadrata 4 × 4
     const X = [6, 10, 14], Y = 8, GORE = 1.6;          // koliko se točkica podigne (px)
+    // Položaji se pišu u postocima (dio od 24 − 4 = 20 px), a ne u px: Safari
+    // vrijednosti u px unutar animacije koja se stalno vrti ne preračuna kad
+    // se stranica poveća ili smanji (stara greška WebKita, bugs.webkit.org
+    // 29993), pa bi točkice ostale razmaknute i pomaknute dolje desno sve do
+    // ponovnog učitavanja. Postotke povećanje ne mijenja.
+    function pct(px) { return +(px / 20 * 100).toFixed(2) + '%'; }
     function polozaj(d) {          // d = [pomak 1., 2. i 3. točkice prema gore]
-      return d.map(function (p, i) { return X[i] + 'px ' + (Y - p).toFixed(2) + 'px'; }).join(', ') + ', 0 0';
+      return d.map(function (p, i) { return pct(X[i]) + ' ' + pct(Y - p); }).join(', ') + ', 0 0';
     }
     const KRUG = +P.tockice > 0 ? Math.max(1.2, +P.tockice) : 0;      // s, jedan krug
     const TOCKICE = KRUG ? KRUG + 's' : '';
@@ -104,6 +115,16 @@
     const H = broj(P.visina, 44, 32, 64);
     const VEL = broj(P.velicinaNatpisa, 12, 9, 20);
     const RAZMAK = broj(P.razmakSlova, .34, 0, 1);
+
+    // Pretvorba pilule u okrugli gumb za zatvaranje i natrag: jedan tempo za
+    // širinu, rubove, razmak i omot ikone. Krene polako (da se prvo vidi
+    // kako se oblačić pretapa u strelicu), u sredini ubrza, pa se mekano smiri.
+    const OBLIK = .44;                                   // s
+    const KRIVULJA = 'cubic-bezier(.6, 0, .2, 1)';
+    const OKRET = 'cubic-bezier(.45, 0, .2, 1)';         // okretanje strelice
+    const IZLAZ = 'cubic-bezier(.4, 0, 1, 1)';           // ikona se smanjuje dok nestaje
+    const ULAZ = 'cubic-bezier(.2, .8, .2, 1)';          // ikona se mekano raširi dok se pojavljuje
+    const STRELICA = OMOT + ' > svg';                    // Voiceflowova strelica za zatvaranje
 
     // ── STIL ─────────────────────────────────────────────────────────────
     // Selektori počinju s :host (element #voiceflow-chat), pa su jači od
@@ -128,8 +149,10 @@
         animation: none;
         text-overflow: clip;                  /* dok se pilula skuplja u krug, natpis se reže, bez "…" */
         /* pretvorba u gumb za zatvaranje i natrag: širina, rubovi i razmak
-           zajedno, istom krivuljom kao kod Voiceflowa; pritisak kratko */
-        transition: box-shadow .3s ease, transform .15s ease, max-width .3s cubic-bezier(.4, 0, .2, 1), padding .3s cubic-bezier(.4, 0, .2, 1), gap .3s cubic-bezier(.4, 0, .2, 1);
+           zajedno, jednim tempom (i Voiceflowova meka sjena okruglog gumba
+           se pojavi i nestane postupno); pritisak kratko */
+        transition: box-shadow .3s ease, transform .15s ease, filter ${OBLIK}s ease,
+          max-width ${OBLIK}s ${KRIVULJA}, padding ${OBLIK}s ${KRIVULJA}, gap ${OBLIK}s ${KRIVULJA};
       }
       /* Voiceflow gumb na dodir poveća za 10 % i posivi, a na pritisak smanji za 20 % */
       :host ${GUMB}:hover,
@@ -142,8 +165,8 @@
 
       /* chat zatvoren: gumb s ikonom i natpisom. Najveća širina je točno
          izmjerena širina pilule (upisuje je JS), a ne Voiceflowovih 500 px:
-         tako se pri otvaranju pilula skuplja u krug jednoliko kroz cijelih
-         0,3 s, a ne naglo pri kraju */
+         tako se pri otvaranju pilula skuplja u krug kroz cijelu pretvorbu,
+         a ne naglo pri kraju */
       ${ZATVOREN} ${GUMB} {
         height: ${H}px;
         max-width: var(--mx-g-sirina, 500px);
@@ -155,6 +178,37 @@
         height: ${H}px;
         max-width: ${H}px;
         padding: ${Math.round((H - 32) / 2)}px;
+        gap: 0;
+      }
+
+      /* omot ikone raste iz oblačića (24 px) u strelicu (32 px) istim tempom
+         kao i gumb (Voiceflow ga mijenja kasnije i brže, pa bi strelica trznula) */
+      :host ${OMOT} { transition: min-width ${OBLIK}s ${KRIVULJA}, min-height ${OBLIK}s ${KRIVULJA}; }
+      ${ZATVOREN} ${OMOT} { min-width: 24px; min-height: 24px; }
+      ${OTVOREN} ${OMOT} { min-width: 32px; min-height: 32px; }
+
+      /* ── strelica: oblačić se na klik pretopi u strelicu okrenutu udesno,
+         a ona se, dok se pilula skuplja u krug, okrene prema dolje. Pri
+         zatvaranju obrnuto. Prijelazi (a ne Voiceflowova animacija), pa je
+         pokret gladak i kad se gumb stisne usred pretvorbe. Strelica i
+         oblačić su u sredini omota, pa se pretapaju na istom mjestu. ── */
+      :host ${STRELICA} {
+        top: 50%;
+        left: 50%;
+        margin: -16px 0 0 -16px;
+        animation: none;
+      }
+      ${ZATVOREN} ${STRELICA} {
+        opacity: 0;
+        rotate: -90deg;
+        scale: .6;
+        transition: rotate .32s ${OKRET}, opacity .12s ease .2s, scale .2s ${IZLAZ} .2s;
+      }
+      ${OTVOREN} ${STRELICA} {
+        opacity: 1;
+        rotate: 0deg;
+        scale: 1;
+        transition: opacity .14s ease-out .02s, scale .26s ${ULAZ}, rotate .38s ${OKRET} .1s;
       }
 
       /* ── natpis: velika razmaknuta slova, isti font kao poruke ── */
@@ -168,19 +222,24 @@
         text-transform: uppercase;
         text-overflow: clip;
         color: var(--mx-g-roza);
-        transition: opacity .18s ease, margin .3s cubic-bezier(.4, 0, .2, 1);
+        /* pri zatvaranju chata natpis se vrati tek kad se pilula već malo raširila */
+        transition: opacity .26s ease .14s, margin ${OBLIK}s ${KRIVULJA};
       }
       /* razmak iza zadnjeg slova ne računa se u širinu gumba */
       ${ZATVOREN} ${NATPIS} { margin-right: -${RAZMAK}em; }
-      /* dok se pilula skuplja u gumb za zatvaranje, natpis se brzo utiša (ne reže se vidljivo);
-         pri zatvaranju chata se vrati tek kad se pilula već malo raširila */
-      ${OTVOREN} ${NATPIS} { opacity: 0; }
-      ${ZATVOREN} ${NATPIS} { transition-delay: .1s, 0s; }
+      /* na klik se natpis odmah utiša, prije nego što ga pilula počne rezati */
+      ${OTVOREN} ${NATPIS} {
+        opacity: 0;
+        transition: opacity .16s ease-out, margin ${OBLIK}s ${KRIVULJA};
+      }
 
       /* ── ikona: oblačić s tri točkice umjesto Voiceflowove slike (slika
          se makne iz vidnog polja, a oblačić i točkice su njezina pozadina;
          Voiceflow je i dalje sam skriva kad se chat otvori) ── */
       :host ${IKONA} {
+        top: 50%;
+        left: 50%;
+        margin: -12px 0 0 -12px;
         width: 24px;
         height: 24px;
         max-width: none;
@@ -194,6 +253,18 @@
         background-position: ${polozaj([0, 0, 0])};
         ${TOCKICE ? `animation: mx-g-tockice ${TOCKICE} ease-in-out infinite;` : ''}
       }
+      /* na klik se oblačić smanji i nestane dok se na njegovom mjestu pojavljuje
+         strelica; pri zatvaranju se vrati kad se strelica već okrenula udesno
+         (vidljivost u mirovanju određuje Voiceflow, npr. dok se chat učitava) */
+      ${ZATVOREN} ${IKONA} {
+        scale: 1;
+        transition: opacity .2s ease .22s, scale .3s ${ULAZ} .2s;
+      }
+      ${OTVOREN} ${IKONA} {
+        opacity: 0;
+        scale: .6;
+        transition: opacity .1s ease, scale .22s ${IZLAZ};
+      }
       /* točkice se podignu jedna za drugom (kao kad netko tipka, oko 1 s), pa miruju do kraja kruga */
       @keyframes mx-g-tockice {
         0%, ${u(1.05)}, 100% { background-position: ${polozaj([0, 0, 0])}; }
@@ -206,20 +277,22 @@
       @media (forced-colors: active) {
         :host ${IKONA} { animation: none; }
       }
-      /* "Smanji pokrete": točkice miruju */
+      /* "Smanji pokrete": točkice miruju, a oblačić i strelica se samo pretope */
       @media (prefers-reduced-motion: reduce) {
         :host ${IKONA} { animation: none; }
         :host ${GUMB}:active { transform: none; }
+        ${ZATVOREN} ${IKONA}, ${OTVOREN} ${IKONA},
+        ${ZATVOREN} ${STRELICA}, ${OTVOREN} ${STRELICA} { rotate: none; scale: none; }
       }
     `;
 
     // Stil ide u shadow root chata (jednom; starija verzija se zamijeni)
     function ubaciStil(korijen) {
       const stari = korijen.querySelector('style[data-mx-gumb]');
-      if (stari && stari.getAttribute('data-mx-gumb') === '4') return;
+      if (stari && stari.getAttribute('data-mx-gumb') === '5') return;
       if (stari) stari.remove();
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-gumb', '4');
+      stil.setAttribute('data-mx-gumb', '5');
       stil.textContent = CSS;
       korijen.appendChild(stil);
     }
@@ -245,8 +318,23 @@
       document.head.appendChild(stil);
     }
 
-    // Voiceflow javlja otvaranje i zatvaranje chata porukom na window
-    // ('{"type":"voiceflow:open"}' / '{"type":"voiceflow:close"}')
+    // ── Je li chat otvoren → atribut data-mx-otvoren na #voiceflow-chat (o
+    // njemu ovisi izgled gumba). Voiceflow otvaranje javi porukom na window
+    // ('{"type":"voiceflow:open"}') i prije nego što sam promijeni gumb, a
+    // zatvaranje ('voiceflow:close') tek nakon toga. Zato se promjena prati i
+    // izravno: čim Voiceflow promijeni klasu chata ili gumba, provjeri se
+    // prima li prozor chata klikove (zatvoren ih ne prima). Tako se gumb
+    // počne mijenjati u istom trenutku kad i prozor chata, u oba smjera.
+    let izmjeriUskoro = null;      // postavi ga pratiSirinu
+    function postavi(host, otvoren) {
+      if (host.hasAttribute('data-mx-otvoren') === otvoren) return;
+      if (otvoren) host.setAttribute('data-mx-otvoren', '');
+      else {
+        host.removeAttribute('data-mx-otvoren');
+        if (izmjeriUskoro) izmjeriUskoro(OBLIK * 1000 + 100);    // pilula se raširila: izmjeri iznova
+      }
+    }
+
     function pratiOtvaranje() {
       window.addEventListener('message', function (e) {
         let d = e.data;
@@ -257,9 +345,28 @@
         const tip = d && d.type;
         const host = document.getElementById(HOST);
         if (!host) return;
-        if (tip === 'voiceflow:open') host.setAttribute('data-mx-otvoren', '');
-        else if (tip === 'voiceflow:close') host.removeAttribute('data-mx-otvoren');
+        if (tip === 'voiceflow:open') postavi(host, true);
+        else if (tip === 'voiceflow:close') postavi(host, false);
       });
+    }
+
+    function pratiStanje(host, korijen) {
+      function otvorenChat() {
+        const prozor = korijen.querySelector('.vfrc-chat__container');
+        return prozor ? getComputedStyle(prozor).pointerEvents !== 'none' : null;
+      }
+      const sad = otvorenChat();                 // npr. chat je ostao otvoren od prije
+      if (sad !== null) postavi(host, sad);
+      new MutationObserver(function (promjene) {
+        for (let i = 0; i < promjene.length; i++) {
+          const k = promjene[i].target.classList;
+          if (k && (k.contains('vfrc-widget') || k.contains('vfrc-launcher'))) {
+            const o = otvorenChat();
+            if (o !== null) postavi(host, o);
+            return;
+          }
+        }
+      }).observe(korijen, { attributes: true, attributeFilter: ['class'], subtree: true });
     }
 
     // Voiceflow se učitava usporedo s ovim modulom: pričeka se njegov element
@@ -278,21 +385,27 @@
     // kad se učita font, pri promjeni veličine prozora i nakon zatvaranja chata
     function pratiSirinu(host, korijen) {
       let ceka = 0;
+      // mjeri se samo kad pilula miruje: usred pretvorbe (ili ako je kartica
+      // u pozadini pa pretvorba stoji) izmjerila bi se prekratka širina
+      function mijenjaSe(g) {
+        if (!g.getAnimations) return false;
+        return g.getAnimations({ subtree: true }).some(function (a) {
+          return a.transitionProperty && /width|padding|gap|margin/.test(a.transitionProperty) && a.playState !== 'finished';
+        });
+      }
       function izmjeri() {
         const g = korijen.querySelector(GUMB);
         if (!g || host.hasAttribute('data-mx-otvoren')) return;
+        if (mijenjaSe(g)) { uskoro(150); return; }
         host.style.removeProperty('--mx-g-sirina');
         const w = g.offsetWidth;                 // bez transformacija (pritisak gumb malo smanji)
         if (w > 0) host.style.setProperty('--mx-g-sirina', w + 'px');
       }
       function uskoro(ms) { clearTimeout(ceka); ceka = setTimeout(izmjeri, ms || 0); }
+      izmjeriUskoro = uskoro;                    // i nakon zatvaranja chata (postavi)
       izmjeri();
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { uskoro(0); });
       window.addEventListener('resize', function () { uskoro(150); });
-      window.addEventListener('message', function (e) {
-        const d = typeof e.data === 'string' ? e.data : '';
-        if (d.indexOf('voiceflow:close') !== -1) uskoro(450);     // pilula se raširila: izmjeri iznova
-      });
       // gumb (ili njegov natpis) se promijenio: izmjeri iznova
       new MutationObserver(function () { uskoro(50); }).observe(korijen, { childList: true, subtree: true, characterData: true });
     }
@@ -313,7 +426,10 @@
       pratiOtvaranje();
       cekajHost(function (host) {
         ubaciStil(host.shadowRoot);
-        cekajGumb(host.shadowRoot, function () { pratiSirinu(host, host.shadowRoot); });
+        cekajGumb(host.shadowRoot, function () {
+          pratiStanje(host, host.shadowRoot);
+          pratiSirinu(host, host.shadowRoot);
+        });
       });
     }
 
