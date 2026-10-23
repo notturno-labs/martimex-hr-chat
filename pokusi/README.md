@@ -263,9 +263,11 @@ ide uz `pocetna-chata.js` ni `tema-chata.js` (to je drugi izgled).
 
 **Gdje se vidi:** na testnoj stranici `proba.html` s vrha repozitorija (grana `main`:
 `https://notturno-labs.github.io/martimex-hr-chat/proba.html`), s perlicama dok Marti priprema
-odgovor i karticom artikla s popustom (`?popust=1` doda probne popuste). Na martimex.hr se ne
-učitava: kad se odobri, u `loader.js` se makne # ispred `jedan-ekran.js` i stavi ispred
-`pocetna-chata.js` (upute su u `loader.js`).
+odgovor i karticom artikla s popustom (`?popust=1` doda probne popuste). Od spajanja grane
+`claude/trake-marki` `loader.js` učitava `jedan-ekran.js` umjesto `pocetna-chata.js`, pa isti
+izgled vrijedi i na martimex.hr; `proba.html` sve učitava iz svoje mape, pa se grana može
+pogledati i preko raw.githack.com prije spajanja (`?izgled=dosadasnji` pokaže stari početni
+ekran za usporedbu). Povratak na stari izgled: u `loader.js` zamijeni # (upute su ondje).
 
 - `jedan-ekran.js` (vrh repozitorija, uz ostale module): cijeli izgled i pozornica u jednom modulu
   (stil u shadow DOM-u, kao ostali moduli; u prozor umeće samo pozornicu, ispod Voiceflowova
@@ -305,6 +307,59 @@ učitava: kad se odobri, u `loader.js` se makne # ispred `jedan-ekran.js` i stav
   Voiceflowov prozor i učita i perlice; `?razgovor=1` postojeći razgovor, `?klik=3` sam pritisne
   ponuđeni odgovor, `?kraj=1` završen razgovor, `?tipka=6` Marti „tipka” 6 s).
 
+## Trake s brendovima na pozornici (`jedan-ekran.js`, probe u `trake/`)
+
+„Jedan ekran” (gore) ostaje kakav jest, samo je pozornica niža i na njoj su umjesto Xerjoffova
+flakona od točkica **tri tanke, diskretne trake s malim logotipima brendova** (iste kuće kao na
+slici `marke/izvor.webp`: Chanel, Hermès, Guerlain … Lancôme, Estée Lauder). Logotipi su prigušeno
+bijeli, jedan pokraj drugoga, i polako putuju: gornja traka ulijevo, srednja udesno, donja ulijevo,
+svaka malo drugom brzinom, bez kraja (traka je sašivena sama sa sobom, pa nema skoka); uz rubove
+pozornice tiho izblijede. Nijedna traka nikad nije prazna: red logotipa se sam ponovi koliko puta
+treba da je uvijek širi od pozornice, a brendovi su tu od prvog kadra (bez blijeđenja pri pojavi).
+Pozornica je nenametljiva — razgovor je glavna stvar. U crnoj traci gore umjesto natpisa MARTIMEX
+stoji „Marti · AI asistentica” u dva reda: MARTI (Jost, isti font kao poruke; razmaknuta velika
+slova, boja pudera) i ispod sitno AI ASISTENTICA (prašnjava roza) — u jednom redu ne bi stalo
+između gumba. Postavke `natpis` i `podnatpis`; traka je visoka 64 px (Voiceflowova 56 px). Kad se
+pozornica sklopi, ostaje samo ta traka.
+
+Ponuđeni odgovori u pozdravu (Provjeri status narudžbe, Loyalty Card, Prijavi reklamaciju,
+Načini plaćanja, Vaš beauty savjetnik) imaju lijevo tanku ikonu (20 px). Originalne ikone su u
+mapi `ikone/` (SVG 48 × 48), a u `jedan-ekran.js` su ugrađene u `IKONE_GUMBA`; koja ikona ide uz
+koji gumb, zadaje postavka `ikoneGumba` (tekst gumba kao u Voiceflowu → ime ikone). Na pilulu
+ispunjenu tintom (pod mišem ili prstom) ikona posvijetli. Gumbi kojih nema u postavci ostaju
+bez ikone.
+
+- Trake su običan CSS (bez WebGL-a): `transform` animacija toka s dva ista reda logotipa. Rade
+  svugdje; „Smanji pokrete”: trake stoje. Ako se neka sličica ne učita, preskoči se.
+- Sličice: male verzije (40 px visoke, oko 100 KB ukupno) **ugrađene su u `jedan-ekran.js`** kao
+  `data:` adrese, pa su na pozornici odmah, bez čekanja na mrežu (zato traka nikad nije prazna);
+  pune sličice su u `marke/trake/<brend>.png` (bijeli logotip na prozirnoj podlozi) i koriste se
+  samo ako ugrađene nema. Oboje izrađuje `marke/izradi-trake.py` (Pillow + NumPy) iz
+  `marke/izvor.webp` i sam upiše ugrađene sličice u `jedan-ekran.js` (između oznaka
+  `// ── SLIČICE LOGOTIPA` i `// ── kraj sličica`). Novi brend: nova slika u `izvor.webp`
+  (ili ručno sličica), ime u `SLIKE` u skripti, pokreni skriptu, pa ime u postavku `marke.trake`.
+- Blijeđenje uz rubove radi se prijelazom boje pozornice preko rubova (ne CSS maskom, koju iOS
+  uz animaciju zna nacrtati prazno); svaki red je barem dvostruko širi od pozornice.
+- Postavke (`marke`): raspored po trakama (`trake`: smjer, brzina u sekundama po jednom krugu,
+  logotipi), `visina` logotipa (18 px; široki natpisi su niži, `sirina` = najveća širina kao
+  višekratnik visine), `razmak`, `razmakTraka`, `prozirnost` (0,55 — diskretno), `rub` (blijeđenje
+  uz rub). Visina pozornice: `pozornica` (15 % prozora, 92–116 px). Na niskom prozoru trake se
+  same smanje da stanu iznad natpisa. Boja logotipa: `boje.logotip` (zadano bijela).
+- Animacije (provjereno na pravom Voiceflowu i u `trake/mock.html`): pri prvom kupčevu odgovoru
+  logotipi izblijede (0,4 s) i pozornica se sklopi (0,9 s, krivulja koja krene odmah i dugo
+  usporava); pri novom razgovoru (gumb gore ili „Započni novi razgovor” nakon završenog) pozornica
+  se raširi čim Voiceflow isprazni razgovor, logotipi se pojave s malim zakašnjenjem (0,25 s), a
+  Marti tipka pozdrav ispod nje. Stanje se čita iz razgovora (ima li kupčev odgovor), ne pamti se:
+  zato se trake vrate i nakon ponovnog otvaranja chata ili kad kupac na mobitelu napusti polje bez
+  slanja. Gumb chata (`gumb-chata.js`): pritisak je kratko smanjenje (0,15 s), pretvorba u okrugli
+  gumb za zatvaranje i natrag teče jednoliko kroz 0,3 s (širina pilule se izmjeri, pa se ne skuplja
+  naglo pri kraju), natpis se pritom utiša umjesto da se reže.
+- Probe: `trake/proba.html` (pravi Voiceflow; sve iz iste grane, pa radi i preko raw.githack.com;
+  `?popust=1` probni popusti) i `trake/mock.html` (bez Voiceflowa; parametri kao u
+  `jedan-ekran/mock.html`). Kad je na grani `main`, i `proba.html` s vrha repozitorija pokazuje trake.
+- Prethodni flakon od točkica ostaje u gitu (grana `main` prije ove promjene) i na granama
+  `claude/pocetni-ekran` i `claude/monogram`.
+
 ## Akcija i promo kod na kartici artikla (`akcija/`)
 
 Popust uz cijenu je u pravoj kartici, `kartica-artikla.js` (v31 = v30 + popust; uputa:
@@ -333,6 +388,24 @@ kartica bez popusta izgleda točno kao v30.
   (stranica sama dodaje probne popuste preporukama: 1. kartica kod MRTMX −30 %, 2. akcija,
   3. akcija + kod).
 - Da bi se popust vidio na webshopu, funkcija u Voiceflowu mora početi slati `oldPrice` i/ili `promo`.
+
+## Gumb chata: oblačić s točkicama (`gumb-chata.js` v4, pregled u `gumb/`)
+
+Gumb u kutu stranice (crta ga Voiceflow, izgled mu daje `gumb-chata.js`): crna pilula visoka 44 px
+s tankim rubom ružičastog zlata (širok oko 132 px), lijevo oblačić (tanki rozi obrub, crna unutrašnjost, repić dolje
+lijevo) s tri svijetle točkice, desno natpis ASISTENT velikim razmaknutim slovima u Jostu (isti font
+kao poruke), u prašnjavoj rozoj `#e3c1ac`. **Jedina animacija:** točkice u oblačiću se jedna za
+drugom lagano podignu i spuste (kao kad netko tipka), pa miruju; ponavlja se svakih 5 s. Nema svjetla po
+rubu, nema bočice parfema, nema pojave pri učitavanju. Miš: rub malo posvijetli; dok je chat otvoren,
+gumb je okrugli gumb za zatvaranje (rozom strelicom). „Smanji pokrete”: točkice miruju.
+
+- Oblačić i točkice su pozadina Voiceflowove slike ikone (slika se makne iz vidnog polja), pa je
+  Voiceflow i dalje sam skriva kad se chat otvori; u gumb se ništa ne umeće.
+- Postavke: boje (`podloga`, `roza`, `tockice`), font, `velicinaNatpisa`, `razmakSlova`, `visina`,
+  `tockice` (sekundi za krug; 0 = miruju). Izvornik ikone: `ikone/oblacic.svg`.
+- Pregled bez Voiceflowa: `gumb/pregled.html` (stvarna veličina i uvećano; klik pokaže otvoreni
+  chat). Pravi chat: `trake/proba.html` (učita `gumb-chata.js` iz iste grane preko `loader.js`).
+- Prethodni gumb (v3, bočica s raspršivačem) ostaje u gitu (grana `main`).
 
 ## Pregled i snimanje
 

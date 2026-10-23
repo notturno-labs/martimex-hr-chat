@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gumb chata – pregled</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  min-height:100vh;
+  padding:56px 24px 72px;
+  background:#ffffff;
+  color:#1c1917;
+  font-family:"MX Jost","Jost","Futura","Century Gothic",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+main{max-width:700px;margin:0 auto}
+h1{margin:0 0 10px;font-size:26px;font-weight:400;letter-spacing:-.01em;line-height:1.2}
+.uvod{margin:0 0 44px;max-width:52ch;font-size:15px;line-height:1.6;color:#6f6660}
+.red{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 0;border-top:1px solid #ece6e1}
+.red:last-of-type{border-bottom:1px solid #ece6e1}
+.opis{min-width:0}
+.ime{margin:0 0 4px;font-size:16px;font-weight:500}
+.sto{margin:0;font-size:14px;line-height:1.5;color:#6f6660}
+.gumb{flex-shrink:0;min-width:176px;display:flex;justify-content:flex-end}
+.veliki{padding:66px 0}
+.veliki .opis{max-width:250px}
+.povecaj{transform:scale(2.2);transform-origin:100% 50%}
+.napomena{margin:28px 0 0;font-size:13.5px;line-height:1.6;color:#6f6660}
+@media (max-width:760px){
+  .red{flex-direction:column;align-items:flex-start;gap:18px}
+  .gumb{justify-content:flex-start}
+  .veliki{padding:26px 0 84px}
+  .veliki .opis{max-width:none}
+  .povecaj{transform:scale(2);transform-origin:0 0}
+}
+</style>
+</head>
+<body>
+<!--
+  Pregled gumba chata bez Voiceflowa: gumb je Voiceflowov (isti elementi i
+  klase kao widget-next), a izgled mu daje ../../gumb-chata.js iz ove grane.
+  Klik na gumb pokaže kako izgleda dok je chat otvoren (okrugli gumb za
+  zatvaranje). Radi i preko raw.githack.com.
+-->
+<main>
+  <h1>Gumb chata: oblačić s točkicama</h1>
+  <p class="uvod">Jedina animacija su tri točkice u oblačiću. Klikom na gumb vidiš kako izgleda dok je chat otvoren.</p>
+
+  <div class="red">
+    <div class="opis">
+      <p class="ime">Stvarna veličina</p>
+      <p class="sto">Ovako se vidi u kutu stranice.</p>
+    </div>
+    <div class="gumb"></div>
+  </div>
+
+  <div class="red veliki">
+    <div class="opis">
+      <p class="ime">Uvećano</p>
+      <p class="sto">Isti gumb, povećan da se ikona i točkice bolje vide.</p>
+    </div>
+    <div class="gumb povecaj"></div>
+  </div>
+
+  <p class="napomena">Ovo je samo pregled. Na stranici gumb i dalje crta Voiceflow, a izgled mu daje datoteka gumb-chata.js.</p>
+</main>
+
+<script>
+(function () {
+  // Voiceflowov stil gumba (widget-next), kako ga Voiceflow ubaci u svoj shadow DOM
+  var VF = "@keyframes _1bvgniia{0%{opacity:0;transform:rotate(-45deg)}to{opacity:1;transform:rotate(0)}}\n@keyframes _1bvgniib{0%{transform:rotate(0)}to{opacity:0;transform:rotate(-45deg)}}\n._1bvgnii2{border-radius:9999px;transition:all .3s cubic-bezier(.4,0,.2,1),width .08s ease-in-out;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--bcqms80);will-change:max-width,transform;height:40px;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--bcqms8a);font-size:14px;line-height:20px;animation:_17c0nw40 .08s ease-out;box-shadow:0 1px #161a1e05,0 0 0 1px #161a1e0a,0 1px 5px -4px #161a1e14,0 4px 8px -6px #161a1e14,0 1px 3px 1px #161a1e03;font-weight:600;overflow-wrap:anywhere;background-color:var(--bcqms85);max-width:500px}\n._1bvgnii2:hover{transform:scale(1.1);background-color:var(--bcqms86)}\n._1bvgnii2:active{transform:scale(.8);background-color:var(--bcqms87)}\n._1bvgnii2:before{content:\"\";top:-4px;position:absolute;bottom:-4px;left:-4px;right:-4px;border-radius:inherit;background-color:transparent;z-index:-1}\n._1bvgnii3{max-width:40px;filter:drop-shadow(rgba(0,0,0,.06) 0px 1px 6px) drop-shadow(rgba(0,0,0,.16) 0px 2px 32px);-webkit-backdrop-filter:drop-shadow(rgba(0,0,0,.06) 0px 1px 6px) drop-shadow(rgba(0,0,0,.16) 0px 2px 32px);gap:0;-webkit-backface-visibility:hidden;-webkit-transform:translate3d(0,0,0);padding:8px}\n._1bvgnii4{max-width:500px;padding:8px 16px 8px 12px}\n._1bvgnii5{background-color:var(--bcqms83)}\n._1bvgnii5:hover,._1bvgnii5:active{transform:none;background-color:var(--bcqms83)}\n._1bvgnii8{padding-left:10px}\n._1bvgnii9{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:left;padding:3px 0 1px;transition:all .3s cubic-bezier(.4,0,.2,1)}\n._1bvgnii0._1bvgnii1 ._1bvgnii9{opacity:0}\n._1bvgniic{transform:rotate(0);transition:width .15s ease,opacity .15s ease;position:absolute;width:32px;height:32px;left:0;opacity:0}\n._1bvgnii0 ._1bvgniic{opacity:0!important}\n._1bvgniid{animation:_1bvgniia .2s ease-in-out forwards;animation-delay:.2s}\n._1bvgniie{animation:_1bvgniib .2s ease-in-out forwards;pointer-events:none}\n._1bvgniif{height:24px;width:24px;position:absolute;border-radius:2px;left:0;pointer-events:none;flex-shrink:0;transition:opacity .15s ease}\n._1bvgnii0 ._1bvgniif{opacity:0}\n._1bvgniig{opacity:0;transition-delay:.2s}\n._1bvgniih{opacity:1}\n._1bvgniii{position:relative;transition:min-width .15s ease,min-height .15s ease}\n._1bvgniil{transition-delay:.2s;min-width:32px;min-height:32px}\n._1bvgniim{min-width:24px;min-height:24px}\n._1bvgniin{min-width:0!important}\n._1bvgniio{min-width:32px}\n._1bvgniip{color:#fff;height:18px;width:18px}\n._1bvgniiq{position:absolute;top:50%;left:50%;width:18px;height:18px;transform:translate(-50%,-50%)}";
+  var STRELICA = '<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.29289 13.2929C8.68342 12.9024 9.31658 12.9024 9.70711 13.2929L16 19.5858L22.2929 13.2929C22.6834 12.9024 23.3166 12.9024 23.7071 13.2929C24.0976 13.6834 24.0976 14.3166 23.7071 14.7071L16.7071 21.7071C16.3166 22.0976 15.6834 22.0976 15.2929 21.7071L8.29289 14.7071C7.90237 14.3166 7.90237 13.6834 8.29289 13.2929Z" fill="currentColor"/></svg>';
+  var PRAZNO = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+
+  function nacrtaj() {
+    document.querySelectorAll('.gumb').forEach(function (mjesto) {
+      var host = document.createElement('div');
+      mjesto.appendChild(host);
+      var root = host.attachShadow({ mode: 'open' });
+      root.innerHTML =
+        '<style>:host{display:block;--bcqms80:#fff;--bcqms85:#000;--bcqms86:#3a3a3a;--bcqms87:#555;--bcqms8a:Arial,sans-serif}' +
+        'button{border:0;margin:0;cursor:pointer;position:relative}' + VF + '</style>' +
+        '<style>' + (window.__mxGumbChataCss || '') + '</style>' +
+        '<button type="button" class="_1bvgnii2 _1bvgnii4 vfrc-launcher" aria-label="Asistent">' +
+          '<div class="_1bvgniii _1bvgniik _1bvgniim">' +
+            '<img src="' + PRAZNO + '" class="_1bvgniif _1bvgniih" alt="">' +
+            STRELICA +
+          '</div>' +
+          '<div class="_1bvgnii9">Asistent</div>' +
+        '</button>';
+      var b = root.querySelector('button'), omot = b.children[0], slika = omot.children[0], strelica = omot.children[1];
+      strelica.setAttribute('class', '_1bvgniic _1bvgniie');
+      // širina pilule (na stranici je mjeri gumb-chata.js), da se pretvorba u krug odvija kroz cijeli prijelaz
+      var izmjeri = function () { if (host.hasAttribute('data-mx-otvoren')) return; host.style.removeProperty('--mx-g-sirina'); host.style.setProperty('--mx-g-sirina', b.offsetWidth + 'px'); };
+      izmjeri();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(izmjeri);
+      var otvoren = false;
+      b.addEventListener('click', function () {
+        otvoren = !otvoren;
+        b.classList.toggle('_1bvgnii3', otvoren);  b.classList.toggle('_1bvgnii4', !otvoren);
+        omot.classList.toggle('_1bvgniil', otvoren); omot.classList.toggle('_1bvgniim', !otvoren);
+        slika.classList.toggle('_1bvgniig', otvoren); slika.classList.toggle('_1bvgniih', !otvoren);
+        strelica.setAttribute('class', '_1bvgniic ' + (otvoren ? '_1bvgniid' : '_1bvgniie'));
+        if (otvoren) host.setAttribute('data-mx-otvoren', ''); else { host.removeAttribute('data-mx-otvoren'); setTimeout(izmjeri, 450); }
+      });
+    });
+  }
+
+  // gumb-chata.js iz ove grane (relativno, da radi i prije spajanja u main)
+  var s = document.createElement('script');
+  s.src = '../../gumb-chata.js?v=' + Math.floor(Date.now() / 60000);
+  s.onload = nacrtaj;
+  s.onerror = nacrtaj;
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
