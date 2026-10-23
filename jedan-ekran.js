@@ -508,12 +508,14 @@
          Voiceflow sve odradi kao prije), ali ništa ne mijenjaju: zaglavlje,
          pozornica, poruke i polje pojavljuju se i nestaju zajedno, s pomakom
          i pretapanjem cijelog prozora */
+      /* (selektori kroz .vfrc-chat, da budu jači i od Voiceflowovih pravila za
+         zatvaranje, koja se učitavaju poslije ovih) */
       ${PROZOR} > .vfrc-header,
-      ${W} .vfrc-chat-dialog,
-      ${W} .vfrc-footer { animation-name: mx-j-cjelina; }
+      ${PROZOR} .vfrc-chat-dialog,
+      ${PROZOR} .vfrc-footer { animation-name: mx-j-cjelina; }
       /* popis poruka je kod Voiceflowa nevidljiv dok njegova animacija ne
          krene (0,6 s nakon otvaranja): ovdje je vidljiv odmah, s prozorom */
-      ${W} .vfrc-chat-dialog { opacity: 1; }
+      ${PROZOR} .vfrc-chat-dialog { opacity: 1; }
       @keyframes mx-j-cjelina {
         from { opacity: 1; }
         to   { opacity: 1; }
