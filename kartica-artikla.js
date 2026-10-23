@@ -858,7 +858,7 @@
         -webkit-hyphens: auto;
         hyphens: auto;
         hyphenate-limit-chars: 7 3 3; /* dijele se samo dulje riječi */
-        font-size: 12.5px;
+        font-size: 14px;
         line-height: 1.6;
         color: var(--mx-dim);
         overflow-wrap: break-word;
