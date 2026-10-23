@@ -374,9 +374,13 @@
     });
   }
 
+  // sljedeći iscrtani okvir (u kartici u pozadini okviri stoje, pa najviše 100 ms)
   function sljedeciOkvir() {
     return new Promise(function (gotovo) {
-      requestAnimationFrame(function () { setTimeout(gotovo, 0); });
+      let bilo = false;
+      function dalje() { if (!bilo) { bilo = true; setTimeout(gotovo, 0); } }
+      requestAnimationFrame(dalje);
+      setTimeout(dalje, 100);
     });
   }
 
