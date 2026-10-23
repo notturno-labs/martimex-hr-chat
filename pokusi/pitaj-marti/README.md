@@ -77,13 +77,15 @@ naslovima) i pogodnosti. Izvori su podaci stranice (Alpine `x-data`
 - Ako Voiceflow ipak ne pošalje podatke uz pokretanje razgovora, modul ih
   sam pošalje događajem (rezerva).
 
-Gumb preuzme visinu, zaobljenje i slova gumba „Dodaj u košaricu” (kad
-artikla nema na stanju, gumba „Obavijesti me kada bude dostupan”, ispod
-kojeg tada stoji). Gumb se vidi samo kad chat postoji ili se upravo
+Gumb stoji u sivoj ploči odmah ispod gumba „Dodaj u košaricu”, iste je
+širine, visine, zaobljenja i slova, a boje su kao kod sporednih gumba na
+martimex.hr (puder-ružičasta pozadina, tamni natpis). Kad artikla nema na
+stanju, stoji ispod gumba „Obavijesti me kada bude dostupan” i iste je
+širine kao on. Gumb se vidi samo kad chat postoji ili se upravo
 učitava: dok kupac ne prihvati kolačiće (pa se chat ne učitava) ili kad
 blokator oglasa blokira Voiceflow, gumba nema; pojavi se čim se chat
 učita. Postavke
-(natpis, sitni opis u gumbu, boje iskrice...) su na vrhu `pitaj-marti.js`
+(natpis, opis za miš i čitače ekrana, boje...) su na vrhu `pitaj-marti.js`
 u `MX_PM_POSTAVKE`.
 
 **U Voiceflowu (okruženje „Radim gumb na webu”)**

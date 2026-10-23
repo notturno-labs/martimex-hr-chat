@@ -53,7 +53,7 @@
   // ─────────────────────────────────────────────────────────────────────
   const MX_PM_POSTAVKE = {
     tekstGumba: 'Pitaj Marti',
-    opisGumba: 'AI savjetnica za ovaj proizvod',   // sitniji tekst u gumbu ('' = bez)
+    opisGumba: 'AI savjetnica za ovaj proizvod',   // opis za čitače ekrana i kad se miš zadrži na gumbu
 
     // Mora biti isto kao poruka u Voiceflowu (workflow "Pitaj Marti"):
     // po njoj (ili po kartici artikla) modul zna da je Marti dobila artikl
@@ -65,9 +65,11 @@
     maxOpis: 2500,                // znakova opisa sa stranice
     maxVarijanti: 40,
 
+    // boje kao sporedni gumbi na martimex.hr ("Nastavi kao gost", "Prijavi se")
     boje: {
-      ikona: '#c99a8d',           // iskrica u gumbu (Martimexova ružičasto-zlatna)
-      ikonaSvijetla: '#e2c3ba'    // iskrica kad je gumb taman (miš iznad gumba)
+      pozadina: '#f7ddd2',        // Martimexova puder-ružičasta (--color-primary-100)
+      pozadinaMis: '#edb8aa',     // kad je miš iznad gumba (--color-primary-200)
+      tekst: '#171717'            // natpis i iskrica
     }
   };
 
@@ -736,114 +738,88 @@
     const stil = document.createElement('style');
     stil.id = 'mx-pm-stil';
     stil.textContent = `
-      .mx-pm { margin: 12px 0 4px; width: 100%; box-sizing: border-box; }
+      .mx-pm { margin: 16px 0 4px; box-sizing: border-box; }
+      /* u sivoj ploči s gumbom za košaricu: razmak daje sama ploča */
+      .mx-pm[data-uz="kosarica"] { margin: 0; }
       .mx-pm-gumb {
-        --mx-pm-tinta: #171717;
         position: relative;
-        display: flex; align-items: center; justify-content: center; gap: 10px;
-        width: var(--mx-pm-sirina, 100%);
-        vertical-align: top;
-        min-width: var(--mx-pm-min, 0);
-        min-height: var(--mx-pm-visina, 52px);
-        margin: 0; padding: 0 var(--mx-pm-uvlaka, 18px);
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        width: var(--mx-pm-sirina, auto); max-width: 100%;
+        min-height: var(--mx-pm-visina, 40px);
+        margin: 0; padding: 7px 20px;
         box-sizing: border-box;
-        border: 1px solid var(--mx-pm-tinta);
-        border-radius: var(--mx-pm-radijus, 0);
-        background: #fff;
-        color: var(--mx-pm-tinta);
+        border: 1px solid transparent;
+        border-radius: var(--mx-pm-radijus, 4px);
+        background: ${B.pozadina};
+        color: ${B.tekst};
         font-family: var(--mx-pm-font, inherit);
-        font-size: var(--mx-pm-velicina, 14px);
+        font-size: var(--mx-pm-velicina, 16px);
         font-weight: var(--mx-pm-debljina, 600);
-        letter-spacing: var(--mx-pm-razmak, .06em);
+        letter-spacing: var(--mx-pm-razmak, normal);
         text-transform: var(--mx-pm-velika, uppercase);
-        line-height: 1.2;
+        line-height: 1.5;
         text-align: center;
+        white-space: nowrap;
         cursor: pointer;
         -webkit-appearance: none; appearance: none;
         -webkit-tap-highlight-color: transparent;
-        transition: background-color .2s ease, color .2s ease;
+        transition: background-color .2s ease;
       }
-      /* zatamnjenje samo uz miša (na mobitelu bi nakon dodira ostalo tamno) */
+      /* miš iznad gumba (na mobitelu bi nakon dodira ostalo obojeno) */
       @media (hover: hover) {
-        .mx-pm-gumb:hover { background: var(--mx-pm-tinta); color: #fff; }
-        .mx-pm-gumb:hover .mx-pm-iskra { fill: ${B.ikonaSvijetla}; }
+        .mx-pm-gumb:hover { background: ${B.pozadinaMis}; }
       }
-      .mx-pm-gumb:active { transform: translateY(1px); }
-      .mx-pm-gumb:focus-visible { outline: 2px solid var(--mx-pm-tinta); outline-offset: 3px; }
-      .mx-pm-ikona { display: inline-flex; flex: none; width: 18px; height: 18px; }
+      .mx-pm-gumb:active { background: ${B.pozadinaMis}; }
+      .mx-pm-gumb:focus-visible { outline: 0; box-shadow: 0 0 0 1px #fff, 0 0 0 3px ${B.pozadinaMis}; }
+      .mx-pm-ikona { display: inline-flex; flex: none; width: 16px; height: 16px; }
       .mx-pm-ikona svg { display: block; width: 100%; height: 100%; overflow: visible; }
-      .mx-pm-iskra { fill: ${B.ikona}; transform-origin: 12px 12px; transition: fill .2s ease; }
+      .mx-pm-iskra { fill: currentColor; transform-origin: 12px 12px; }
       .mx-pm-iskra-mala { transform-origin: 19px 5px; }
       .mx-pm-tekst { white-space: nowrap; }
-      .mx-pm-opis {
-        font-size: .82em; font-weight: 400; letter-spacing: .02em; text-transform: none;
-        opacity: .62; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      }
-      .mx-pm-opis::before { content: "·"; margin-right: 10px; opacity: .8; }
       .mx-pm-gumb[aria-busy="true"] { cursor: progress; }
       .mx-pm-gumb[aria-busy="true"] .mx-pm-iskra { animation: mx-pm-treptaj .9s ease-in-out infinite; }
       .mx-pm-gumb[aria-busy="true"] .mx-pm-iskra-mala { animation-delay: .3s; }
       @keyframes mx-pm-treptaj { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.55); opacity: .45; } }
-      @media (max-width: 420px) { .mx-pm-opis { display: none; } }
-      /* artikla nema na stanju: gumb je kao "Obavijesti me" iznad njega */
-      .mx-pm[data-uz="obavijest"] .mx-pm-opis { display: none; }
-      .mx-pm[data-uz="obavijest"] .mx-pm-gumb { display: inline-flex; }
       @media (prefers-reduced-motion: reduce) {
-        .mx-pm-gumb, .mx-pm-iskra { transition: none; }
+        .mx-pm-gumb { transition: none; }
         .mx-pm-gumb[aria-busy="true"] .mx-pm-iskra { animation: none; opacity: .5; }
       }
     `;
     (document.head || document.documentElement).appendChild(stil);
   }
 
-  // Gumb preuzme visinu, zaobljenje i slova gumba "Dodaj u košaricu". Kad
-  // dio stranice ide od ruba do ruba ekrana (mobitel), gumb se lijevim i
-  // desnim rubom poravna s redom u kojem je gumb za košaricu.
+  // Gumb je širok i visok kao gumb "Dodaj u košaricu" (kad artikla nema na
+  // stanju, kao "Obavijesti me kada bude dostupan"), s istim slovima i
+  // zaobljenjem, i poravnat s njim lijevo.
   function uskladiSaKosaricom(omot, sekcija) {
-    // uzor: gumb za košaricu, a kad artikla nema na stanju gumb "Obavijesti me"
-    const kosarica = sekcija.querySelector('.js-add-to-cart') || sekcija.querySelector('.js-notify-me-btn');
-    if (!kosarica || !omot.isConnected) return;
+    const uzor = sekcija.querySelector('.js-add-to-cart') || sekcija.querySelector('.js-notify-me-btn');
+    if (!uzor || !omot.isConnected) return;
     try {
-      // uz "Obavijesti me" (nije puna širina): gumb je širok barem kao on,
-      // poravnat lijevo, s istim unutarnjim razmakom
-      if (kosarica.classList.contains('js-notify-me-btn')) {
-        const ss = getComputedStyle(kosarica), sir = kosarica.getBoundingClientRect().width;
-        omot.setAttribute('data-uz', 'obavijest');
-        omot.style.setProperty('--mx-pm-sirina', 'auto');
-        if (sir > 0) omot.style.setProperty('--mx-pm-min', Math.round(sir) + 'px');
-        if (parseFloat(ss.paddingLeft) > 0) omot.style.setProperty('--mx-pm-uvlaka', ss.paddingLeft);
-      } else {
-        omot.removeAttribute('data-uz');
-        omot.style.removeProperty('--mx-pm-sirina');
-        omot.style.removeProperty('--mx-pm-min');
-        omot.style.removeProperty('--mx-pm-uvlaka');
+      const r = uzor.getBoundingClientRect();
+      if (r.width >= 120) omot.style.setProperty('--mx-pm-sirina', Math.round(r.width) + 'px');
+      if (r.height >= 32 && r.height <= 80) omot.style.setProperty('--mx-pm-visina', Math.round(r.height) + 'px');
+      // isti lijevi rub kao uzor (ako gumb nije u istoj ploči)
+      omot.style.paddingLeft = '';
+      const o = omot.getBoundingClientRect();
+      const pomak = Math.round(r.left - o.left);
+      if (r.width && o.width && pomak > 0 && pomak <= 48) omot.style.paddingLeft = pomak + 'px';
+      // izvan ploče (ispod "Obavijesti me"): razmak do uzora 16 px, kao u ploči
+      omot.style.marginTop = '';
+      if (omot.getAttribute('data-uz') !== 'kosarica' && r.height) {
+        const razmak = omot.getBoundingClientRect().top - r.bottom;
+        if (razmak > 16 && razmak < 120) {
+          omot.style.marginTop = Math.round(parseFloat(getComputedStyle(omot).marginTop) - (razmak - 16)) + 'px';
+        }
       }
-      const red = kosarica.closest('.product__add-to-cart-btn-quantity-wrapper') || kosarica;
-      omot.style.paddingLeft = omot.style.paddingRight = '';
-      const o = omot.getBoundingClientRect(), r = red.getBoundingClientRect();
-      const sirina = document.documentElement.clientWidth || window.innerWidth;
-      if (o.width && r.width && o.left <= 4 && o.right >= sirina - 4) {
-        const lijevo = Math.round(r.left - o.left), desno = Math.round(o.right - r.right);
-        if (lijevo > 0 && lijevo <= 48) omot.style.paddingLeft = lijevo + 'px';
-        if (desno > 0 && desno <= 48) omot.style.paddingRight = desno + 'px';
-      }
-      const cs = getComputedStyle(kosarica);
-      const natpis = kosarica.querySelector('.btn__label') || kosarica;
+      const cs = getComputedStyle(uzor);
+      const natpis = uzor.querySelector('.btn__label') || uzor;
       const ns = getComputedStyle(natpis);
-      const visina = kosarica.getBoundingClientRect().height;
-      if (visina >= 36 && visina <= 80) omot.style.setProperty('--mx-pm-visina', Math.round(visina) + 'px');
       if (cs.borderTopLeftRadius) omot.style.setProperty('--mx-pm-radijus', cs.borderTopLeftRadius);
       if (ns.fontFamily) omot.style.setProperty('--mx-pm-font', ns.fontFamily);
       if (ns.fontSize) omot.style.setProperty('--mx-pm-velicina', ns.fontSize);
       if (ns.fontWeight) omot.style.setProperty('--mx-pm-debljina', ns.fontWeight);
       if (ns.letterSpacing) omot.style.setProperty('--mx-pm-razmak', ns.letterSpacing);
       if (ns.textTransform) omot.style.setProperty('--mx-pm-velika', ns.textTransform);
-      // boja ruba i teksta = boja gumba za košaricu, ali samo ako je tamna
-      const rgb = (cs.backgroundColor || '').match(/\d+(\.\d+)?/g);
-      if (rgb && rgb.length >= 3 && (rgb.length < 4 || +rgb[3] > 0.9) &&
-          (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255 < 0.35) {
-        omot.style.setProperty('--mx-pm-tinta', cs.backgroundColor);
-      }
     } catch (e) { /* ostaju zadane vrijednosti */ }
   }
 
@@ -860,17 +836,12 @@
     gumb.type = 'button';
     gumb.className = 'mx-pm-gumb';
     gumb.setAttribute('aria-label', P.tekstGumba + ' — ' + (P.opisGumba || 'pitanja o ovom proizvodu'));
+    if (P.opisGumba) gumb.title = P.opisGumba;
     gumb.innerHTML = '<span class="mx-pm-ikona">' + IKONA + '</span>';
     const t = document.createElement('span');
     t.className = 'mx-pm-tekst';
     t.textContent = P.tekstGumba;
     gumb.appendChild(t);
-    if (P.opisGumba) {
-      const o = document.createElement('span');
-      o.className = 'mx-pm-opis';
-      o.textContent = P.opisGumba;
-      gumb.appendChild(o);
-    }
     gumb.addEventListener('click', function (e) {
       e.preventDefault();
       pritisak(gumb);
@@ -887,8 +858,17 @@
     if (omotGumba && omotGumba.isConnected) return true;
     ubaciStil();
     if (!omotGumba) omotGumba = napraviGumb();
-    // ispod gumba "Dodaj u košaricu"; kad artikla nema na stanju, ispod
-    // gumba "Obavijesti me kada bude dostupan"
+    // u sivoj ploči s gumbom "Dodaj u košaricu", odmah ispod njega
+    const ploca = sekcija.querySelector('.product__add-to-cart');
+    if (ploca && ploca.querySelector('.js-add-to-cart')) {
+      omotGumba.setAttribute('data-uz', 'kosarica');
+      ploca.appendChild(omotGumba);
+      uskladiSaKosaricom(omotGumba, sekcija);
+      zapis('gumb postavljen');
+      return true;
+    }
+    // inače (npr. artikla nema na stanju) ispod "Obavijesti me kada bude dostupan"
+    omotGumba.removeAttribute('data-uz');
     const iza = sekcija.querySelector('.product__add-to-cart-wrap') ||
       sekcija.querySelector('.product__out-of-stock') ||
       sekcija.querySelector('.product__variations') ||
