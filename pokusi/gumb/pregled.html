@@ -46,7 +46,7 @@ h1{margin:0 0 10px;font-size:26px;font-weight:400;letter-spacing:-.01em;line-hei
 -->
 <main>
   <h1>Gumb chata: oblačić s točkicama</h1>
-  <p class="uvod">Jedina animacija su tri točkice u oblačiću. Klikom na gumb vidiš kako izgleda dok je chat otvoren.</p>
+  <p class="uvod">U mirovanju se miču samo tri točkice u oblačiću. Klikom na gumb vidiš pretvorbu: oblačić postane strelica udesno, a ona se okrene prema dolje dok se gumb skuplja u krug. Drugim klikom sve ide unatrag.</p>
 
   <div class="red">
     <div class="opis">
@@ -93,7 +93,13 @@ h1{margin:0 0 10px;font-size:26px;font-weight:400;letter-spacing:-.01em;line-hei
       var b = root.querySelector('button'), omot = b.children[0], slika = omot.children[0], strelica = omot.children[1];
       strelica.setAttribute('class', '_1bvgniic _1bvgniie');
       // širina pilule (na stranici je mjeri gumb-chata.js), da se pretvorba u krug odvija kroz cijeli prijelaz
-      var izmjeri = function () { if (host.hasAttribute('data-mx-otvoren')) return; host.style.removeProperty('--mx-g-sirina'); host.style.setProperty('--mx-g-sirina', b.offsetWidth + 'px'); };
+      var izmjeri = function () {
+        if (host.hasAttribute('data-mx-otvoren')) return;
+        // samo kad pilula miruje (usred pretvorbe širina bi bila prekratka)
+        var mijenjaSe = b.getAnimations && b.getAnimations({ subtree: true }).some(function (a) { return a.transitionProperty && /width|padding|gap|margin/.test(a.transitionProperty) && a.playState !== 'finished'; });
+        if (mijenjaSe) { setTimeout(izmjeri, 150); return; }
+        host.style.removeProperty('--mx-g-sirina'); host.style.setProperty('--mx-g-sirina', b.offsetWidth + 'px');
+      };
       izmjeri();
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(izmjeri);
       var otvoren = false;
@@ -103,7 +109,7 @@ h1{margin:0 0 10px;font-size:26px;font-weight:400;letter-spacing:-.01em;line-hei
         omot.classList.toggle('_1bvgniil', otvoren); omot.classList.toggle('_1bvgniim', !otvoren);
         slika.classList.toggle('_1bvgniig', otvoren); slika.classList.toggle('_1bvgniih', !otvoren);
         strelica.setAttribute('class', '_1bvgniic ' + (otvoren ? '_1bvgniid' : '_1bvgniie'));
-        if (otvoren) host.setAttribute('data-mx-otvoren', ''); else { host.removeAttribute('data-mx-otvoren'); setTimeout(izmjeri, 450); }
+        if (otvoren) host.setAttribute('data-mx-otvoren', ''); else { host.removeAttribute('data-mx-otvoren'); setTimeout(izmjeri, 540); }
       });
     });
   }
