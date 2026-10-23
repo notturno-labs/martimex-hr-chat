@@ -511,6 +511,9 @@
       ${PROZOR} > .vfrc-header,
       ${W} .vfrc-chat-dialog,
       ${W} .vfrc-footer { animation-name: mx-j-cjelina; }
+      /* popis poruka je kod Voiceflowa nevidljiv dok njegova animacija ne
+         krene (0,6 s nakon otvaranja): ovdje je vidljiv odmah, s prozorom */
+      ${W} .vfrc-chat-dialog { opacity: 1; }
       @keyframes mx-j-cjelina {
         from { opacity: 1; }
         to   { opacity: 1; }
