@@ -499,6 +499,28 @@
       /* bez prijelaza (chat se otvori na postojećem razgovoru) */
       :host .mx-j-odmah .mx-j-scena, :host .mx-j-odmah .mx-j-trake { transition: none; }
 
+      /* ═══ OTVARANJE I ZATVARANJE: cijeli prozor kao jedna cjelina ═══
+         Voiceflow pri otvaranju chata zasebno pretapa zaglavlje (kreće nakon
+         0,2 s), polje za poruku (0,1 s) i poruke (0,6 s; do tada ih pokaže pa
+         sakrije), a pri zatvaranju ih gasi svakog svojim tempom. Pozornica s
+         trakama u tome ne sudjeluje, pa se vidjela prije i poslije svega
+         ostalog. Te Voiceflowove animacije ovdje ostaju (isto trajanje, da
+         Voiceflow sve odradi kao prije), ali ništa ne mijenjaju: zaglavlje,
+         pozornica, poruke i polje pojavljuju se i nestaju zajedno, s pomakom
+         i pretapanjem cijelog prozora */
+      /* (selektori kroz .vfrc-chat, da budu jači i od Voiceflowovih pravila za
+         zatvaranje, koja se učitavaju poslije ovih) */
+      ${PROZOR} > .vfrc-header,
+      ${PROZOR} .vfrc-chat-dialog,
+      ${PROZOR} .vfrc-footer { animation-name: mx-j-cjelina; }
+      /* popis poruka je kod Voiceflowa nevidljiv dok njegova animacija ne
+         krene (0,6 s nakon otvaranja): ovdje je vidljiv odmah, s prozorom */
+      ${PROZOR} .vfrc-chat-dialog { opacity: 1; }
+      @keyframes mx-j-cjelina {
+        from { opacity: 1; }
+        to   { opacity: 1; }
+      }
+
       /* ═══ PORUKE ═══ */
       ${PORUKE} { padding-top: 14px; }
       /* Voiceflowov uvod (veliki avatar i naslov) više ne treba: tu je pozornica */
@@ -570,7 +592,15 @@
 
       /* ponuđeni odgovori: pilule s tankim tamnim obrubom; pod mišem (ili
          dok je prst na njima) se ispune tintom */
-      ${W} .vfrc-system-response--actions { gap: 8px; margin: 14px 0 6px; }
+      ${W} .vfrc-system-response--actions {
+        gap: 8px;
+        margin: 14px 0 6px;
+        /* ponuđeni odgovori se pojave jednom, kao jedan blok, malo iza poruke
+           (Voiceflow ih inače pokazuje jedan po jedan i to ponovi pri svakom
+           otvaranju i zatvaranju chata) */
+        animation: mx-j-pojava .6s var(--mx-j-glatko) .12s backwards;
+      }
+      ${W} .vfrc-system-response--action { animation: none; opacity: 1; }
       ${PILULA} {
         min-height: 36px;
         padding: 8px 16px 9px;
@@ -812,7 +842,7 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       @media (prefers-reduced-motion: reduce) {
         :host .mx-j-scena, :host .mx-j-trake { transition: none; }
         :host .mx-j-tok { animation: none; }
-        ${MARTI}, ${KORISNIK} { animation: mx-j-prozirnost .3s linear backwards; }
+        ${MARTI}, ${KORISNIK}, ${W} .vfrc-system-response--actions { animation: mx-j-prozirnost .3s linear backwards; }
         ${W} .vfrc-typing-indicator > span { animation: none; opacity: 1; }
         ${POSALJI}, ${POSALJI}:hover, ${POSALJI}:active, ${PILULA}:active,
         ${ZAGLAVLJE} .vfrc-header--button:active { transform: none; }
