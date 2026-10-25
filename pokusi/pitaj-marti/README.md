@@ -12,6 +12,11 @@ Ispod gumba **„Dodaj u košaricu”** na stranici proizvoda pojavi se gumb
 4. Marti zna o kojem je artiklu riječ, pa kupac može odmah pitati što god
    želi o njemu.
 
+Na stranici **Kontakt**, u okviru „Kontakt podaci”, ispod radnog vremena je
+redak „AI asistentica” s gumbom **„Pitaj Marti”**, koji samo otvori chat —
+isto kao gumb chata u donjem desnom kutu (razgovor se nastavi, a ako ga nema,
+počne običnim pozdravom).
+
 Ovo je **proba**: na martimex.hr se ništa ne mijenja dok se modul ne doda u
 `loader.js` (vidi dolje).
 
@@ -19,12 +24,16 @@ Ovo je **proba**: na martimex.hr se ništa ne mijenja dok se modul ne doda u
 
 | Datoteka | Što je |
 |---|---|
-| `pitaj-marti.js` | modul: gumb, čitanje artikla sa stranice i slanje Marti |
+| `pitaj-marti.js` | modul: gumb na stranici proizvoda (čitanje artikla i slanje Marti) i na stranici Kontakt |
 | `proba.html` | kopija stranice proizvoda s martimex.hr (isti HTML i stil kao webshop) s gumbom i chatom |
+| `kontakt.html` | kopija stranice Kontakt s martimex.hr s gumbom i chatom |
+| `okvir.js` | zaglavlje i podnožje kao na martimex.hr, za obje probne stranice |
 
 ## Kako isprobati
 
-Stranica: **https://notturno-labs.github.io/martimex-hr-chat/pokusi/pitaj-marti/proba.html**
+Stranice: **https://notturno-labs.github.io/martimex-hr-chat/pokusi/pitaj-marti/proba.html**
+i **https://notturno-labs.github.io/martimex-hr-chat/pokusi/pitaj-marti/kontakt.html**
+(u probnoj traci i u zaglavlju je poveznica „Kontakt”).
 
 Probna traka na vrhu stranice:
 
@@ -57,6 +66,13 @@ pozdrav, bez artikla).
 Chat na probnoj stranici razgovara s Voiceflow projektom **V2 - Martimex -
 Live**, okruženje **„Radim gumb na webu”** (nacrt), a ne s Marti na webshopu.
 
+**Prije prezentacije:** otvoriti stranicu iznova (ili pritisnuti „Novi
+razgovor” u probnoj traci) i jednom kliknuti „Pitaj Marti” da se vidi da
+chat radi; za vrijeme prezentacije ne mijenjati nacrt okruženja „Radim gumb
+na webu” u Voiceflowu (stranica razgovara s nacrtom). Razgovor koji stoji
+više od 30 minuta Voiceflow završi — to je normalno: gumb tada sam pokrene
+novi razgovor s artiklom.
+
 ## Kako radi
 
 **Na stranici (`pitaj-marti.js`)** — podaci se čitaju sa same stranice u
@@ -73,18 +89,58 @@ naslovima) i pogodnosti. Izvori su podaci stranice (Alpine `x-data`
   ekran preskoči.)
 - Razgovor već traje → šalje se događaj `pitaj_marti`; razgovor i Martino
   pamćenje ostaju, a kartica i pitanje dođu na dno razgovora.
-- Isti artikl (ista varijanta) već je u razgovoru → chat se samo otvori.
+- Razgovor koji chat pokazuje je **zastario** → pokrene se novi razgovor s
+  artiklom (vidi „Zastarjeli razgovor” dolje).
+- Isti artikl (ista varijanta) je zadnje što je Marti pokazala i kupac otad
+  nije ništa pitao → chat se samo otvori. Ako je kupac u međuvremenu nešto
+  pitao, kartica i pitanje dođu ponovno na dno.
 - Ako Voiceflow ipak ne pošalje podatke uz pokretanje razgovora, modul ih
-  sam pošalje događajem (rezerva).
+  sam pošalje događajem (rezerva). Ako na događaj ne stigne baš ništa (ni
+  kartica ni bilo kakav Martin odgovor) u 10 s, modul pokrene novi razgovor
+  s artiklom (rezerva u drugom smjeru).
+- U podacima o artiklu polje `put` kaže kojim je putem artikl poslan
+  (`launch`, `dogadaj`, `launch-novi`, `launch-rezerva`, `dogadaj-rezerva`);
+  vidi se u Voiceflowovu transkriptu i pomaže kod traženja greške.
 
-Gumb preuzme visinu, zaobljenje i slova gumba „Dodaj u košaricu” (kad
-artikla nema na stanju, gumba „Obavijesti me kada bude dostupan”, ispod
-kojeg tada stoji). Gumb se vidi samo kad chat postoji ili se upravo
+**Zastarjeli razgovor.** Voiceflow razgovor završi nakon **30 minuta bez
+poruka**, ali preglednik ga i dalje pamti (`sessionStorage`, dok je
+kartica preglednika otvorena — Safari je zna čuvati i danima) i pri
+sljedećem učitavanju stranice opet ga pokaže. Događaj poslan u takav
+razgovor ne dobije nikakav odgovor: Voiceflow otvori novi razgovor, a
+događaj u njemu nema što pokrenuti — u chatu se ne pojavi ništa. Upravo se
+to događalo kad gumb „nije radio” (vidi transkripte: prvi zahtjev novog
+razgovora bio je `event pitaj_marti`, bez odgovora). Zato modul sada:
+
+- pri učitavanju stranice obriše zapamćeni razgovor stariji od 25 minuta
+  (prije nego ga chat pročita), pa chat kreće iznova i gumb pokrene
+  razgovor s artiklom kao i prvi put;
+- ako razgovor zastari dok je stranica otvorena, gumb umjesto događaja
+  pokrene novi razgovor s artiklom — Voiceflowovim „Restart conversation”
+  (gumb u izborniku chata i potvrda „Start new chat”, koje modul sam
+  pritisne), pa se dosadašnje poruke obrišu kao kad kupac sam pokrene novi
+  razgovor, a launch nosi artikl. Ako je chat u međuvremenu sam pokazao
+  svoj gumb za novi razgovor (Voiceflow mu je javio da je razgovor
+  završen), razgovor kreće njime, kao i dosad;
+- na stranici Kontakt gumb u istom slučaju otvori chat i počne novi
+  razgovor običnim pozdravom.
+
+Gumb stoji u sivoj ploči odmah ispod gumba „Dodaj u košaricu”, iste je
+širine, visine, zaobljenja i slova, a boje su kao kod sporednih gumba na
+martimex.hr (puder-ružičasta pozadina, tamni natpis). Kad artikla nema na
+stanju, stoji ispod gumba „Obavijesti me kada bude dostupan” i iste je
+širine kao on. Gumb se vidi samo kad chat postoji ili se upravo
 učitava: dok kupac ne prihvati kolačiće (pa se chat ne učitava) ili kad
 blokator oglasa blokira Voiceflow, gumba nema; pojavi se čim se chat
 učita. Postavke
-(natpis, sitni opis u gumbu, boje iskrice...) su na vrhu `pitaj-marti.js`
-u `MX_PM_POSTAVKE`.
+(natpis, opis za miš i čitače ekrana, boje, tekstovi retka na stranici
+Kontakt u `kontakt`...) su na vrhu `pitaj-marti.js` u `MX_PM_POSTAVKE`.
+
+**Stranica Kontakt**: modul je prepozna po okviru „Kontakt podaci”
+(`.contact-page__info-wrap`) i na kraj doda redak u istom obliku kao Email,
+Telefon i Radno vrijeme (iskrica, „AI asistentica”, kratki tekst i gumb).
+Gumb pozove `voiceflow.chat.open()` — isto što radi gumb chata — pa
+izgled „Jedan ekran” sam pokrene razgovor ako ga još nema. I ovdje se gumb
+vidi samo kad chat postoji.
 
 **U Voiceflowu (okruženje „Radim gumb na webu”)**
 
@@ -123,8 +179,8 @@ Zatim redoslijed — **prvo Voiceflow, pa tek onda GitHub**:
 3. **GitHub**: `pitaj-marti.js` premjestiti na vrh repozitorija i u
    `loader.js` u popis `MODULI` dodati redak `pitaj-marti.js`.
 
-Na stranicama koje nisu stranica proizvoda gumb se ne pojavi, a chat radi
-kao i prije.
+Na stranicama koje nisu stranica proizvoda ni Kontakt gumb se ne pojavi, a
+chat radi kao i prije.
 
 ## Što je provjereno
 
@@ -141,15 +197,33 @@ kao i prije.
   Martini odgovori na „Kakav je miris?”, „Koju veličinu odabrati?” i „Koju
   nijansu odabrati?” s podacima sa stranice, isti artikl (samo se otvori
   chat), ruž na mobitelu, te „Pitaj Marti” nakon običnog pozdrava.
-- Automatski testovi (Chromium, računalo i mobitel, 15 scenarija): jedan
+- Automatski testovi (Chromium, računalo i mobitel, 23 scenarija): jedan
   `launch` po pritisku (i kod dvostrukog klika), ispravni podaci o artiklu
   (veličina, nijansa, akcija, artikl bez varijanti, nije na stanju, opis u
-  karticama), ponuđena pitanja, isti artikl, druga veličina usred
-  razgovora, osvježena stranica, završen razgovor, klik prije nego se chat
-  učitao, rezerva kad `launch` stigne bez artikla, stranica bez stila s
-  martimex.hr, blokiran chat (gumb se sakrije), chat koji se učita tek
-  nakon 20 s, kolačići koji još nisu prihvaćeni, i da obični „Start new
-  chat” ostaje običan pozdrav.
+  karticama), ponuđena pitanja, isti artikl (samo se otvori; nakon pitanja
+  kartica ponovno), druga veličina usred razgovora, osvježena stranica,
+  završen razgovor, klik prije nego se chat učitao, rezerva kad `launch`
+  stigne bez artikla, stranica bez stila s martimex.hr, blokiran chat (gumb
+  se sakrije), chat koji se učita tek nakon 20 s, kolačići koji još nisu
+  prihvaćeni, da obični „Start new chat” ostaje običan pozdrav, da je gumb
+  širok i poravnat kao „Dodaj u košaricu”, stranica Kontakt (gumb samo
+  otvori chat s običnim pozdravom, drugi put samo otvori isti razgovor, i
+  čeka kolačiće), te zastarjeli razgovor: stariji od 25 min se pri
+  učitavanju obriše pa gumb pokrene novi razgovor s artiklom, razgovor koji
+  zastari dok je stranica otvorena dobije novi razgovor s artiklom,
+  događaj bez ikakvog odgovora dobije novi razgovor nakon 10 s,
+  svjež razgovor star 20 min se ne dira, a na stranici Kontakt zastarjeli
+  razgovor dobije novi pozdrav.
+- Zastarjeli razgovor u pravom pregledniku (Chrome, Voiceflow nacrt):
+  nakon 30 min bez poruka Voiceflow pri ponovnom učitavanju stranice chatu
+  javi da je razgovor završen (chat pokaže svoj gumb za novi razgovor) i
+  gumb „Pitaj Marti” pokrene novi razgovor s artiklom; a klik prije nego
+  što Voiceflow to javi (ili kad veza ne uspije) slao je događaj u mrtav
+  razgovor — to je slučaj koji modul sada rješava sam. „Restart
+  conversation” pritisnut iz modula u pravom chatu (webchat 2.207) obriše
+  stare poruke i pokrene razgovor s artiklom (kartica i pitanje za ~2 s);
+  `launch` kroz `voiceflow.chat.interact` taj chat zanemari, pa se koristi
+  samo kao rezerva za chat bez tog gumba.
 - Čitanje artikla na pravim stranicama martimex.hr: 439 nasumičnih
   artikala iz svih 141 kategorije (od toga 347 pravih stranica, ostalo su
   skriveni artikli koji vode na naslovnicu). Gumb se postavi na svima, uz

@@ -25,6 +25,7 @@
       proba.html?artikl=eros-parfum       → artikl bez varijanti
       proba.html?artikl=creamy-delight    → ruž s nijansama
       proba.html?artikl=purple-stain      → nije na stanju ("Obavijesti me"), opis u karticama
+      kontakt.html                        → stranica Kontakt (gumb "Pitaj Marti" samo otvori chat)
       &kolacici=ceka                      → kao martimex.hr: chat se učita tek kad se prihvate kolačići (gumb u traci)
       &pitajmarti=debug                   → zapisi modula u konzoli preglednika
       &izgled=dosadasnji                  → dosadašnji početni ekran (pocetna-chata.js), samo za usporedbu
@@ -48,27 +49,13 @@
     window.addEventListener('load', mxpProvjeriStil);
   </script>
   <style>
-    /* ── probna traka i jednostavno zaglavlje (vlastite klase, ne diraju stil s martimex.hr) ── */
+    /* ── probna traka (vlastite klase, ne diraju stil s martimex.hr) ── */
     .mxp-traka { position: relative; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 16px; background: #fdf0e9; border-bottom: 1px solid #ecd6cc; color: #3a2d29; font: 13px/1.45 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
     .mxp-traka b { font-weight: 600; }
     .mxp-traka .mxp-izbor { display: inline-flex; flex-wrap: wrap; gap: 4px; }
     .mxp-traka a, .mxp-traka button { padding: 3px 10px; border: 1px solid #d9bfb4; border-radius: 999px; background: #fff; color: #3a2d29; font: inherit; text-decoration: none; cursor: pointer; }
     .mxp-traka a[aria-current] { background: #171717; border-color: #171717; color: #fff; }
     .mxp-traka .mxp-zatvori { margin-left: auto; padding: 3px 9px; }
-    .mxp-najava { background: #171717; color: #fff; text-align: center; font: 500 13px/1.4 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; padding: 9px 12px; letter-spacing: .02em; }
-    .mxp-najava span + span::before { content: "·"; margin: 0 12px; opacity: .6; }
-    .mxp-zaglavlje { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px clamp(16px, 4vw, 48px); border-bottom: 1px solid #eee; background: #fff; }
-    .mxp-zaglavlje nav { display: flex; gap: 22px; font: 600 14px/1 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
-    .mxp-zaglavlje nav a { color: #171717; text-decoration: none; }
-    .mxp-logo img { display: block; height: 30px; width: auto; }
-    .mxp-logo { font: 600 24px/1 Georgia, serif; letter-spacing: .18em; color: #171717; text-decoration: none; }
-    .mxp-ikone { display: flex; gap: 18px; }
-    .mxp-ikone svg { width: 22px; height: 22px; }
-    .mxp-kategorije { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 26px; padding: 12px 16px; border-bottom: 1px solid #eee; font: 500 14px/1.2 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: #fff; }
-    .mxp-kategorije a { color: #171717; text-decoration: none; }
-    .mxp-podnozje { margin-top: 64px; padding: 40px 16px; background: #171717; color: #bbb; text-align: center; font: 13px/1.6 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
-    .mxp-podnozje img { height: 26px; filter: invert(1); opacity: .9; }
-    @media (max-width: 768px) { .mxp-zaglavlje nav { display: none; } .mxp-kategorije { justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; white-space: nowrap; } }
     /* na mobitelu je probna traka jedan red koji se pomiče vodoravno */
     @media (max-width: 600px) {
       .mxp-traka { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; gap: 6px; padding: 6px 10px; font-size: 12px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
@@ -85,6 +72,19 @@
     /* ── rezervni stil: samo ako se stil s martimex.hr ne učita ── */
     .mx-bez-stila body { margin: 0; background: #fff; color: #171717; font: 15px/1.55 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
     .mx-bez-stila .d-none { display: none !important; }
+    .mx-bez-stila .announcements-bar { color: #fff; padding: 8px; }
+    .mx-bez-stila .announcements-bar__container { display: flex; justify-content: center; gap: 40px; }
+    .mx-bez-stila .announcements-bar-mobile, .mx-bez-stila .site-header__lower-wrap, .mx-bez-stila .site-footer__social--mobile, .mx-bez-stila .site-header__mobile-menu-icon { display: none; }
+    .mx-bez-stila .announcements-bar img, .mx-bez-stila .site-header svg { width: 18px; height: 18px; }
+    .mx-bez-stila .announcements-bar h5 { display: inline; margin: 0 0 0 6px; font-size: 14px; }
+    .mx-bez-stila .site-header__main-wrap { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: #f7ddd2; }
+    .mx-bez-stila .site-header .nav { display: flex; gap: 20px; list-style: none; margin: 0; padding: 0; }
+    .mx-bez-stila .site-header a { color: #171717; text-decoration: none; }
+    .mx-bez-stila .site-header__logo img { height: 28px; }
+    .mx-bez-stila .site-header__nav-primary-right, .mx-bez-stila .site-header__nav-icons { display: flex; align-items: center; gap: 16px; }
+    .mx-bez-stila .site-header__nav-icon-button { border: 0; background: none; }
+    .mx-bez-stila .site-footer { margin-top: 40px; padding: 40px 16px; background: #f6f6f6; text-align: center; }
+    .mx-bez-stila .site-footer img { height: 22px; }
     .mx-bez-stila h1, .mx-bez-stila h2, .mx-bez-stila h3, .mx-bez-stila h4, .mx-bez-stila h5, .mx-bez-stila h6 { margin: 0; font-weight: 400; }
     .mx-bez-stila .product .container { max-width: 1240px; margin: 0 auto; padding: 32px clamp(16px, 4vw, 48px); }
     .mx-bez-stila .product__outter { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 56px; align-items: start; }
@@ -185,29 +185,19 @@
   <div class="mxp-traka" id="mxp-traka">
     <b>Proba „Pitaj Marti”</b>
     <span class="mxp-izbor" id="mxp-artikli" aria-label="Artikl"></span>
+    <span class="mxp-izbor" aria-label="Stranica"><a href="kontakt.html">Kontakt</a></span>
     <button type="button" id="mxp-novi" title="Obriše razgovor iz preglednika i učita stranicu ispočetka">Novi razgovor</button>
     <button type="button" id="mxp-kolacici" hidden title="Kao „Prihvati sve” na traci s kolačićima na martimex.hr">Prihvati kolačiće</button>
     <button type="button" class="mxp-zatvori" aria-label="Sakrij traku" onclick="this.parentNode.remove()">✕</button>
   </div>
 
-  <div class="mxp-najava"><span>Besplatna dostava iznad 75€</span><span>Poklon uz svaku kupnju iznad 10€</span></div>
-  <header class="mxp-zaglavlje">
-    <nav aria-label="Izbornik"><a href="#">Poslovnice</a><a href="#">Kontakt</a><a href="#">Beauty saloni</a></nav>
-    <a class="mxp-logo" href="#" aria-label="Martimex"><img src="https://martimex.hr/martimex-content/uploads/2024/10/martimex-logo.svg" alt="Martimex" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode('MARTIMEX'))"></a>
-    <div class="mxp-ikone" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#171717" stroke-width="1.5"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
-      <svg viewBox="0 0 24 24" fill="none" stroke="#171717" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.8-4 3.8-6 7.5-6s6.7 2 7.5 6"/></svg>
-      <svg viewBox="0 0 24 24" fill="none" stroke="#171717" stroke-width="1.5"><path d="M5 7h14l-1.2 12.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>
-    </div>
-  </header>
-  <nav class="mxp-kategorije" aria-label="Kategorije"><a href="#">Ponude i akcije</a><a href="#">Parfemi</a><a href="#">Makeup</a><a href="#">Njega</a><a href="#">Kosa</a><a href="#">Dodaci</a><a href="#">Marke</a></nav>
+  <div id="app">
+    <script src="okvir.js" data-dio="zaglavlje"></script>
 
   <main id="main" class="main"></main>
 
-  <footer class="mxp-podnozje">
-    <img src="https://martimex.hr/martimex-content/uploads/2024/10/martimex-logo.svg" alt="Martimex" referrerpolicy="no-referrer" onerror="this.remove()">
-    <p>Probna kopija stranice proizvoda s martimex.hr — samo za isprobavanje gumba „Pitaj Marti”. Košarica ovdje ne radi.</p>
-  </footer>
+    <script src="okvir.js" data-dio="podnozje"></script>
+  </div>
 
   <!-- Proizvod: isti HTML kao na martimex.hr (dio <section class="product">), složen iz podataka niže -->
   <script>
