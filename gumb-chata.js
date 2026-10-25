@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — gumb koji otvara chat s Marti: "oblačić s točkicama" (v7)
+  //  MARTIMEX — gumb koji otvara chat s Marti: "oblačić s točkicama" (v8)
   //
   //  Gumb u kutu ekrana i dalje crta Voiceflow; ovaj modul mu daje izgled:
   //
@@ -122,11 +122,19 @@
       razmak: .15,     // s, za koliko kasni susjedna točkica
       pocetak: .6      // s, prvi val nakon što se gumb pojavi
     };
-    // točkica: krug (2,6 px, mekan rub do 3,6 px) nacrtan u svojem kvadratu
-    // 4 × 4 px; kvadrati stoje na cijelim pikselima, pa je točkica u
-    // mirovanju oštra (sitan element na pola piksela preglednik zamuti)
-    const POLJE = 4;                                                       // px, kvadrat jedne točkice
-    const TOCKA = 'radial-gradient(circle at center, ' + B.tockice + ' 0 1.3px, ' + prozirna(B.tockice, 0) + ' 1.8px)';
+    // točkica: mekan krug nacrtan u svojem kvadratu 4 × 4 px. Veličina kruga
+    // zadana je u postocima kvadrata, a ne u px: Safari px duljine unutar
+    // prijelaza boja (gradijenta) ne povećava zajedno sa stranicom, pa su pri
+    // velikom povećanju točkice ostajale sitne. Kvadrat raste i smanjuje se
+    // kao i sve ostalo, a s njim i točkica. Kvadrati stoje na cijelim
+    // pikselima, pa je točkica u mirovanju oštra (sitan element na pola
+    // piksela preglednik zamuti).
+    const POLJE = 4;              // px, kvadrat jedne točkice
+    const JEZGRA = 1.05;          // px, polumjer pune točkice (pri povećanju 100 %)
+    const RUB = 1.5;              // px, do kud se rub točkice mekano gubi
+    const TOCKA = 'radial-gradient(circle closest-side, ' +
+      B.tockice + ' 0 ' + pct(JEZGRA / (POLJE / 2) * 100) + ', ' +
+      prozirna(B.tockice, 0) + ' ' + pct(RUB / (POLJE / 2) * 100) + ')';
     const TRAJANJE_VALA = VAL.uspon + VAL.spust + 2 * VAL.razmak;          // s, od prve do zadnje točkice
     const KRUG = +P.tockice > 0 ? Math.max(TRAJANJE_VALA + .3, +P.tockice) : 0;   // s, jedan krug (val + mirovanje)
     const SINUS = 'cubic-bezier(.37, 0, .63, 1)';      // polovica sinusnog vala (mekano krene i mekano stane)
@@ -351,10 +359,10 @@
     // Stil ide u shadow root chata (jednom; starija verzija se zamijeni)
     function ubaciStil(korijen) {
       const stari = korijen.querySelector('style[data-mx-gumb]');
-      if (stari && stari.getAttribute('data-mx-gumb') === '7') return;
+      if (stari && stari.getAttribute('data-mx-gumb') === '8') return;
       if (stari) stari.remove();
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-gumb', '7');
+      stil.setAttribute('data-mx-gumb', '8');
       stil.textContent = CSS;
       korijen.appendChild(stil);
     }
