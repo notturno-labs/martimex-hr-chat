@@ -46,7 +46,7 @@ h1{margin:0 0 10px;font-size:26px;font-weight:400;letter-spacing:-.01em;line-hei
 -->
 <main>
   <h1>Gumb chata: oblačić s točkicama</h1>
-  <p class="uvod">U mirovanju se miču samo tri točkice u oblačiću. Klikom na gumb vidiš pretvorbu: oblačić postane strelica udesno, a ona se okrene prema dolje dok se gumb skuplja u krug. Drugim klikom sve ide unatrag.</p>
+  <p class="uvod">U mirovanju svakih 5 sekundi kroz tri točkice u oblačiću mekano prođe val. Klikom na gumb vidiš pretvorbu: oblačić postane strelica udesno, a ona se okrene prema dolje dok se gumb skuplja u krug. Drugim klikom sve ide unatrag.</p>
 
   <div class="red">
     <div class="opis">
@@ -87,6 +87,7 @@ h1{margin:0 0 10px;font-size:26px;font-weight:400;letter-spacing:-.01em;line-hei
           '<div class="_1bvgniii _1bvgniik _1bvgniim">' +
             '<img src="' + PRAZNO + '" class="_1bvgniif _1bvgniih" alt="">' +
             STRELICA +
+            (window.__mxGumbChataTockice || '') +   // tri točkice (na stranici ih u gumb doda gumb-chata.js)
           '</div>' +
           '<div class="_1bvgnii9">Asistent</div>' +
         '</button>';
