@@ -26,6 +26,8 @@
   //     mali oblak izmaglice (kao točkice na pozornici "Jednog ekrana"),
   //     točkice niti otplove, natpis se zamuti, a oblačić tiho izblijedi dok
   //     se na njegovu mjestu pojavljuje Martina poruka
+  //   - prije prvog Martinog pozdrava oblačića nema (pozdrav-bez-tipkanja.js
+  //     ga sakrije, a skriveni oblačić se ne animira)
   //
   //  Sve se crta točno prema vremenu, u barem dvostrukoj razlučivosti (i na
   //  običnom zaslonu glatko, bez treperenja), i samo dok je oblačić u chatu.
@@ -454,6 +456,10 @@
     // U Voiceflowove točkice umetne animaciju (i natpis)
     function ozivi(tockice) {
       if (tockice.querySelector(':scope > .mx-c')) return;
+      // skriveni oblačić se ne animira (npr. dok Marti priprema pozdrav, vidi
+      // pozdrav-bez-tipkanja.js); kad Voiceflow makne skriveni oblačić, nema
+      // ni kopije koja blijedi. Ako se kasnije pokaže, animacija krene tada
+      if (!tockice.getClientRects().length) return;
       const platno = document.createElement('canvas');
       const g = platno.getContext && platno.getContext('2d');
       if (!g) return;                                        // bez crtanja ostaju Voiceflowove točkice
