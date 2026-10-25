@@ -1,6 +1,6 @@
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — gumb koji otvara chat s Marti: "oblačić s točkicama" (v6)
+  //  MARTIMEX — gumb koji otvara chat s Marti: "oblačić s točkicama" (v7)
   //
   //  Gumb u kutu ekrana i dalje crta Voiceflow; ovaj modul mu daje izgled:
   //
@@ -27,13 +27,13 @@
   //  oblačić se samo pretope, bez okretanja.
   //
   //  Tehnički: Voiceflow crta chat u shadow DOM-u elementa #voiceflow-chat.
-  //  Modul onamo ubaci svoj stil i u gumb ništa ne umeće: oblačić i
-  //  točkice su pozadina Voiceflowove slike ikone (jedna SVG slika s
-  //  ugrađenim valom; Voiceflowova slika se makne iz vidnog polja), pa je
-  //  Voiceflow i dalje sam skriva kad se chat otvori. Oslanja
-  //  se na klasu .vfrc-launcher, koju Voiceflow službeno podržava za
-  //  prilagodbu. Ako Voiceflow jednog dana promijeni gumb, izgled izostane,
-  //  a chat radi normalno.
+  //  Modul onamo ubaci svoj stil. Oblačić je pozadina Voiceflowove slike
+  //  ikone (slika se makne iz vidnog polja), a tri točkice su jedino što
+  //  modul doda u gumb: mali ukrasni <span> u omotu ikone (zašto, piše kod
+  //  TOČKICA niže). Voiceflow i dalje sam skriva ikonu kad se chat otvori.
+  //  Oslanja se na klasu .vfrc-launcher, koju Voiceflow službeno podržava
+  //  za prilagodbu. Ako Voiceflow jednog dana promijeni gumb, izgled
+  //  izostane, a chat radi normalno.
   //  Pregled bez Voiceflowa: pokusi/gumb/pregled.html. Izvornik ikone:
   //  ikone/oblacic.svg.
   // ═════════════════════════════════════════════════════════════════════
@@ -93,11 +93,22 @@
     function broj(v, zadano, min, max) { v = +v; return isFinite(v) ? Math.min(max, Math.max(min, v)) : zadano; }
 
     // ── OBLAČIĆ (24 × 24): tanki rozi obrub, crna unutrašnjost, repić dolje
-    // lijevo, a u sredini tri svijetle točkice. Sve je jedna SVG slika
-    // (pozadina Voiceflowove slike ikone), a točkice se u njoj miču vlastitom
-    // animacijom (SMIL): crtaju se kao vektor, pa klize glatko, i za dijelove
-    // piksela, a povećanje ili smanjenje stranice ih ne može razmjestiti (to
-    // se Safariju događalo dok su se točkice micale pomicanjem pozadine).
+    // lijevo. Mirna SVG slika, pozadina Voiceflowove slike ikone.
+    const OBLACIC = 'url("data:image/svg+xml,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
+      '<path d="M6.5 3.25H17.5A3.75 3.75 0 0 1 21.25 7V13A3.75 3.75 0 0 1 17.5 16.75H9.6L5.75 20.25V16.6A3.75 3.75 0 0 1 2.75 13V7A3.75 3.75 0 0 1 6.5 3.25Z" ' +
+      'fill="' + B.podloga + '" stroke="' + B.roza + '" stroke-width="1.5" stroke-linejoin="round"/></svg>') + '")';
+
+    // ── TOČKICE: tri mala kruga preko oblačića. To je jedino što modul doda
+    // u gumb: mali <span> na kraju omota ikone (samo ukras, čitači ekrana ga
+    // preskaču). Točkice namjerno nisu dio slike ni pozadine: Safari pri
+    // povećanju ili smanjenju stranice kvari animaciju unutar SVG slike
+    // (bugs.webkit.org 241910), a px vrijednosti u animaciji koja se stalno
+    // vrti ne preračuna (29993), pa su točkice ispadale prevelike ili
+    // razmaknute. Ovako su veličina i položaj obični CSS pikseli, pa rastu i
+    // smanjuju se zajedno sa stranicom, a val je pomak u postocima vlastite
+    // visine, na koji povećanje ne utječe. Pokret je transformacija, pa je
+    // gladak i za dijelove piksela.
     //
     // VAL: svakih nekoliko sekundi (P.tockice) kroz točkice prođe val, kao
     // val na moru. Svaka se podigne i spusti mekanom sinusnom krivuljom (bez
@@ -111,28 +122,18 @@
       razmak: .15,     // s, za koliko kasni susjedna točkica
       pocetak: .6      // s, prvi val nakon što se gumb pojavi
     };
+    // točkica: krug (2,6 px, mekan rub do 3,6 px) nacrtan u svojem kvadratu
+    // 4 × 4 px; kvadrati stoje na cijelim pikselima, pa je točkica u
+    // mirovanju oštra (sitan element na pola piksela preglednik zamuti)
+    const POLJE = 4;                                                       // px, kvadrat jedne točkice
+    const TOCKA = 'radial-gradient(circle at center, ' + B.tockice + ' 0 1.3px, ' + prozirna(B.tockice, 0) + ' 1.8px)';
     const TRAJANJE_VALA = VAL.uspon + VAL.spust + 2 * VAL.razmak;          // s, od prve do zadnje točkice
     const KRUG = +P.tockice > 0 ? Math.max(TRAJANJE_VALA + .3, +P.tockice) : 0;   // s, jedan krug (val + mirovanje)
+    const SINUS = 'cubic-bezier(.37, 0, .63, 1)';      // polovica sinusnog vala (mekano krene i mekano stane)
+    const TOCKICE = OMOT + ' > .mx-g-tockice';
+    const TOCKICE_HTML = '<span class="mx-g-tockice" aria-hidden="true"><i></i><i></i><i></i></span>';
+    function pct(v) { return +v.toFixed(2) + '%'; }
     function sek(v) { return +v.toFixed(3) + 's'; }
-    function oblacic(val) {
-      const k1 = +(VAL.uspon / KRUG).toFixed(4), k2 = +((VAL.uspon + VAL.spust) / KRUG).toFixed(4);
-      const SINUS = '.37 0 .63 1';               // polovica sinusnog vala (mekano krene i mekano stane)
-      function tocka(cx, i) {
-        return '<circle cx="' + cx + '" cy="10" r="1.4">' + (val
-          ? '<animateTransform attributeName="transform" type="translate" calcMode="spline"' +
-            ' dur="' + sek(KRUG) + '" begin="' + sek(VAL.pocetak + i * VAL.razmak) + '" repeatCount="indefinite"' +
-            ' keyTimes="0;' + k1 + ';' + k2 + ';1" values="0 0;0 -' + VAL.visina + ';0 0;0 0"' +
-            ' keySplines="' + SINUS + ';' + SINUS + ';0 0 1 1"/>'
-          : '') + '</circle>';
-      }
-      return 'url("data:image/svg+xml,' + encodeURIComponent(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
-        '<path d="M6.5 3.25H17.5A3.75 3.75 0 0 1 21.25 7V13A3.75 3.75 0 0 1 17.5 16.75H9.6L5.75 20.25V16.6A3.75 3.75 0 0 1 2.75 13V7A3.75 3.75 0 0 1 6.5 3.25Z" ' +
-        'fill="' + B.podloga + '" stroke="' + B.roza + '" stroke-width="1.5" stroke-linejoin="round"/>' +
-        '<g fill="' + B.tockice + '">' + tocka(8, 0) + tocka(12, 1) + tocka(16, 2) + '</g></svg>') + '")';
-    }
-    const OBLACIC_VAL = oblacic(KRUG > 0);       // točkice s valom (ako val nije isključen)
-    const OBLACIC_MIRNO = oblacic(false);        // točkice miruju ("Smanji pokrete", visoki kontrast)
     const H = broj(P.visina, 44, 32, 64);
     const VEL = broj(P.velicinaNatpisa, 12, 9, 20);
     const RAZMAK = broj(P.razmakSlova, .34, 0, 1);
@@ -268,11 +269,59 @@
         object-position: -9999px 0;
         color: transparent;                   /* ako se slika ne učita, ne vidi se ni njezin opis */
         font-size: 0;
-        background-image: ${OBLACIC_VAL};
+        background-image: ${OBLACIC};
         background-size: 24px 24px;
         background-repeat: no-repeat;
         background-position: 0 0;
       }
+
+      /* ── točkice: na istom mjestu kao oblačić (24 × 24, u sredini omota) ── */
+      :host ${TOCKICE} {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 24px;
+        height: 24px;
+        margin: -12px 0 0 -12px;
+        padding: 0;
+        pointer-events: none;
+        forced-color-adjust: none;            /* i uz visoki kontrast točkice ostaju vidljive */
+      }
+      :host ${TOCKICE} > i {
+        position: absolute;
+        top: ${10 - POLJE / 2}px;             /* sredina točkice na y = 10, kao u ikone/oblacic.svg */
+        width: ${POLJE}px;
+        height: ${POLJE}px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: ${TOCKA};
+        ${KRUG ? `animation: mx-g-val ${sek(KRUG)} infinite both;` : ''}
+      }
+      :host ${TOCKICE} > i:nth-child(1) { left: ${8 - POLJE / 2}px; animation-delay: ${sek(VAL.pocetak)}; }
+      :host ${TOCKICE} > i:nth-child(2) { left: ${12 - POLJE / 2}px; animation-delay: ${sek(VAL.pocetak + VAL.razmak)}; }
+      :host ${TOCKICE} > i:nth-child(3) { left: ${16 - POLJE / 2}px; animation-delay: ${sek(VAL.pocetak + 2 * VAL.razmak)}; }
+      /* jedna točkica: mekano gore, mekano dolje, pa miruje do kraja kruga
+         (pomak je u postocima visine njezina kvadrata: ${VAL.visina} px) */
+      @keyframes mx-g-val {
+        0% { transform: translateY(0); animation-timing-function: ${SINUS}; }
+        ${pct(VAL.uspon / KRUG * 100)} { transform: translateY(-${pct(VAL.visina / POLJE * 100)}); animation-timing-function: ${SINUS}; }
+        ${pct((VAL.uspon + VAL.spust) / KRUG * 100)}, 100% { transform: translateY(0); }
+      }
+      /* pri otvaranju chata točkice se smanje i nestanu zajedno s oblačićem,
+         a pri zatvaranju se s njim i vrate (isti tempo kao oblačić) */
+      ${ZATVOREN} ${TOCKICE} {
+        opacity: 1;
+        scale: 1;
+        transition: opacity .2s ease .22s, scale .3s ${ULAZ} .2s;
+      }
+      ${OTVOREN} ${TOCKICE} {
+        opacity: 0;
+        scale: .6;
+        transition: opacity .1s ease, scale .22s ${IZLAZ};
+      }
+      /* dok Voiceflow umjesto ikone vrti kružić učitavanja, točkica nema */
+      :host ${OMOT}:has(> .vfrc-launcher__loading-spinner-container) > .mx-g-tockice { opacity: 0; }
       /* na klik se oblačić smanji i nestane dok se na njegovom mjestu pojavljuje
          strelica; pri zatvaranju se vrati kad se strelica već okrenula udesno
          (vidljivost u mirovanju određuje Voiceflow, npr. dok se chat učitava) */
@@ -287,13 +336,14 @@
       }
       /* ako sustav sam određuje boje (visoki kontrast), točkice miruju */
       @media (forced-colors: active) {
-        :host ${IKONA} { background-image: ${OBLACIC_MIRNO}; }
+        :host ${TOCKICE} > i { animation: none; }
       }
       /* "Smanji pokrete": točkice miruju, a oblačić i strelica se samo pretope */
       @media (prefers-reduced-motion: reduce) {
-        :host ${IKONA} { background-image: ${OBLACIC_MIRNO}; }
+        :host ${TOCKICE} > i { animation: none; }
         :host ${GUMB}:active { transform: none; }
         ${ZATVOREN} ${IKONA}, ${OTVOREN} ${IKONA},
+        ${ZATVOREN} ${TOCKICE}, ${OTVOREN} ${TOCKICE},
         ${ZATVOREN} ${STRELICA}, ${OTVOREN} ${STRELICA} { rotate: none; scale: none; }
       }
     `;
@@ -301,10 +351,10 @@
     // Stil ide u shadow root chata (jednom; starija verzija se zamijeni)
     function ubaciStil(korijen) {
       const stari = korijen.querySelector('style[data-mx-gumb]');
-      if (stari && stari.getAttribute('data-mx-gumb') === '6') return;
+      if (stari && stari.getAttribute('data-mx-gumb') === '7') return;
       if (stari) stari.remove();
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-gumb', '6');
+      stil.setAttribute('data-mx-gumb', '7');
       stil.textContent = CSS;
       korijen.appendChild(stil);
     }
@@ -433,22 +483,40 @@
       promatrac.observe(korijen, { childList: true, subtree: true });
     }
 
+    // Točkice: mali <span> s tri kruga na kraju omota ikone. React ga ne
+    // dira (nije njegov element), a ako Voiceflow gumb nacrta iznova (npr.
+    // nakon promjene postavki), doda se ponovno
+    function ubaciTockice(korijen) {
+      const omot = korijen.querySelector(OMOT);
+      if (!omot) return;
+      for (let c = omot.firstElementChild; c; c = c.nextElementSibling) {
+        if (c.classList.contains('mx-g-tockice')) return;
+      }
+      omot.insertAdjacentHTML('beforeend', TOCKICE_HTML);
+    }
+    function pratiTockice(korijen) {
+      ubaciTockice(korijen);
+      new MutationObserver(function () { ubaciTockice(korijen); }).observe(korijen, { childList: true, subtree: true });
+    }
+
     function pokreni() {
       ubaciFont();
       pratiOtvaranje();
       cekajHost(function (host) {
         ubaciStil(host.shadowRoot);
         cekajGumb(host.shadowRoot, function () {
+          pratiTockice(host.shadowRoot);
           pratiStanje(host, host.shadowRoot);
           pratiSirinu(host, host.shadowRoot);
         });
       });
     }
 
-    return { pokreni: pokreni, css: CSS };
+    return { pokreni: pokreni, css: CSS, tockice: TOCKICE_HTML };
   })();
 
   window.__mxGumbChataCss = MX_GUMB.css;   // samo za stranicu s pregledom (pokusi/gumb/pregled.html)
+  window.__mxGumbChataTockice = MX_GUMB.tockice;
 
   try { MX_GUMB.pokreni(); }
   catch (e) { console.warn('[Martimex] Izgled gumba chata nije postavljen:', e); }
