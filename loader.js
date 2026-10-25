@@ -23,11 +23,16 @@
   // tema-chata.js je izgled chata "Calacatta" (bijeli i crni mramor sa
   // zlatom; proba: proba-staklo.html); kad se odobri, makne se # ispred
   // njega i izgled vrijedi na martimex.hr.
+  // pozdrav-bez-tipkanja.js: Martin pozdrav s gumbima pojavi se cijeli
+  // odjednom, a sve ostale poruke ispisuju se slovo po slovo ("Stream text"
+  // iz Voiceflowa). Stavi # ispred njega i pozdrav se opet ispisuje kao
+  // ostale poruke.
   var MODULI = `
     kartica-artikla.js
     gumb-chata.js
     cekanje-odgovora.js
     jedan-ekran.js
+    pozdrav-bez-tipkanja.js
     # pocetna-chata.js
     # tema-chata.js
   `;
