@@ -66,6 +66,13 @@ pozdrav, bez artikla).
 Chat na probnoj stranici razgovara s Voiceflow projektom **V2 - Martimex -
 Live**, okruženje **„Radim gumb na webu”** (nacrt), a ne s Marti na webshopu.
 
+**Prije prezentacije:** otvoriti stranicu iznova (ili pritisnuti „Novi
+razgovor” u probnoj traci) i jednom kliknuti „Pitaj Marti” da se vidi da
+chat radi; za vrijeme prezentacije ne mijenjati nacrt okruženja „Radim gumb
+na webu” u Voiceflowu (stranica razgovara s nacrtom). Razgovor koji stoji
+više od 30 minuta Voiceflow završi — to je normalno: gumb tada sam pokrene
+novi razgovor s artiklom.
+
 ## Kako radi
 
 **Na stranici (`pitaj-marti.js`)** — podaci se čitaju sa same stranice u
