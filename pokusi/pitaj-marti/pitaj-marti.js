@@ -27,8 +27,15 @@
   //   - razgovor već traje → šalje se događaj "pitaj_marti"
   //     (last_event.payload.event.pitaj_marti); razgovor i Martino pamćenje
   //     ostaju, a kartica i pitanje dođu na dno razgovora
-  //   - ako isti artikl (ista varijanta) već stoji u razgovoru, chat se samo
-  //     otvori
+  //   - razgovor koji chat pokazuje je zastario (Voiceflow razgovor završi
+  //     nakon 30 min bez poruka, a preglednik ga i dalje pamti; događaj u
+  //     njemu ne bi dobio odgovor) → pokrene se novi razgovor s artiklom
+  //     (launch kroz interact); pri učitavanju stranice takav se razgovor
+  //     obriše, pa chat kreće iznova
+  //   - ako isti artikl (ista varijanta) već stoji na dnu razgovora, chat
+  //     se samo otvori
+  //   - ako na događaj ne stigne baš ništa, pokrene se novi razgovor s
+  //     artiklom; ako uz launch ne stigne kartica, pošalje se događaj
   //  S izgledom "Jedan ekran" (jedan-ekran.js, kakav je na martimex.hr)
   //  chat se otvori kao i inače, samo umjesto pozdrava dođu kartica i
   //  pitanje; s dosadašnjim početnim ekranom (pocetna-chata.js) taj se
@@ -70,6 +77,8 @@
     dogadaj: 'pitaj_marti',       // ime događaja u Voiceflowu
     cekajChat: 15000,             // ms: koliko se najduže čeka da se chat učita
     cekajOdgovor: 15000,          // ms: koliko se najduže čeka kartica/pitanje prije rezerve
+    cekajDogadaj: 10000,          // ms: ako na događaj ne stigne baš ništa, nakon toliko se pokrene novi razgovor
+    razgovorTraje: 25 * 60 * 1000, // ms: Voiceflow razgovor završi nakon 30 min bez poruka; nakon ovoliko ga modul smatra završenim
     maxOpis: 2500,                // znakova opisa sa stranice
     maxVarijanti: 40,
 
@@ -104,12 +113,13 @@
   // njega (launch.event.payload.pitaj_marti), pa launch pokrenut gumbom nosi
   // podatke o artiklu, a svaki drugi launch prazan objekt (= običan početak).
   const ARTIKL = {};
-  (function postaviLaunch() {
+  const LAUNCH = (function postaviLaunch() {
     const vf = window.MartimexVoiceflow = window.MartimexVoiceflow || {};
     const launch = vf.launch = vf.launch || {};
     const ev = launch.event = launch.event || { type: 'launch' };
     if (!ev.type) ev.type = 'launch';
     ev.payload = Object.assign({}, ev.payload, { pitaj_marti: ARTIKL });
+    return ev;
   })();
 
   function upisiArtikl(a) {
@@ -485,6 +495,93 @@
     return false;
   }
 
+  // ── 3b. ZASTARJELI RAZGOVOR ───────────────────────────────────────────
+  // Voiceflow razgovor završi nakon 30 minuta bez poruka, ali preglednik ga
+  // i dalje pamti (sessionStorage ili localStorage, ključ
+  // "voiceflow-session-<projekt>") i pri učitavanju stranice opet pokaže.
+  // Događaj poslan u takav razgovor ne dobije nikakav odgovor: Voiceflow
+  // tada počne novi razgovor, a događaj u njemu nema što pokrenuti, pa u
+  // chatu ništa ne stigne. Zato:
+  //  - pri učitavanju stranice zastarjeli zapamćeni razgovor se obriše
+  //    (prije nego ga chat pročita), pa chat kreće iznova i gumb pokrene
+  //    razgovor s artiklom kao i prvi put,
+  //  - ako razgovor zastari dok je stranica otvorena, gumb umjesto
+  //    događaja pokrene novi razgovor s artiklom (launch kroz interact);
+  //    dosadašnje poruke ostaju vidljive iznad.
+  // Razgovor se smatra zastarjelim P.razgovorTraje nakon zadnje poruke —
+  // malo prije nego ga Voiceflow stvarno završi.
+  let zadnjaAktivnost = 0;        // kad je na ovoj stranici zadnji put nešto poslano Voiceflowu (koliko modul zna)
+  let obrisanPriUcitavanju = false;
+  function zabiljeziAktivnost() { zadnjaAktivnost = Date.now(); }
+  // (chat iz paketa react-chat javlja svaku interakciju porukom prozoru;
+  // widget-next ne javlja ništa, pa odlučuje zapamćeni razgovor)
+  window.addEventListener('message', function (e) {
+    if (e.source && e.source !== window) return;
+    const d = e.data;
+    const interakcija = typeof d === 'string' ? d.indexOf('voiceflow:interact') !== -1 : !!(d && d.type === 'voiceflow:interact');
+    if (interakcija) zabiljeziAktivnost();
+  });
+
+  // zapamćeni razgovori u pregledniku (s barem jednom porukom)
+  function zapamceniRazgovori() {
+    const nadjeni = [];
+    try {
+      const spremista = [window.sessionStorage, window.localStorage];
+      for (let s = 0; s < spremista.length; s++) {
+        const sp = spremista[s];
+        if (!sp) continue;
+        for (let i = 0; i < sp.length; i++) {
+          const kljuc = sp.key(i);
+          if (!kljuc || kljuc.indexOf('voiceflow-session-') !== 0) continue;
+          let sesija = null;
+          try { sesija = JSON.parse(sp.getItem(kljuc) || 'null'); } catch (e) { sesija = null; }
+          if (sesija && Array.isArray(sesija.turns) && sesija.turns.length) nadjeni.push({ spremiste: sp, kljuc: kljuc, sesija: sesija });
+        }
+      }
+    } catch (e) { /* spremište nedostupno (npr. zabranjeni kolačići) */ }
+    return nadjeni;
+  }
+
+  // vrijeme zadnje poruke u zapamćenom razgovoru (ms); 0 ako se ne zna
+  function zadnjaPoruka(sesija) {
+    let t = 0;
+    function uzmi(v) {
+      const n = typeof v === 'number' ? v : (typeof v === 'string' ? Date.parse(v) : NaN);
+      if (isFinite(n) && n > t) t = n;
+    }
+    uzmi(sesija.lastReceivedAt);
+    uzmi(sesija.startTime);
+    for (let i = 0; i < sesija.turns.length; i++) if (sesija.turns[i]) uzmi(sesija.turns[i].timestamp);
+    return t;
+  }
+
+  // Je li razgovor koji chat pokazuje zastario (Voiceflow ga je već završio)
+  function razgovorZastario() {
+    let t = zadnjaAktivnost;
+    const razgovori = zapamceniRazgovori();
+    for (let i = 0; i < razgovori.length; i++) t = Math.max(t, zadnjaPoruka(razgovori[i].sesija));
+    if (t) return Date.now() - t > P.razgovorTraje;
+    // ne zna se kad je bila zadnja poruka: zastario je samo ako je pri
+    // učitavanju obrisan zastarjeli razgovor, a chat ga je ipak pokazao
+    return obrisanPriUcitavanju;
+  }
+
+  // Pri učitavanju stranice: zastarjeli zapamćeni razgovor se briše prije
+  // nego ga chat pročita (modul se izvršava prije Voiceflowove skripte)
+  (function obrisiZastarjeli() {
+    zapamceniRazgovori().forEach(function (z) {
+      const t = zadnjaPoruka(z.sesija);
+      if (!t || Date.now() - t <= P.razgovorTraje) return;
+      try { z.spremiste.removeItem(z.kljuc); } catch (e) { return; }
+      obrisanPriUcitavanju = true;
+      // da se chat ne otvori sam, prazan
+      [window.sessionStorage, window.localStorage].forEach(function (sp) {
+        try { if (sp) sp.removeItem('voiceflow-chat-widget:is-open'); } catch (e) { /* nije bitno */ }
+      });
+      zapis('zastarjeli razgovor obrisan (zadnja poruka ' + new Date(t).toLocaleString() + ')');
+    });
+  })();
+
   function otvoriChat() {
     try { window.voiceflow.chat.open(); } catch (e) { console.warn('[Martimex] Pitaj Marti: chat se nije otvorio', e); }
   }
@@ -549,33 +646,34 @@
   }
 
   // ── 4. PRAĆENJE ODGOVORA ──────────────────────────────────────────────
-  // Gleda pojavljuje li se u chatu kartica artikla ili Martino pitanje, i
-  // kad se pojavi prva Martina poruka (bilo koja, npr. obični pozdrav).
+  // Gleda pojavljuje li se u chatu NOVA kartica artikla ili NOVO Martino
+  // pitanje, i kad stigne prva nova Martina poruka (bilo koja, npr. obični
+  // pozdrav). Broji se koliko ih ima u odnosu na trenutak kad je praćenje
+  // počelo, pa ponovno iscrtavanje starih poruka (npr. kad se razgovor
+  // pokrene iznova) ne zavara.
   function pratiOdgovor(kor) {
-    const stanje = { kartica: null, pitanje: false, odgovor: 0, promatrac: null };
-    function provjeriCvor(n) {
-      if (!n || n.nodeType !== 1) {
-        if (n && n.nodeType === 3 && (n.nodeValue || '').indexOf(P.pitanje) !== -1) stanje.pitanje = true;
-        return;
-      }
-      if (!stanje.kartica) {
-        const k = n.matches && n.matches(KARTICA) ? n : (n.querySelector && n.querySelector(KARTICA));
-        if (k) stanje.kartica = k;
-      }
-      if (!stanje.pitanje && (n.textContent || '').indexOf(P.pitanje) !== -1) stanje.pitanje = true;
-      if (!stanje.odgovor) {
-        // poruka u Martinom odgovoru (točkice "piše..." se ne broje)
-        const m = n.matches && n.matches(PORUKA) ? n : (n.querySelector && n.querySelector(PORUKA));
-        if (m && m.closest && m.closest(ODGOVOR)) stanje.odgovor = Date.now();
-      }
+    function kartice() { return kor.querySelectorAll(KARTICA); }
+    function pitanja() {
+      const t = ((kor.querySelector(PROZOR) || kor).textContent || '');
+      let n = 0, i = -1;
+      while ((i = t.indexOf(P.pitanje, i + 1)) !== -1) n++;
+      return n;
     }
-    stanje.promatrac = new MutationObserver(function (promjene) {
-      for (let i = 0; i < promjene.length; i++) {
-        const pr = promjene[i];
-        if (pr.type === 'characterData') provjeriCvor(pr.target);
-        for (let j = 0; j < pr.addedNodes.length; j++) provjeriCvor(pr.addedNodes[j]);
-      }
-    });
+    // poruke u Martinim odgovorima (točkice "piše..." se ne broje)
+    function poruke() { return kor.querySelectorAll(ODGOVOR + ' ' + PORUKA).length; }
+    const pocetno = { kartice: kartice().length, pitanja: pitanja(), poruke: poruke() };
+    const stanje = { kartica: null, pitanje: false, odgovor: 0, promatrac: null };
+    function provjeri() {
+      const k = kartice(), np = pitanja(), nm = poruke();
+      // kad chat obriše dosadašnje poruke (novi razgovor), broji se od nule
+      if (k.length < pocetno.kartice) pocetno.kartice = k.length;
+      if (np < pocetno.pitanja) pocetno.pitanja = np;
+      if (nm < pocetno.poruke) pocetno.poruke = nm;
+      if (!stanje.kartica && k.length > pocetno.kartice) stanje.kartica = k[k.length - 1];
+      if (!stanje.pitanje && np > pocetno.pitanja) stanje.pitanje = true;
+      if (!stanje.odgovor && nm > pocetno.poruke) stanje.odgovor = Date.now();
+    }
+    stanje.promatrac = new MutationObserver(provjeri);
     stanje.promatrac.observe(kor, { childList: true, subtree: true, characterData: true });
     stanje.stani = function () { if (stanje.promatrac) stanje.promatrac.disconnect(); stanje.promatrac = null; };
     return stanje;
@@ -611,11 +709,30 @@
   // ── 5. SLANJE ARTIKLA ──────────────────────────────────────────────────
   let zadnji = null;           // { kljuc, kartica } — zadnji artikl koji je Marti prikazala
 
-  function posaljiDogadaj(artikl) {
-    zapis('događaj', P.dogadaj, artikl);
+  // "put" u podacima kaže kojim je putem artikl poslan (vidi se u
+  // Voiceflowovu transkriptu, pomaže kod otklanjanja grešaka): launch,
+  // dogadaj, launch-novi (zastarjeli razgovor), launch-rezerva, dogadaj-rezerva
+  function sPutem(artikl, put) { return Object.assign({}, artikl, { put: put }); }
+
+  function zapamti(artikl, prati) { zadnji = { kljuc: kljucArtikla(artikl), kartica: prati.kartica }; }
+
+  function posaljiDogadaj(artikl, put) {
+    zapis('događaj', P.dogadaj, '(' + put + ')', artikl);
+    zabiljeziAktivnost();
     window.voiceflow.chat.interact({
       type: 'event',
-      payload: { event: { name: P.dogadaj, pitaj_marti: artikl } }
+      payload: { event: { name: P.dogadaj, pitaj_marti: sPutem(artikl, put) } }
+    });
+  }
+
+  // Novi razgovor s artiklom kroz Voiceflowov interact — isto što pošalje
+  // gumb za početak razgovora, samo što dosadašnje poruke ostaju u prozoru
+  function posaljiLaunch(artikl, put) {
+    zapis('launch kroz interact', '(' + put + ')', artikl);
+    zabiljeziAktivnost();
+    window.voiceflow.chat.interact({
+      type: 'launch',
+      payload: Object.assign({}, LAUNCH.payload, { pitaj_marti: sPutem(artikl, put) })
     });
   }
 
@@ -634,7 +751,7 @@
 
   // Razgovor ne postoji (ili je završen): pokrene se novi, a launch nosi artikl
   async function pokreniSArtiklom(kor, artikl) {
-    upisiArtikl(artikl);
+    upisiArtikl(sPutem(artikl, 'launch'));
     const prati = pratiOdgovor(kor);
     const launchGotov = cekajInterakciju('launch', P.cekajOdgovor);
 
@@ -646,6 +763,7 @@
       zapis('launch s artiklom');
       try { kor.querySelector(START).click(); } catch (e) { /* nije bitno */ }
     }
+    zabiljeziAktivnost();
     await cekajUvjet(function () { return !cekaPocetak(kor); }, 2000);
     otvoriChat();
 
@@ -655,20 +773,46 @@
 
     if (prati.kartica || prati.pitanje) {
       zapis('artikl stigao uz launch');
-      zadnji = { kljuc: kljucArtikla(artikl), kartica: prati.kartica };
+      zapamti(artikl, prati);
       return;
     }
     // Voiceflow nije poslao artikl uz launch (ili odgovor kasni): rezerva je događaj
     zapis('rezerva: artikl nije stigao uz launch, šaljem događaj');
-    await posaljiIPrati(kor, artikl);
+    await posaljiIPrati(kor, artikl, 'dogadaj-rezerva', false);
   }
 
-  async function posaljiIPrati(kor, artikl) {
+  // Događaj, pa čekanje kartice. Ako na događaj ne stigne baš ništa — ni
+  // kartica ni bilo kakav Martin odgovor (tako prođe događaj poslan u
+  // razgovor koji je Voiceflow u međuvremenu završio) — i rezerva je
+  // dopuštena, pokrene se novi razgovor s artiklom.
+  async function posaljiIPrati(kor, artikl, put, rezerva) {
     const prati = pratiOdgovor(kor);
-    posaljiDogadaj(artikl);
+    posaljiDogadaj(artikl, put);
+    const pocetak = Date.now();
+    await cekajUvjet(function () {
+      if (prati.kartica || prati.pitanje) return true;
+      return rezerva && !prati.odgovor && Date.now() - pocetak >= P.cekajDogadaj;
+    }, P.cekajOdgovor);
+    prati.stani();
+    if (prati.kartica || prati.pitanje) { zapamti(artikl, prati); return; }
+    zadnji = null;
+    if (prati.odgovor || !rezerva) { zapis(prati.odgovor ? 'Marti je na događaj odgovorila bez kartice' : 'na događaj nije stigla kartica'); return; }
+    zapis('na događaj nije stigao nikakav odgovor: pokrećem novi razgovor s artiklom');
+    await pokreniNovi(kor, artikl, 'launch-rezerva', false);
+  }
+
+  // Novi razgovor s artiklom kroz interact(launch). Ako ni na njega ne
+  // stigne baš ništa, a rezerva je dopuštena, još se jednom pokuša događajem.
+  async function pokreniNovi(kor, artikl, put, rezerva) {
+    const prati = pratiOdgovor(kor);
+    posaljiLaunch(artikl, put);
     await cekajUvjet(function () { return prati.kartica || prati.pitanje; }, P.cekajOdgovor);
     prati.stani();
-    zadnji = { kljuc: kljucArtikla(artikl), kartica: prati.kartica };
+    if (prati.kartica || prati.pitanje) { zapis('artikl stigao uz novi razgovor'); zapamti(artikl, prati); return; }
+    zadnji = null;
+    if (prati.odgovor || !rezerva) { zapis(prati.odgovor ? 'na novi razgovor je stigao odgovor bez kartice' : 'na novi razgovor nije stigla kartica'); return; }
+    zapis('rezerva: na novi razgovor nije ništa stiglo, šaljem događaj');
+    await posaljiIPrati(kor, artikl, 'dogadaj-rezerva', false);
   }
 
   // Razgovor traje: chat se otvori, a artikl ide događajem
@@ -676,27 +820,53 @@
     preskociPocetni(kor);
     otvoriChat();
     await sljedeciOkvir();
-    await posaljiIPrati(kor, artikl);
+    await posaljiIPrati(kor, artikl, 'dogadaj', true);
+  }
+
+  // Razgovor koji chat pokazuje je zastario (Voiceflow ga je zbog
+  // neaktivnosti završio, pa događaj u njemu ne bi dobio odgovor): pokrene
+  // se novi razgovor s artiklom; dosadašnje poruke ostaju iznad
+  async function pokreniIznova(kor, artikl) {
+    preskociPocetni(kor);
+    otvoriChat();
+    await sljedeciOkvir();
+    // otvaranje je možda pokazalo Voiceflowov gumb za početak (razgovor
+    // završen i u chatu): onda razgovor kreće njime
+    if (cekaPocetak(kor)) { await pokreniSArtiklom(kor, artikl); return; }
+    zapis('razgovor je zastario (Voiceflow ga je završio): novi razgovor s artiklom');
+    await pokreniNovi(kor, artikl, 'launch-novi', true);
   }
 
   // Razgovor kreće otvaranjem chata (Voiceflowov autostart ili izgled
   // "jedan ekran"): launch nosi artikl
   async function otvoriSArtiklom(kor, artikl) {
-    upisiArtikl(artikl);
+    upisiArtikl(sPutem(artikl, 'launch'));
     const prati = pratiOdgovor(kor);
     const launchGotov = cekajInterakciju('launch', P.cekajOdgovor);
     zapis('launch s artiklom (otvaranjem chata)');
+    zabiljeziAktivnost();
     otvoriChat();
     await cekajKarticu(prati, launchGotov);
     isprazniArtikl();
     prati.stani();
     if (prati.kartica || prati.pitanje) {
       zapis('artikl stigao uz launch');
-      zadnji = { kljuc: kljucArtikla(artikl), kartica: prati.kartica };
+      zapamti(artikl, prati);
       return;
     }
     zapis('rezerva: artikl nije stigao uz launch, šaljem događaj');
-    await posaljiIPrati(kor, artikl);
+    await posaljiIPrati(kor, artikl, 'dogadaj-rezerva', false);
+  }
+
+  // Je li kartica zadnje što se u razgovoru dogodilo (kupac otad nije
+  // ništa poslao); ako jest, isti artikl ne treba slati ponovno
+  function karticaNaDnu(kor, kartica) {
+    if (!kartica || !kartica.isConnected) return false;
+    const kupac = kor.querySelectorAll(PROZOR + ' .vfrc-user-response');
+    for (let i = kupac.length - 1; i >= 0; i--) {
+      if (kartica.compareDocumentPosition(kupac[i]) & Node.DOCUMENT_POSITION_FOLLOWING) return false;
+    }
+    return true;
   }
 
   let radi = false;
@@ -715,8 +885,9 @@
         provjeriChat();
         return;
       }
-      // isti artikl (ista varijanta) već je u razgovoru: chat se samo otvori
-      if (zadnji && zadnji.kljuc === kljucArtikla(artikl) && zadnji.kartica && zadnji.kartica.isConnected && !cekaPocetak(kor)) {
+      const zastario = imaRazgovor(kor) && razgovorZastario();
+      // isti artikl (ista varijanta) već je na dnu razgovora: chat se samo otvori
+      if (!zastario && zadnji && zadnji.kljuc === kljucArtikla(artikl) && karticaNaDnu(kor, zadnji.kartica) && !cekaPocetak(kor)) {
         zapis('isti artikl je već u razgovoru');
         preskociPocetni(kor);
         otvoriChat();
@@ -724,6 +895,7 @@
       }
       if (cekaPocetak(kor)) await pokreniSArtiklom(kor, artikl);
       else if (!imaRazgovor(kor)) await otvoriSArtiklom(kor, artikl);
+      else if (zastario) await pokreniIznova(kor, artikl);
       else await posaljiUsredRazgovora(kor, artikl);
     } catch (e) {
       console.warn('[Martimex] Pitaj Marti nije uspio:', e);
@@ -917,8 +1089,19 @@
     try {
       // ako se chat još učitava, pričeka ga
       if (!chatPostoji()) await cekajUvjet(chatPostoji, P.cekajChat);
-      if (chatPostoji()) { zapis('kontakt: otvaram chat'); otvoriChat(); }
-      else { console.warn('[Martimex] Pitaj Marti: chat se nije učitao'); provjeriChat(); }
+      if (!chatPostoji()) { console.warn('[Martimex] Pitaj Marti: chat se nije učitao'); provjeriChat(); return; }
+      zapis('kontakt: otvaram chat');
+      otvoriChat();
+      // razgovor koji chat pokazuje je zastario (Voiceflow ga je završio, pa
+      // poruka u njemu ne bi dobila odgovor): počne novi, običnim pozdravom
+      const kor = korijenChata();
+      if (kor && imaRazgovor(kor) && razgovorZastario()) {
+        await sljedeciOkvir();
+        if (cekaPocetak(kor)) return;   // chat već nudi početak novog razgovora
+        zapis('kontakt: razgovor je zastario, novi razgovor');
+        zabiljeziAktivnost();
+        window.voiceflow.chat.interact({ type: 'launch', payload: Object.assign({}, LAUNCH.payload) });
+      }
     } finally {
       radi = false;
       oznaciGumb(gumb, false);
@@ -991,7 +1174,7 @@
   }
 
   // za probe i otklanjanje grešaka
-  window.MartimexPitajMarti = { verzija: 1, procitajArtikl: procitajArtikl };
+  window.MartimexPitajMarti = { verzija: 2, procitajArtikl: procitajArtikl, razgovorZastario: razgovorZastario };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () {
     try { pokreni(); } catch (e) { console.warn('[Martimex] Pitaj Marti nije pokrenut:', e); }
