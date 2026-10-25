@@ -750,10 +750,9 @@
     const potvrda = kor.querySelector(POTVRDA);
     if (!restart || !potvrda) return false;
     try { restart.click(); } catch (e) { return false; }
-    await cekajUvjet(function () {
-      const s = getComputedStyle(potvrda);
-      return s.pointerEvents !== 'none' && parseFloat(s.opacity || '1') > 0.5;
-    }, 1500);
+    // potvrda se pojavi (pointer-events: auto) u sljedećem okviru; klik
+    // radi i prije nego što se do kraja pokaže
+    await cekajUvjet(function () { return getComputedStyle(potvrda).pointerEvents !== 'none'; }, 800);
     const gumbi = potvrda.querySelectorAll('button');
     let gumb = null;
     for (let i = 0; i < gumbi.length; i++) {
