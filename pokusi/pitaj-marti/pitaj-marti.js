@@ -30,8 +30,8 @@
   //   - razgovor koji chat pokazuje je zastario (Voiceflow razgovor završi
   //     nakon 30 min bez poruka, a preglednik ga i dalje pamti; događaj u
   //     njemu ne bi dobio odgovor) → pokrene se novi razgovor s artiklom
-  //     (launch kroz interact); pri učitavanju stranice takav se razgovor
-  //     obriše, pa chat kreće iznova
+  //     (Voiceflowov "Restart conversation", pa launch nosi artikl); pri
+  //     učitavanju stranice takav se razgovor obriše, pa chat kreće iznova
   //   - ako isti artikl (ista varijanta) već stoji na dnu razgovora, chat
   //     se samo otvori
   //   - ako na događaj ne stigne baš ništa, pokrene se novi razgovor s
@@ -506,8 +506,9 @@
   //    (prije nego ga chat pročita), pa chat kreće iznova i gumb pokrene
   //    razgovor s artiklom kao i prvi put,
   //  - ako razgovor zastari dok je stranica otvorena, gumb umjesto
-  //    događaja pokrene novi razgovor s artiklom (launch kroz interact);
-  //    dosadašnje poruke ostaju vidljive iznad.
+  //    događaja pokrene novi razgovor s artiklom (Voiceflowovim "Restart
+  //    conversation": dosadašnje poruke se obrišu, kao kad kupac sam
+  //    pokrene novi razgovor).
   // Razgovor se smatra zastarjelim P.razgovorTraje nakon zadnje poruke —
   // malo prije nego ga Voiceflow stvarno završi.
   let zadnjaAktivnost = 0;        // kad je na ovoj stranici zadnji put nešto poslano Voiceflowu (koliko modul zna)
@@ -725,15 +726,45 @@
     });
   }
 
-  // Novi razgovor s artiklom kroz Voiceflowov interact — isto što pošalje
-  // gumb za početak razgovora, samo što dosadašnje poruke ostaju u prozoru
+  // Launch kroz interact — isto što pošalje gumb za početak razgovora, samo
+  // što dosadašnje poruke ostaju u prozoru. (Chat iz paketa react-chat to
+  // podržava; widget-next takav launch zanemari, pa je za njega tu
+  // ponovnoPokreni.)
   function posaljiLaunch(artikl, put) {
     zapis('launch kroz interact', '(' + put + ')', artikl);
     zabiljeziAktivnost();
     window.voiceflow.chat.interact({
       type: 'launch',
-      payload: Object.assign({}, LAUNCH.payload, { pitaj_marti: sPutem(artikl, put) })
+      payload: Object.assign({}, LAUNCH.payload, artikl ? { pitaj_marti: sPutem(artikl, put) } : {})
     });
+  }
+
+  // Voiceflowov "Restart conversation" (gumb u izborniku chata, pa potvrda
+  // "Start new chat"): chat obriše dosadašnje poruke i pokrene novi
+  // razgovor svojom postavkom launch — a ona nosi ARTIKL. Gumbi su u DOM-u
+  // i dok se ne vide. Vraća true ako je pokrenuto.
+  const RESTART = '#restart-chat';
+  const POTVRDA = '.vfrc-prompt';
+  async function ponovnoPokreni(kor) {
+    const restart = kor.querySelector(RESTART);
+    const potvrda = kor.querySelector(POTVRDA);
+    if (!restart || !potvrda) return false;
+    try { restart.click(); } catch (e) { return false; }
+    await cekajUvjet(function () {
+      const s = getComputedStyle(potvrda);
+      return s.pointerEvents !== 'none' && parseFloat(s.opacity || '1') > 0.5;
+    }, 1500);
+    const gumbi = potvrda.querySelectorAll('button');
+    let gumb = null;
+    for (let i = 0; i < gumbi.length; i++) {
+      const t = ((gumbi[i].getAttribute('aria-label') || '') + ' ' + (gumbi[i].getAttribute('label') || '') + ' ' + (gumbi[i].textContent || '')).toLowerCase();
+      if (/cancel|odustani/.test(t)) continue;
+      if (/start new chat|zapo[cč]ni|novi razgovor|restart/.test(t)) { gumb = gumbi[i]; break; }
+    }
+    if (!gumb) gumb = gumbi[0] || null;
+    if (!gumb) return false;
+    try { gumb.click(); } catch (e) { return false; }
+    return true;
   }
 
   // Nakon launcha: čeka se kartica ili pitanje. Ako umjesto njih stigne
@@ -798,20 +829,28 @@
     zadnji = null;
     if (prati.odgovor || !rezerva) { zapis(prati.odgovor ? 'Marti je na događaj odgovorila bez kartice' : 'na događaj nije stigla kartica'); return; }
     zapis('na događaj nije stigao nikakav odgovor: pokrećem novi razgovor s artiklom');
-    await pokreniNovi(kor, artikl, 'launch-rezerva', false);
+    await noviRazgovor(kor, artikl, 'launch-rezerva', true);
   }
 
-  // Novi razgovor s artiklom kroz interact(launch). Ako ni na njega ne
-  // stigne baš ništa, a rezerva je dopuštena, još se jednom pokuša događajem.
-  async function pokreniNovi(kor, artikl, put, rezerva) {
+  // Novi razgovor s artiklom dok chat još pokazuje dosadašnji: Voiceflowov
+  // "Restart conversation" (vidi ponovnoPokreni) obriše dosadašnje poruke i
+  // pokrene novi razgovor, a launch nosi artikl. Chat bez tog gumba
+  // (react-chat) dobije launch kroz interact (dosadašnje poruke ostaju).
+  // Ako ni tako ne stigne kartica, a rezerva je dopuštena, pošalje se
+  // događaj (npr. kad launch ode bez artikla, pa stigne pozdrav).
+  async function noviRazgovor(kor, artikl, put, rezerva) {
+    upisiArtikl(sPutem(artikl, put));
     const prati = pratiOdgovor(kor);
-    posaljiLaunch(artikl, put);
+    zabiljeziAktivnost();
+    if (await ponovnoPokreni(kor)) zapis('novi razgovor Voiceflowovim "Restart conversation"', '(' + put + ')', artikl);
+    else posaljiLaunch(artikl, put);
     await cekajUvjet(function () { return prati.kartica || prati.pitanje; }, P.cekajOdgovor);
+    isprazniArtikl();
     prati.stani();
     if (prati.kartica || prati.pitanje) { zapis('artikl stigao uz novi razgovor'); zapamti(artikl, prati); return; }
     zadnji = null;
-    if (prati.odgovor || !rezerva) { zapis(prati.odgovor ? 'na novi razgovor je stigao odgovor bez kartice' : 'na novi razgovor nije stigla kartica'); return; }
-    zapis('rezerva: na novi razgovor nije ništa stiglo, šaljem događaj');
+    if (!rezerva) { zapis('uz novi razgovor nije stigla kartica'); return; }
+    zapis('rezerva: uz novi razgovor nije stigla kartica, šaljem događaj');
     await posaljiIPrati(kor, artikl, 'dogadaj-rezerva', false);
   }
 
@@ -825,7 +864,7 @@
 
   // Razgovor koji chat pokazuje je zastario (Voiceflow ga je zbog
   // neaktivnosti završio, pa događaj u njemu ne bi dobio odgovor): pokrene
-  // se novi razgovor s artiklom; dosadašnje poruke ostaju iznad
+  // se novi razgovor s artiklom
   async function pokreniIznova(kor, artikl) {
     preskociPocetni(kor);
     otvoriChat();
@@ -834,7 +873,7 @@
     // završen i u chatu): onda razgovor kreće njime
     if (cekaPocetak(kor)) { await pokreniSArtiklom(kor, artikl); return; }
     zapis('razgovor je zastario (Voiceflow ga je završio): novi razgovor s artiklom');
-    await pokreniNovi(kor, artikl, 'launch-novi', true);
+    await noviRazgovor(kor, artikl, 'launch-novi', true);
   }
 
   // Razgovor kreće otvaranjem chata (Voiceflowov autostart ili izgled
@@ -1100,7 +1139,7 @@
         if (cekaPocetak(kor)) return;   // chat već nudi početak novog razgovora
         zapis('kontakt: razgovor je zastario, novi razgovor');
         zabiljeziAktivnost();
-        window.voiceflow.chat.interact({ type: 'launch', payload: Object.assign({}, LAUNCH.payload) });
+        if (!(await ponovnoPokreni(kor))) posaljiLaunch(null, 'kontakt');
       }
     } finally {
       radi = false;

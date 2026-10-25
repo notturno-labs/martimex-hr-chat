@@ -108,9 +108,11 @@ razgovora bio je `event pitaj_marti`, bez odgovora). Zato modul sada:
   (prije nego ga chat pročita), pa chat kreće iznova i gumb pokrene
   razgovor s artiklom kao i prvi put;
 - ako razgovor zastari dok je stranica otvorena, gumb umjesto događaja
-  pokrene novi razgovor s artiklom (`launch` kroz `voiceflow.chat.interact`);
-  dosadašnje poruke ostanu vidljive iznad. Ako je chat u međuvremenu sam
-  pokazao svoj gumb za novi razgovor (Voiceflow mu je javio da je razgovor
+  pokrene novi razgovor s artiklom — Voiceflowovim „Restart conversation”
+  (gumb u izborniku chata i potvrda „Start new chat”, koje modul sam
+  pritisne), pa se dosadašnje poruke obrišu kao kad kupac sam pokrene novi
+  razgovor, a launch nosi artikl. Ako je chat u međuvremenu sam pokazao
+  svoj gumb za novi razgovor (Voiceflow mu je javio da je razgovor
   završen), razgovor kreće njime, kao i dosad;
 - na stranici Kontakt gumb u istom slučaju otvori chat i počne novi
   razgovor običnim pozdravom.
@@ -201,16 +203,20 @@ chat radi kao i prije.
   otvori chat s običnim pozdravom, drugi put samo otvori isti razgovor, i
   čeka kolačiće), te zastarjeli razgovor: stariji od 25 min se pri
   učitavanju obriše pa gumb pokrene novi razgovor s artiklom, razgovor koji
-  zastari dok je stranica otvorena dobije novi razgovor s artiklom
-  (`launch`), događaj bez ikakvog odgovora dobije novi razgovor nakon 10 s,
+  zastari dok je stranica otvorena dobije novi razgovor s artiklom,
+  događaj bez ikakvog odgovora dobije novi razgovor nakon 10 s,
   svjež razgovor star 20 min se ne dira, a na stranici Kontakt zastarjeli
   razgovor dobije novi pozdrav.
-- Zastarjeli razgovor u pravom pregledniku (Chrome, github.io, Voiceflow
-  nacrt): nakon 30 min bez poruka Voiceflow pri ponovnom učitavanju
-  stranice chatu javi da je razgovor završen (chat pokaže svoj gumb za
-  novi razgovor) i gumb „Pitaj Marti” pokrene novi razgovor s artiklom; a
-  klik prije nego što Voiceflow to javi (ili kad veza ne uspije) slao je
-  događaj u mrtav razgovor — to je slučaj koji modul sada rješava sam.
+- Zastarjeli razgovor u pravom pregledniku (Chrome, Voiceflow nacrt):
+  nakon 30 min bez poruka Voiceflow pri ponovnom učitavanju stranice chatu
+  javi da je razgovor završen (chat pokaže svoj gumb za novi razgovor) i
+  gumb „Pitaj Marti” pokrene novi razgovor s artiklom; a klik prije nego
+  što Voiceflow to javi (ili kad veza ne uspije) slao je događaj u mrtav
+  razgovor — to je slučaj koji modul sada rješava sam. „Restart
+  conversation” pritisnut iz modula u pravom chatu (webchat 2.207) obriše
+  stare poruke i pokrene razgovor s artiklom (kartica i pitanje za ~2 s);
+  `launch` kroz `voiceflow.chat.interact` taj chat zanemari, pa se koristi
+  samo kao rezerva za chat bez tog gumba.
 - Čitanje artikla na pravim stranicama martimex.hr: 439 nasumičnih
   artikala iz svih 141 kategorije (od toga 347 pravih stranica, ostalo su
   skriveni artikli koji vode na naslovnicu). Gumb se postavi na svima, uz
