@@ -25,22 +25,23 @@ Ovo je **proba**: na martimex.hr se ništa ne mijenja dok se modul ne doda u
 | Datoteka | Što je |
 |---|---|
 | `pitaj-marti.js` | modul: gumb na stranici proizvoda (čitanje artikla i slanje Marti) i na stranici Kontakt |
-| `proba.html` | kopija stranice proizvoda s martimex.hr (isti HTML i stil kao webshop) s gumbom i chatom |
-| `kontakt.html` | kopija stranice Kontakt s martimex.hr s gumbom i chatom |
-| `okvir.js` | zaglavlje i podnožje kao na martimex.hr, za obje probne stranice |
+| `proba.html` | probna stranica, sve u jednoj datoteci: kopija stranice proizvoda i stranice Kontakt s martimex.hr (isti HTML i stil kao webshop), zaglavlje i podnožje webshopa, gumb i chat |
 
 ## Kako isprobati
 
-Stranice: **https://notturno-labs.github.io/martimex-hr-chat/pokusi/pitaj-marti/proba.html**
-i **https://notturno-labs.github.io/martimex-hr-chat/pokusi/pitaj-marti/kontakt.html**
-(u probnoj traci i u zaglavlju je poveznica „Kontakt”).
+Stranica: **https://notturno-labs.github.io/martimex-hr-chat/pokusi/pitaj-marti/proba.html**
 
-Probna traka na vrhu stranice:
+Sve je na toj jednoj stranici. Probna traka na vrhu:
 
 - **artikl**: Dylan Blue (kao na martimex.hr), Crystal Noir (na akciji),
   Eros Parfum (bez veličina), ruž Creamy Delight (nijanse), Purple Stain
   (nije na stanju, opis u karticama „Opis / Uporaba / Sastojci...”),
+- **Kontakt**: stranica Kontakt (adresa `proba.html?stranica=kontakt`); i
+  poveznica „Kontakt” u zaglavlju vodi na nju, a logo Martimex natrag na
+  stranicu proizvoda,
 - **Novi razgovor**: obriše razgovor iz preglednika i učita stranicu ispočetka.
+
+Razgovor ostaje kad se ide s jedne stranice na drugu (kao na webshopu).
 
 Chat na probnoj stranici ima kod za chat iz repozitorija (kao u „Za
 martimex.hr (cisti)”), a `loader.js` s vrha repozitorija učita module —
@@ -57,6 +58,13 @@ Dodaci na kraju adrese:
 - `&izgled=dosadasnji` — dosadašnji početni ekran (`pocetna-chata.js`), samo
   za usporedbu,
 - `&pitajmarti=debug` — modul zapisuje što radi u konzolu preglednika.
+
+Kad se neka datoteka na GitHubu promijeni, preglednik do 10 minuta može
+pokazivati staru spremljenu kopiju stranice (tako radi GitHub Pages). Tada
+pomaže osvježavanje bez spremljene kopije: Chrome **Cmd+Shift+R**, Safari
+**Cmd+Option+R** (Windows: Ctrl+F5). Modul `pitaj-marti.js` stranica uvijek
+učitava svjež (oznaka `?v=` se mijenja svake minute), pa stara kopija modula
+ne može raditi s novom stranicom.
 
 Vrijedi probati: odabrati drugu veličinu ili nijansu pa opet „Pitaj Marti”,
 prvo otvoriti chat običnim gumbom pa tek onda „Pitaj Marti”, osvježiti
@@ -197,7 +205,7 @@ chat radi kao i prije.
   Martini odgovori na „Kakav je miris?”, „Koju veličinu odabrati?” i „Koju
   nijansu odabrati?” s podacima sa stranice, isti artikl (samo se otvori
   chat), ruž na mobitelu, te „Pitaj Marti” nakon običnog pozdrava.
-- Automatski testovi (Chromium, računalo i mobitel, 23 scenarija): jedan
+- Automatski testovi (Chromium, računalo i mobitel, 24 scenarija): jedan
   `launch` po pritisku (i kod dvostrukog klika), ispravni podaci o artiklu
   (veličina, nijansa, akcija, artikl bez varijanti, nije na stanju, opis u
   karticama), ponuđena pitanja, isti artikl (samo se otvori; nakon pitanja
@@ -213,7 +221,9 @@ chat radi kao i prije.
   zastari dok je stranica otvorena dobije novi razgovor s artiklom,
   događaj bez ikakvog odgovora dobije novi razgovor nakon 10 s,
   svjež razgovor star 20 min se ne dira, a na stranici Kontakt zastarjeli
-  razgovor dobije novi pozdrav.
+  razgovor dobije novi pozdrav; te da probna traka i zaglavlje vode na
+  Kontakt i natrag, da je na Kontaktu gumb „Pitaj Marti” i da razgovor
+  ostaje kad se ide između stranica.
 - Zastarjeli razgovor u pravom pregledniku (Chrome, Voiceflow nacrt):
   nakon 30 min bez poruka Voiceflow pri ponovnom učitavanju stranice chatu
   javi da je razgovor završen (chat pokaže svoj gumb za novi razgovor) i
