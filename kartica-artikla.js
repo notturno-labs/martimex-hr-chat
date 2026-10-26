@@ -1,3 +1,4 @@
+// Ukratko: Kartice proizvoda koje Marti preporuči
 (function () {
   // ═════════════════════════════════════════════════════════════════════
   //  MARTIMEX — kartice preporučenih proizvoda za Marti (v32)

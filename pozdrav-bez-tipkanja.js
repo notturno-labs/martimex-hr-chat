@@ -1,3 +1,4 @@
+// Ukratko: Martin pozdrav izroni bez tipkanja
 (function () {
   // ═════════════════════════════════════════════════════════════════════
   //  MARTIMEX — Martin pozdrav: odjednom, bez "tipkanja", izroni iz magle (v3)

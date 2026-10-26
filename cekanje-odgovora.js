@@ -1,3 +1,4 @@
+// Ukratko: Animacija perlica dok Marti piše odgovor
 (function () {
   // ═════════════════════════════════════════════════════════════════════
   //  MARTIMEX — dok Marti smišlja odgovor: "perlice na niti" (v2)

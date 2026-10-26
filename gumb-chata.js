@@ -1,3 +1,4 @@
+// Ukratko: Izgled gumba koji otvara chat
 (function () {
   // ═════════════════════════════════════════════════════════════════════
   //  MARTIMEX — gumb koji otvara chat s Marti: "oblačić s točkicama" (v8)

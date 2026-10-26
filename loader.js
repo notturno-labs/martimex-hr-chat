@@ -1,3 +1,4 @@
+// Ukratko: Učitava sve module chata s GitHuba
 /* ============================================================
    MARTI CHAT – loader.js
    Stranica (martimex.hr) sama učitava Voiceflow widget.

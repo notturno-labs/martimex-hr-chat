@@ -1,3 +1,4 @@
+// Ukratko: Gumb „Pitaj Marti” na stranicama webshopa
 (function () {
   // ═════════════════════════════════════════════════════════════════════
   //  MARTIMEX — gumb "Pitaj Marti" na stranici proizvoda (v1)
