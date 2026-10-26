@@ -12,10 +12,11 @@ Ispod gumba **„Dodaj u košaricu”** na stranici proizvoda pojavi se gumb
 4. Marti zna o kojem je artiklu riječ, pa kupac može odmah pitati što god
    želi o njemu.
 
-Na stranici **Kontakt**, u okviru „Kontakt podaci”, ispod radnog vremena je
-redak „AI asistentica” s gumbom **„Pitaj Marti”**, koji samo otvori chat —
-isto kao gumb chata u donjem desnom kutu (razgovor se nastavi, a ako ga nema,
-počne običnim pozdravom).
+Na stranici **Kontakt**, u okviru „Kontakt podaci”, ispod radnog vremena
+piše „Naša AI asistentica Marti dostupna Vam je za sve upite 24/7.”, a ispod
+toga je gumb **„Pitaj Marti”** preko cijele širine okvira. Gumb samo otvori
+chat — isto kao gumb chata u donjem desnom kutu (razgovor se nastavi, a ako
+ga nema, počne običnim pozdravom).
 
 Ovo je **proba**: na martimex.hr se ništa ne mijenja dok se modul ne doda u
 `loader.js` (vidi dolje).
@@ -26,6 +27,7 @@ Ovo je **proba**: na martimex.hr se ništa ne mijenja dok se modul ne doda u
 |---|---|
 | `pitaj-marti.js` | modul: gumb na stranici proizvoda (čitanje artikla i slanje Marti) i na stranici Kontakt |
 | `proba.html` | probna stranica, sve u jednoj datoteci: kopija stranice proizvoda i stranice Kontakt s martimex.hr (isti HTML i stil kao webshop), zaglavlje i podnožje webshopa, gumb i chat |
+| `martimex-stil.css`, `martimex-stil-mobitel.css` | kopija stila s martimex.hr za probnu stranicu (vidi „Stil probne stranice” niže) |
 
 ## Kako isprobati
 
@@ -140,15 +142,32 @@ stanju, stoji ispod gumba „Obavijesti me kada bude dostupan” i iste je
 učitava: dok kupac ne prihvati kolačiće (pa se chat ne učitava) ili kad
 blokator oglasa blokira Voiceflow, gumba nema; pojavi se čim se chat
 učita. Postavke
-(natpis, opis za miš i čitače ekrana, boje, tekstovi retka na stranici
-Kontakt u `kontakt`...) su na vrhu `pitaj-marti.js` u `MX_PM_POSTAVKE`.
+(natpis, opis za miš i čitače ekrana, boje, tekst i natpis gumba na
+stranici Kontakt u `kontakt`...) su na vrhu `pitaj-marti.js` u
+`MX_PM_POSTAVKE`.
 
 **Stranica Kontakt**: modul je prepozna po okviru „Kontakt podaci”
-(`.contact-page__info-wrap`) i na kraj doda redak u istom obliku kao Email,
-Telefon i Radno vrijeme (iskrica, „AI asistentica”, kratki tekst i gumb).
-Gumb pozove `voiceflow.chat.open()` — isto što radi gumb chata — pa
-izgled „Jedan ekran” sam pokrene razgovor ako ga još nema. I ovdje se gumb
-vidi samo kad chat postoji.
+(`.contact-page__info-wrap`) i na kraj, ispod radnog vremena, doda tekst
+(istih slova kao Email, Telefon i Radno vrijeme) i ispod njega gumb preko
+cijele širine okvira (iskrica i „Pitaj Marti”, boje kao gumb na stranici
+proizvoda). Gumb pozove `voiceflow.chat.open()` — isto što radi gumb
+chata — pa izgled „Jedan ekran” sam pokrene razgovor ako ga još nema. I
+ovdje se tekst i gumb vide samo kad chat postoji.
+
+**Stil probne stranice** (`martimex-stil.css`, `martimex-stil-mobitel.css`)
+je kopija stila s martimex.hr, preuzeta 26. 10. 2026. sa stranice
+martimex.hr/kontakt/ (iste datoteke vrijede za cijeli webshop). Stranica ga
+ne učitava izravno s martimex.hr jer martimex.hr ime svoje datoteke sa
+stilom mijenja kad god obnovi predmemoriju (`autoptimize_….css`), a staru
+tada briše: 26. 10. stara je vraćala „410 Gone”, pa je probna stranica u
+pregledniku koji je nije imao spremljenu ostajala na rezervnom stilu (obrazac
+na Kontaktu drukčiji nego na webshopu, „Kontakt podaci” ispod obrasca). U
+kopiji poveznice na slike i fontove vode na martimex.hr, a male SVG ikone
+teme (npr. veliko „M” u pozadini okvira) ugrađene su u datoteku, pa ne
+ovise o tome hoće li ih martimex.hr preimenovati. Ako se izgled martimex.hr
+jednog dana bitno promijeni, kopija se obnovi na isti način; dotad probna
+stranica izgleda kao webshop na dan kopije. Rezervni stil u `proba.html`
+ostaje samo za slučaj da se kopija ne učita.
 
 **U Voiceflowu (okruženje „Radim gumb na webu”)**
 
@@ -192,6 +211,11 @@ chat radi kao i prije.
 
 ## Što je provjereno
 
+- Stil (26. 10. 2026.): s kopijom stila stranica Kontakt izgleda kao
+  martimex.hr/kontakt/ (pozadinska slika, obrazac s natpisima u poljima,
+  „Kontakt podaci” desno, „M” u pozadini okvira), a stranica proizvoda kao
+  na webshopu; na računalu (1100 i 1280 px) i na mobitelu (390 px). Tekst
+  i gumb „Pitaj Marti” ispod radnog vremena: gumb otvori chat.
 - Voiceflow (nacrt okruženja): pokretanje s artiklom, događaj usred
   razgovora, običan pozdrav kad razgovor nije pokrenut gumbom, pitanja o
   artiklu i promjena artikla usred razgovora.

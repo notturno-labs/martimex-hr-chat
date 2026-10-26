@@ -66,11 +66,11 @@
     // po njoj (ili po kartici artikla) modul zna da je Marti dobila artikl
     pitanje: 'Kako Vam mogu pomoći oko ovog artikla?',
 
-    // Stranica Kontakt: u okviru "Kontakt podaci" redak s gumbom koji samo
-    // otvori chat (isto kao gumb chata u donjem desnom kutu)
+    // Stranica Kontakt: u okviru "Kontakt podaci", ispod radnog vremena,
+    // tekst i ispod njega gumb koji samo otvori chat (isto kao gumb chata u
+    // donjem desnom kutu)
     kontakt: {
-      naslov: 'AI asistentica',                                   // '' = bez naslova
-      tekst: 'Marti odgovara odmah, i izvan radnog vremena.',     // '' = bez teksta
+      tekst: 'Naša AI asistentica Marti dostupna Vam je za sve upite 24/7.',   // '' = bez teksta
       gumb: 'Pitaj Marti'
     },
 
@@ -959,11 +959,11 @@
       .mx-pm { margin: 16px 0 4px; box-sizing: border-box; }
       /* u sivoj ploči s gumbom za košaricu: razmak daje sama ploča */
       .mx-pm[data-uz="kosarica"] { margin: 0; }
-      /* stranica Kontakt: redak kao Email / Telefon / Radno vrijeme */
-      .mx-pm[data-uz="kontakt"] { margin: 0; }
-      .mx-pm-kontakt-ikona { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 24px; height: 24px; color: ${B.pozadinaMis}; }
-      .mx-pm-kontakt-ikona svg { width: 20px; height: 20px; overflow: visible; }
-      .mx-pm[data-uz="kontakt"] .mx-pm-gumb { align-self: flex-start; margin-top: 12px; text-transform: none; }
+      /* stranica Kontakt: ispod radnog vremena tekst, a ispod njega gumb
+         preko cijele širine okvira "Kontakt podaci" */
+      .mx-pm[data-uz="kontakt"] { display: flex; flex-direction: column; align-items: stretch; gap: 14px; margin: 24px 0 0; }
+      .mx-pm[data-uz="kontakt"] .mx-pm-kontakt-tekst { margin: 0; }
+      .mx-pm[data-uz="kontakt"] .mx-pm-gumb { width: 100%; min-height: 44px; text-transform: none; }
       .mx-pm-gumb {
         position: relative;
         display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -1077,30 +1077,21 @@
   let omotGumba = null;
 
   // ── 7. STRANICA KONTAKT ────────────────────────────────────────────────
-  // Gumb samo otvori chat, isto kao gumb chata u donjem desnom kutu
-  // (razgovor se nastavi ili, ako ga nema, počne običnim pozdravom).
+  // U okviru "Kontakt podaci", ispod radnog vremena: tekst (P.kontakt.tekst,
+  // istih slova kao Email, Telefon i Radno vrijeme) i ispod njega gumb preko
+  // cijele širine okvira. Gumb samo otvori chat, isto kao gumb chata u
+  // donjem desnom kutu (razgovor se nastavi ili, ako ga nema, počne običnim
+  // pozdravom).
   function napraviKontakt() {
     const K = P.kontakt || {};
-    const red = document.createElement('div');
-    red.className = 'contact-page__info-line mx-pm';
-    red.setAttribute('data-uz', 'kontakt');
-    const ikona = document.createElement('span');
-    ikona.className = 'mx-pm-kontakt-ikona';
-    ikona.innerHTML = IKONA;
-    red.appendChild(ikona);
-    const tekst = document.createElement('div');
-    tekst.className = 'contact-page__info-line-text';
-    if (K.naslov) {
-      const h = document.createElement('h5');
-      h.className = 't-700';
-      h.textContent = K.naslov;
-      tekst.appendChild(h);
-    }
+    const blok = document.createElement('div');
+    blok.className = 'mx-pm';
+    blok.setAttribute('data-uz', 'kontakt');
     if (K.tekst) {
-      const t = document.createElement('span');
-      t.className = 'h5';
+      const t = document.createElement('p');
+      t.className = 'h5 mx-pm-kontakt-tekst';
       t.textContent = K.tekst;
-      tekst.appendChild(t);
+      blok.appendChild(t);
     }
     const gumb = document.createElement('button');
     gumb.type = 'button';
@@ -1115,9 +1106,8 @@
       e.preventDefault();
       otvoriSKontakta(gumb);
     });
-    tekst.appendChild(gumb);
-    red.appendChild(tekst);
-    return red;
+    blok.appendChild(gumb);
+    return blok;
   }
 
   async function otvoriSKontakta(gumb) {

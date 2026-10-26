@@ -11,9 +11,11 @@
     Sve je u ovoj jednoj datoteci: stranica proizvoda, stranica Kontakt te
     zaglavlje i podnožje webshopa. Stranice su kopije stranica s martimex.hr:
     isti HTML (iste klase, isti x-data podaci, isti gumbi varijanti, isti
-    JSON-LD), a stil i slike se učitavaju izravno s martimex.hr. Ispod gumba
-    "Dodaj u košaricu" je gumb "Pitaj Marti"; na stranici Kontakt je u okviru
-    "Kontakt podaci" redak s gumbom "Pitaj Marti", koji samo otvori chat.
+    JSON-LD) i isti stil (kopija stila s martimex.hr u martimex-stil.css, vidi
+    niže), a slike se učitavaju izravno s martimex.hr. Ispod gumba "Dodaj u
+    košaricu" je gumb "Pitaj Marti"; na stranici Kontakt je u okviru "Kontakt
+    podaci", ispod radnog vremena, tekst o Marti i gumb "Pitaj Marti", koji
+    samo otvori chat.
     Između stranica se ide probnom trakom na vrhu ili poveznicom "Kontakt" u
     zaglavlju.
 
@@ -34,9 +36,13 @@
       &pitajmarti=debug                   → zapisi modula u konzoli preglednika
       &izgled=dosadasnji                  → dosadašnji početni ekran (pocetna-chata.js), samo za usporedbu
   -->
-  <!-- stil izravno s martimex.hr; ako se ne učita (npr. promijeni se ime datoteke), uključi se rezervni stil niže -->
-  <link media="all" rel="stylesheet" href="https://martimex.hr/martimex-content/cache/autoptimize/css/autoptimize_b1540327174d6f6032786febaffceffc.css">
-  <link media="only screen and (max-width: 768px)" rel="stylesheet" href="https://martimex.hr/martimex-content/cache/autoptimize/css/autoptimize_52268c8fa15ab42b20398d08b910fe38.css">
+  <!-- Stil s martimex.hr, kopiran u repozitorij (martimex-stil.css i martimex-stil-mobitel.css, uz ovu stranicu).
+       Ne učitava se izravno s martimex.hr jer martimex.hr ime svoje datoteke sa stilom mijenja kad god obnovi
+       predmemoriju (npr. autoptimize_b154…css → autoptimize_ff37…css), a staru tada briše (odgovor 410), pa je
+       ova stranica ostajala bez stila. Kopija je preuzeta 26. 10. 2026.; slike i fontovi i dalje dolaze s
+       martimex.hr. Ako se kopija ipak ne učita, uključi se rezervni stil niže. -->
+  <link media="all" rel="stylesheet" href="martimex-stil.css">
+  <link media="only screen and (max-width: 768px)" rel="stylesheet" href="martimex-stil-mobitel.css">
   <script>
     // Je li stil s martimex.hr tu: njegov .d-flex (rezervni stil ga nema) element pretvori u flex
     function mxpProvjeriStil() {
@@ -216,8 +222,8 @@
   <script>
     // Zaglavlje i podnožje kao na martimex.hr. HTML je preuzet sa stranice
     // martimex.hr (bez skripti, izbornika koji se otvaraju i prozora za
-    // prijavu), a stil dolazi izravno s martimex.hr, pa izgleda isto kao
-    // webshop. mxpOkvir('zaglavlje') / mxpOkvir('podnozje') umetne svoj dio
+    // prijavu), a stil je kopija stila s martimex.hr (martimex-stil.css),
+    // pa izgleda isto kao webshop. mxpOkvir('zaglavlje') / mxpOkvir('podnozje') umetne svoj dio
     // točno na mjesto skripte iz koje je pozvan (dok se stranica čita).
     window.mxpOkvir = function (dio) {
       'use strict';
