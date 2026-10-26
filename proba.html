@@ -37,13 +37,14 @@
       &kolacici=ceka                      → kao martimex.hr: chat se učita tek kad se prihvate kolačići (gumb u traci)
       &pitajmarti=debug                   → zapisi modula u konzoli preglednika
   -->
-  <!-- Stil s martimex.hr, kopiran u repozitorij (martimex-stil.css i martimex-stil-mobitel.css, uz ovu stranicu).
+  <!-- Stil s martimex.hr, kopiran u repozitorij (martimex-stil.css, uz ovu stranicu).
        Ne učitava se izravno s martimex.hr jer martimex.hr ime svoje datoteke sa stilom mijenja kad god obnovi
        predmemoriju (npr. autoptimize_b154…css → autoptimize_ff37…css), a staru tada briše (odgovor 410), pa je
-       ova stranica ostajala bez stila. Kopija je preuzeta 26. 10. 2026.; slike i fontovi i dalje dolaze s
-       martimex.hr. Ako se kopija ipak ne učita, uključi se rezervni stil niže. -->
+       ova stranica ostajala bez stila. Kopija je preuzeta 26. 10. 2026.; slike i ikonski fontovi i dalje dolaze s
+       martimex.hr, a fontovi teksta s Google Fonts. Ako se kopija ipak ne učita, uključi se rezervni stil niže.
+       martimex.hr ima i drugi stil, samo za mobitel (do 768 px, WooCommerce "smallscreen"), ali on uređuje samo
+       dijelove kojih na ovoj stranici nema (košaricu, blagajnu, korisnički račun, popise proizvoda), pa nije kopiran. -->
   <link media="all" rel="stylesheet" href="martimex-stil.css">
-  <link media="only screen and (max-width: 768px)" rel="stylesheet" href="martimex-stil-mobitel.css">
   <script>
     // Je li stil s martimex.hr tu: njegov .d-flex (rezervni stil ga nema) element pretvori u flex
     function mxpProvjeriStil() {
@@ -353,7 +354,7 @@
     if (MXP.kontakt) document.body.className = 'wp-singular page-template page-template-page-contact page page-id-24 wp-embed-responsive wp-theme-martimex theme-martimex woocommerce-js kontakt';
   </script>
 
-  <div class="mxp-traka" id="mxp-traka">
+  <div class="mxp-traka">
     <b>Proba „Pitaj Marti”</b>
     <span class="mxp-izbor" id="mxp-artikli" aria-label="Artikl"></span>
     <span class="mxp-izbor" id="mxp-stranice" aria-label="Stranica"></span>
@@ -496,7 +497,6 @@
     var trazeni = new URLSearchParams(location.search).get('artikl');
     var kljuc = ARTIKLI[trazeni] ? trazeni : 'dylan-blue';
     var A = ARTIKLI[kljuc];
-    window.__mxpArtikl = { kljuc: kljuc, podaci: A, svi: ARTIKLI };
 
     // ── pomoćno ──
     function esc(s) {
@@ -523,7 +523,7 @@
     var V = A.varijante;
     function podaciVarijante(v) {
       return {
-        id: v.id, inStock: v.dostupno !== false, onSale: !!v.stara, salePercentage: v.postotak || 0,
+        id: v.id, inStock: true, onSale: !!v.stara, salePercentage: v.postotak || 0,
         color: A.boje ? v.naziv : '', label: A.boje ? '' : v.naziv, name: A.boje ? v.kratko : v.naziv,
         imageFull: v.slika || A.slika, imageSmall: maleSlike(v.slika || A.slika), price: v.cijena
       };
@@ -537,8 +537,6 @@
       },
       variation: prva ? podaciVarijante(prva) : null
     };
-    window.__mxpVarijante = {};
-    V.forEach(function (v) { window.__mxpVarijante[v.id] = podaciVarijante(v); });
 
     // ── galerija ──
     function sličice(slike, varId, aktivna) {
@@ -693,7 +691,6 @@
     }
     function izaberi(gumb) {
       var id = gumb.getAttribute('data-variation-id');
-      var v = (window.__mxpVarijante || {})[id] || {};
       sekcija.querySelectorAll('.js-var-btn').forEach(function (b) { b.classList.toggle('active', b === gumb); });
       prikazi('.js-var-price', 'data-price-var-id', id);
       prikazi('.js-var-sku', 'data-sku-var-id', id);
@@ -705,11 +702,6 @@
       if (puna && slika) slika.src = puna;
       var boja = sekcija.querySelector('.js-color-name');
       if (boja && gumb.getAttribute('data-var-color')) boja.textContent = gumb.getAttribute('data-var-color');
-      var naStanju = v.inStock !== false;
-      var obavijest = sekcija.querySelector('.product__variations-no-variation-stock-notice');
-      if (obavijest) obavijest.classList.toggle('d-none', naStanju);
-      var kolicina = sekcija.querySelector('.product__quantity');
-      if (kolicina) kolicina.classList.toggle('d-none', !naStanju);
     }
 
     sekcija.addEventListener('click', function (e) {
@@ -827,7 +819,7 @@
       vf.onerror = function () { console.error('[Martimex] Voiceflow widget se nije učitao'); };
       document.head.appendChild(vf);
 
-      // 3) Ekstenzije (i kasnije dizajn) s GitHuba – učitava se istovremeno s Voiceflowom
+      // 3) Ekstenzije s GitHuba – učitava se istovremeno s Voiceflowom
       var gh = document.createElement('script');
       gh.src = GITHUB_LOADER + '?v=' + Math.floor(Date.now() / 60000);
       gh.onerror = bezGithuba;

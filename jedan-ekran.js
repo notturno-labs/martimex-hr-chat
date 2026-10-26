@@ -47,7 +47,7 @@
   //     vrate i nakon ponovnog otvaranja chata
   //   - ako razgovor već postoji (npr. kupac je s preporuke otišao na
   //     stranicu proizvoda), chat se otvori odmah sklopljen
-  //   - razgovor kreće sam kad se chat otvori (nema gumba "Početak"), ali
+  //   - razgovor kreće sam kad se chat otvori, ali
   //     tek tada: samo učitavanje stranice ne pokreće razgovor u Voiceflowu
   //   - Voiceflowovi engleski tekstovi ("Start new chat", "Cancel",
   //     "Chat has ended") su na hrvatskom
@@ -63,7 +63,7 @@
   //  element: pozornicu, odmah ispod Voiceflowova zaglavlja (ako je
   //  Voiceflow iscrta iznova, vrati se na mjesto). Voiceflowu se isključi
   //  "autostart", pa se razgovor pokrene tek otvaranjem chata (modul tada
-  //  pritisne Voiceflowov skriveni gumb za početak, kao nekad "Početak").
+  //  pritisne Voiceflowov skriveni gumb za početak).
   //  Ako modul zakaže, chat radi kao Voiceflowov.
   //  Gdje radi: učitava ga loader.js, pa vrijedi na martimex.hr i na
   //  testnoj stranici proba.html.
@@ -78,7 +78,7 @@
   // ─────────────────────────────────────────────────────────────────────
   const MX_JEDAN_POSTAVKE = {
     boje: {                     // uvijek u obliku #rrggbb
-      tama:      '#0e0c0b',     // topla crna: traka gore i pozornica s flakonom
+      tama:      '#0e0c0b',     // topla crna: traka gore i pozornica s logotipima
       bjelokost: '#f7f3ef',     // pozadina razgovora
       papir:     '#fffdfb',     // Martine poruke, polje za poruku, ploče
       tinta:     '#1c1715',     // tekst; kupčeve poruke; obrub i ispuna ponuđenih odgovora
@@ -89,11 +89,10 @@
       logotip:   '#ffffff'      // logotipi na trakama (sličice su bijele; drugom bojom se oboje)
     },
 
-    // Fontovi iz mape fonts/ (učitavaju ih i ostali moduli)
+    // Font iz mape fonts/ (učitavaju ga i ostali moduli)
     font: '"MX Jost", "Futura", "Century Gothic", "Avenir Next", Avenir, "Segoe UI", Roboto, Arial, sans-serif',
-    fontNatpisa: '"MX Cormorant", "Cormorant Garamond", Garamond, Georgia, "Times New Roman", serif',
 
-    natpis: 'Marti',                          // u traci gore, 1. red (Cormorant, velika slova)
+    natpis: 'Marti',                          // u traci gore, 1. red (Jost, razmaknuta velika slova)
     podnatpis: 'AI asistentica',              // u traci gore, 2. red (sitno, roza); '' = samo 1. red
 
     // Voiceflowovi engleski tekstovi ('' = ostaje Voiceflowov tekst)
@@ -158,11 +157,9 @@
     const M = P.marke || {};
     const HOST = 'voiceflow-chat';          // element u čiji shadow DOM Voiceflow crta chat
     const START = '#vfrc-start-chat';       // Voiceflowov gumb "Start new chat"
-    const OZNAKA = 'data-mx-j';             // atribut na #voiceflow-chat: "sklopljeno", "pokrecem"
     // adresa mape ove skripte (vrh repozitorija); fontovi su u njezinoj mapi fonts/
-    const MAPA = ((document.currentScript && document.currentScript.src) || 'https://notturno-labs.github.io/martimex-hr-chat/jedan-ekran.js')
+    const KORIJEN = ((document.currentScript && document.currentScript.src) || 'https://notturno-labs.github.io/martimex-hr-chat/jedan-ekran.js')
       .replace(/[?#].*$/, '').replace(/[^\/]*$/, '');
-    const KORIJEN = MAPA;
     const MIRNO = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
     const MOBITEL = !!(window.matchMedia && window.matchMedia('(max-width: 768px), (pointer: coarse)').matches);
     const PAMCENJE = ['sessionStorage', 'localStorage', 'memory'].indexOf(P.pamcenje) !== -1 ? P.pamcenje : '';
@@ -222,7 +219,6 @@
     const W = ':host .vfrc-widget';
     const PROZOR = W + ' .vfrc-chat';
     const ZAGLAVLJE = PROZOR + ' > .vfrc-header';
-    const SKLOPLJENO = ':host([' + OZNAKA + '~="sklopljeno"]) .vfrc-widget';
     const PORUKE = PROZOR + ' > div:has(> .vfrc-chat-dialog)';             // dio koji se pomiče (poruke)
     const RED_UNOSA = W + ' div:has(> .vfrc-input-container)';
     const OKO_POLJA = W + ' .vfrc-footer div:has(.vfrc-input-container)';
@@ -279,7 +275,6 @@
         --mx-j-roza-60: ${prozirna(B.roza, .6)};
         --mx-j-roza-35: ${prozirna(B.roza, .35)};
         --mx-j-font: ${P.font};
-        --mx-j-font-natpisa: ${P.fontNatpisa};
         /* sjena bijele kartice na bjelokosti: tanka topla linija i meka sjena ispod */
         --mx-j-sjena: 0 0 0 1px rgba(60, 40, 30, .05), 0 10px 26px -16px rgba(60, 40, 30, .32), 0 2px 5px -3px rgba(60, 40, 30, .12);
         --mx-j-glatko: cubic-bezier(.16, 1, .3, 1);
@@ -338,7 +333,7 @@
         transform: translateX(-50%);
         padding-left: .34em;                  /* optički centrira razmaknuta slova */
         font-family: var(--mx-j-font);        /* isti font kao poruke (Jost) */
-        font-size: ${P.podnatpis ? 16 : 16}px;
+        font-size: 16px;
         font-weight: 500;
         line-height: ${P.podnatpis ? 24 : VISINA_TRAKE}px;
         letter-spacing: .34em;
@@ -383,7 +378,7 @@
       /* ═══ POZORNICA S TRAKAMA LOGOTIPA (umetnuta ispod trake) ═══ */
       :host .mx-j {
         position: relative;
-        z-index: 4;                           /* natpis ispod nje sjedne u traku kad se sklopi */
+        z-index: 4;                           /* roza crta i prijelaz ispod pozornice (::after) leže preko poruka */
         flex: none;
         font-family: var(--mx-j-font);
         -webkit-user-select: none;
@@ -859,9 +854,9 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       korijen.appendChild(stil);
     }
 
-    // Fontovi (Jost i Cormorant Garamond iz mape fonts/) idu u <head>
-    // stranice: fontovi iz <head> vrijede i unutar shadow roota. Ako ih je
-    // neki drugi modul već učitao, ne učitavaju se opet.
+    // Font (Jost iz mape fonts/) ide u <head>
+    // stranice: fontovi iz <head> vrijede i unutar shadow roota. Ako ga je
+    // neki drugi modul već učitao, ne učitava se opet.
     function ubaciFontove() {
       if (!document.head) return;
       const rasponi = {
@@ -879,19 +874,17 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
         }).join('\n');
         document.head.appendChild(stil);
       }
-      if (!document.getElementById('mx-pocetna-font-300')) dodaj('mx-pocetna-font-300', [['MX Jost', 'jost', '300']]);
-      if (document.getElementById('mx-kartice-font') || document.getElementById('mx-pocetna-font') || document.getElementById('mx-tema-font') || document.getElementById('mx-jedan-font')) return;
-      dodaj('mx-jedan-font', [['MX Jost', 'jost', '400 600'], ['MX Cormorant', 'cormorant-garamond', '500 700']]);
+      if (document.getElementById('mx-kartice-font') || document.getElementById('mx-jedan-font')) return;
+      dodaj('mx-jedan-font', [['MX Jost', 'jost', '400 600']]);
     }
 
 
     // ═══════════════════════════════════════════════════════════════════
     //  POZORNICA — element ispod Voiceflowova zaglavlja
     // ═══════════════════════════════════════════════════════════════════
-    function el(oznaka, klasa, sadrzaj) {
+    function el(oznaka, klasa) {
       const e = document.createElement(oznaka);
       if (klasa) e.className = klasa;
-      if (sadrzaj) e.textContent = sadrzaj;
       return e;
     }
 
@@ -902,11 +895,10 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       const trake = el('div', 'mx-j-trake');
       const popis = Array.isArray(M.trake) ? M.trake : [];
       const redovi = [];                     // za svaku traku: kako je napuniti i provjeriti
-      popis.forEach(function (t, i) {
+      popis.forEach(function (t) {
         const logotipi = (t && Array.isArray(t.logotipi) ? t.logotipi : []).map(function (x) { return String(x || '').trim(); }).filter(function (x) { return x && SLICICE[x]; });
         if (!logotipi.length) return;
         const traka = el('div', 'mx-j-traka' + (t.smjer === 'desno' ? ' mx-j-traka-desno' : ''));
-        traka.style.setProperty('--mx-j-i', i);
         traka.style.setProperty('--mx-j-trajanje', broj(t.brzina, 70, 10, 600) + 's');
         const tok = el('div', 'mx-j-tok');
         traka.appendChild(tok);
@@ -974,13 +966,12 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
         korijen.style.setProperty('--mx-j-boja-logotipa', filter);
       }
 
-      let visina = 230, ziv = false, izmjereno = false;
+      let visina = 230, izmjereno = false;
 
       return {
         el: korijen,
-        ziv: function () { return ziv; },
         // visina otvorene pozornice prema visini prozora chata; trake se
-        // po potrebi smanje da stanu iznad natpisa
+        // po potrebi smanje da stanu na pozornicu
         mjeri: function (visinaProzora) {
           if (!(visinaProzora > 0)) return;              // prozor se još ne vidi (zatvoren chat)
           const p = P.pozornica || {};
@@ -1007,21 +998,10 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
             }
           }
         },
-        // pozornica otvorena: trake se pojave ispočetka
-        pokazi: function () {
-          ziv = true;
-          korijen.classList.remove('mx-j-ulaz', 'mx-j-spremno');
-          void korijen.offsetWidth;                       // da se pojava ponovi
-          korijen.classList.add('mx-j-ulaz', 'mx-j-spremno');
-        },
-        // chat zatvoren
-        sakrij: function () { ziv = false; korijen.classList.remove('mx-j-spremno'); },
         // sklapanje: trake izblijede dok se pozornica sklapa
         sklopi: function (odmah) {
-          ziv = false;
           korijen.classList.toggle('mx-j-odmah', !!odmah);
           korijen.classList.add('mx-j-sklopljeno');
-          korijen.classList.remove('mx-j-ulaz');
         },
         rasiri: function (odmah) {
           korijen.classList.toggle('mx-j-odmah', !!odmah);
@@ -1035,7 +1015,7 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
     // ═══════════════════════════════════════════════════════════════════
     //  VEZA S VOICEFLOWOM
     // ═══════════════════════════════════════════════════════════════════
-    const S = { host: null, kor: null, pozornica: null, sklopljeno: false, otvoren: false, promatracVelicine: null, prozor: null, ceka: false, tipka: false, tipkaCeka: 0 };
+    const S = { kor: null, pozornica: null, sklopljeno: false, otvoren: false, promatracVelicine: null, prozor: null, ceka: false, tipka: false, tipkaCeka: 0 };
 
     function kupacJeOdgovorio(kor) { return !!kor.querySelector('.vfrc-chat .vfrc-user-response'); }
     function imaRazgovor(kor) { return !!kor.querySelector('.vfrc-chat .vfrc-system-response, .vfrc-chat .vfrc-user-response'); }
@@ -1048,28 +1028,17 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       return !ploca.hasAttribute('inert') && getComputedStyle(g).display !== 'none' && !imaRazgovor(kor);
     }
 
-    // stanje na elementu chata (za CSS): "otvoreno", "sklopljeno" ili "sklopljeno odmah"
-    function oznaci(sklopljeno, odmah) {
-      const h = S.host;
-      if (!h) return;
-      const v = sklopljeno ? (odmah ? 'sklopljeno odmah' : 'sklopljeno') : 'otvoreno';
-      if (h.getAttribute(OZNAKA) !== v) h.setAttribute(OZNAKA, v);
-    }
-
     function sklopi(odmah) {
       if (!S.pozornica || S.sklopljeno) return;
       odmah = !!odmah || MIRNO.matches;
       S.sklopljeno = true;
-      oznaci(true, odmah);
       S.pozornica.sklopi(odmah);
     }
 
     function rasiri(odmah) {
       if (!S.pozornica || !S.sklopljeno) return;
       S.sklopljeno = false;
-      oznaci(false);
       S.pozornica.rasiri(!!odmah || MIRNO.matches);
-      if (S.otvoren) S.pozornica.pokazi();
     }
 
     // Treba li pozornica biti sklopljena: čim je kupac odgovorio (razgovor
@@ -1122,11 +1091,7 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
         // još dok Marti tipka pozdrav (dok je chat zatvoren, bez animacije)
         rasiri(!S.otvoren);
       }
-      if (S.otvoren) {
-        // prozor se pojavio tek nakon otvaranja: flakon i razgovor kreću sad
-        if (!S.sklopljeno && !S.pozornica.ziv()) S.pozornica.pokazi();
-        zapocni();
-      }
+      if (S.otvoren) zapocni();
     }
     // (setTimeout, a ne requestAnimationFrame: radi i dok je kartica u pozadini)
     function uskladiUskoro() {
@@ -1149,15 +1114,12 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       if (!kor || !prikvaci(kor)) return;     // prozor još ne postoji: uskladi() nastavi kad se pojavi
       S.tipka = false;                         // polje više nema fokus (prozor se tek otvara)
       if (trebaSklopiti(kor)) sklopi(true);    // postojeći razgovor: odmah sklopljeno, bez animacije
-      else { rasiri(true); S.pozornica.pokazi(); }
+      else rasiri(true);
       zapocni();
     }
 
     function zatvoreno() {
       S.otvoren = false;
-      const p = S.pozornica;
-      // animacija staje kad se prozor spusti (Voiceflow ga spušta 0,3 s)
-      if (p) setTimeout(function () { if (!S.otvoren) p.sakrij(); }, 400);
     }
 
     // Voiceflow javlja otvaranje i zatvaranje chata porukom na window
@@ -1260,10 +1222,8 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       ubaciFontove();
       pratiOtvaranje();
       cekajHost(function (host) {
-        S.host = host;
         S.kor = host.shadowRoot;
         ubaciStil(S.kor);
-        oznaci(false);
         pratiPolje(S.kor);
         new MutationObserver(function () { imenaGumba(S.kor); ikoneGumba(S.kor); uskladiUskoro(); })
           .observe(S.kor, { childList: true, subtree: true });

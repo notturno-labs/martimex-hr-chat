@@ -1,15 +1,11 @@
 /* ============================================================
    MARTI CHAT – loader.js
    Stranica (martimex.hr) sama učitava Voiceflow widget.
-   Ovaj file mu dodaje skripte s GitHuba (a kasnije po potrebi i CSS).
+   Ovaj file mu dodaje skripte s GitHuba.
    ============================================================ */
 (function () {
 
   /* ---------- POSTAVKE – ovo smiješ mijenjati ---------- */
-
-  // CSS s izgledom chata – za sada ga nema.
-  // Kad ga napraviš, ovdje upiši ime filea, npr. 'widget-style.css'.
-  var CSS_FILE = '';
 
   // Skripte koje se učitavaju prije pokretanja chata – jedno ime po retku.
   // Redak koji počinje s # se preskače (tako privremeno isključiš modul).
@@ -30,9 +26,6 @@
     jedan-ekran.js
     pozdrav-bez-tipkanja.js
   `;
-
-  // Ostale Voiceflow postavke koje želiš dodati s GitHuba (za sada ništa).
-  var DODATNO = {};
 
   /* ---------- ISPOD OVOGA NE TREBAŠ DIRATI ---------- */
 
@@ -90,9 +83,8 @@
         .map(sigurno);
 
       var odModula = window.MartimexVoiceflow || {};
-      var cfg = Object.assign({}, DODATNO, odModula);
-      cfg.assistant = Object.assign({}, DODATNO.assistant, odModula.assistant, { extensions: ekstenzije });
-      if (CSS_FILE) cfg.assistant.stylesheet = BASE + CSS_FILE + '?v=' + v;
+      var cfg = Object.assign({}, odModula);
+      cfg.assistant = Object.assign({}, odModula.assistant, { extensions: ekstenzije });
 
       window.MartimexConfig = cfg;  // za kraću verziju koda na stranici
       if (typeof window.__martimexGitHub === 'function') window.__martimexGitHub(cfg);
