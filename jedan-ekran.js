@@ -1,3 +1,4 @@
+// Ukratko: Izgled prozora chata s logotipima brendova
 (function () {
   // ═════════════════════════════════════════════════════════════════════
   //  MARTIMEX — chat s Marti na JEDNOM ekranu (izgled "Jedan ekran")
