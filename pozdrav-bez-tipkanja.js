@@ -154,15 +154,12 @@
     /* "Smanji pokrete": pozdrav se samo tiho pojavi, bez zamućenja i pomaka */
     @media (prefers-reduced-motion: reduce) {
       ${AVATAR}, ${PORUKA} { animation: mx-p-svjetlo .8s ease backwards; }
-      ${GUMB}, ${GUMB}:nth-child(n) { animation: mx-p-svjetlo .6s ease backwards; animation-delay: .3s !important; }
+      ${GUMB}:nth-child(n) { animation: mx-p-svjetlo .6s ease backwards; animation-delay: .3s !important; }
     }
   `;
   function ubaciStil(kor) {
-    const stari = kor.querySelector('style[data-mx-pozdrav]');
-    if (stari && stari.getAttribute('data-mx-pozdrav') === '3') return;
-    if (stari) stari.remove();
     const stil = document.createElement('style');
-    stil.setAttribute('data-mx-pozdrav', '3');
+    stil.setAttribute('data-mx-pozdrav', '');
     stil.textContent = CSS;
     kor.appendChild(stil);
   }

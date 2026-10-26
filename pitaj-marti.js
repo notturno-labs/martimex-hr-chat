@@ -257,7 +257,7 @@
         if (c.nodeType !== 1) continue;
         const t = String(c.tagName).toUpperCase();
         if (/^(SCRIPT|STYLE|TEMPLATE|NOSCRIPT|BUTTON|SVG|IMG|IFRAME)$/.test(t)) continue;
-        if (c.classList && c.classList.contains('product__show-description')) continue;   // "Prikaži više"
+        if (c.classList && c.classList.contains('product__show-description')) continue;   // "Pročitaj više"
         if (t === 'BR') { novi(); continue; }
         const blok = BLOK.test(t);
         if (blok) novi();
@@ -1176,9 +1176,6 @@
       okvir = requestAnimationFrame(function () { uskladiSaKosaricom(omotGumba, sekcijaProizvoda() || sekcija); });
     });
   }
-
-  // za probe i otklanjanje grešaka
-  window.MartimexPitajMarti = { verzija: 2, procitajArtikl: procitajArtikl, razgovorZastario: razgovorZastario };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () {
     try { pokreni(); } catch (e) { console.warn('[Martimex] Pitaj Marti nije pokrenut:', e); }

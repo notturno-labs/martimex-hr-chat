@@ -3,36 +3,33 @@
   //  MARTIMEX — dok Marti smišlja odgovor: "perlice na niti" (v2)
   //
   //  Dok Marti priprema odgovor, Voiceflow u razgovoru prikaže oblačić s
-  //  tri sive točkice. Ovaj modul ih zamijeni mirnom, glatkom animacijom u
-  //  stilu zaglavlja s flakonom:
+  //  tri sive točkice. Ovaj modul ih zamijeni mirnom, glatkom animacijom:
   //
   //   - oblačić meko izroni (kao Martine poruke), a avatar se tiho pojavi
-  //   - tanka nit od sitnih točkica boje ružičastog zlata (kao niti od
-  //     točkica od kojih je satkan flakon u zaglavlju) iscrta se slijeva
+  //   - tanka nit od sitnih točkica boje ružičastog zlata iscrta se slijeva
   //     nadesno, a na nju jedna za drugom meko sjednu tri crne perlice
   //     (boja teksta, kao avatar i kupčeve poruke); nit pod svakom malo
   //     popusti, kao svila
   //   - zatim se nit polako njiše: val putuje slijeva nadesno, pa se perlice
   //     dižu i spuštaju jedna za drugom, kao kad netko tipka. S vrhom vala
-  //     putuje meko zlatno svjetlo (kao odsjaj koji prelazi preko flakona):
-  //     nit tamo zasja zlatom, a perla dobije topli odsjaj odozgo. Perle su
-  //     sjajne, s mekom sjenom ispod
+  //     putuje meko zlatno svjetlo: nit tamo zasja zlatom, a perla dobije
+  //     topli odsjaj odozgo. Perle su sjajne, s mekom sjenom ispod
   //   - ako odgovor potraje (dulje od natpisNakon), oblačić se glatko
   //     proširi i iz blage izmaglice se pojavi natpis "Trenutak, molim…";
   //     svjetlo koje stigne do kraja niti zatim prijeđe i preko natpisa.
   //     Između dviju Martinih poruka zaredom Voiceflow nakratko prikaže isti
   //     oblačić; tada se vide samo perlice
   //   - kad stigne odgovor, oblačić ne nestane naglo: perle se rasplinu u
-  //     mali oblak izmaglice (kao točkice na pozornici "Jednog ekrana"),
-  //     točkice niti otplove, natpis se zamuti, a oblačić tiho izblijedi dok
-  //     se na njegovu mjestu pojavljuje Martina poruka
+  //     mali oblak izmaglice, točkice niti otplove, natpis se zamuti, a
+  //     oblačić tiho izblijedi dok se na njegovu mjestu pojavljuje Martina
+  //     poruka
   //   - prije prvog Martinog pozdrava oblačića nema (pozdrav-bez-tipkanja.js
   //     ga sakrije, a skriveni oblačić se ne animira)
   //
   //  Sve se crta točno prema vremenu, u barem dvostrukoj razlučivosti (i na
   //  običnom zaslonu glatko, bez treperenja), i samo dok je oblačić u chatu.
-  //  Boju i oblik oblačića daje izgled chata (npr. bijela kartica u pokusu
-  //  "Jedan ekran"); modul mu samo prilagodi visinu i razmak. Ako je na
+  //  Boju i oblik oblačića daje izgled chata (bijela kartica iz
+  //  jedan-ekran.js); modul mu samo prilagodi visinu i razmak. Ako je na
   //  uređaju uključeno "Smanji pokrete", nit je ravna, perlice miruju,
   //  oblačić se samo tiho pojavi, a natpis je tu odmah i bez odsjaja.
   //
@@ -90,7 +87,7 @@
     const B = P.boje;
     const HOST = 'voiceflow-chat';          // element u čiji shadow DOM Voiceflow crta chat
     const TOCKICE = '.vfrc-typing-indicator';  // Voiceflowova službena klasa točkica
-    const OZNAKA = 'data-mx-cekanje';       // atribut na #voiceflow-chat (selektori su jači od tema)
+    const OZNAKA = 'data-mx-cekanje';       // atribut na #voiceflow-chat (selektori su jači od onih u jedan-ekran.js)
     const MIRNO = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 
     function rgb(hex) {
@@ -299,7 +296,7 @@
 
     // ── STIL ─────────────────────────────────────────────────────────────
     // Selektori počinju s :host([data-mx-cekanje]), pa su jači od
-    // Voiceflowovih i od izgleda chata (teme stiliziraju i "točkice > span").
+    // Voiceflowovih i od izgleda chata (jedan-ekran.js stilizira i "točkice > span").
     // Točkice u kojima je animacija, oblačić i avatar uz njih modul označi
     // atributima (bez :has(), pa radi i u starijim preglednicima)
     const W = ':host([' + OZNAKA + ']) .vfrc-widget';
@@ -334,8 +331,8 @@
       ${ZIVO} { display: flex; align-items: center; gap: 0; }
       ${ZIVO} > :not(.mx-c) { display: none; }     /* Voiceflowove tri točkice */
 
-      /* animacija i natpis (teme stiliziraju svaki span u točkicama, pa se
-         to ovdje poništi) */
+      /* animacija i natpis (jedan-ekran.js stilizira svaki span u točkicama,
+         pa se to ovdje poništi) */
       ${ZIVO} > .mx-c {
         all: unset;
         display: flex;
@@ -437,13 +434,10 @@
       }
     `;
 
-    // Stil ide u shadow root chata (jednom; starija verzija se zamijeni)
+    // Stil ide u shadow root chata (jednom)
     function ubaciStil(korijen) {
-      const stari = korijen.querySelector('style[data-mx-cekanje]');
-      if (stari && stari.getAttribute('data-mx-cekanje') === '2') return;
-      if (stari) stari.remove();
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-cekanje', '2');
+      stil.setAttribute('data-mx-cekanje', '');   // oznaka (da se u DevToolsu vidi čiji je stil)
       stil.textContent = CSS;
       korijen.appendChild(stil);
     }

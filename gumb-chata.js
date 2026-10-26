@@ -354,13 +354,10 @@
       }
     `;
 
-    // Stil ide u shadow root chata (jednom; starija verzija se zamijeni)
+    // Stil ide u shadow root chata (jednom)
     function ubaciStil(korijen) {
-      const stari = korijen.querySelector('style[data-mx-gumb]');
-      if (stari && stari.getAttribute('data-mx-gumb') === '8') return;
-      if (stari) stari.remove();
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-gumb', '8');
+      stil.setAttribute('data-mx-gumb', '8');   // oznaka (samo za snalaženje u alatima preglednika)
       stil.textContent = CSS;
       korijen.appendChild(stil);
     }
@@ -371,7 +368,6 @@
     function ubaciFont() {
       if (!document.head) return;
       if (document.getElementById('mx-gumb-font') || document.getElementById('mx-jedan-font') ||
-          document.getElementById('mx-pocetna-font') || document.getElementById('mx-tema-font') ||
           document.getElementById('mx-kartice-font')) return;
       const rasponi = {
         'latin': 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD',
