@@ -38,8 +38,7 @@
   //     artiklom; ako uz launch ne stigne kartica, pošalje se događaj
   //  S izgledom "Jedan ekran" (jedan-ekran.js, kakav je na martimex.hr)
   //  chat se otvori kao i inače, samo umjesto pozdrava dođu kartica i
-  //  pitanje; s dosadašnjim početnim ekranom (pocetna-chata.js) taj se
-  //  ekran preskoči.
+  //  pitanje.
   //
   //  Tehnički: modul dodaje Voiceflowu postavku launch.event (preko
   //  window.MartimexVoiceflow, koji loader.js preda Voiceflowu). Njezin
@@ -630,22 +629,6 @@
     if (!pratiChat && !chatPostoji()) pratiChat = setInterval(provjeriChat, 1000);
   }
 
-  // Početni ekran (pocetna-chata.js) se preskače: sakrije se odmah i
-  // "pritisne" se njegov gumb "Početak" (bez tipkovnice, pa polje za poruku
-  // ne dobije fokus). Ako razgovor još ne postoji, taj gumb sam pokrene
-  // razgovor (Voiceflowovim gumbom za početak), a launch tada nosi artikl.
-  function preskociPocetni(kor) {
-    const p = kor.querySelector(PROZOR + ' .mx-p');
-    if (!p || p.classList.contains('mx-p-izlaz')) return false;
-    const g = p.querySelector('.mx-p-gumb');
-    if (!g) return false;
-    p.style.visibility = 'hidden';
-    try { g.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 })); }
-    catch (e) { return false; }
-    zapis('početni ekran preskočen');
-    return true;
-  }
-
   // ── 4. PRAĆENJE ODGOVORA ──────────────────────────────────────────────
   // Gleda pojavljuje li se u chatu NOVA kartica artikla ili NOVO Martino
   // pitanje, i kad stigne prva nova Martina poruka (bilo koja, npr. obični
@@ -785,10 +768,6 @@
     const prati = pratiOdgovor(kor);
     const launchGotov = cekajInterakciju('launch', P.cekajOdgovor);
 
-    // s početnim ekranom (pocetna-chata.js) razgovor pokrene njegov gumb
-    // "Početak"; Voiceflowov gumb se pritisne samo ako to nije učinio on
-    const bezRazgovora = cekaPocetak(kor);
-    if (preskociPocetni(kor) && bezRazgovora) await cekajUvjet(function () { return !cekaPocetak(kor); }, 1000);
     if (cekaPocetak(kor)) {
       zapis('launch s artiklom');
       try { kor.querySelector(START).click(); } catch (e) { /* nije bitno */ }
@@ -855,7 +834,6 @@
 
   // Razgovor traje: chat se otvori, a artikl ide događajem
   async function posaljiUsredRazgovora(kor, artikl) {
-    preskociPocetni(kor);
     otvoriChat();
     await sljedeciOkvir();
     await posaljiIPrati(kor, artikl, 'dogadaj', true);
@@ -865,7 +843,6 @@
   // neaktivnosti završio, pa događaj u njemu ne bi dobio odgovor): pokrene
   // se novi razgovor s artiklom
   async function pokreniIznova(kor, artikl) {
-    preskociPocetni(kor);
     otvoriChat();
     await sljedeciOkvir();
     // otvaranje je možda pokazalo Voiceflowov gumb za početak (razgovor
@@ -927,7 +904,6 @@
       // isti artikl (ista varijanta) već je na dnu razgovora: chat se samo otvori
       if (!zastario && zadnji && zadnji.kljuc === kljucArtikla(artikl) && karticaNaDnu(kor, zadnji.kartica) && !cekaPocetak(kor)) {
         zapis('isti artikl je već u razgovoru');
-        preskociPocetni(kor);
         otvoriChat();
         return;
       }
