@@ -34,8 +34,6 @@
   //  Oslanja se na klasu .vfrc-launcher, koju Voiceflow službeno podržava
   //  za prilagodbu. Ako Voiceflow jednog dana promijeni gumb, izgled
   //  izostane, a chat radi normalno.
-  //  Pregled bez Voiceflowa: pokusi/gumb/pregled.html. Izvornik ikone:
-  //  ikone/oblacic.svg.
   // ═════════════════════════════════════════════════════════════════════
 
   if (window.__mxGumbChata) return;   // zaštita ako se modul učita dvaput
@@ -297,7 +295,7 @@
       }
       :host ${TOCKICE} > i {
         position: absolute;
-        top: ${10 - POLJE / 2}px;             /* sredina točkice na y = 10, kao u ikone/oblacic.svg */
+        top: ${10 - POLJE / 2}px;             /* sredina točkice na y = 10, kao u ikoni oblačića (OBLACIC) */
         width: ${POLJE}px;
         height: ${POLJE}px;
         margin: 0;
@@ -520,11 +518,8 @@
       });
     }
 
-    return { pokreni: pokreni, css: CSS, tockice: TOCKICE_HTML };
+    return { pokreni: pokreni };
   })();
-
-  window.__mxGumbChataCss = MX_GUMB.css;   // samo za stranicu s pregledom (pokusi/gumb/pregled.html)
-  window.__mxGumbChataTockice = MX_GUMB.tockice;
 
   try { MX_GUMB.pokreni(); }
   catch (e) { console.warn('[Martimex] Izgled gumba chata nije postavljen:', e); }

@@ -34,7 +34,6 @@
       proba.html?stranica=kontakt         → stranica Kontakt (gumb "Pitaj Marti" samo otvori chat)
       &kolacici=ceka                      → kao martimex.hr: chat se učita tek kad se prihvate kolačići (gumb u traci)
       &pitajmarti=debug                   → zapisi modula u konzoli preglednika
-      &izgled=dosadasnji                  → dosadašnji početni ekran (pocetna-chata.js), samo za usporedbu
   -->
   <!-- Stil s martimex.hr, kopiran u repozitorij (martimex-stil.css i martimex-stil-mobitel.css, uz ovu stranicu).
        Ne učitava se izravno s martimex.hr jer martimex.hr ime svoje datoteke sa stilom mijenja kad god obnovi
@@ -191,20 +190,6 @@
       .mx-bez-stila .product__title-wrap h1 { font-size: 27px; }
     }
   </style>
-  <script>
-    // Izgled chata je onaj iz loader.js, kao na martimex.hr ("Jedan ekran").
-    // Samo za usporedbu: ?izgled=dosadasnji → dosadašnji početni ekran
-    // (pocetna-chata.js), isto kao na testnoj stranici proba.html na vrhu repozitorija
-    (function () {
-      if (new URLSearchParams(location.search).get('izgled') !== 'dosadasnji') return;
-      window.__mxJedanEkran = true;   // jedan-ekran.js (iz loader.js) se ne pokreće
-      window.__mxTemaChata = true;    // ni tema-chata.js, ako se uključi u loader.js
-      window.MartimexVoiceflow = Object.assign(window.MartimexVoiceflow || {}, { autostart: false, assistant: { persistence: 'sessionStorage' } });
-      var s = document.createElement('script');
-      s.src = '../../pocetna-chata.js?v=' + Math.floor(Date.now() / 60000);
-      document.head.appendChild(s);
-    })();
-  </script>
   <script>
     // Koja je stranica: ?stranica=kontakt → Kontakt, inače stranica proizvoda.
     // MXP.adresa({ ... }) složi adresu ove stranice s promijenjenim

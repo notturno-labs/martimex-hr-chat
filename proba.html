@@ -4,31 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Marti – testna stranica</title>
-  <script>
-    // Chat je isti kao na martimex.hr: loader.js (iz iste mape kao ova
-    // stranica, pa radi i kad se grana gleda preko raw.githack.com) učita
-    // module, među njima jedan-ekran.js — chat na jednom ekranu s trakama
-    // brendova i Martinim pozdravom s ikonama — i gumb-chata.js (gumb chata).
-    //   proba.html                     → kao na martimex.hr
-    //   proba.html?popust=1            → uz to probni popusti na karticama artikla (vidi dolje)
-    //   proba.html?izgled=dosadasnji   → dosadašnji početni ekran (pocetna-chata.js), za usporedbu
-    (function () {
-      if (new URLSearchParams(location.search).get('izgled') !== 'dosadasnji') return;
-      window.__mxJedanEkran = true;   // jedan-ekran.js (iz loader.js) se ne pokreće
-      window.__mxTemaChata = true;    // ni tema-chata.js, ako se uključi u loader.js
-      // Voiceflow: razgovor kreće tek gumbom "Početak" (to postavi i pocetna-chata.js;
-      // ovdje je da sigurno stigne prije nego loader.js preda postavke Voiceflowu)
-      window.MartimexVoiceflow = { autostart: false, assistant: { persistence: 'sessionStorage' } };
-      var s = document.createElement('script');
-      s.src = new URL('pocetna-chata.js', location.href).href + '?v=' + Math.floor(Date.now() / 60000);
-      document.head.appendChild(s);
-    })();
-  </script>
+  <!--
+    Chat je isti kao na martimex.hr: loader.js (iz iste mape kao ova
+    stranica, pa radi i kad se grana gleda preko raw.githack.com) učita
+    module, među njima jedan-ekran.js — chat na jednom ekranu s trakama
+    brendova i Martinim pozdravom s ikonama — i gumb-chata.js (gumb chata).
+      proba.html            → kao na martimex.hr
+      proba.html?popust=1   → uz to probni popusti na karticama artikla (vidi dolje)
+  -->
 </head>
 <body>
   <h1>Testna stranica za Marti chat</h1>
   <p>Ova stranica glumi martimex.hr. Chat je u kutu ekrana, isti kao na webshopu: razgovor kreće sam kad se chat otvori.</p>
-  <p><a href="?">Chat kao na martimex.hr</a> · <a href="?popust=1">S probnim popustima na karticama</a> · <a href="?izgled=dosadasnji">Dosadašnji početni ekran (za usporedbu)</a></p>
+  <p><a href="?">Chat kao na martimex.hr</a> · <a href="?popust=1">S probnim popustima na karticama</a></p>
 
   <!-- Marti chat (Martimex) – ovaj kod se ne mijenja, sve izmjene rade se na GitHubu -->
   <script>

@@ -15,14 +15,9 @@
   // Redak koji počinje s # se preskače (tako privremeno isključiš modul).
   // jedan-ekran.js je izgled "Jedan ekran": chat bez početnog ekrana, s crnom
   // trakom MARTI, pozornicom s logotipima brendova i Martinim pozdravom s
-  // ikonama na gumbima (vidi proba.html). Zamijenio je pocetna-chata.js
-  // (dosadašnji početni ekran), koji ostaje ovdje isključen za povratak:
-  // stavi # ispred jedan-ekran.js, a makni ga ispred pocetna-chata.js. Da
-  // se vide i perlice iz cekanje-odgovora.js, u Voiceflowu projekta s
-  // webshopa za prikaz čekanja odgovora odabere se "dots" (pa Publish).
-  // tema-chata.js je izgled chata "Calacatta" (bijeli i crni mramor sa
-  // zlatom; proba: proba-staklo.html); kad se odobri, makne se # ispred
-  // njega i izgled vrijedi na martimex.hr.
+  // ikonama na gumbima (vidi proba.html). Da se vide i perlice iz
+  // cekanje-odgovora.js, u Voiceflowu projekta s webshopa za prikaz
+  // čekanja odgovora odabere se "dots" (pa Publish).
   // pozdrav-bez-tipkanja.js: Martin pozdrav s gumbima stigne bez točkica i
   // natpisa "Trenutak, molim…", ne ispisuje se slovo po slovo, nego cijeli
   // polagano izroni iz magle; sve ostale poruke ispisuju se slovo po slovo
@@ -34,8 +29,6 @@
     cekanje-odgovora.js
     jedan-ekran.js
     pozdrav-bez-tipkanja.js
-    # pocetna-chata.js
-    # tema-chata.js
   `;
 
   // Ostale Voiceflow postavke koje želiš dodati s GitHuba (za sada ništa).
@@ -50,7 +43,7 @@
   var v = Math.floor(Date.now() / 60000);                         // nova oznaka svake minute
 
   window.MartimexExtensions = window.MartimexExtensions || [];
-  // Voiceflow postavke koje traže moduli (npr. pocetna-chata.js isključuje
+  // Voiceflow postavke koje traže moduli (npr. jedan-ekran.js isključuje
   // autostart); kad se modul isključi, nestane i njegova postavka
   window.MartimexVoiceflow = window.MartimexVoiceflow || {};
 

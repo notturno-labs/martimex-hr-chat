@@ -13,8 +13,8 @@
   //   - ispod nje, u istoj toploj crnoj boji, je niska pozornica: tri
   //     tanke, diskretne trake s malim logotipima parfemskih i modnih kuća
   //     koje Martimex prodaje (Chanel, Hermès, Guerlain ... Lancôme, Estée
-  //     Lauder; sličice su u mapi marke/trake/, izrezane iz marke/izvor.webp
-  //     skriptom marke/izradi-trake.py). Logotipi su prigušeno bijeli, jedan
+  //     Lauder; sličice su ugrađene u modul, vidi SLIČICE LOGOTIPA niže).
+  //     Logotipi su prigušeno bijeli, jedan
   //     pokraj drugoga, i polako putuju: gornja traka ulijevo, srednja
   //     udesno, donja ulijevo, svaka malo drugom brzinom, bez kraja (traka
   //     se sašije sama sa sobom, pa nema skoka). Nijedna traka nikad nije
@@ -28,8 +28,8 @@
   //     su tamne (tinta), ponuđeni odgovori su pilule s tankim tamnim
   //     obrubom koje se pod mišem (ili prstom) ispune tamnom bojom; glavni
   //     odgovori (status narudžbe, Loyalty Card, reklamacija, plaćanje,
-  //     beauty savjetnik) imaju lijevo tanku ikonu (originali u mapi
-  //     ikone/; POSTAVKE: ikoneGumba), koja na ispunjenoj piluli posvijetli
+  //     beauty savjetnik) imaju lijevo tanku ikonu (POSTAVKE: ikoneGumba),
+  //     koja na ispunjenoj piluli posvijetli
   //   - polje za poruku je bijela kapsula s tankim toplim rubom; gumb za
   //     slanje je taman krug tek kad ima što poslati
   //   - čim kupac pošalje prvu poruku ili pritisne ponuđeni odgovor,
@@ -65,11 +65,9 @@
   //  "autostart", pa se razgovor pokrene tek otvaranjem chata (modul tada
   //  pritisne Voiceflowov skriveni gumb za početak, kao nekad "Početak").
   //  Ako modul zakaže, chat radi kao Voiceflowov.
-  //  Ne ide uz pocetna-chata.js ni tema-chata.js (oni su drugi izgled).
-  //  Gdje radi: loader.js ga učitava umjesto pocetna-chata.js (dosadašnjeg
-  //  početnog ekrana), pa vrijedi na martimex.hr i na testnoj stranici
-  //  proba.html (vrh repozitorija); povratak na stari izgled: vidi loader.js.
-  //  Probe: pokusi/trake/proba.html i, bez Voiceflowa, pokusi/trake/mock.html.
+  //  Gdje radi: učitava ga loader.js, pa vrijedi na martimex.hr i na
+  //  testnim stranicama proba.html (vrh repozitorija) i
+  //  pokusi/pitaj-marti/proba.html.
   // ═════════════════════════════════════════════════════════════════════
 
   if (window.__mxJedanEkran) return;   // zaštita ako se modul učita dvaput
@@ -124,7 +122,8 @@
     // razgovor (0 = svugdje tek kad pošalje prvu poruku)
     sklopiNaFokus: 700,
 
-    // Trake s logotipima brendova (sličice iz mape marke/trake/, bez .png).
+    // Trake s logotipima brendova (imena kao u SLIČICAMA LOGOTIPA niže;
+    // logotip koji tamo nije ugrađen se preskače).
     // Svaka traka je jedan red; redom odozgo. Smjer: 'lijevo' ili 'desno';
     // brzina: koliko sekundi treba da cijeli red prođe (veće = sporije)
     marke: {
@@ -141,7 +140,7 @@
       rub: 48                 // px: koliko logotipi blijede uz lijevi i desni rub pozornice
     },
 
-    // Koliko dugo Voiceflow pamti razgovor (kao u pocetna-chata.js):
+    // Koliko dugo Voiceflow pamti razgovor:
     // 'sessionStorage' → dok je kartica preglednika otvorena; 'localStorage' →
     // trajno; 'memory' → do sljedećeg učitavanja stranice; '' → kako je u Voiceflowu
     pamcenje: 'sessionStorage'
@@ -182,11 +181,12 @@
 
     // ═══════════════════════════════════════════════════════════════════
     //  SLIČICE LOGOTIPA — ugrađene u modul (data: adrese), da su na
-    //  pozornici odmah, bez čekanja na mrežu; pune sličice su u
-    //  marke/trake/. Blok između oznaka upisuje skripta
-    //  marke/izradi-trake.py: ne mijenja se ručno.
+    //  pozornici odmah, bez čekanja na mrežu. Blok između oznaka je
+    //  izradila skripta marke/izradi-trake.py (iz marke/izvor.webp); obje
+    //  su maknute iz repozitorija, a ostale su na grani
+    //  backup-prije-ciscenja, ako zatreba novi logotip.
     // ═══════════════════════════════════════════════════════════════════
-    // ── SLIČICE LOGOTIPA (generirano: python3 marke/izradi-trake.py)
+    // ── SLIČICE LOGOTIPA
     const SLICICE = {
       'chanel': 'data:image/png;base64,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',
       'hermes': 'data:image/png;base64,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',
@@ -904,7 +904,7 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       const popis = Array.isArray(M.trake) ? M.trake : [];
       const redovi = [];                     // za svaku traku: kako je napuniti i provjeriti
       popis.forEach(function (t, i) {
-        const logotipi = (t && Array.isArray(t.logotipi) ? t.logotipi : []).map(function (x) { return String(x || '').trim(); }).filter(Boolean);
+        const logotipi = (t && Array.isArray(t.logotipi) ? t.logotipi : []).map(function (x) { return String(x || '').trim(); }).filter(function (x) { return x && SLICICE[x]; });
         if (!logotipi.length) return;
         const traka = el('div', 'mx-j-traka' + (t.smjer === 'desno' ? ' mx-j-traka-desno' : ''));
         traka.style.setProperty('--mx-j-i', i);
@@ -927,8 +927,7 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
               logotipi.forEach(function (ime) {
                 const slika = document.createElement('img');
                 slika.className = 'mx-j-logotip';
-                // ugrađena sličica (odmah, bez mreže); ako je nema, datoteka iz marke/trake/
-                slika.src = SLICICE[ime] || (KORIJEN + 'marke/trake/' + encodeURIComponent(ime) + '.png');
+                slika.src = SLICICE[ime];               // ugrađena sličica (odmah, bez mreže)
                 slika.alt = r || q ? '' : ime.replace(/-/g, ' ');
                 slika.draggable = false;
                 if (!r) {
@@ -1271,21 +1270,6 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
           .observe(S.kor, { childList: true, subtree: true });
         uskladi();
         ikoneGumba(S.kor);
-        // sličice logotipa se preuzmu unaprijed, kad preglednik miruje, da su
-        // tu kad se chat otvori
-        const kasnije = window.requestIdleCallback || function (f) { return setTimeout(f, 1200); };
-        kasnije(function () {
-          (Array.isArray(M.trake) ? M.trake : []).forEach(function (t) {
-            (t && Array.isArray(t.logotipi) ? t.logotipi : []).forEach(function (ime) {
-              if (SLICICE[String(ime || '').trim()]) return;          // ugrađena: nema što preuzimati
-              const l = document.createElement('link');
-              l.rel = 'prefetch';
-              l.as = 'image';
-              l.href = KORIJEN + 'marke/trake/' + encodeURIComponent(String(ime || '').trim()) + '.png';
-              document.head.appendChild(l);
-            });
-          });
-        }, { timeout: 2500 });
       });
     }
 
