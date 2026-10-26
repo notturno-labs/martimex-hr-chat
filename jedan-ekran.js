@@ -66,8 +66,7 @@
   //  pritisne Voiceflowov skriveni gumb za početak, kao nekad "Početak").
   //  Ako modul zakaže, chat radi kao Voiceflowov.
   //  Gdje radi: učitava ga loader.js, pa vrijedi na martimex.hr i na
-  //  testnim stranicama proba.html (vrh repozitorija) i
-  //  pokusi/pitaj-marti/proba.html.
+  //  testnoj stranici proba.html.
   // ═════════════════════════════════════════════════════════════════════
 
   if (window.__mxJedanEkran) return;   // zaštita ako se modul učita dvaput
