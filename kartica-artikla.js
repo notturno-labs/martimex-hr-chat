@@ -608,7 +608,7 @@
       .mx-marka + .mx-naziv { margin-top: 4px; }
       /* vrsta mirisa (Eau de Parfum · 100 ml...): ista slova kao marka (Jost, velika,
          razmaknuta), ali sitnija, tanja i siva, pa je diskretna kao i prije.
-         Veličina i razmak slova su takvi da "EAU DE PARFUM · 100 ML" (≈110 px)
+         Veličina i razmak slova su takvi da "EAU DE PARFUM · 100 ML" (≈124 px)
          stane u jedan redak na mobitelu, pokraj bočice.
          Dijelovi su zasebni komadići s točkom ispred sebe. Redak je pomaknut
          ulijevo za širinu točke i taj dio je odrezan (clip-path), pa se točka
@@ -620,7 +620,7 @@
         margin-top: 4px;
         margin-left: -1em;
         clip-path: inset(0 0 0 1em);
-        font-size: 8px;
+        font-size: 9px;
         line-height: 1.5;
         font-weight: 400;
         letter-spacing: .12em;
