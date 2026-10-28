@@ -649,7 +649,9 @@
         user-select: none;
         -webkit-user-drag: none;
       }
-      .mx-marka-logo + .mx-naziv { margin-top: 6px; }
+      .mx-marka-logo + .mx-naziv,
+      .mx-marka-logo + .mx-marka-rezerva + .mx-naziv { margin-top: 6px; }
+      .mx-marka-rezerva { display: none; }   /* ime marke uz logo: samo kad logo ne može */
       /* vrsta mirisa (Eau de Parfum · 100 ml...): ista slova kao marka (Jost, velika,
          razmaknuta), ali sitnija, tanja i siva, pa je diskretna kao i prije.
          Veličina i razmak slova su takvi da "EAU DE PARFUM · 100 ML" (≈124 px)
@@ -1071,6 +1073,10 @@
       @media (forced-colors: active) {
         .mx-stara { text-decoration: line-through; }
         .mx-stara::after { display: none; }
+        /* visoki kontrast: crni logo bi na tamnoj podlozi nestao, pa ime slovima */
+        .mx-marka-logo { display: none; }
+        .mx-marka-rezerva { display: inline; }
+        .mx-marka-logo + .mx-marka-rezerva + .mx-naziv { margin-top: 4px; }
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -1534,16 +1540,42 @@
     const KLJUC_LOGOTIPA = 'mx_logotipi_marki';
     const NAJVISE_LOGOTIPA = 300;
 
-    // "Dolce & Gabbana" → "dolce-gabbana", "Floraïku" → "floraiku" (kao u adresi
-    // stranice marke na martimex.hr)
+    // kao adresa stranice marke na martimex.hr (WordPress): "Dolce&Gabbana" →
+    // "dolcegabbana", "Van Cleef & Arpels" → "van-cleef-arpels", "Floraïku" → "floraiku"
     function slugMarke(s) {
       s = String(s || '');
       if (s.normalize) s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      return s.toLowerCase().replace(/['\u2019`]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      return s.toLowerCase().replace(/['\u2019`&]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     }
-    // ista marka i kad je jedan naziv dulji: "memo" i "memo-paris"
+    // ista marka i kad se razlikuju samo crtice ("dolce-gabbana" i "dolcegabbana")
+    // ili je jedan naziv dulji ("memo" i "memo-paris")
     function istaMarka(a, b) {
-      return !!a && !!b && (a === b || a.indexOf(b + '-') === 0 || b.indexOf(a + '-') === 0);
+      if (!a || !b) return false;
+      return a.replace(/-/g, '') === b.replace(/-/g, '') || a.indexOf(b + '-') === 0 || b.indexOf(a + '-') === 0;
+    }
+
+    // ime marke na stranici proizvoda (JSON-LD ili Alpine podaci), jer se adresa
+    // stranice marke ponekad ne slaže s imenom (Rabanne → /brand/paco-rabanne/)
+    function markaStranice() {
+      try {
+        const skripte = document.querySelectorAll('script[type="application/ld+json"]');
+        for (let i = 0; i < skripte.length; i++) {
+          let d;
+          try { d = JSON.parse(skripte[i].textContent || ''); } catch (e) { continue; }
+          const lista = [].concat(d && d['@graph'] ? d['@graph'] : d);
+          for (let j = 0; j < lista.length; j++) {
+            const x = lista[j];
+            if (!x || [].concat(x['@type'] || []).indexOf('Product') === -1 || !x.brand) continue;
+            const ime = typeof x.brand === 'string' ? x.brand : (x.brand.name || '');
+            if (ime) return tekst(ime);
+          }
+        }
+        const sekcija = document.querySelector('section.product');
+        const A = window.Alpine;
+        const pod = sekcija && A && typeof A.$data === 'function' ? A.$data(sekcija) : null;
+        if (pod && pod.product && pod.product.brandName) return tekst(pod.product.brandName);
+      } catch (e) { /* nema podataka: samo adresa stranice marke */ }
+      return '';
     }
 
     function zapamceniLogotipi() {
@@ -1585,7 +1617,13 @@
           if (src && slug) nadjeni[slug] = src;
         } catch (e) { /* neispravna poveznica: preskoči */ }
       }
-      if (Object.keys(nadjeni).length) zapamtiLogotipe(nadjeni);
+      // stranica proizvoda ima jedan logo: zapamti ga i pod imenom marke
+      const adrese = Object.keys(nadjeni);
+      if (adrese.length === 1) {
+        const ime = slugMarke(markaStranice());
+        if (ime && !nadjeni[ime]) nadjeni[ime] = nadjeni[adrese[0]];
+      }
+      if (adrese.length) zapamtiLogotipe(nadjeni);
       return nadjeni;
     }
 
@@ -1596,7 +1634,7 @@
       const izvori = [logotipiSaStranice(), zapamceniLogotipi()];
       for (let i = 0; i < izvori.length; i++) {
         if (izvori[i][slug]) return sigurniLink(izvori[i][slug]);
-        const k = Object.keys(izvori[i]).filter(function (x) { return istaMarka(x, slug); })[0];
+        const k = Object.keys(izvori[i]).filter(function (x) { return istaMarka(x, slug); })[0];   // npr. "dolcegabbana"
         if (k) return sigurniLink(izvori[i][k]);
       }
       return '';
@@ -1613,8 +1651,10 @@
       else logotipiSaStranice();
     }
 
-    // logo umjesto imena marke; kad se ne učita, vrati se ime slovima
-    function slikaLoga(src, marka, vrh) {
+    // logo umjesto imena marke. Uz logo je i ime slovima, skriveno: pokaže se
+    // kad se logo ne učita i u načinu visokog kontrasta (Windows), gdje bi crni
+    // logo na tamnoj podlozi bio nevidljiv
+    function slikaLoga(src, marka, vrh, rezerva) {
       const img = el('img', 'mx-marka-logo');
       img.alt = marka || '';
       img.decoding = 'async';
@@ -1627,8 +1667,8 @@
       }, { once: true });
       img.addEventListener('error', function () {
         zaboraviLogo(src);
-        if (img.parentNode && marka) img.parentNode.replaceChild(el('span', 'mx-marka', marka), img);
-        else img.remove();
+        img.remove();
+        if (rezerva) rezerva.classList.remove('mx-marka-rezerva');
         centrirajVrh(vrh, true);
       }, { once: true });
       img.src = src;
@@ -1992,9 +2032,10 @@
       // MARKA, NAZIV, CIJENA
       const glava = el('div', 'mx-glava');
       const d = razdvojiNaziv(k.naziv);
-      const logo = k.logo || logoMarke(d.marka);
-      if (logo) glava.appendChild(slikaLoga(logo, d.marka, vrh));
-      else if (d.marka) glava.appendChild(el('span', 'mx-marka', d.marka));
+      const logo = LM.prikazi ? (k.logo || logoMarke(d.marka)) : '';
+      const imeMarke = d.marka ? el('span', logo ? 'mx-marka mx-marka-rezerva' : 'mx-marka', d.marka) : null;
+      if (logo) glava.appendChild(slikaLoga(logo, d.marka, vrh, imeMarke));
+      if (imeMarke) glava.appendChild(imeMarke);
       if (d.naziv) glava.appendChild(el('div', 'mx-naziv', d.naziv));
       if (d.vrsta) {
         // svaki dio vrste (Eau de Parfum, 100 ml, Tester) je zaseban komadić; točke
