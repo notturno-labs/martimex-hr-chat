@@ -159,10 +159,13 @@
     // je kupac (logo iznad naziva artikla), kad je ista marka kao na kartici,
     // i pamti se u pregledniku, pa se poslije vidi i na drugim stranicama.
     // Kad logo nije poznat ili se ne učita, marka je ispisana slovima.
+    // Slika loga se ne reže, nego se cijela poveća. Logotipi na martimex.hr su
+    // slike 100 × 50 s natpisom u sredini, pa su uz širinu 88 px slova loga
+    // velika kao naziv artikla (BORNTOSTANDOUT, Versace).
     logoMarke: {
       prikazi: true,          // false = marka je uvijek ispisana slovima
-      visina: 20,             // px: visina loga (širok logo je niži, da ne bude predug)
-      najvecaSirina: 120      // px: najveća širina loga (vrlo širok logo, npr. CAROLINA HERRERA)
+      sirina: 88,             // px: širina slike loga
+      visina: 44              // px: visina slike loga (pola širine, kao slike na martimex.hr)
     }
   };
 
@@ -181,7 +184,7 @@
     const LM = (function (o) {
       o = o || {};
       const n = function (v, d, min, max) { v = Number(v); return isFinite(v) && v > 0 ? Math.min(max, Math.max(min, v)) : d; };
-      return { prikazi: o.prikazi !== false, visina: n(o.visina, 20, 8, 60), najvecaSirina: n(o.najvecaSirina, 120, 20, 300) };
+      return { prikazi: o.prikazi !== false, sirina: n(o.sirina, 88, 20, 300), visina: n(o.visina, 44, 8, 150) };
     })(P.logoMarke);
     const EUR = (function () {
       try { return new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR' }); }
@@ -631,16 +634,15 @@
         overflow-wrap: break-word;
       }
       .mx-marka + .mx-naziv { margin-top: 4px; }
-      /* logo marke umjesto imena: crni logo kao na stranici proizvoda, lijevi
-         rub poravnat s tekstom ispod. Visina iz postavki; širok logo je niži
-         (namjesti se kad se učita), da ne bude dulji od najveće širine */
+      /* logo marke umjesto imena: crni logo kao na stranici proizvoda, cijela
+         slika (ne reže se) u veličini iz postavki, lijevi rub poravnat s tekstom
+         ispod. Slika ima prazan prostor iznad i ispod natpisa, pa je naziv blizu */
       .mx-marka-logo {
         display: block;
         flex: none;
-        width: auto;
+        width: ${LM.sirina}px;
         height: ${LM.visina}px;
         max-width: 100%;
-        max-width: min(100%, ${LM.najvecaSirina}px);
         margin: 0;
         padding: 0;
         border: 0;
@@ -650,7 +652,7 @@
         -webkit-user-drag: none;
       }
       .mx-marka-logo + .mx-naziv,
-      .mx-marka-logo + .mx-marka-rezerva + .mx-naziv { margin-top: 6px; }
+      .mx-marka-logo + .mx-marka-rezerva + .mx-naziv { margin-top: 2px; }
       .mx-marka-rezerva { display: none; }   /* ime marke uz logo: samo kad logo ne može */
       /* vrsta mirisa (Eau de Parfum · 100 ml...): ista slova kao marka (Jost, velika,
          razmaknuta), ali sitnija, tanja i siva, pa je diskretna kao i prije.
@@ -1660,11 +1662,7 @@
       img.decoding = 'async';
       img.draggable = false;
       img.referrerPolicy = 'no-referrer';
-      img.addEventListener('load', function () {
-        const omjer = img.naturalWidth / img.naturalHeight;
-        if (omjer > 0 && isFinite(omjer)) img.style.height = Math.min(LM.visina, LM.najvecaSirina / omjer).toFixed(1) + 'px';
-        centrirajVrh(vrh, true);
-      }, { once: true });
+      img.addEventListener('load', function () { centrirajVrh(vrh, true); }, { once: true });
       img.addEventListener('error', function () {
         zaboraviLogo(src);
         img.remove();
