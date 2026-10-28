@@ -590,6 +590,9 @@
         letter-spacing: .18em;
         text-transform: uppercase;
         color: var(--mx-marka);
+        /* vrlo tanak crni obrub oko slova (sjena u četiri smjera, izvan slova,
+           pa slovo ne postane tanje): svijetla roza bolje se čita na bijeloj */
+        text-shadow: .4px 0 var(--mx-tinta), -.4px 0 var(--mx-tinta), 0 .4px var(--mx-tinta), 0 -.4px var(--mx-tinta);
         overflow-wrap: break-word;
       }
       /* naziv: u serifnom fontu, na oko jednako velik kao marka. Marka je sva u
