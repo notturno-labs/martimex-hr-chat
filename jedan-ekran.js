@@ -131,6 +131,14 @@
         { smjer: 'desno',  brzina: 115, logotipi: ['giorgio-armani', 'carolina-herrera', 'prada', 'chloe', 'valentino', 'yves-saint-laurent', 'lancome', 'van-cleef-arpels'] },
         { smjer: 'lijevo', brzina: 105, logotipi: ['xerjoff', 'penhaligons', 'chopard', 'maison-francis-kurkdjian', 'tiziana-terenzi', 'memo-paris', 'the-merchant-of-venice', 'brunello-cucinelli'] }
       ],
+      // Proba s dvije trake umjesto tri: vrijedi samo uz ?trake=2 u adresi
+      // stranice (npr. proba.html?trake=2), inače su trake gore. Isti
+      // logotipi, raspoređeni u dvije trake; red je dulji, pa je brzina u
+      // sekundama veća, da logotipi putuju jednako brzo kao u trima trakama
+      dvijeTrake: [
+        { smjer: 'lijevo', brzina: 146, logotipi: ['chanel', 'dolce-gabbana', 'xerjoff', 'guerlain', 'tom-ford', 'chopard', 'hermes', 'elie-saab', 'tiziana-terenzi', 'versace', 'estee-lauder', 'the-merchant-of-venice'] },
+        { smjer: 'desno',  brzina: 163, logotipi: ['giorgio-armani', 'carolina-herrera', 'penhaligons', 'prada', 'chloe', 'maison-francis-kurkdjian', 'valentino', 'yves-saint-laurent', 'memo-paris', 'lancome', 'van-cleef-arpels', 'brunello-cucinelli'] }
+      ],
       visina: 18,             // px: visina logotipa (okomiti, npr. Chanel); široki natpisi su niži, da stanu u širinu
       sirina: 3.4,            // najveća širina logotipa, kao višekratnik visine (Dolce & Gabbana, Elie Saab...)
       razmak: 32,             // px između logotipa u traci
@@ -894,7 +902,8 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       korijen.setAttribute('role', 'presentation');
       const scena = el('div', 'mx-j-scena');
       const trake = el('div', 'mx-j-trake');
-      const popis = Array.isArray(M.trake) ? M.trake : [];
+      const dvije = /[?&]trake=2\b/.test(location.search) && Array.isArray(M.dvijeTrake);    // proba s dvije trake
+      const popis = dvije ? M.dvijeTrake : Array.isArray(M.trake) ? M.trake : [];
       const redovi = [];                     // za svaku traku: kako je napuniti i provjeriti
       popis.forEach(function (t) {
         const logotipi = (t && Array.isArray(t.logotipi) ? t.logotipi : []).map(function (x) { return String(x || '').trim(); }).filter(function (x) { return x && SLICICE[x]; });
