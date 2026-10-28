@@ -124,7 +124,7 @@
   const MX_POSTAVKE = {
     boje: {                   // uvijek u obliku #rrggbb
       tinta:   '#000000', // crna kao trake u headeru i footeru: naziv, cijena
-      marka:   '#af8650', // zlatno-bež s martimex.hr (--color-gold): marka (VERSACE)
+      marka:   '#e2c3ba', // prašnjava roza kao AI ASISTENTICA u traci chata: marka (VERSACE)
       roza:    '#e2c3ba', // prašnjava roza iza loga: izmaglica, crtica iznad cijene, val oko pečata
       puder:   '#f6ebe7', // najsvjetlija roza: rubovi aure oko bočice
       linija:  '#eee3de', // tanki dvostruki rub kartice (vanjski i unutarnji)
