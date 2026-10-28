@@ -123,7 +123,8 @@
   // ─────────────────────────────────────────────────────────────────────
   const MX_POSTAVKE = {
     boje: {                   // uvijek u obliku #rrggbb
-      tinta:   '#000000', // crna kao trake u headeru i footeru: marka, naziv, cijena
+      tinta:   '#000000', // crna kao trake u headeru i footeru: naziv, cijena
+      marka:   '#af8650', // zlatno-bež s martimex.hr (--color-gold): marka (VERSACE)
       roza:    '#e2c3ba', // prašnjava roza iza loga: izmaglica, crtica iznad cijene, val oko pečata
       puder:   '#f6ebe7', // najsvjetlija roza: rubovi aure oko bočice
       linija:  '#eee3de', // tanki dvostruki rub kartice (vanjski i unutarnji)
@@ -215,6 +216,7 @@
     const CSS = `
       .mx {
         --mx-tinta: ${B.tinta};
+        --mx-marka: ${B.marka};
         --mx-roza: ${B.roza};
         --mx-linija: ${B.linija};
         --mx-dim: ${B.dim};
@@ -587,7 +589,7 @@
         font-weight: 600;
         letter-spacing: .18em;
         text-transform: uppercase;
-        color: var(--mx-tinta);
+        color: var(--mx-marka);
         overflow-wrap: break-word;
       }
       /* naziv: u serifnom fontu, na oko jednako velik kao marka. Marka je sva u
