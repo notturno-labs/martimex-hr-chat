@@ -1,7 +1,7 @@
 // Ukratko: Kartice proizvoda koje Marti preporuči
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v32)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v33)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -25,6 +25,9 @@
   //              marka, naziv, cijena) i gumb ostaju isti. Vrijedi za cijeli
   //              prikaz ({ cards: [...], hideDescription: true }, tako šalje
   //              playbook "Trazilica")
+  //   brandLogo → adresa loga marke (https://...). Danas ga funkcije ne šalju:
+  //              logo se uzima sa stranice proizvoda (vidi LOGO MARKE niže), a
+  //              ovo polje je za kasnije, ako ga počnu slati n8n ili Voiceflow
   //
   //  Raspored kartice:
   //   ┌────────────────────────────┐
@@ -45,7 +48,9 @@
   //   kao cjelina (bočica je od lijevog ruba jednako daleko kao tekst od desnog).
   //
   //  Marka i naziv složeni su kao natpis na etiketi bočice:
-  //   - marka sitnim, razmaknutim velikim slovima (XERJOFF)
+  //   - marka je logo marke (crni, kao iznad naziva na stranici proizvoda),
+  //     poravnat ulijevo s tekstom ispod; kad logo nije poznat ili se ne
+  //     učita, marka je ispisana sitnim, razmaknutim velikim slovima (XERJOFF)
   //   - naziv je u otmjenom serifnom fontu (Cormorant Garamond) i na oko je
   //     jednako velik kao marka
   //   - vrsta mirisa ("Eau de Parfum", "Extrait de Parfum"...) odvaja se s
@@ -96,7 +101,7 @@
   //   - raspored gornjeg dijela računa se po stvarnim recima teksta (i kad se
   //     naziv prelomi), a centriranje duljeg naziva po stvarnoj širini bočice
   //     izrezane iz fotografije, ne po prozirnom prostoru oko nje; ponovno se
-  //     računa kad se promijeni širina chata ili se učitaju fontovi. Kad stigne
+  //     računa kad se promijeni širina chata, učitaju fontovi ili logo marke. Kad stigne
   //     bočica, gornji dio klizne na mjesto zajedno s njezinim dizanjem
   //   - gumb je mala prozirna pilula s tankim tamnim obrubom i sitnim
   //     razmaknutim velikim slovima; kad je miš iznad njega (a na mobitelu samo
@@ -148,7 +153,17 @@
     // Najviše znakova opisa (reže se na cijeloj riječi). 0 = bez ograničenja
     opisZnakova: 320,
 
-    tekstUzKod: 'uz kod'      // ispod cijene s kodom: "uz kod MRTMX"
+    tekstUzKod: 'uz kod',     // ispod cijene s kodom: "uz kod MRTMX"
+
+    // Logo marke umjesto imena marke. Uzima se sa stranice proizvoda na kojoj
+    // je kupac (logo iznad naziva artikla), kad je ista marka kao na kartici,
+    // i pamti se u pregledniku, pa se poslije vidi i na drugim stranicama.
+    // Kad logo nije poznat ili se ne učita, marka je ispisana slovima.
+    logoMarke: {
+      prikazi: true,          // false = marka je uvijek ispisana slovima
+      visina: 20,             // px: visina loga (širok logo je niži, da ne bude predug)
+      najvecaSirina: 120      // px: najveća širina loga (vrlo širok logo, npr. CAROLINA HERRERA)
+    }
   };
 
 
@@ -163,6 +178,11 @@
     const BAZA = ((document.currentScript && document.currentScript.src) || 'https://notturno-labs.github.io/martimex-hr-chat/kartica-artikla.js')
       .replace(/[?#].*$/, '').replace(/[^\/]*$/, '');
     const B = P.boje;
+    const LM = (function (o) {
+      o = o || {};
+      const n = function (v, d, min, max) { v = Number(v); return isFinite(v) && v > 0 ? Math.min(max, Math.max(min, v)) : d; };
+      return { prikazi: o.prikazi !== false, visina: n(o.visina, 20, 8, 60), najvecaSirina: n(o.najvecaSirina, 120, 20, 300) };
+    })(P.logoMarke);
     const EUR = (function () {
       try { return new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR' }); }
       catch (e) { return { format: function (n) { return n.toFixed(2).replace('.', ',') + '\u00a0€'; } }; }
@@ -611,6 +631,25 @@
         overflow-wrap: break-word;
       }
       .mx-marka + .mx-naziv { margin-top: 4px; }
+      /* logo marke umjesto imena: crni logo kao na stranici proizvoda, lijevi
+         rub poravnat s tekstom ispod. Visina iz postavki; širok logo je niži
+         (namjesti se kad se učita), da ne bude dulji od najveće širine */
+      .mx-marka-logo {
+        display: block;
+        flex: none;
+        width: auto;
+        height: ${LM.visina}px;
+        max-width: 100%;
+        max-width: min(100%, ${LM.najvecaSirina}px);
+        margin: 0;
+        padding: 0;
+        border: 0;
+        object-fit: contain;
+        object-position: left center;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+      .mx-marka-logo + .mx-naziv { margin-top: 6px; }
       /* vrsta mirisa (Eau de Parfum · 100 ml...): ista slova kao marka (Jost, velika,
          razmaknuta), ali sitnija, tanja i siva, pa je diskretna kao i prije.
          Veličina i razmak slova su takvi da "EAU DE PARFUM · 100 ML" (≈124 px)
@@ -1051,7 +1090,7 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '32');
+      stil.setAttribute('data-mx-kartice', '33');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
       if (cilj.querySelector('style[data-mx-kartice]')) return;
@@ -1103,7 +1142,7 @@
 
     // ── RASPORED GORNJEG DIJELA ──────────────────────────────────────────
     // Gornji dio (bočica + tekst) složi se po stvarnim recima teksta (i kad se
-    // marka ili naziv prelome), pa ovo ne može sam CSS:
+    // marka ili naziv prelome) i po širini loga marke, pa ovo ne može sam CSS:
     //  - kratak naziv: gornji dio se dijeli na dvije jednake polovice širine
     //    opisa. Tekst počinje na desnoj polovici, poravnat ulijevo, a bočica je
     //    na sredini lijeve polovice
@@ -1158,6 +1197,14 @@
           sirina = Math.max(sirina, kraj - razmak);
         }
       }
+      // logo marke nije tekst: mjeri se kao slika (dok se ne učita, širok je 0)
+      glava.querySelectorAll('.mx-marka-logo').forEach(function (e) {
+        const r = e.getBoundingClientRect();
+        if (!r.width) return;
+        const kraj = (r.right - g.left) * mjera;
+        zauzeto = Math.max(zauzeto, kraj);
+        sirina = Math.max(sirina, kraj);
+      });
       // pečat po rasporedu (offset), ne po onome što se vidi: pečat se
       // pri pojavi utiskuje s povećanjem. Mjeri se od kartice, kao i glava
       const desniRub = function (e) { return e ? e.offsetLeft + e.offsetWidth - glava.offsetLeft : 0; };
@@ -1253,6 +1300,7 @@
           cijena: c.price,
           stara: c.oldPrice,
           slika: c.imageUrl || '',
+          logo: sigurniLink(prvo(c.brandLogo, c.brandLogoUrl) || ''),
           url: c.url || '',
           kod: tekst(prvo(promo.code, c.promoCode)),
           kodPostotak: prvo(promo.percent, c.promoPercent),
@@ -1474,6 +1522,117 @@
         localStorage.setItem(KLJUC, JSON.stringify(lista.slice(-40)));
       } catch (e) { /* bez localStorage → uvijek animiraj */ }
       return true;
+    }
+
+    // ── LOGO MARKE ───────────────────────────────────────────────────────
+    // Na stranici proizvoda na martimex.hr iznad naziva artikla je logo marke,
+    // u poveznici na stranicu marke: <a href=".../brand/versace/"><img src=...>.
+    // Logo se odande uzme za karticu iste marke i zapamti u pregledniku
+    // (localStorage), pa kartica te marke poslije ima logo i na drugim
+    // stranicama (npr. u pretrazi). Na adresu loga se ne može doći iz imena
+    // marke (Versace → .../2024/10/Versace_logo1-2.svg), pa samo tako.
+    const KLJUC_LOGOTIPA = 'mx_logotipi_marki';
+    const NAJVISE_LOGOTIPA = 300;
+
+    // "Dolce & Gabbana" → "dolce-gabbana", "Floraïku" → "floraiku" (kao u adresi
+    // stranice marke na martimex.hr)
+    function slugMarke(s) {
+      s = String(s || '');
+      if (s.normalize) s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return s.toLowerCase().replace(/['\u2019`]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+    // ista marka i kad je jedan naziv dulji: "memo" i "memo-paris"
+    function istaMarka(a, b) {
+      return !!a && !!b && (a === b || a.indexOf(b + '-') === 0 || b.indexOf(a + '-') === 0);
+    }
+
+    function zapamceniLogotipi() {
+      try {
+        const o = JSON.parse(localStorage.getItem(KLJUC_LOGOTIPA) || '{}');
+        return o && typeof o === 'object' && !Array.isArray(o) ? o : {};
+      } catch (e) { return {}; }
+    }
+    function zapamtiLogotipe(nadjeni) {
+      try {
+        const sve = zapamceniLogotipi();
+        let promjena = false;
+        Object.keys(nadjeni).forEach(function (k) {
+          if (sve[k] === nadjeni[k]) return;
+          delete sve[k];                  // zadnji viđeni idu na kraj popisa
+          if (nadjeni[k]) sve[k] = nadjeni[k];
+          promjena = true;
+        });
+        if (!promjena) return;
+        const kljucevi = Object.keys(sve);
+        kljucevi.slice(0, Math.max(0, kljucevi.length - NAJVISE_LOGOTIPA)).forEach(function (k) { delete sve[k]; });
+        localStorage.setItem(KLJUC_LOGOTIPA, JSON.stringify(sve));
+      } catch (e) { /* bez localStorage: logo samo na stranici proizvoda */ }
+    }
+
+    // logotipi marki sa stranice proizvoda: { "versace": "https://..." }
+    function logotipiSaStranice() {
+      const nadjeni = {};
+      let poveznice = [];
+      try { poveznice = document.querySelectorAll('.product__title-wrap a[href*="/brand/"]'); } catch (e) { return nadjeni; }
+      for (let i = 0; i < poveznice.length; i++) {
+        try {
+          const m = (poveznice[i].getAttribute('href') || '').match(/\/brand\/([^\/?#]+)/);
+          const img = poveznice[i].querySelector('img');
+          if (!m || !img) continue;
+          const src = [img.currentSrc, img.getAttribute('src'), img.getAttribute('data-src'), img.getAttribute('data-lazy-src')]
+            .map(sigurniLink).filter(Boolean)[0];   // data: (rezervirano mjesto za lijeno učitavanje) se preskače
+          const slug = slugMarke(decodeURIComponent(m[1]));
+          if (src && slug) nadjeni[slug] = src;
+        } catch (e) { /* neispravna poveznica: preskoči */ }
+      }
+      if (Object.keys(nadjeni).length) zapamtiLogotipe(nadjeni);
+      return nadjeni;
+    }
+
+    function logoMarke(marka) {
+      if (!LM.prikazi) return '';
+      const slug = slugMarke(marka);
+      if (!slug) return '';
+      const izvori = [logotipiSaStranice(), zapamceniLogotipi()];
+      for (let i = 0; i < izvori.length; i++) {
+        if (izvori[i][slug]) return sigurniLink(izvori[i][slug]);
+        const k = Object.keys(izvori[i]).filter(function (x) { return istaMarka(x, slug); })[0];
+        if (k) return sigurniLink(izvori[i][k]);
+      }
+      return '';
+    }
+    function zaboraviLogo(src) {
+      const sve = zapamceniLogotipi(), losi = {};
+      Object.keys(sve).forEach(function (k) { if (sve[k] === src) losi[k] = ''; });
+      if (Object.keys(losi).length) zapamtiLogotipe(losi);
+    }
+
+    // čim se otvori stranica proizvoda, njezin logo marke se zapamti
+    if (LM.prikazi) {
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', logotipiSaStranice, { once: true });
+      else logotipiSaStranice();
+    }
+
+    // logo umjesto imena marke; kad se ne učita, vrati se ime slovima
+    function slikaLoga(src, marka, vrh) {
+      const img = el('img', 'mx-marka-logo');
+      img.alt = marka || '';
+      img.decoding = 'async';
+      img.draggable = false;
+      img.referrerPolicy = 'no-referrer';
+      img.addEventListener('load', function () {
+        const omjer = img.naturalWidth / img.naturalHeight;
+        if (omjer > 0 && isFinite(omjer)) img.style.height = Math.min(LM.visina, LM.najvecaSirina / omjer).toFixed(1) + 'px';
+        centrirajVrh(vrh, true);
+      }, { once: true });
+      img.addEventListener('error', function () {
+        zaboraviLogo(src);
+        if (img.parentNode && marka) img.parentNode.replaceChild(el('span', 'mx-marka', marka), img);
+        else img.remove();
+        centrirajVrh(vrh, true);
+      }, { once: true });
+      img.src = src;
+      return img;
     }
 
     // ── GRADNJA ──────────────────────────────────────────────────────────
@@ -1833,7 +1992,9 @@
       // MARKA, NAZIV, CIJENA
       const glava = el('div', 'mx-glava');
       const d = razdvojiNaziv(k.naziv);
-      if (d.marka) glava.appendChild(el('span', 'mx-marka', d.marka));
+      const logo = k.logo || logoMarke(d.marka);
+      if (logo) glava.appendChild(slikaLoga(logo, d.marka, vrh));
+      else if (d.marka) glava.appendChild(el('span', 'mx-marka', d.marka));
       if (d.naziv) glava.appendChild(el('div', 'mx-naziv', d.naziv));
       if (d.vrsta) {
         // svaki dio vrste (Eau de Parfum, 100 ml, Tester) je zaseban komadić; točke
