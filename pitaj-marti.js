@@ -723,7 +723,9 @@
       if (kartica < pocetnoKartica) pocetnoKartica = kartica;
       if (poruka < pocetnoPoruka) pocetnoPoruka = poruka;
       if (np < pocetnoPitanja) pocetnoPitanja = np;
-      for (let j = 0; j < nove.length; j++) {
+      // od novih elemenata pamti se najnoviji (zadnji u razgovoru): ako chat
+      // iznova iscrta i starije poruke, one su "nove", ali nisu na dnu
+      for (let j = nove.length - 1; j >= 0; j--) {
         const el = nove[j];
         if (jeKartica(el)) {
           if (!stanje.kartica && kartica > pocetnoKartica) stanje.kartica = el;
@@ -912,10 +914,20 @@
       if (martiPise(kor)) return false;
       return sad - pocetak >= (rezerva ? P.cekajDogadaj : P.cekajOdgovor);
     }, P.cekajNajduze);
-    prati.stani();
-    if (prati.kartica || prati.pitanje) { zapamti(artikl, prati); return; }
+    if (prati.kartica || prati.pitanje) { prati.stani(); zapamti(artikl, prati); return; }
     zaboraviZadnjeg();
-    if (prati.odgovor || !rezerva || martiPise(kor)) {
+    if (martiPise(kor)) {
+      // Marti i dalje piše: gumb se oslobađa, a kartica koja ipak stigne
+      // zapamti se naknadno (da se isti artikl ne šalje opet)
+      zapis('Marti još piše, a kartica nije stigla: gumb se oslobađa');
+      cekajUvjet(function () { return prati.kartica || prati.pitanje || !martiPise(kor); }, P.cekajNajduze).then(function () {
+        if (prati.kartica || prati.pitanje) { zapis('kartica je stigla naknadno'); zapamti(artikl, prati); }
+        prati.stani();
+      });
+      return;
+    }
+    prati.stani();
+    if (prati.odgovor || !rezerva) {
       zapis(prati.odgovor ? 'Marti je na događaj odgovorila bez kartice' : 'na događaj nije stigla kartica');
       return;
     }
@@ -989,7 +1001,13 @@
   // Je li kartica zadnje što se u razgovoru dogodilo (kupac otad nije
   // ništa poslao); ako jest, isti artikl ne treba slati ponovno
   function karticaNaDnu(kor, kartica) {
-    if (!kartica || !kartica.isConnected) return false;
+    if (!kartica) return false;
+    if (!kartica.isConnected) {
+      // chat je poruke iscrtao iznova (isti sadržaj, novi elementi): gleda se zadnja kartica
+      const kartice = kor.querySelectorAll(PROZOR + ' ' + KARTICA);
+      kartica = kartice.length ? kartice[kartice.length - 1] : null;
+      if (!kartica) return false;
+    }
     const kupac = kor.querySelectorAll(PROZOR + ' .vfrc-user-response');
     for (let i = kupac.length - 1; i >= 0; i--) {
       if (kartica.compareDocumentPosition(kupac[i]) & Node.DOCUMENT_POSITION_FOLLOWING) return false;
