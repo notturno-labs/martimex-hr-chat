@@ -77,7 +77,9 @@
     dogadaj: 'pitaj_marti',       // ime događaja u Voiceflowu
     cekajChat: 15000,             // ms: koliko se najduže čeka da se chat učita
     cekajOdgovor: 15000,          // ms: koliko se najduže čeka kartica/pitanje prije rezerve
-    cekajDogadaj: 10000,          // ms: ako na događaj ne stigne baš ništa, nakon toliko se pokrene novi razgovor
+    cekajDogadaj: 10000,          // ms: ako na događaj ne stigne baš ništa (ni Martino tipkanje), nakon toliko se pokrene novi razgovor
+    cekajNakonOdgovora: 2500,     // ms: Marti je odgovorila nečim drugim (bez kartice): još toliko se pričeka kartica, pa se odustane
+    cekajNajduze: 30000,          // ms: dok Marti tipka čeka se i duže od cekajOdgovor, ali najviše ovoliko
     razgovorTraje: 25 * 60 * 1000, // ms: Voiceflow razgovor završi nakon 30 min bez poruka; nakon ovoliko ga modul smatra završenim
     maxOpis: 2500,                // znakova opisa sa stranice
     maxVarijanti: 40,
@@ -101,6 +103,7 @@
   const KARTICA = '.mx-kartica';          // kartica artikla (kartica-artikla.js)
   const ODGOVOR = '.vfrc-system-response'; // Martin odgovor u chatu
   const PORUKA = '.vfrc-message';         // jedna poruka (tekst, kartica...)
+  const TIPKANJE = '.vfrc-typing-indicator'; // Voiceflowove točkice dok Marti "piše"
   const DEBUG = /[?&]pitajmarti=debug\b/.test(location.search);
 
   function zapis() {
@@ -135,13 +138,15 @@
     return el ? String(el.textContent || '').replace(/\s+/g, ' ').trim() : '';
   }
 
-  // "1.299,50 €" → 1299.5; "88.5" → 88.5; "54.717" (data-var-price) → 54.717
+  // "1.299,50 €" → 1299.5; "88.5" → 88.5; "54.717" (data-var-price) → 54.72
+  // (zaokruženo na cente); negativno ili nečitljivo → null
   function uBroj(v) {
-    if (typeof v === 'number') return isFinite(v) ? v : null;
+    if (typeof v === 'number') return isFinite(v) && v >= 0 ? v : null;
     if (v === undefined || v === null) return null;
     // strojni zapis (atributi i JSON, npr. data-var-price="54.717"): točka je
     // decimalna, koliko god znamenki iza nje bilo
     const t = String(v).trim();
+    if (/^[-−]/.test(t)) return null;
     if (/^\d+(?:\.\d+)?$/.test(t)) { const n = parseFloat(t); return isFinite(n) ? Math.round(n * 100) / 100 : null; }
     let s = t.replace(/[^\d.,]/g, '');
     if (!s) return null;
@@ -150,6 +155,17 @@
     else s = s.replace(/[.,]/g, '');
     const n = parseFloat(s);
     return isFinite(n) ? n : null;
+  }
+
+  // Tekst iz podataka stranice (JSON, atributi): HTML entiteti → znakovi
+  // ("Dolce &amp; Gabbana" → "Dolce & Gabbana"), višak razmaka → jedan
+  function cistTekst(v) {
+    if (v === undefined || v === null || typeof v === 'object') return '';
+    let s = String(v);
+    if (s.indexOf('&') !== -1) {
+      try { const ta = document.createElement('textarea'); ta.innerHTML = s.replace(/</g, '&lt;'); s = ta.value; } catch (e) { /* ostaje kako je */ }
+    }
+    return s.replace(/\s+/g, ' ').trim();
   }
 
   // Sadržaj JavaScript stringa (bez navodnika) → pravi tekst (" → ", \/ → / ...)
@@ -215,15 +231,17 @@
       document.querySelector('section.product');
   }
 
+  // Sve varijante sa stranice (sve gumbe: odabrana može biti i zadnja; koliko
+  // ih se šalje Marti, ograničava se tek kod slanja, vidi procitajArtikl)
   function varijanteSaStranice(sekcija) {
     const gumbi = sekcija.querySelectorAll('.js-var-btn');
     const lista = [];
-    for (let i = 0; i < gumbi.length && lista.length < P.maxVarijanti; i++) {
+    for (let i = 0; i < gumbi.length; i++) {
       const g = gumbi[i];
       const id = g.getAttribute('data-variation-id') || '';
       const podaci = izJsonParse(g.getAttribute('@click') || g.getAttribute('x-on:click')) || {};
-      const naziv = (g.getAttribute('data-var-color') || podaci.color || g.getAttribute('data-var-name') ||
-        podaci.label || podaci.name || tekst(g.querySelector('.product__single-variation-size')) || '').trim();
+      const naziv = cistTekst(g.getAttribute('data-var-color') || podaci.color || g.getAttribute('data-var-name') ||
+        podaci.label || podaci.name || tekst(g.querySelector('.product__single-variation-size')) || '');
       if (!naziv) continue;
       const okvir = id ? sekcija.querySelector('.js-var-price[data-price-var-id="' + id + '"]') : null;
       const cijena = uBroj(g.getAttribute('data-var-price')) !== null ? uBroj(g.getAttribute('data-var-price'))
@@ -260,6 +278,7 @@
         if (/^(SCRIPT|STYLE|TEMPLATE|NOSCRIPT|BUTTON|SVG|IMG|IFRAME)$/.test(t)) continue;
         if (c.classList && c.classList.contains('product__show-description')) continue;   // "Pročitaj više"
         if (t === 'BR') { novi(); continue; }
+        if (t === 'TD' || t === 'TH') { red += ' '; hodaj(c); red += ' '; continue; }   // ćelije tablice se ne lijepe
         const blok = BLOK.test(t);
         if (blok) novi();
         hodaj(c);
@@ -274,11 +293,15 @@
   //  - jedan blok "Opis proizvoda" (.product__description)
   //  - kartice "Opis / Prednosti / Upotreba..." (.product__description-tabs;
   //    na mobitelu iste kartice kao harmonika) — tada svaki dio dobije naslov
+  // Ima li stranica oboje, ide blok pa kartice.
   function opisSaStranice(sekcija) {
     const blok = sekcija.querySelector('.product__description .post-content') || sekcija.querySelector('.product__description');
-    if (blok) return retciTeksta(blok);
+    const izBloka = blok ? retciTeksta(blok) : [];
     const kartice = sekcija.querySelector('.product__description-tabs');
-    if (!kartice) return [];
+    if (!kartice) return izBloka;
+    return izBloka.concat(opisIzKartica(kartice));
+  }
+  function opisIzKartica(kartice) {
     let retci = [];
     const gumbi = kartice.querySelectorAll('.product__description-tabs-nav-btn');
     for (let i = 0; i < gumbi.length; i++) {
@@ -313,11 +336,11 @@
     const proizvod = Object.assign({}, xd.product || {}, zivo.product || {});
     const ld = jsonLdProizvod() || {};
 
-    const naziv = tekst(sekcija.querySelector('.product__title-wrap h1, h1')) || proizvod.name || ld.name || '';
+    const naziv = tekst(sekcija.querySelector('.product__title-wrap h1, h1')) || cistTekst(proizvod.name) || cistTekst(ld.name);
     if (!naziv) return null;
 
     // marka: Alpine/x-data, JSON-LD ili poveznica na stranicu marke (/brand/versace/)
-    let marka = proizvod.brandName || (ld.brand && (ld.brand.name || ld.brand)) || '';
+    let marka = cistTekst(proizvod.brandName) || cistTekst(ld.brand && (ld.brand.name || ld.brand));
     if (!marka) {
       const a = sekcija.querySelector('.product__title-wrap a[href*="/brand/"]');
       const m = a && a.getAttribute('href').match(/\/brand\/([^\/?#]+)/);
@@ -362,6 +385,8 @@
     else if (!varijante.length && typeof proizvod.inStock === 'boolean') dostupno = proizvod.inStock;
     const obavijest = sekcija.querySelector('.product__variations-no-variation-stock-notice');
     if (dostupno === null && obavijest) dostupno = obavijest.classList.contains('d-none');
+    // raspored "nije na stanju" (umjesto košarice "Obavijesti me kada bude dostupan")
+    if (dostupno === null && sekcija.querySelector('.product__out-of-stock')) dostupno = false;
 
     const glavnaSlika = sekcija.querySelector('.js-featured-image');
     const slika = (odabrana && odabrana.slika) ||
@@ -371,7 +396,8 @@
     // opis: odlomci i retci (<p>, <br>, popisi) ostaju odvojeni, da se ne slijepe
     let opis = opisSaStranice(sekcija)
       .reduce(function (s, r) { return !s ? r : s + (/[.!?:;,]$/.test(s) ? ' ' : '; ') + r; }, '');
-    if (opis.length > P.maxOpis) opis = opis.slice(0, P.maxOpis);
+    // predug opis se skrati na cijelu riječ, s tri točke
+    if (opis.length > P.maxOpis) opis = opis.slice(0, P.maxOpis).replace(/\s+\S*$/, '').replace(/[\s,;:–-]+$/, '') + '…';
 
     const pogodnosti = [].map.call(sekcija.querySelectorAll('.product__benefits-single h5, .product__benefits-single'), tekst)
       .filter(function (t, i, svi) { return t && svi.indexOf(t) === i; }).slice(0, 6);
@@ -382,9 +408,9 @@
       varijacija_id: idVar,
       naziv: naziv,
       marka: String(marka || '').trim(),
-      vrsta: proizvod.category || tekst(sekcija.querySelector('.product__sku-wrap h5')) || ld.category || '',
+      vrsta: cistTekst(proizvod.category) || tekst(sekcija.querySelector('.product__sku-wrap h5')) || cistTekst(ld.category),
       kategorija: putanja.join(' › '),
-      glavna_kategorija: proizvod.categoryMain || putanja[0] || '',
+      glavna_kategorija: cistTekst(proizvod.categoryMain) || putanja[0] || '',
       varijanta: odabrana ? odabrana.naziv : '',
       cijena: cijena,
       stara_cijena: stara,
@@ -395,7 +421,8 @@
       url: adresaStranice(),
       opis: opis,
       pogodnosti: pogodnosti,
-      varijante: varijante.map(function (v) {
+      // najviše maxVarijanti, ali odabrana ide uvijek
+      varijante: varijante.filter(function (v, i) { return i < P.maxVarijanti || v === odabrana; }).map(function (v) {
         const r = { naziv: v.naziv, cijena: v.cijena };
         if (v.stara_cijena) r.stara_cijena = v.stara_cijena;
         if (v.dostupno !== null) r.dostupno = v.dostupno;
@@ -511,17 +538,44 @@
   //    pokrene novi razgovor).
   // Razgovor se smatra zastarjelim P.razgovorTraje nakon zadnje poruke —
   // malo prije nego ga Voiceflow stvarno završi.
-  let zadnjaAktivnost = 0;        // kad je na ovoj stranici zadnji put nešto poslano Voiceflowu (koliko modul zna)
+  let zadnjaAktivnost = 0;        // kad je na ovoj stranici zadnji put nešto poslano Voiceflowu ili stiglo u chat (koliko modul zna)
   let obrisanPriUcitavanju = false;
   function zabiljeziAktivnost() { zadnjaAktivnost = Date.now(); }
-  // (chat iz paketa react-chat javlja svaku interakciju porukom prozoru;
-  // widget-next ne javlja ništa, pa odlučuje zapamćeni razgovor)
+  // Chat javlja prozoru otvaranje i zatvaranje ('voiceflow:open' /
+  // 'voiceflow:close'); chat iz paketa react-chat javlja i svaku interakciju
+  // ('voiceflow:interact'), widget-next ne — za njega aktivnost broje nove
+  // poruke u otvorenom chatu (pratiAktivnost) i zapamćeni razgovor.
+  let chatOtvoren = false, brojPoruka = -1, promatracPoruka = null;
+  function brojPorukaUChatu(kor) {
+    return kor.querySelectorAll(PROZOR + ' .vfrc-user-response, ' + PROZOR + ' .vfrc-system-response').length;
+  }
   window.addEventListener('message', function (e) {
     if (e.source && e.source !== window) return;
-    const d = e.data;
-    const interakcija = typeof d === 'string' ? d.indexOf('voiceflow:interact') !== -1 : !!(d && d.type === 'voiceflow:interact');
-    if (interakcija) zabiljeziAktivnost();
+    let d = e.data;
+    if (typeof d === 'string') {
+      if (d.indexOf('voiceflow:') === -1) return;
+      try { d = JSON.parse(d); } catch (x) { return; }
+    }
+    if (!d || typeof d.type !== 'string') return;
+    if (d.type === 'voiceflow:interact') zabiljeziAktivnost();
+    else if (d.type === 'voiceflow:open') { chatOtvoren = true; const kor = korijenChata(); brojPoruka = kor ? brojPorukaUChatu(kor) : -1; }
+    else if (d.type === 'voiceflow:close') chatOtvoren = false;
   });
+  // Dok je chat otvoren, svaka nova poruka u njemu (kupčeva ili Martina) je
+  // aktivnost — i kad kupac razgovara sam, bez gumba. Pri učitavanju
+  // stranice chat je zatvoren i samo iscrtava zapamćeni razgovor: to se ne
+  // broji.
+  function pratiAktivnost(kor) {
+    if (promatracPoruka) return;
+    promatracPoruka = new MutationObserver(function () {
+      const n = brojPorukaUChatu(kor);
+      if (brojPoruka === -1) { brojPoruka = n; return; }
+      if (n === brojPoruka) return;
+      brojPoruka = n;
+      if (chatOtvoren) zabiljeziAktivnost();
+    });
+    promatracPoruka.observe(kor, { childList: true, subtree: true });
+  }
 
   // zapamćeni razgovori u pregledniku (s barem jednom porukom)
   function zapamceniRazgovori() {
@@ -584,6 +638,7 @@
   })();
 
   function otvoriChat() {
+    if (!chatPostoji()) return;
     try { window.voiceflow.chat.open(); } catch (e) { console.warn('[Martimex] Pitaj Marti: chat se nije otvorio', e); }
   }
 
@@ -618,7 +673,11 @@
   function provjeriChat() {
     if (chatPostoji()) {
       pokaziGumb(true);
-      clearInterval(pratiChat); pratiChat = 0;   // chat je tu i ostaje
+      const kor = korijenChata();
+      if (kor) {
+        pratiAktivnost(kor);
+        clearInterval(pratiChat); pratiChat = 0;   // chat je tu i ostaje
+      }
       return;
     }
     if (!document.querySelector(VF_SKRIPTA)) { skriptaOd = 0; pokaziGumb(false); return; }
@@ -627,42 +686,61 @@
   }
   function pratiDostupnostChata() {
     provjeriChat();
-    if (!pratiChat && !chatPostoji()) pratiChat = setInterval(provjeriChat, 1000);
+    if (!pratiChat && !(chatPostoji() && korijenChata())) pratiChat = setInterval(provjeriChat, 1000);
   }
 
   // ── 4. PRAĆENJE ODGOVORA ──────────────────────────────────────────────
   // Gleda pojavljuje li se u chatu NOVA kartica artikla ili NOVO Martino
   // pitanje, i kad stigne prva nova Martina poruka (bilo koja, npr. obični
-  // pozdrav). Broji se koliko ih ima u odnosu na trenutak kad je praćenje
-  // počelo, pa ponovno iscrtavanje starih poruka (npr. kad se razgovor
-  // pokrene iznova) ne zavara.
+  // pozdrav). Nova je samo poruka (element) koje u chatu nije bilo kad je
+  // praćenje počelo — pa prijašnja poruka koja se još ispisuje slovo po
+  // slovo (i tek sad dovrši isto pitanje) ne zavara — i broj ih mora biti
+  // veći nego na početku, pa ne zavara ni ponovno iscrtavanje starih poruka.
   function pratiOdgovor(kor) {
-    function kartice() { return kor.querySelectorAll(KARTICA); }
-    function pitanja() {
-      const t = ((kor.querySelector(PROZOR) || kor).textContent || '');
+    const SVE = KARTICA + ', ' + ODGOVOR + ' ' + PORUKA;   // kartice i poruke u Martinim odgovorima (točkice "piše..." nisu poruka)
+    function jeKartica(el) { return el.matches ? el.matches(KARTICA) : false; }
+    function pitanjaU(t) {
       let n = 0, i = -1;
       while ((i = t.indexOf(P.pitanje, i + 1)) !== -1) n++;
       return n;
     }
-    // poruke u Martinim odgovorima (točkice "piše..." se ne broje)
-    function poruke() { return kor.querySelectorAll(ODGOVOR + ' ' + PORUKA).length; }
-    const pocetno = { kartice: kartice().length, pitanja: pitanja(), poruke: poruke() };
-    const stanje = { kartica: null, pitanje: false, odgovor: 0, promatrac: null };
+    function pitanja() { return pitanjaU((kor.querySelector(PROZOR) || kor).textContent || ''); }
+    const bile = new Set(kor.querySelectorAll(SVE));
+    let pocetnoKartica = 0, pocetnoPoruka = 0;
+    bile.forEach(function (el) { if (jeKartica(el)) pocetnoKartica++; else pocetnoPoruka++; });
+    let pocetnoPitanja = pitanja();
+    const stanje = { kartica: null, pitanje: null, odgovor: 0, promatrac: null };
     function provjeri() {
-      const k = kartice(), np = pitanja(), nm = poruke();
+      const sad = kor.querySelectorAll(SVE);
+      let kartica = 0, poruka = 0;
+      const nove = [];
+      for (let i = 0; i < sad.length; i++) {
+        if (jeKartica(sad[i])) kartica++; else poruka++;
+        if (!bile.has(sad[i])) nove.push(sad[i]);
+      }
+      const np = pitanja();
       // kad chat obriše dosadašnje poruke (novi razgovor), broji se od nule
-      if (k.length < pocetno.kartice) pocetno.kartice = k.length;
-      if (np < pocetno.pitanja) pocetno.pitanja = np;
-      if (nm < pocetno.poruke) pocetno.poruke = nm;
-      if (!stanje.kartica && k.length > pocetno.kartice) stanje.kartica = k[k.length - 1];
-      if (!stanje.pitanje && np > pocetno.pitanja) stanje.pitanje = true;
-      if (!stanje.odgovor && nm > pocetno.poruke) stanje.odgovor = Date.now();
+      if (kartica < pocetnoKartica) pocetnoKartica = kartica;
+      if (poruka < pocetnoPoruka) pocetnoPoruka = poruka;
+      if (np < pocetnoPitanja) pocetnoPitanja = np;
+      for (let j = 0; j < nove.length; j++) {
+        const el = nove[j];
+        if (jeKartica(el)) {
+          if (!stanje.kartica && kartica > pocetnoKartica) stanje.kartica = el;
+          continue;
+        }
+        if (!stanje.odgovor && poruka > pocetnoPoruka) stanje.odgovor = Date.now();
+        if (!stanje.pitanje && np > pocetnoPitanja && pitanjaU(el.textContent || '')) stanje.pitanje = el;
+      }
     }
     stanje.promatrac = new MutationObserver(provjeri);
     stanje.promatrac.observe(kor, { childList: true, subtree: true, characterData: true });
     stanje.stani = function () { if (stanje.promatrac) stanje.promatrac.disconnect(); stanje.promatrac = null; };
     return stanje;
   }
+
+  // Marti upravo "piše" (Voiceflowove točkice): odgovor tek stiže
+  function martiPise(kor) { return !!kor.querySelector(TIPKANJE); }
 
   // Voiceflow javlja završenu interakciju porukom '{"type":"voiceflow:interact", ...}'
   function cekajInterakciju(tip, ms) {
@@ -692,14 +770,34 @@
   }
 
   // ── 5. SLANJE ARTIKLA ──────────────────────────────────────────────────
-  let zadnji = null;           // { kljuc, kartica } — zadnji artikl koji je Marti prikazala
+  let zadnji = null;           // { kljuc, kartica } — zadnji artikl koji je Marti prikazala (kartica ili pitanje u chatu)
 
   // "put" u podacima kaže kojim je putem artikl poslan (vidi se u
   // Voiceflowovu transkriptu, pomaže kod otklanjanja grešaka): launch,
   // dogadaj, launch-novi (zastarjeli razgovor), launch-rezerva, dogadaj-rezerva
   function sPutem(artikl, put) { return Object.assign({}, artikl, { put: put }); }
 
-  function zapamti(artikl, prati) { zadnji = { kljuc: kljucArtikla(artikl), kartica: prati.kartica }; }
+  // Ključ zadnjeg artikla pamti se i u pregledniku (dok je kartica otvorena),
+  // pa se ni nakon novog učitavanja stranice isti artikl ne šalje dvaput
+  const KLJUC_ZADNJEG = 'mx-pm-zadnji';
+  function zapamti(artikl, prati) {
+    zadnji = { kljuc: kljucArtikla(artikl), kartica: prati.kartica || prati.pitanje };
+    try { sessionStorage.setItem(KLJUC_ZADNJEG, zadnji.kljuc); } catch (e) { /* nije bitno */ }
+  }
+  function zaboraviZadnjeg() {
+    zadnji = null;
+    try { sessionStorage.removeItem(KLJUC_ZADNJEG); } catch (e) { /* nije bitno */ }
+  }
+  // Zadnji artikl: iz ovog učitavanja stranice, ili iz prošlog ako je
+  // njegova kartica (zadnja u razgovoru) i dalje tu
+  function zadnjiArtikl(kor) {
+    if (zadnji) return zadnji;
+    let kljuc = '';
+    try { kljuc = sessionStorage.getItem(KLJUC_ZADNJEG) || ''; } catch (e) { return null; }
+    if (!kljuc) return null;
+    const kartice = kor.querySelectorAll(PROZOR + ' ' + KARTICA);
+    return kartice.length ? { kljuc: kljuc, kartica: kartice[kartice.length - 1] } : null;
+  }
 
   function posaljiDogadaj(artikl, put) {
     zapis('događaj', P.dogadaj, '(' + put + ')', artikl);
@@ -725,18 +823,24 @@
 
   // Voiceflowov "Restart conversation" (gumb u izborniku chata, pa potvrda
   // "Start new chat"): chat obriše dosadašnje poruke i pokrene novi
-  // razgovor svojom postavkom launch — a ona nosi ARTIKL. Gumbi su u DOM-u
-  // i dok se ne vide. Vraća true ako je pokrenuto.
+  // razgovor svojom postavkom launch — a ona nosi ARTIKL. Gumb je u DOM-u i
+  // dok se ne vidi; potvrda je obično također (skrivena), a ako je chat
+  // iscrta tek nakon pritiska, pričeka se. Vraća true ako je pokrenuto.
   const RESTART = '#restart-chat';
   const POTVRDA = '.vfrc-prompt';
   async function ponovnoPokreni(kor) {
     const restart = kor.querySelector(RESTART);
-    const potvrda = kor.querySelector(POTVRDA);
-    if (!restart || !potvrda) return false;
+    if (!restart) return false;
     try { restart.click(); } catch (e) { return false; }
     // potvrda se pojavi (pointer-events: auto) u sljedećem okviru; klik
     // radi i prije nego što se do kraja pokaže
-    await cekajUvjet(function () { return getComputedStyle(potvrda).pointerEvents !== 'none'; }, 800);
+    let potvrda = null;
+    await cekajUvjet(function () {
+      potvrda = kor.querySelector(POTVRDA);
+      return !!potvrda && getComputedStyle(potvrda).pointerEvents !== 'none';
+    }, 800);
+    if (!potvrda) potvrda = kor.querySelector(POTVRDA);
+    if (!potvrda) return false;
     const gumbi = potvrda.querySelectorAll('button');
     let gumb = null;
     for (let i = 0; i < gumbi.length; i++) {
@@ -792,21 +896,29 @@
   }
 
   // Događaj, pa čekanje kartice. Ako na događaj ne stigne baš ništa — ni
-  // kartica ni bilo kakav Martin odgovor (tako prođe događaj poslan u
-  // razgovor koji je Voiceflow u međuvremenu završio) — i rezerva je
-  // dopuštena, pokrene se novi razgovor s artiklom.
+  // kartica, ni bilo kakav Martin odgovor, ni Martino tipkanje (tako prođe
+  // događaj poslan u razgovor koji je Voiceflow u međuvremenu završio) — i
+  // rezerva je dopuštena, pokrene se novi razgovor s artiklom. Dok Marti
+  // piše, čeka se (najviše P.cekajNajduze); ako odgovori nečim drugim bez
+  // kartice, još se malo pričeka pa se odustane.
   async function posaljiIPrati(kor, artikl, put, rezerva) {
     const prati = pratiOdgovor(kor);
     posaljiDogadaj(artikl, put);
     const pocetak = Date.now();
     await cekajUvjet(function () {
       if (prati.kartica || prati.pitanje) return true;
-      return rezerva && !prati.odgovor && Date.now() - pocetak >= P.cekajDogadaj;
-    }, P.cekajOdgovor);
+      const sad = Date.now();
+      if (prati.odgovor) return sad - prati.odgovor >= P.cekajNakonOdgovora;
+      if (martiPise(kor)) return false;
+      return sad - pocetak >= (rezerva ? P.cekajDogadaj : P.cekajOdgovor);
+    }, P.cekajNajduze);
     prati.stani();
     if (prati.kartica || prati.pitanje) { zapamti(artikl, prati); return; }
-    zadnji = null;
-    if (prati.odgovor || !rezerva) { zapis(prati.odgovor ? 'Marti je na događaj odgovorila bez kartice' : 'na događaj nije stigla kartica'); return; }
+    zaboraviZadnjeg();
+    if (prati.odgovor || !rezerva || martiPise(kor)) {
+      zapis(prati.odgovor ? 'Marti je na događaj odgovorila bez kartice' : 'na događaj nije stigla kartica');
+      return;
+    }
     zapis('na događaj nije stigao nikakav odgovor: pokrećem novi razgovor s artiklom');
     await noviRazgovor(kor, artikl, 'launch-rezerva', true);
   }
@@ -827,7 +939,7 @@
     isprazniArtikl();
     prati.stani();
     if (prati.kartica || prati.pitanje) { zapis('artikl stigao uz novi razgovor'); zapamti(artikl, prati); return; }
-    zadnji = null;
+    zaboraviZadnjeg();
     if (!rezerva) { zapis('uz novi razgovor nije stigla kartica'); return; }
     zapis('rezerva: uz novi razgovor nije stigla kartica, šaljem događaj');
     await posaljiIPrati(kor, artikl, 'dogadaj-rezerva', false);
@@ -889,8 +1001,7 @@
 
   async function pritisak(gumb) {
     if (radi) return;
-    const artikl = procitajArtikl();
-    if (!artikl) { console.warn('[Martimex] Pitaj Marti: podaci o artiklu nisu pronađeni na stranici'); return; }
+    if (!procitajArtikl()) { console.warn('[Martimex] Pitaj Marti: podaci o artiklu nisu pronađeni na stranici'); return; }
     radi = true;
     oznaciGumb(gumb, true);
     try {
@@ -901,9 +1012,15 @@
         provjeriChat();
         return;
       }
+      // artikl se čita tek sad: dok se chat učitavao, kupac je možda
+      // promijenio veličinu ili nijansu
+      const artikl = procitajArtikl();
+      if (!artikl) { console.warn('[Martimex] Pitaj Marti: podaci o artiklu nisu pronađeni na stranici'); return; }
+      pratiAktivnost(kor);
       const zastario = imaRazgovor(kor) && razgovorZastario();
       // isti artikl (ista varijanta) već je na dnu razgovora: chat se samo otvori
-      if (!zastario && zadnji && zadnji.kljuc === kljucArtikla(artikl) && karticaNaDnu(kor, zadnji.kartica) && !cekaPocetak(kor)) {
+      const prosli = zadnjiArtikl(kor);
+      if (!zastario && prosli && prosli.kljuc === kljucArtikla(artikl) && karticaNaDnu(kor, prosli.kartica) && !cekaPocetak(kor)) {
         zapis('isti artikl je već u razgovoru');
         otvoriChat();
         return;
@@ -1107,6 +1224,8 @@
         zabiljeziAktivnost();
         if (!(await ponovnoPokreni(kor))) posaljiLaunch(null, 'kontakt');
       }
+    } catch (e) {
+      console.warn('[Martimex] Pitaj Marti (Kontakt) nije uspio:', e);
     } finally {
       radi = false;
       oznaciGumb(gumb, false);
