@@ -298,7 +298,11 @@ try {
   const brojevi = new Set(ostali.filter(t => /^\d+$/.test(t) && (t === String(minPrice) || t === String(maxPrice))));
   const tokeniProizvoda = ostali.filter(t => !brojevi.has(t) && !/^(eur|eura|euro|e|kn|kuna|cijene|cijena)$/.test(t));
   const akcijaFilter = tokeniProizvoda.some(t => /^(akcij|snizen|sale|popust|rasprodaj|outlet)/.test(t));
-  const tokeniBezAkcije = tokeniProizvoda.filter(t => !/^(akcij|snizen|sale|popust|rasprodaj|outlet)$/.test(t) && !/^(akcij|snizen|popust)/.test(t));
+  const PROMO_RE = /^(promo|kod|koda|kodovi|kodova|kupon|kuponi|kupona|aktivni|aktivan|vrijedi|vrijede)$/;
+  const trazimPromo = tokeniProizvoda.some(t => /^(promo|kupon|kuponi|kupona)$/.test(t)) || (tokeniProizvoda.includes('kod') && tokeniProizvoda.some(t => /^(promo|popust|akcij)/.test(t)));
+  const tokeniBezAkcije = tokeniProizvoda.filter(t => !/^(akcij|snizen|sale|popust|rasprodaj|outlet)$/.test(t) && !/^(akcij|snizen|popust)/.test(t) && !(trazimPromo && PROMO_RE.test(t)));
+  // pitanje o promo kodu bez proizvoda i brenda: kodovi su na proizvodima, pa popis popularnih parfema pokazuje aktivni kod
+  if (trazimPromo && !tokeniBezAkcije.length && !brend) return izlaz('dohvati', [{ url: 'https://martimex.hr/kategorija/parfemi/?sort=1', uloga: 'popis' }], { tip: 'popis', tokeni: [], zeliOpis, napomena: 'Promo kodovi vrijede za pojedine proizvode: zajednički kod je u retku „Promo kod vrijedi za …“, a kod pojedinog proizvoda u retku „| Promo: …“. Za konkretan proizvod pozovi alat s njegovim nazivom.' });
 
   // 5) kategorija (slugovi iz sitemapa)
   let kategorija = null;
