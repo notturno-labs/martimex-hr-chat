@@ -1,4 +1,4 @@
-// Code node "Odaberi stranice" (Martimex uživo) – v1.3
+// Code node "Odaberi stranice" (Martimex uživo) – v1.4
 // Ulaz: (a) item { akcija:'odaberi', kontekst, idx } iz "Pripremi upit" ili (b) HTTP odgovori sitemapa (redoslijed = kontekst.sitemapDatoteke).
 // Deterministički (bez AI-ja) odlučuje koje stranice martimex.hr treba pročitati uživo: tema → informativna stranica,
 // brend/kategorija → popis, naziv proizvoda → 1–3 stranice proizvoda. Nikad ne baca; greške vraća kao akcija 'odgovori'.
@@ -235,10 +235,12 @@ try {
           const w2 = slugIz(r[0]).split('-').filter(w => w && !STOP.has(w) && !/^\d+$/.test(w));
           const zaj = sw.filter(w => w2.includes(w)).length;
           const sl = zaj / Math.max(sw.length, w2.length);
-          if (sl >= 0.6) kand.push({ naziv: naziv_iz_sluga(slugIz(r[0])), url: r[0], sl });
+          if (sl >= 0.6) kand.push({ url: r[0], sl });
         }
         kand.sort((a, b) => b.sl - a.sl);
-        for (const c of kand.slice(0, 2)) urlPrijedlozi.push({ naziv: c.naziv, url: c.url });
+        // naziv i brend iz mape brendova (kako piše na webu); inače iz adrese bez sufiksa -2
+        const izMapa = (put) => { for (const kl of Object.keys(idx)) { if (!kl.startsWith('brend:')) continue; const m = vrijednost(kl); if (m && Array.isArray(m.proizvodi)) { const f = m.proizvodi.find(p => p[0] === put); if (f) return f[1] + (m.naziv ? ' (' + m.naziv + ')' : ''); } } return null; };
+        for (const c of kand.slice(0, 2)) urlPrijedlozi.push({ naziv: izMapa(putanja(c.url)) || naziv_iz_sluga(slugIz(c.url).replace(/-\d+$/, '')), url: c.url });
       }
     }
     return izlaz('dohvati', [{ url: p.url, uloga: 'url' }], { tokeni, zeliOpis, urlPrijedlozi });
@@ -302,7 +304,7 @@ try {
   const trazimPromo = tokeniProizvoda.some(t => /^(promo|kupon|kuponi|kupona)$/.test(t)) || (tokeniProizvoda.includes('kod') && tokeniProizvoda.some(t => /^(promo|popust|akcij)/.test(t)));
   const tokeniBezAkcije = tokeniProizvoda.filter(t => !/^(akcij|snizen|sale|popust|rasprodaj|outlet)$/.test(t) && !/^(akcij|snizen|popust)/.test(t) && !(trazimPromo && PROMO_RE.test(t)));
   // pitanje o promo kodu bez proizvoda i brenda: kodovi su na proizvodima, pa popis popularnih parfema pokazuje aktivni kod
-  if (trazimPromo && !tokeniBezAkcije.length && !brend) return izlaz('dohvati', [{ url: 'https://martimex.hr/kategorija/parfemi/?sort=1', uloga: 'popis' }], { tip: 'popis', tokeni: [], zeliOpis, napomena: 'Promo kodovi vrijede za pojedine proizvode: zajednički kod je u retku „Promo kod vrijedi za …“, a kod pojedinog proizvoda u retku „| Promo: …“. Za konkretan proizvod pozovi alat s njegovim nazivom.' });
+  if (trazimPromo && !tokeniBezAkcije.length && !brend) return izlaz('dohvati', [{ url: 'https://martimex.hr/kategorija/parfemi/?sort=1', uloga: 'popis' }], { tip: 'popis', tokeni: [], zeliOpis, napomena: 'Promo kodovi vrijede za pojedine proizvode i mogu vrijediti i izvan parfema: aktivni kodovi su u retku „Promo kodovi na ovoj stranici“ i u oznakama „| Promo: …“ uz proizvode. Za konkretan proizvod pozovi alat s njegovim nazivom.' });
 
   // 5) kategorija (slugovi iz sitemapa)
   let kategorija = null;
@@ -345,7 +347,7 @@ try {
       return izlaz('dohvati', [{ url: u, uloga: 'popis' }], { tip: 'popis', tema: tema.tema.id, tokeni: tokeniOstatak, akcijaFilter: false, zeliOpis });
     }
     const stranice = urlovi.slice(0, 2).map(u => ({ url: 'https://martimex.hr' + u, uloga: 'stranica' }));
-    return izlaz('dohvati', stranice, { tip: 'stranica', tema: tema.tema.id, temaAlternativa: alternativa ? { id: alternativa.id, url: 'https://martimex.hr' + alternativa.url[0] } : null, tokeni: tokeniBezAkcije.filter(t => !tema.hits.includes(t)), tokeniTeme: tema.hits, zeliOpis, napomena: (tema.tema.id === 'chanel' && !brendSlugovi.includes('chanel')) ? 'Chanel nije na popisu brendova webshopa martimex.hr (nije u ponudi webshopa); stranica opisuje Chanel u parfumerijama Martimex.' : null });
+    return izlaz('dohvati', stranice, { tip: 'stranica', tema: tema.tema.id, temaAlternativa: alternativa ? { id: alternativa.id, url: 'https://martimex.hr' + alternativa.url[0] } : null, tokeni: tokeniBezAkcije.filter(t => !tema.hits.includes(t)), tokeniTeme: tema.hits, zeliOpis, napomena: (tema.tema.id === 'chanel' && !brendSlugovi.includes('chanel')) ? 'Chanel mirise i kozmetiku Martimex nudi u svojim parfumerijama (Chanel Espace, vidi stranicu); na popisu brendova webshopa martimex.hr Chanel nema, pa se ne može naručiti online.' : null });
   }
 
   // 6) proizvodi: rangiranje slugova (algoritam iz "Izvuci i filtriraj URL-ove")
