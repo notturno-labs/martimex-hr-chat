@@ -1,4 +1,4 @@
-// Code node "Odaberi stranice" (Martimex uživo) – v1
+// Code node "Odaberi stranice" (Martimex uživo) – v1.3
 // Ulaz: (a) item { akcija:'odaberi', kontekst, idx } iz "Pripremi upit" ili (b) HTTP odgovori sitemapa (redoslijed = kontekst.sitemapDatoteke).
 // Deterministički (bez AI-ja) odlučuje koje stranice martimex.hr treba pročitati uživo: tema → informativna stranica,
 // brend/kategorija → popis, naziv proizvoda → 1–3 stranice proizvoda. Nikad ne baca; greške vraća kao akcija 'odgovori'.
@@ -67,7 +67,7 @@ const SAMOPROVJERA = [
   { url: 'https://martimex.hr/dostava-i-isporuka/', uloga: 'stranica', ocekuj: 'tekst' }
 ];
 const BRENDOVA_PO_SERIJI = 6;
-const OSVJEZI_NAKON_S = 180;
+const OSVJEZI_NAKON_S = 120;
 const now = Date.now();
 
 const norm = s => String(s || '').toLowerCase().replace(/đ/g, 'd').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -223,7 +223,25 @@ try {
   if (k.url) {
     const p = provjeriUrl(k.url);
     if (!p.url) return odgovori({ ok: false, greska: p.greska });
-    return izlaz('dohvati', [{ url: p.url, uloga: 'url' }], { tokeni, zeliOpis });
+    // adresa proizvoda koje nema u indeksu: pripremi najbliže proizvode za slučaj 404
+    const urlPrijedlozi = [];
+    const putUrl = putanja(p.url);
+    if (/^\/proizvod\//.test(putUrl) && !proizvodiRows.some(r => putanja(r[0]) === putUrl)) {
+      const sw = slugIz(p.url).split('-').filter(w => w && !STOP.has(w) && !/^\d+$/.test(w));
+      if (sw.length) {
+        const kand = [];
+        for (const r of proizvodiRows) {
+          const put = putanja(r[0]); if (!/^\/proizvod\//.test(put)) continue;
+          const w2 = slugIz(r[0]).split('-').filter(w => w && !STOP.has(w) && !/^\d+$/.test(w));
+          const zaj = sw.filter(w => w2.includes(w)).length;
+          const sl = zaj / Math.max(sw.length, w2.length);
+          if (sl >= 0.6) kand.push({ naziv: naziv_iz_sluga(slugIz(r[0])), url: r[0], sl });
+        }
+        kand.sort((a, b) => b.sl - a.sl);
+        for (const c of kand.slice(0, 2)) urlPrijedlozi.push({ naziv: c.naziv, url: c.url });
+      }
+    }
+    return izlaz('dohvati', [{ url: p.url, uloga: 'url' }], { tokeni, zeliOpis, urlPrijedlozi });
   }
 
   // 2) tema (informativne stranice)
@@ -323,7 +341,7 @@ try {
       return izlaz('dohvati', [{ url: u, uloga: 'popis' }], { tip: 'popis', tema: tema.tema.id, tokeni: tokeniOstatak, akcijaFilter: false, zeliOpis });
     }
     const stranice = urlovi.slice(0, 2).map(u => ({ url: 'https://martimex.hr' + u, uloga: 'stranica' }));
-    return izlaz('dohvati', stranice, { tip: 'stranica', tema: tema.tema.id, temaAlternativa: alternativa ? { id: alternativa.id, url: 'https://martimex.hr' + alternativa.url[0] } : null, tokeni: tokeniBezAkcije.filter(t => !tema.hits.includes(t)), tokeniTeme: tema.hits, zeliOpis });
+    return izlaz('dohvati', stranice, { tip: 'stranica', tema: tema.tema.id, temaAlternativa: alternativa ? { id: alternativa.id, url: 'https://martimex.hr' + alternativa.url[0] } : null, tokeni: tokeniBezAkcije.filter(t => !tema.hits.includes(t)), tokeniTeme: tema.hits, zeliOpis, napomena: (tema.tema.id === 'chanel' && !brendSlugovi.includes('chanel')) ? 'Chanel nije na popisu brendova webshopa martimex.hr (nije u ponudi webshopa); stranica opisuje Chanel u parfumerijama Martimex.' : null });
   }
 
   // 6) proizvodi: rangiranje slugova (algoritam iz "Izvuci i filtriraj URL-ove")
@@ -332,7 +350,14 @@ try {
   const NE_MIRIS = ['deo', 'deodorant', 'dezodorans', 'gel', 'balm', 'balzam', 'losion', 'lotion', 'shower', 'after', 'shave', 'krema', 'sapun', 'stick', 'body', 'mlijeko', 'oil', 'ulje'];
   const mapaBrenda = brend ? vrijednost('brend:' + brend) : null;
   const mapaPutanje = (mapaBrenda && Array.isArray(mapaBrenda.proizvodi)) ? new Set(mapaBrenda.proizvodi.map(p => p[0])) : null;
-  const mapaPotpuna = !!(mapaBrenda && mapaBrenda.stranice && mapaBrenda.djelomicno === false && mapaPutanje && mapaPutanje.size);
+  // mapa je potpuna samo ako je označena tako I broj proizvoda odgovara broju stranica popisa (20 po stranici)
+  const mapaPotpuna = !!(mapaBrenda && mapaBrenda.stranice && mapaBrenda.djelomicno === false && mapaPutanje && mapaPutanje.size && mapaPutanje.size > (Number(mapaBrenda.stranice) - 1) * 20);
+  // riječi vrste proizvoda (ne određuju koji je to proizvod); spol i flankeri (homme, femme, intense, elixir…) ostaju dio naziva
+  const OPISNE = new Set(['miris', 'mirisi', 'mirisa', 'original', 'originalni', 'novi', 'nova', 'novo']);
+  const TIP_RIJECI = new Set(['parfum', 'parfem', 'parfemska', 'parfemski', 'toilette', 'toaletna', 'cologne', 'kolonjska', 'extrait', 'voda', 'set', 'spray', 'sprej', 'edp', 'edt', 'natural', 'vaporisateur']);
+  // kad je brend poznat: proizvodi koji su u mapi NEKOG DRUGOG brenda ne dolaze u obzir
+  const tudjePutanje = new Set();
+  if (brend) for (const kl of Object.keys(idx)) { if (!kl.startsWith('brend:') || kl === 'brend:' + brend) continue; const m = vrijednost(kl); if (m && Array.isArray(m.proizvodi)) for (const p of m.proizvodi) tudjePutanje.add(p[0]); }
   const mapaNazivi = {};
   if (mapaBrenda && Array.isArray(mapaBrenda.proizvodi)) for (const p of mapaBrenda.proizvodi) mapaNazivi[p[0]] = p[1];
   const brendRijeci = new Set(brend ? brend.split('-').concat(brendTokeni) : []);
@@ -349,6 +374,7 @@ try {
       const path = putanja(url);
       if (!/^\/proizvod\//.test(path)) continue;
       if (ograniciNaMapu && !mapaPutanje.has(path)) continue;
+      if (tudjePutanje.has(path) && !(mapaPutanje && mapaPutanje.has(path))) continue;
       if (kategorija && !path.includes('/' + kategorija.segs[kategorija.segs.length - 1] + '/')) continue;
       const slug = slugIz(url);
       const hay = ' ' + norm(path).replace(/\s+/g, ' ') + ' ';
@@ -367,15 +393,21 @@ try {
       if (trazenEdp) score += /-eau-de-parfum/.test(slug) ? 1.5 : (/parfum/.test(slug) ? -0.5 : 0);
       if (trazenEdt) score += /-eau-de-toilette/.test(slug) ? 1.5 : (/toilette/.test(slug) ? -0.5 : 0);
       const words = norm(slug).split(' ').filter(Boolean);
-      const rijeci = words.filter(w => !STOP.has(w) && !brendRijeci.has(w) && !/^\d+(ml|g|gr)?$/.test(w));
+      // riječi naziva (jake) i riječi vrste proizvoda (slabe: parfum, toilette, set, intense…) broje se odvojeno
+      const sveRijeci = words.filter(w => !STOP.has(w) && !brendRijeci.has(w) && !/^\d+(ml|g|gr)?$/.test(w));
+      const rijeci = sveRijeci.filter(w => !TIP_RIJECI.has(w));
+      const slabe = sveRijeci.filter(w => TIP_RIJECI.has(w));
       const pogodjene = rijeci.filter(w => hitSlug(w)).length;
       const visak = rijeci.length - pogodjene;
-      score += 2 * pogodjene / Math.max(1, rijeci.length) - 0.4 * visak;
-      const jezgraSluga = words.filter(w => !STOP.has(w) && !brendRijeci.has(w) && !/^\d+(ml|g|gr)?$/.test(w)).sort().join(' ');
-      const tocno = jezgraSluga === toks.filter(t => !STOP.has(t) && !/^\d+$/.test(t)).slice().sort().join(' ');
+      const visakSlabih = slabe.filter(w => !hitSlug(w)).length;
+      score += 2 * pogodjene / Math.max(1, rijeci.length) - 0.4 * visak - 0.15 * visakSlabih;
+      const jakiUpit = toks.filter(t => !STOP.has(t) && !TIP_RIJECI.has(t) && !OPISNE.has(t) && !/^\d+$/.test(t));
+      const slabiUpit = toks.filter(t => TIP_RIJECI.has(t));
+      const tocno = jakiUpit.length > 0 && rijeci.slice().sort().join(' ') === jakiUpit.slice().sort().join(' ') && slabiUpit.every(t => slabe.some(w => w === t || (t.length >= 5 && w.startsWith(t.slice(0, 5)))));
       if (tocno) score += 3;
+      if (slabe.includes('set') && !toks.includes('set') && !toks.includes('setovi')) score -= 1;
       if (/\/uncategorized\//.test(path)) score -= 1;
-      if (mapaPutanje && mapaPutanje.has(path)) score += 0.75;
+      if (mapaPutanje && mapaPutanje.has(path)) score += mapaPotpuna ? 0.75 : 0.1;
       rez.push({ url, path, slug, score, visak, len: slug.length, tocno, naziv: mapaNazivi[path] || naziv_iz_sluga(slug) });
     }
     rez.sort((a, b) => (b.score - a.score) || (a.visak - b.visak) || (a.len - b.len));
@@ -402,9 +434,17 @@ try {
   if (lista.length) {
     const top = lista[0];
     let odabrani;
-    if (lista.length === 1 || (top.tocno && !(lista[1] && lista[1].tocno)) || top.score - lista[1].score >= 1.0) odabrani = [top];
-    else odabrani = lista.filter(r => r.score >= top.score - 0.75).slice(0, 3);
-    const slicni = lista.filter(r => !odabrani.includes(r)).slice(0, 3).map(r => ({ naziv: r.naziv, url: r.url }));
+    // jasan pobjednik: jedini točan naziv ili velika prednost (bez točnog naziva traži se veća prednost); inače do 3 podjednako dobra
+    const prag = top.tocno ? 1.0 : 1.5;
+    if (lista.length === 1 || (top.tocno && !(lista[1] && lista[1].tocno)) || top.score - lista[1].score >= prag) odabrani = [top];
+    else odabrani = lista.filter(r => r.score >= top.score - (top.tocno ? 0.75 : prag)).slice(0, 3);
+    // slični: ista glavna kategorija, razumna sličnost; kad je brend poznat, samo proizvodi potvrđeni u mapi brenda
+    const kat1 = p => (String(p).split('/')[2] || '');
+    const glavneKat = new Set(odabrani.map(r => kat1(r.path)));
+    let slicniKand = lista.filter(r => !odabrani.includes(r) && glavneKat.has(kat1(r.path)) && r.score >= Math.max(1, top.score * 0.4));
+    if (!tokeniOstatak.includes('set') && !tokeniOstatak.includes('setovi')) slicniKand = slicniKand.filter(r => !/(^|-)set(-|$)/.test(r.slug));
+    if (brend) slicniKand = slicniKand.filter(r => mapaPutanje && mapaPutanje.has(r.path));
+    const slicni = slicniKand.slice(0, 3).map(r => ({ naziv: r.naziv, url: r.url }));
     const stranice = odabrani.map(r => ({ url: r.url, uloga: 'proizvod', naziv: r.naziv, score: Math.round(r.score * 100) / 100 }));
     return izlaz('dohvati', stranice, { tip: odabrani.length > 1 ? 'vise_proizvoda' : 'proizvod', brend, brendNaziv: brend ? brendNaziv(brend) : null, brendProvjera, brendOgraniceno: ograniceno, kandidata: lista.length, slicni, tokeni: tokeniOstatak, zeliOpis, akcijaFilter });
   }
@@ -413,7 +453,7 @@ try {
   if (brend && tokeniOstatak.length) {
     const bliski = (mapaBrenda && Array.isArray(mapaBrenda.proizvodi)) ? mapaBrenda.proizvodi.filter(p => tokeniOstatak.some(t => norm(p[1]).split(' ').some(w => w === t || (t.length >= 4 && w.startsWith(t.slice(0, 4))) || (t.length >= 5 && lev(w, t) <= 1)))).slice(0, 3).map(p => ({ naziv: p[1], url: 'https://martimex.hr' + p[0] })) : [];
     const brojProizvoda = (mapaBrenda && Array.isArray(mapaBrenda.proizvodi)) ? mapaBrenda.proizvodi.length : null;
-    return odgovori({ ok: true, tip: 'nije_pronadjeno', tekst: 'NIJE PRONAĐENO: brend ' + brendNaziv(brend) + ' u webshopu nema proizvod koji odgovara nazivu „' + tokeniOstatak.join(' ') + '“' + (brojProizvoda !== null ? ' (provjereno među ' + brojProizvoda + ' proizvoda brenda u indeksu' + (k.indeksStarostS !== null ? ', indeks osvježen prije ' + Math.round((k.indeksStarostS || 0) / 60) + ' min' : '') + ')' : ' (prema popisu adresa proizvoda)') + '.\n' + (bliski.length ? 'Najbliže od tog brenda: ' + bliski.map(b => b.naziv + ' ' + b.url).join(' · ') + '\n' : '') + 'Stranica brenda (svi proizvodi, s cijenama): ' + brendUrl(brend) + (akcijaFilter ? ' (traženo: na akciji)' : '') }, { tip: 'nije_pronadjeno', brend });
+    return odgovori({ ok: true, tip: 'nije_pronadjeno', tekst: 'NIJE PRONAĐENO: brend ' + brendNaziv(brend) + ' u webshopu nema proizvod koji odgovara nazivu „' + tokeniOstatak.join(' ') + '“' + (brojProizvoda !== null ? ' (provjereno među ' + brojProizvoda + ' proizvoda brenda u indeksu' + (k.sitemapiUzivo || k.indeksStarostS !== null ? ', indeks osvježen prije ' + (k.sitemapiUzivo ? 0 : Math.round((k.indeksStarostS || 0) / 60)) + ' min' : '') + ')' : ' (prema popisu adresa proizvoda)') + '.\n' + (bliski.length ? 'Najbliže od tog brenda: ' + bliski.map(b => b.naziv + ' ' + b.url).join(' · ') + '\n' : '') + 'Stranica brenda (svi proizvodi, s cijenama): ' + brendUrl(brend) + (akcijaFilter ? ' (traženo: na akciji)' : '') }, { tip: 'nije_pronadjeno', brend });
   }
   if (brend && kategorija && kategorija.segs.length >= 2 && !/^(parfemske-vode|toaletne-vode|parfemski-ekstrakti|njega-lica|njega-tijela|njega-kose)$/.test(kategorija.segs[kategorija.segs.length - 1])) return popis(kategorija.url, { filtrirajBrend: brendNaziv(brend), kategorijaNapomena: 'Popis kategorije ' + kategorija.path + ' je filtriran na brend ' + brendNaziv(brend) + ' (web nema filtar po brendu); za sve proizvode brenda: ' + brendUrl(brend) });
   if (brend) return popis(brendUrl(brend), { kategorijaNapomena: kategorija ? 'Kategorija ' + kategorija.path + ' je prepoznata, ali popis brenda ne filtrira po kategoriji; u popisu su svi proizvodi brenda (po potrebi pozovi alat s url kategorije).' : null, napomena: brend === 'furla' ? 'Furla ima i stranice https://martimex.hr/furla/ i https://martimex.hr/kontakt-furla/ (pozovi alat s url).' : (k.napomena || null) });
@@ -431,7 +471,7 @@ try {
   // 8) ništa: po potrebi osvježi sitemape uživo i pokušaj još jednom
   const upitNorm = tokeniBezAkcije.join(' ');
   const nepoznatBrend = NEPOZNATI_BRENDOVI.find(b => spojeno.includes(' ' + b + ' '));
-  if (!k.sitemapiUzivo && !nepoznatBrend && (k.indeksStarostS === null || k.indeksStarostS > OSVJEZI_NAKON_S) && tokeniOstatak.length) return izlaz('sitemapi', sitemapItemi(), { osvjezenoNaPrazno: true });
+  if (!k.sitemapiUzivo && (k.indeksStarostS === null || k.indeksStarostS > OSVJEZI_NAKON_S) && tokeniOstatak.length) return izlaz('sitemapi', sitemapItemi(), { osvjezenoNaPrazno: true });
 
   // nije pronađeno: najbliži brendovi, kategorije, proizvodi
   const bliskiBrendovi = brendSlugovi.map(s => { const w = s.replace(/-/g, ' '); const d = Math.min(...tokeniBezAkcije.filter(t => t.length >= 4).map(t => Math.min(lev(t, s.replace(/-/g, '')), ...w.split(' ').filter(x => x.length >= 4).map(x => lev(t, x))))); return { s, d }; }).filter(x => isFinite(x.d) && x.d <= (upitNorm.length >= 7 ? 2 : 1)).sort((a, b) => a.d - b.d).slice(0, 3);
@@ -448,7 +488,7 @@ try {
     bliskiProizvodi.sort((a, b) => b.d - a.d || a.len - b.len);
   }
   const blog = postRows.filter(r => { const w = slugIz(r[0]).split('-'); return tokeniBezAkcije.filter(t => t.length >= 4).some(t => w.some(x => x === t || x.startsWith(stem(t)))); }).slice(0, 2);
-  const redci = ['NIJE PRONAĐENO po nazivu „' + k.upit + '“' + (k.indeksStarostS !== null ? ' (indeks adresa osvježen prije ' + Math.round((k.indeksStarostS || 0) / 60) + ' min)' : '') + '.'];
+  const redci = ['NIJE PRONAĐENO po nazivu „' + k.upit + '“' + (k.sitemapiUzivo || k.indeksStarostS !== null ? ' (indeks adresa osvježen prije ' + (k.sitemapiUzivo ? 0 : Math.round((k.indeksStarostS || 0) / 60)) + ' min)' : '') + '.'];
   if (nepoznatBrend) redci.push('Brend „' + nepoznatBrend + '“ nije na popisu brendova webshopa martimex.hr (nije u ponudi webshopa; poslovnice mogu imati drukčiju ponudu).');
   else if (tokeniBezAkcije.length <= 2 && !bliskiBrendovi.length && !kategorija) redci.push('Na popisu brendova webshopa martimex.hr nema brenda s tim nazivom.');
   const najblize = [];

@@ -317,6 +317,8 @@ try {
   main = removeBalanced(main, junkRe);
   main = removeBalanced(main, /<([a-z][a-z0-9]*)\b[^>]*(?<![:\w-])class="(?![^"]*\bd-(?:sm|md|lg|xl|xxl)-)(?:[^"]*\s)?d-none(?:\s[^"]*)?"[^>]*>/gi);
   main = removeBalanced(main, /<([a-z][a-z0-9]*)\b[^>]*\bstyle="[^"]*(?:display\s*:\s*none|visibility\s*:\s*hidden)[^"]*"[^>]*>/gi);
+  // gumbi s iznosima (npr. vrijednosti poklon bona) ostaju kao tekst; ostali gumbi i obrasci se uklanjaju
+  main = main.replace(/<button\b[^>]*>([\s\S]*?)<\/button>/gi, (all, inner) => { const t = stripTags(inner); return (/\d/.test(t) && t.length <= 40) ? '<span>' + t + '</span> ' : all; });
   main = removeBalanced(main, /<(template|svg|iframe|picture|video|select|button|form)\b[^>]*>/gi);
   main = main.replace(/<(img|input|source|link|meta)\b[^>]*>/gi, '');
   main = main.replace(/<div class="accordion__trigger"[^>]*>([\s\S]*?)<\/div>/g, (all, inner) => { const t = stripTags(inner); return t ? '<h3>' + t + '</h3>' : ''; });
