@@ -9,7 +9,7 @@ const KONTAKT = ' Ne navodi cijene ni dostupnost napamet; pokušaj ponovno ili u
 const ZG = 'Europe/Zagreb';
 const now = Date.now();
 
-const norm = s => String(s || '').toLowerCase().replace(/đ/g, 'd').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const norm = s => String(s || '').toLowerCase().replace(/đ/g, 'd').normalize('NFD').replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, ' ').trim();
 const stem = w => { if (!w || w.length < 4) return w; const s = w.replace(/(ovima|evima|ovi|evi|ima|ama|om|em|a|e|i|o|u|y)$/, ''); return s.length >= 3 ? s : w; };
 const slugify = s => norm(s).replace(/ /g, '-');
 const vrijeme = ts => { try { return DateTime.fromMillis(ts).setZone(ZG).toFormat('dd.MM.yyyy. HH:mm:ss'); } catch (e) { return new Date(ts).toISOString(); } };
@@ -117,7 +117,7 @@ function slicnoRedak(kandidati, proizvodi, brend, budzet) {
 function tekstStranice(s, tokeni, max, tokeniTeme) {
   let md = String(s.markdown || '').replace(/<(https?:\/\/[^>\s]+)>/g, '$1').replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[\s*\]\([^)]*\)/g, '')
     .replace(/\]\((\?[^)]*)\)/g, '](' + String(s.url || '').split('?')[0] + '$1)').replace(/\]\((\/[^)]*)\)/g, '](https://martimex.hr$1)')
-    .replace(/\\([\\`*_{}\[\]()#+\-.!|>~])/g, '$1').replace(/<\/?[a-z][^>]*>/gi, '').replace(/&nbsp;|\u00a0/g, ' ').replace(/[ \t]+/g, ' ')
+    .replace(/\\([\\`*_{}\[\]()#+\-.!|>~])/g, '$1').replace(/<\/?[a-z][^>]*>/gi, '').replace(/&nbsp;/g, ' ').replace(new RegExp(String.fromCharCode(160), 'g'), ' ').replace(/[ \t]+/g, ' ')
     .replace(/\[([^\]]*)\]\((?:mailto:|tel:)[^)]*\)/g, '$1').replace(/\[([^\]]*)\]\(https?:\/\/(?!(?:www\.)?martimex\.hr)[^)]*\)/g, '$1');
   const linije = []; let prev = null;
   for (const raw of md.split('\n')) { const line = raw.trim(); if (/^[*\-+|#>_]*$/.test(line)) { if (prev !== '') { linije.push(''); prev = ''; } continue; } if (line === prev) continue; linije.push(line); prev = line; }
@@ -312,7 +312,7 @@ try {
           if (k.filtrirajBrend) { const nb = norm(k.filtrijBrend || k.filtrirajBrend); const istog = lista.filter(p => norm(p.brend) === nb || norm(p.brend).replace(/ /g, '') === nb.replace(/ /g, '')); napBrend = istog.length ? 'Prikazani su samo proizvodi brenda ' + k.filtrirajBrend + ' (' + istog.length + ' od ' + lista.length + ' na ovoj stranici popisa).' : 'Na ovoj stranici popisa nema proizvoda brenda ' + k.filtrirajBrend + ' (' + lista.length + ' drugih proizvoda).'; if (istog.length) lista = istog; }
           if (k.akcijaFilter) { const naAkciji = lista.filter(p => p.naAkciji || p.redovna); if (naAkciji.length) { napAkcija = 'Prikazani su samo proizvodi na akciji (' + naAkciji.length + ' od ' + lista.length + ' na ovoj stranici).'; lista = naAkciji; } else napAkcija = 'Na ovoj stranici popisa nijedan proizvod nije označen kao akcija.'; }
           const st = s.stranicenje;
-          r.push('POPIS: ' + (lp.naslov || s.naslov || s.url) + ' · ' + lista.length + ' proizvoda na stranici' + (st && st.ukupno > 1 ? ' · stranica ' + st.trenutna + ' od ' + st.ukupno : ' · sve na jednoj stranici'));
+          r.push('POPIS: ' + (lp.naslov || s.naslov || s.url) + ' · ' + lista.length + ' ' + mn(lista.length, 'proizvod', 'proizvoda', 'proizvoda') + ' na stranici' + (st && st.ukupno > 1 ? ' · stranica ' + st.trenutna + ' od ' + st.ukupno : ' · sve na jednoj stranici'));
           r.push(s.url);
           const fr = filtriRijecima(s.url); if (fr) r.push(fr);
           if (st && st.sljedeca) r.push('Sljedeća stranica: ' + st.sljedeca + ' (pozovi alat s url).');

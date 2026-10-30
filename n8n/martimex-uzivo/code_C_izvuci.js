@@ -277,7 +277,7 @@ try {
     rezultat.proizvod = { naziv, brend: brendIme, kategorija, kategorijaGlavna, breadcrumbs, varijante, jedno, promo, slicni: slicni.slice(0, 4), note: noteRecenice.slice(0, 260), opisZnakova: opisTekst.length, bezZalihe: varijante.length ? varijante.every(v => v.zaliha === 'nije na zalihi') : (jedno ? jedno.zaliha === 'nije na zalihi' : false) };
     rezultat.html = opisHtml.trim() ? ('<div>' + opisHtml.slice(0, 60000) + '</div>') : '<p></p>';
     if (k.brendProvjera && brendIme) {
-      const n = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '');
+      const n = s => String(s).toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, '');
       rezultat.drugiBrend = n(brendIme) !== n(k.brendProvjera) && !n(k.brendProvjera).includes(n(brendIme)) && !n(brendIme).includes(n(k.brendProvjera));
     }
     return { json: rezultat };

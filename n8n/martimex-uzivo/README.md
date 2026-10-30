@@ -20,7 +20,8 @@ ova mapa je samo kopija za pregled razlika i lokalno testiranje.
 | `build_sdk.py` | – | sastavlja n8n Workflow SDK kod cijelog workflowa iz gornjih datoteka |
 | `workflow_skeleton.js` | – | kostur workflowa (nodeovi, veze, postavke) s praznim Code nodeovima |
 | `harness.js` | – | lokalno oponaša Code nodeove (`$input`, `$()`, `$json`, `$now`, `DateTime`) i vrti A → B → C → Markdown → D → E nad spremljenim HTML-om |
-| `escape_push.py` | – | prije slanja u n8n nevidljive i kombinirajuće znakove pretvara u `\uXXXX` |
+| `escape_push.py` | – | provjera prije slanja: nevidljive i kombinirajuće znakove pretvara u `\uXXXX` (kod ih ionako ne smije sadržavati) |
+| `test_brendovi.js` | – | jedinični test spremanja mape brendova (više stranica istog brenda u jednoj seriji) |
 | `index_extra.json` | – | mali dio indeksa (brendovi, kategorije, stranice) za lokalne testove |
 
 ## Lokalni test
@@ -38,9 +39,11 @@ Stranica bez spremljenog uzorka u testu se ponaša kao 404.
 
 ## Objava promjene u n8n
 
-1. `python3 escape_push.py code_B_odaberi.js /tmp/B.js`
-2. MCP `update_workflow`: `setNodeParameter`, node „Odaberi stranice“, path `/jsCode`, vrijednost = sadržaj `/tmp/B.js`.
-3. Produkcijski test webhookom, zatim `publish_workflow`.
+1. Kod ne smije sadržavati nevidljive znakove ni `\uXXXX` zapise: JSON prijenos pretvara `\u0300` u stvarni nevidljivi znak.
+   Umjesto toga koristi `/\p{M}/gu` i `String.fromCharCode(...)`. Provjera: `python3 escape_push.py code_B_odaberi.js /tmp/B.js` ne smije ništa promijeniti.
+2. MCP `update_workflow`: `setNodeParameter`, node „Odaberi stranice“, path `/jsCode`, vrijednost = sadržaj datoteke.
+3. `get_workflow_details` i usporedba pohranjenog `jsCode` s datotekom (mora biti identičan).
+4. Produkcijski test webhookom, zatim `publish_workflow`.
 
 `build_sdk.py` čita ID-ove iz varijabli okoline `TABLE_ID`, `TELEGRAM_CREDENTIAL_ID` i `TELEGRAM_CHAT_ID`;
 bez njih u kodu ostaju oznake `__…__` koje treba zamijeniti prije izrade novog workflowa.

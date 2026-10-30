@@ -70,7 +70,7 @@ const BRENDOVA_PO_SERIJI = 6;
 const OSVJEZI_NAKON_S = 120;
 const now = Date.now();
 
-const norm = s => String(s || '').toLowerCase().replace(/đ/g, 'd').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+const norm = s => String(s || '').toLowerCase().replace(/đ/g, 'd').normalize('NFD').replace(/\p{M}/gu, '').replace(/&/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
 const tokeniziraj = s => norm(s).split(' ').filter(Boolean).map(t => ZAMJENE[t] || t);
 function stem(w) { if (!w || w.length < 4) return w; const s = w.replace(/(ovima|evima|ovi|evi|ima|ama|om|em|a|e|i|o|u|y)$/, ''); return s.length >= 3 ? s : w; }
 function lev(a, b) {

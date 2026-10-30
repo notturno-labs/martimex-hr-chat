@@ -42,7 +42,7 @@ function citajZahtjev() {
   if (!b || typeof b !== 'object') b = {};
   const q = (j.query && typeof j.query === 'object') ? j.query : {};
   const first = (...v) => v.find(x => x !== undefined && x !== null && String(x).trim() !== '') ?? '';
-  const cisti = (s) => String(s).replace(/[\u200b-\u200d\ufeff]/g, '').trim().replace(/^[\s"'`<>\[\]{}()]+|[\s"'`<>\[\]{}()]+$/g, '');
+  const cisti = (s) => String(s).replace(new RegExp('[' + String.fromCharCode(0x200b, 0x200c, 0x200d, 0xfeff) + ']', 'g'), '').trim().replace(/^[\s"'`<>\[\]{}()]+|[\s"'`<>\[\]{}()]+$/g, '');
   let upit = cisti(first(b.upit, q.upit, j.upit, b.query, b.trazi, j.trazi));
   let url = cisti(first(b.url, q.url, j.url, b.link, b.poveznica, b.putanja));
   if (PRAZNO.test(upit)) upit = '';
