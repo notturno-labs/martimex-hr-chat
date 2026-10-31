@@ -1,4 +1,4 @@
-// Code node "Izvuci činjenice" (Martimex uživo) – v1, izvršava se po stavci.
+// Code node "Izvuci činjenice" (Martimex uživo) – v1.5, izvršava se po stavci.
 // Ulaz: HTTP odgovor stranice (fullResponse: statusCode, headers, body), nakon prvog ili ponovljenog dohvata.
 // Klasificira odgovor (nikad ok za grešku, preusmjerenje, ne-HTML ili stare podatke), izvlači činjenice iz JSON-a teme
 // (proizvod: varijante, cijene, akcija, zaliha, promo; popis: kartice proizvoda; informativna stranica: očišćen HTML za Markdown).
@@ -278,7 +278,10 @@ try {
     rezultat.html = opisHtml.trim() ? ('<div>' + opisHtml.slice(0, 60000) + '</div>') : '<p></p>';
     if (k.brendProvjera && brendIme) {
       const n = s => String(s).toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, '');
-      rezultat.drugiBrend = n(brendIme) !== n(k.brendProvjera) && !n(k.brendProvjera).includes(n(brendIme)) && !n(brendIme).includes(n(k.brendProvjera));
+      // sva poznata imena traženog brenda (slug, naziv s weba, aliasi), npr. thoo = The House of Oud
+      const imena = (Array.isArray(k.brendImena) && k.brendImena.length ? k.brendImena : [k.brendProvjera]).map(n).filter(Boolean);
+      const nb = n(brendIme);
+      rezultat.drugiBrend = !!nb && !imena.some(x => x === nb || x.includes(nb) || nb.includes(x));
     }
     return { json: rezultat };
   }

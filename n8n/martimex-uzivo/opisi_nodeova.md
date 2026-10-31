@@ -2,7 +2,7 @@
 
 Isti tekstovi stoje kao sticky bilješke uz svaki node u n8n-u (workflow „Marti – Martimex uživo“, v1.4). Brojevi u naslovima odgovaraju redoslijedu koraka; slova A–E su ulazi (okidači), G1 i G2 obrada kvarova.
 
-## Marti – Martimex uživo (v1.4): kako radi
+## Marti – Martimex uživo (v1.5): kako radi
 Jedan alat za Marti. Marti pošalje pitanje kupca, workflow pronađe 1–3 stranice martimex.hr, pročita ih **uživo** i vrati kratak tekst s činjenicama. AI se ne koristi: svaka odluka je pravilo u kodu.
 
 **Glavni put (pitanje kupca, obično 1,5–4 s):**\
@@ -13,7 +13,8 @@ Sporedni putovi: 4 Dohvati sitemape (kad je indeks stariji od 30 min, ili kad se
 
 **Indeks** (tablica „Marti - indeks weba“) zna samo GDJE je nešto. Cijene, zaliha i tekst uvijek se čitaju uživo.\
 **Odgovor Marti** je uvijek HTTP 200: `{ ok, tip, tekst }` ili `{ ok:false, greska }`. Tip je proizvod, vise_proizvoda, popis, stranica ili nije_pronadjeno.\
-**Vremenska ograničenja:** stranica 8 s, drugi dohvat 5–8 s, sitemap 10 s, cijeli workflow 28 s.\
+**Vremenska ograničenja:** stranica 8 s za pitanje kupca i samoprovjeru (drugi dohvat samo za pitanje, 5–8 s), 15 s za brendove; sitemap 10 s; cijeli workflow 28 s. Najviše 3 stranice istodobno.\
+**Dojave:** Telegram stiže kad nešto stvarno ne radi (alat ne može izvući podatke, web prespor za kupce, indeks se ne osvježava 2 h, interni kvar, i na pitanju kupca preko 16b). Kratko spor ili nedostupan web ne javlja grešku.\
 **Boje bilježaka:** plava = ulazi i održavanje · žuta = glavni put · zelena = indeks (čitanje i spremanje) · crvena = greške i dojave.
 
 ### A · Zahtjev od Marti
@@ -49,7 +50,8 @@ Ručni test ne ide na 16, nego na „17 Zadatak uspio?“. Uz `ok:true` rezultat
 *Schedule Trigger*\
 Svakih 25 minuta osvježi indeks adresa iz sitemapa martimex.hr: novi i uklonjeni proizvodi, kategorije, brendovi i stranice.\
 Zato je indeks obično mlađi od 30 minuta, pa Martina pitanja ne moraju čekati čitanje sitemapa.\
-Ako osvježavanje ne uspije (npr. jedan od 13 sitemapa ne odgovori), ne sprema se ništa i stiže Telegram. Kad indeks prijeđe 30 min, pitanja bez url-a čitaju sitemape uživo (nekoliko sekundi dulje).
+Ako neki sitemap ne uspije, ostali se spreme, a za njega ostaje stari popis; sljedeći pokušaj je za 25 min. Telegram stiže tek kad je obavezni dio indeksa (proizvodi, kategorije, brendovi, stranice) stariji od 2 h, i to jednom, zatim jednom dnevno dok se ne popravi. Nagli pad broja adresa (više od pola) ne prepisuje dobar indeks.\
+Kad je indeks stariji od 30 min, pitanja bez url-a čitaju sitemape uživo (nekoliko sekundi dulje).
 
 ### C2 · Zadatak: sitemapi
 (node: `Zadatak: sitemapi`)
@@ -61,22 +63,26 @@ Postavi `zadatak = "sitemapi"`. Po tome ostatak workflowa zna da ovo nije pitanj
 (node: `Svakih 10 min: brendovi`)
 
 *Schedule Trigger*\
-Svakih 10 minuta pročita sljedećih 6 stranica brendova (npr. /brand/versace/?pg=2). Iz njih nastaje **mapa brendova**: popis proizvoda svakog brenda.\
+Svakih 10 minuta pročita sljedeće 3 stranice brendova (npr. /brand/versace/?pg=2), da web nikad ne slaže više od 3 stranice istodobno. Iz njih nastaje **mapa brendova**: popis proizvoda svakog brenda.\
 Mapa treba jer adresa proizvoda najčešće ne sadrži ime brenda (npr. /eros-eau-de-parfum/). Krug svih brendova traje nekoliko sati, a zatim kreće ispočetka.\
-Neuspjela stranica vraća se u red još jednom, a nakon drugog neuspjeha se preskače. Zadatak javlja grešku (Telegram) samo ako nijedna stranica serije nije pročitana.
+Neuspjela stranica vraća se u red još jednom, a nakon drugog neuspjeha se preskače. Ako ne stigne nijedna od 3 stranice serije (web ne odgovara), ista serija ponavlja se bez trošenja pokušaja, najviše 6 puta zaredom. Stranica brenda bez ijedne kartice ne briše mapu. Ako se tablica indeksa ne učita, serija se preskače.\
+Spor ili nedostupan web ovdje ne javlja grešku; promjenu izgleda popisa javlja samoprovjera.
 
 ### D2 · Zadatak: brendovi
 (node: `Zadatak: brendovi`)
 
 *Set*\
-Postavi `zadatak = "brendovi"`: održavanje mape brendova, jedna serija od 6 stranica.
+Postavi `zadatak = "brendovi"`: održavanje mape brendova, jedna serija od 3 stranice.
 
 ### E · Dnevno 06:15: samoprovjera
 (node: `Dnevno 06:15: samoprovjera`)
 
 *Schedule Trigger (cron `15 6 * * *`, vrijeme Zagreb)*\
 Svako jutro pročita 6 poznatih stranica: proizvod s više veličina, proizvod s jednom cijenom, ruž s nijansama, popis brenda Versace, /akcija/ i /dostava-i-isporuka/.\
-Provjeri da alat iz njih još izvlači cijene, zalihu, nijanse, popis i tekst te da su stranice svježe. Ako web promijeni izgled pa izvlačenje prestane raditi, stiže Telegram poruka.
+Za svaku ulogu ima 2–3 kandidata; uzme prvi koji je u indeksu, pa uklonjen proizvod ne ruši provjeru. Timeout po stranici 8 s, kao za kupca; druga trojka kreće 4 s kasnije.\
+Provjeri da alat iz njih još izvlači cijene, zalihu, nijanse, popis i tekst te da su stranice svježe.\
+Telegram stiže kad se iz pročitane stranice ne mogu izvući podaci (promjena weba ili alata), kad testna stranica vrati 404, preusmjerenje ili zabranu, kad web ne odgovara za 3 ili više stranica (prespor i za kupce), kad na 2 ili više stranica nema oznake svježine, kad se tablica indeksa ne učita ili kad neki sitemap nije osvježen 36 h.\
+Jedna ili dvije spore stranice i prazna /akcija/ samo su upozorenje: alat radi, web je bio spor.
 
 ### E2 · Zadatak: samoprovjera
 (node: `Zadatak: samoprovjera`)
@@ -104,7 +110,8 @@ Ako tablica ne odgovori, workflow nastavlja s praznim indeksom.
 1. Prepozna odakle je poziv došao (Marti, ručni test ili raspored) i pročita `upit`, `url` i `zadatak`.
 2. Očisti ulaz: nevidljive znakove, navodnike i zagrade. Vrijednosti poput „-“, „null“ ili „{upit}“ znače da polje nije poslano. Upit se skrati na 300 znakova, url na 500.
 3. Iz redaka tablice složi indeks. Veliki zapisi spremljeni su u dijelovima (`ključ#0`, `ključ#1`…), pa ih spoji i provjeri da nijedan dio ne nedostaje.
-4. Izračuna koliko je indeks star i odluči treba li sitemape pročitati odmah: za zadatak sitemapi uvijek; za pitanje bez url-a ako je indeks stariji od 30 min ili ga nema; za zadatak brendovi ako indeks nije potpun.
+4. Prepozna i grešku čitanja tablice (tada se indeks ne smatra praznim, a serija brendova se preskače). Ponovljeni redak istog dijela zapisa ne kvari zapis.
+5. Izračuna koliko je indeks star i odluči treba li sitemape pročitati odmah: za zadatak sitemapi uvijek; za pitanje bez url-a ako je indeks stariji od 30 min ili ga nema (zadatak brendovi nikad: bez popisa brendova serija se preskače).
 
 **Izlaz:** jedna stavka „odaberi“ ili 13 adresa sitemapa za čitanje.
 
@@ -120,7 +127,7 @@ Ako tablica ne odgovori, workflow nastavlja s praznim indeksom.
 
 *HTTP Request (GET)*\
 Uživo pročita XML sitemape martimex.hr, 13 datoteka: proizvodi (do 4 dijela), kategorije, oznake, brendovi, vrste, spol, note mirisa, stranice, blog i beauty centri.\
-Timeout 10 s, prati do 3 preusmjerenja. Greška ne zaustavlja workflow: za neuspjeli sitemap ostaje stari popis. Zadatak sitemapi tada javi grešku i ne spremi ništa; kod pitanja kupca uspjeli se sitemapi ipak spreme.\
+Timeout 10 s, prati do 3 preusmjerenja. Greška ne zaustavlja workflow: za neuspjeli sitemap ostaje stari popis, a uspjeli se spreme. Kad zadatak sitemapi javlja grešku, opisano je uz „C · Svakih 25 min“.\
 Ovamo vodi i povratna veza iz „6 Što dalje?“: kad se po upitu ne prepozna ništa (ni proizvod, ni brend, ni kategorija, ni tema), a indeks je stariji od 2 min, indeks se osvježi i traži se još jednom (najviše jednom po pozivu).
 
 ### 5 · Odaberi stranice
@@ -129,9 +136,10 @@ Ovamo vodi i povratna veza iz „6 Što dalje?“: kad se po upitu ne prepozna n
 *Code – „mozak“ alata, bez AI-ja*\
 Odluči koje stranice treba pročitati. Ako su upravo stigli sitemapi, najprije iz njih složi svježi indeks.
 
-**Zadaci:** sitemapi → kratki izvještaj (broj adresa); brendovi → sljedećih 6 stranica brendova iz reda; samoprovjera → 6 testnih stranica.
+**Zadaci:** sitemapi → izvještaj i odluka o dojavi (vidi C); brendovi → sljedeće 3 stranice brendova iz reda; samoprovjera → 6 testnih stranica (prvi kandidat po ulozi koji je u indeksu).\
+Svakoj stranici za čitanje zada timeout: pitanje kupca i samoprovjera 8 s, brendovi 15 s.
 
-**Poslan `url`:** provjeri da je stranica s martimex.hr (odbija druge domene, /wp-admin, košaricu, račun, pretragu i datoteke) i čita baš nju; url ima prednost pred upitom. Ako uz url stigne i `upit`, on služi samo da se duga stranica skrati na traženi dio. Ako adrese proizvoda nema u indeksu, pripremi do 2 slična proizvoda (barem 60 % istih riječi u adresi) za slučaj da stranica ne postoji.
+**Poslan `url`:** provjeri da je stranica s martimex.hr (odbija druge domene, /wp-admin, košaricu, račun, pretragu i datoteke) i čita baš nju; url ima prednost pred upitom, osim kad uz upit stigne nešto što nije adresa (npr. „nepoznato“) ili samo početna stranica. Ako uz url stigne i `upit`, on služi samo da se duga stranica skrati na traženi dio. Ako adrese proizvoda nema u indeksu, pripremi do 2 slična proizvoda (barem 60 % istih riječi u adresi) za slučaj da stranica ne postoji.
 
 **Poslan `upit`:** riječi se pojednostave (mala slova, bez kvačica, „edp“ = parfum, sinonimi krema/cream…). Prepozna:
 - temu (dostava, plaćanje, povrat, otkazivanje, poslovnice, kontakt, loyalty, poklon bon, akcija, novo, Chanel, FAQ…),
@@ -141,12 +149,12 @@ Odluči koje stranice treba pročitati. Ako su upravo stigli sitemapi, najprije 
 **Odluka:**
 1. promo kod bez proizvoda i bez brenda → popis najpopularnijih parfema (na njemu se vide aktivni kodovi);
 2. tema bez brenda i kategorije → 1–2 informativne stranice (akcija i novo → popis);
-3. naziv proizvoda → bodovanje adresa proizvoda iz indeksa (uz prepoznatu kategoriju samo iz nje; uz potpunu mapu brenda najprije samo proizvodi tog brenda): riječi naziva, točan naziv, EDP/EDT, kazna za setove; proizvodi drugog brenda otpadaju. Uzme jasnog pobjednika ili do 3 podjednako dobra, plus do 3 slična (slični se samo navedu kao poveznice, ne čitaju se);
-4. brend nema proizvod tog naziva → odmah „nije pronađeno“ (bez osvježavanja indeksa) i najbliži proizvodi tog brenda;
+3. naziv proizvoda → bodovanje adresa proizvoda iz indeksa (uz prepoznatu kategoriju samo iz nje; uz potpunu mapu brenda samo proizvodi tog brenda, a nov proizvod koji još nije ni u jednoj mapi samo uz točan naziv): riječi naziva, točan naziv, EDP/EDT, kazna za setove; proizvodi drugog brenda otpadaju. Uzme jasnog pobjednika ili do 3 podjednako dobra, plus do 3 slična (slični se samo navedu kao poveznice, ne čitaju se);
+4. brend nema proizvod tog naziva → odmah „nije pronađeno“ (bez osvježavanja indeksa) i najbliži proizvodi tog brenda; ako indeks nije upotrebljiv, `ok:false` umjesto tvrdnje da nema;
 5. samo brend, kategorija, spol ili filtri → stranica popisa s filtrima;
-6. ništa nije prepoznato → ako je indeks stariji od 2 min, osvježi sitemape i pokuša još jednom; inače „NIJE PRONAĐENO“ s najbližim brendovima, kategorijama i proizvodima.
+6. ništa nije prepoznato → ako je indeks stariji od 2 min, osvježi sitemape i pokuša još jednom (ne za brend koji poznato nije u ponudi, npr. Dior); inače „NIJE PRONAĐENO“ s najbližim brendovima, kategorijama i proizvodima.
 
-**Izlaz:** `akcija` = dohvati (stranice za čitanje), sitemapi (najprije osvježi indeks) ili odgovori (gotov odgovor bez čitanja weba). Greška u logici odabira postane `ok:false` (bez Telegram poruke); iznimka pri obradi upravo pročitanih sitemapa ide na „G1“ i Telegram.
+**Izlaz:** `akcija` = dohvati (stranice za čitanje), sitemapi (najprije osvježi indeks) ili odgovori (gotov odgovor bez čitanja weba). Greška u logici odabira postane `ok:false` (bez Telegram poruke, osim za zadatak iz rasporeda); iznimka pri obradi upravo pročitanih sitemapa bilježi se kao neuspjeli sitemap.
 
 ### 6 · Što dalje?
 (node: `Što dalje?`)
@@ -161,9 +169,9 @@ Odluči koje stranice treba pročitati. Ako su upravo stigli sitemapi, najprije 
 (node: `Dohvati stranice`)
 
 *HTTP Request (POST)*\
-Uživo čita sve odabrane stranice istodobno (za pitanje kupca 1–3, za zadatke 6–7). Postavka serije od 3 ne usporava čitanje jer je razmak između serija 0 ms.
+Uživo čita odabrane stranice istodobno: za pitanje kupca 1–3, za brendove 3; samoprovjera ima 6–7 stranica, pa druga trojka kreće 4 s kasnije (`razmakMs`).
 - **POST umjesto GET:** cache weba (LiteSpeed) ne odgovara na POST spremljenom kopijom, pa web stranicu složi svježe u tom trenutku. Cijena i zaliha su zato aktualne.
-- Timeout 8 s po stranici. Preusmjerenja se ovdje ne prate; o njima odlučuje korak 8.
+- Timeout po stranici zadaje korak 5 (`timeoutMs`): pitanje kupca i samoprovjera 8 s, brendovi 15 s. Preusmjerenja se ovdje ne prate; o njima odlučuje korak 8.
 - Vraća cijeli odgovor (status, headere, HTML). Greška ne zaustavlja workflow, nego se obradi u koracima 8 i 12.
 
 ### 8 · Treba drugi dohvat?
@@ -172,10 +180,11 @@ Uživo čita sve odabrane stranice istodobno (za pitanje kupca 1–3, za zadatke
 *If – za svaku stranicu posebno*\
 DA (dolje na „9 Dohvati ponovno“) kad:
 - web nije odgovorio (timeout, mrežna greška) ili vraća grešku servera (5xx),
-- stranica je preusmjerena (3xx) na drugu adresu na martimex.hr,
+- stranica je preusmjerena (3xx) na drugu adresu na martimex.hr (ne na drugi web, ni adresu koja počinje s „//“),
 - status je 200, ali HTML je nepotpun (nema kraja glavnog sadržaja).
 
 NE (ravno na „11 Spoji dohvate“): uredna stranica, 404 i slično.\
+Za zadatke (brendovi, samoprovjera) drugog dohvata nema: stranica je već imala dulji timeout, a neuspjeh se rješava u koraku 14 (ponavljanje serije, upozorenje).\
 Ako su u ovom pozivu sitemapi već čitani uživo, drugog dohvata nema, da cijeli poziv stane u 28 s.
 
 ### 9 · Dohvati ponovno
@@ -183,7 +192,7 @@ Ako su u ovom pozivu sitemapi već čitani uživo, drugog dohvata nema, da cijel
 
 *HTTP Request – drugi pokušaj*
 - **Preusmjerenje:** POST na novu adresu iz headera `Location` (timeout 8 s), npr. proizvod kojem je promijenjena adresa.
-- **Greška ili nepotpuna stranica:** običan GET iste adrese (timeout 5 s). GET smije doći iz cachea weba, zato korak 12 takvu kopiju prihvaća samo ako je stranica složena prije najviše 10 minuta; inače vraća `ok:false`.
+- **Greška ili nepotpuna stranica (samo pitanje kupca):** običan GET iste adrese (timeout 5 s). GET smije doći iz cachea weba, zato korak 12 takvu kopiju prihvaća samo ako je stranica složena prije najviše 10 minuta; inače vraća `ok:false`.
 
 Bolje „ne mogu provjeriti“ nego stara cijena.
 
@@ -207,7 +216,7 @@ Iz HTML-a izvuče podatke:
 1. **Je li odgovor ispravan:** timeout, mrežna greška, 404, zabrana (403/429), greška servera, zaštita od botova ili nepotpun HTML → `ok:false` s razlogom.
 2. **Svježina:** pročita kada je stranica složena. Kopiju iz cachea ili rezervnog GET-a stariju od 10 min, ili nepoznate starosti, odbije.
 3. **Vrsta stranice:** proizvod, popis (kategorija, brend, akcija), članak ili informativna stranica; kod popisa i „stranica X od Y“ te adresa sljedeće stranice.
-4. **Proizvod:** naziv, brend, kategorija; za svaku veličinu ili nijansu cijena, akcija (-%, redovna cijena, najniža u 30 dana) i zaliha; promo kod; rečenice o notama; opis. Označi ako proizvod nije traženog brenda.
+4. **Proizvod:** naziv, brend, kategorija; za svaku veličinu ili nijansu cijena, akcija (-%, redovna cijena, najniža u 30 dana) i zaliha; promo kod; rečenice o notama; opis. Označi ako proizvod nije traženog brenda (uspoređuje sa svim imenima brenda, npr. thoo = The House of Oud).
 5. **Popis:** za svaki proizvod naziv, brend, vrsta, cijena ili raspon, akcija, promo, oznake i „nije na zalihi“; potkategorije.
 6. **Informativna stranica:** izreže glavni sadržaj i očisti ga (izbornici, filtri, slike, skriveni dijelovi, obrasci) za pretvorbu u tekst.
 
@@ -235,9 +244,9 @@ Od svih pročitanih stranica složi **jedan** kratak odgovor.
 - **Neuspjeh:** `ok:false` s razlogom, npr. 404 s prijedlogom prave adrese.
 - **Najveća duljina:** 800 znakova po proizvodu + 700 (s opisom s weba + 2.400), popis 5.300, stranica 13.500; duži tekst se skrati.
 
-**Zadaci:** izvještaj o sitemapima; za brendove nova mapa brenda i red sljedećih stranica; za samoprovjeru ocjena svake stranice.\
-Usput u mapu brendova doda pročitane proizvode koji u njoj nedostaju.\
-**Izlaz:** uvijek točno jedna stavka: `odgovor`, `spremi` (što treba upisati u indeks), `zadatak`, `webhook`, `trajanjeMs`.
+**Zadaci:** izvještaj o sitemapima; za brendove nova mapa brenda i red sljedećih stranica (spor web nije greška); za samoprovjeru ocjena svake stranice: neizvučeni podaci, 404/preusmjerenje/zabrana testne stranice, nestala oznaka svježine ili 3+ nedostupne stranice = greška, 1–2 spore stranice ili prazna /akcija/ = upozorenje.\
+Usput napravi mapu za brend koji je još nema (postojeće mape održava samo serija brendova). Stranice slaže redom kao korak 5, i kad je neka stigla iz drugog pokušaja.\
+**Izlaz:** uvijek točno jedna stavka: `odgovor`, `spremi` (što treba upisati u indeks), `zadatak`, `webhook`, `interna` (opis interne greške ili prazno, za 16b), `trajanjeMs`.
 
 ### 15 · Je li zahtjev od Marti (webhook)?
 (node: `Je li zahtjev od Marti (webhook)?`)
@@ -252,6 +261,15 @@ Usput u mapu brendova doda pročitane proizvode koji u njoj nedostaju.\
 *Respond to Webhook*\
 Pošalje Marti JSON `{ ok, tip, tekst }` ili `{ ok:false, greska }`, uvijek s HTTP 200. Tako Voiceflow uvijek pročita sadržaj, pa i poruku o grešci, umjesto da prijavi tehničku grešku.\
 Nakon slanja workflow nastavlja na spremanje indeksa (19, 20); Marti to više ne čeka.
+
+### 16b · Interna greška u odgovoru?
+(node: `Interna greška u odgovoru?`)
+
+*If – nakon odgovora Marti*\
+Marti je odgovor već dobila. Ovdje se provjeri je li taj odgovor nastao zbog kvara alata (polje `interna` iz koraka 14: iznimka u kodu nodeova 5, 12 ili 14, ili nijedna stranica nije obrađena).
+- DA → „G2 Telegram“: vlasnik dobije poruku s opisom kvara i zahtjevom.
+- NE (gotovo uvijek) → ništa dalje.\
+Spor web, 404, nepostojeći proizvod i slično nisu interne greške i ne šalju poruku.
 
 ### 17 · Zadatak uspio?
 (node: `Zadatak uspio?`)
@@ -289,14 +307,14 @@ Ako upis ne uspije → „G2 Telegram“.
 (node: `Vrati grešku (sustav)`)
 
 *Respond to Webhook – rezervni izlaz za kvarove*\
-Ovamo vode izlazi „error“ nodeova 2, 5, 12, 13, 14 i 19, ali samo kad node stvarno padne: iznimka u nodeovima 2 i 19 (nemaju vlastito hvatanje grešaka), greška Markdown nodea, iznimka pri obradi sitemapa u nodeu 5 ili problem s izvršnim okruženjem n8n-a.\
+Ovamo vode izlazi „error“ nodeova 2, 5, 12, 13, 14 i 19, ali samo kad node stvarno padne: iznimka u nodeovima 2 i 19 (nemaju vlastito hvatanje grešaka), greška Markdown nodea ili problem s izvršnim okruženjem n8n-a.\
 Ako Marti još nije dobila odgovor, dobije `ok:false` (HTTP 200) s porukom da pokuša ponovno i da cijene i dostupnost ne navodi napamet. Zatim ide Telegram poruka.\
-Uobičajene greške (404, timeout…) i iznimke u glavnoj logici nodeova 5, 12 i 14 kod hvata sam i vraća kao `ok:false` normalnim putem. Tada Telegram ne stiže, osim za zadatak iz rasporeda (preko 18).
+Uobičajene greške (404, timeout…) i iznimke u glavnoj logici nodeova 5, 12 i 14 kod hvata sam i vraća kao `ok:false` normalnim putem. Za iznimke Telegram svejedno stiže: na pitanju kupca preko 16b, za zadatak iz rasporeda preko 18.
 
 ### G2 · Telegram: greška alata
 (node: `Telegram: greška alata`)
 
 *Telegram*\
-Pošalje vlasniku poruku „Marti alat … – interna greška: … Izvršavanje: broj“, da se problem može odmah pogledati u n8n-u.\
-Poziva se iz „G1 Vrati grešku“ i kad „20 Spremi indeks“ ne uspije upisati u tablicu.\
+Pošalje vlasniku poruku „Marti alat … – interna greška: … Izvršavanje: broj“ i zahtjev (zadatak, upit, url). Uspješno završena izvršavanja se ne spremaju, zato su detalji u poruci.\
+Poziva se iz „G1 Vrati grešku“, iz „16b Interna greška u odgovoru?“ i kad „20 Spremi indeks“ ne uspije upisati u tablicu.\
 Šalje jednu poruku i kad stigne više stavki; ako Telegram ne radi, workflow ne pada.

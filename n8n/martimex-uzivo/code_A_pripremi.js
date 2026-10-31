@@ -1,4 +1,4 @@
-// Code node "Pripremi upit" (Martimex uživo) – v1
+// Code node "Pripremi upit" (Martimex uživo) – v1.5
 // Ulaz: svi redci Data Tablea "Marti - indeks weba" (ili jedan prazan item kad je tablica prazna).
 // Čita zahtjev (webhook / ručni test / Schedule Set nodeovi), parsira indeks i odlučuje treba li sitemape čitati uživo.
 // Izlaz: ili jedan item { akcija:'odaberi', kontekst, idx } ili N itema { url, akcija:'sitemapi' } (prvi nosi kontekst i idx).
@@ -42,7 +42,7 @@ function citajZahtjev() {
   if (!b || typeof b !== 'object') b = {};
   const q = (j.query && typeof j.query === 'object') ? j.query : {};
   const first = (...v) => v.find(x => x !== undefined && x !== null && String(x).trim() !== '') ?? '';
-  const cisti = (s) => String(s).replace(new RegExp('[' + String.fromCharCode(0x200b, 0x200c, 0x200d, 0xfeff) + ']', 'g'), '').trim().replace(/^[\s"'`<>\[\]{}()]+|[\s"'`<>\[\]{}()]+$/g, '');
+  const cisti = (s) => String(s).slice(0, 2000).replace(new RegExp('[' + String.fromCharCode(0x200b, 0x200c, 0x200d, 0xfeff) + ']', 'g'), '').trim().replace(/^[\s"'`<>\[\]{}()]+|[\s"'`<>\[\]{}()]+$/g, '');
   let upit = cisti(first(b.upit, q.upit, j.upit, b.query, b.trazi, j.trazi));
   let url = cisti(first(b.url, q.url, j.url, b.link, b.poveznica, b.putanja));
   if (PRAZNO.test(upit)) upit = '';
@@ -69,12 +69,14 @@ function parsirajIndeks(items) {
   for (const k of Object.keys(grupe)) {
     const g = grupe[k].sort((a, b) => a.i - b.i);
     const at = Math.max(...g.map(x => x.at));
-    const dijelovi = g.filter(x => x.at === at);
-    const broj = dijelovi.length ? dijelovi[0].broj : 0;
-    const kompletno = broj > 0 && dijelovi.length >= broj && dijelovi.slice(0, broj).every((x, n) => x.i === n);
+    const po = new Map();
+    for (const x of g) if (x.at === at && !po.has(x.i)) po.set(x.i, x);
+    const broj = po.has(0) ? po.get(0).broj : 0;
+    const dio = Array.from({ length: broj }, (_, n) => po.get(n));
+    const kompletno = broj > 0 && dio.every(x => x && x.broj === broj);
     if (!kompletno) { stanje.push(k + ': nepotpuno'); continue; }
     try {
-      const v = JSON.parse(dijelovi.slice(0, broj).map(x => x.rows).join(''));
+      const v = JSON.parse(dio.map(x => x.rows).join(''));
       idx[k] = { at, v };
     } catch (e) { stanje.push(k + ': neispravan JSON'); }
   }
@@ -82,7 +84,9 @@ function parsirajIndeks(items) {
 }
 
 const zahtjev = citajZahtjev();
-const { idx, stanje } = parsirajIndeks($input.all());
+const ulazIndeksa = $input.all();
+const { idx, stanje } = parsirajIndeks(ulazIndeksa);
+const indeksGreska = ulazIndeksa.length > 0 && !ulazIndeksa.some(it => it.json && typeof it.json.prefiks === 'string') && ulazIndeksa.some(it => it.json && Object.keys(it.json).length > 0);
 const sitemapAt = OBAVEZNI.map(p => (idx[p] && Array.isArray(idx[p].v) && idx[p].v.length) ? idx[p].at : 0);
 const indeksAt = Math.min(...sitemapAt);
 const indeksStarostS = indeksAt > 0 ? Math.round((now - indeksAt) / 1000) : null;
@@ -92,13 +96,14 @@ const indeksZastario = indeksStarostS === null || indeksStarostS * 1000 > TTL_MS
 let trebaSitemape = false;
 if (zahtjev.zadatak === 'sitemapi') trebaSitemape = true;
 else if (zahtjev.zadatak === 'upit' && !zahtjev.url && zahtjev.upit && indeksZastario) trebaSitemape = true;
-else if (zahtjev.zadatak === 'brendovi' && indeksNepotpun) trebaSitemape = true;
+// zadatak brendovi ne čita sitemape uživo (serija bi prešla 20 s); bez popisa brendova serija se preskače
 
 const kontekst = Object.assign({}, zahtjev, {
   pocetak: now,
   indeksStarostS,
   indeksNepotpun,
-  indeksStanje: stanje.join('; ') || 'ok',
+  indeksGreska,
+  indeksStanje: (indeksGreska ? 'tablica nije učitana; ' : '') + (stanje.join('; ') || 'ok'),
   sitemapiUzivo: trebaSitemape,
   sitemapDatoteke: SITEMAP_DATOTEKE
 });

@@ -22,6 +22,8 @@ ova mapa je samo kopija za pregled razlika i lokalno testiranje.
 | `harness.js` | – | lokalno oponaša Code nodeove (`$input`, `$()`, `$json`, `$now`, `DateTime`) i vrti A → B → C → Markdown → D → E nad spremljenim HTML-om |
 | `escape_push.py` | – | provjera prije slanja: nevidljive i kombinirajuće znakove pretvara u `\uXXXX` (kod ih ionako ne smije sadržavati) |
 | `test_brendovi.js` | – | jedinični test spremanja mape brendova (više stranica istog brenda u jednoj seriji) |
+| `test_zadaci.js` | – | testovi zadataka (v1.5): samoprovjera (spora stranica = upozorenje, kvar = greška), sitemapi (tolerancija, dojava nakon 2 h jednom dnevno, zaštita od naglog pada adresa), brendovi (ponavljanje serije kad web ne odgovara) |
+| `test_v15_dodatno.js` | – | testovi ostalih ispravaka v1.5 (greška čitanja tablice, ponovljeni dijelovi zapisa, slab url, aliasi brendova, provjera brenda, neupotrebljiv indeks, dojava interne greške) |
 | `index_extra.json` | – | mali dio indeksa (brendovi, kategorije, stranice) za lokalne testove |
 | `opisi_nodeova.md` | – | opis svakog nodea korak po korak; isti tekst stoji kao sticky bilješka uz node u n8n-u |
 

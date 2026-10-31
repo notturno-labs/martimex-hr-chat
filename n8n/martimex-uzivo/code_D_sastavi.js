@@ -1,4 +1,4 @@
-// Code node "Sastavi odgovor" (Martimex uživo) – v1.4
+// Code node "Sastavi odgovor" (Martimex uživo) – v1.5
 // Ulaz: stavke iz "HTML u Markdown" (po jedna po pročitanoj stranici) ili stavka 'odgovori' iz "Odaberi stranice" (bez dohvata).
 // Sastavlja kratak tekst za Marti ({ ok, tip, tekst } ili { ok:false, greska }), rezultate zadataka (sitemapi, brendovi, samoprovjera)
 // i popis dijelova indeksa za spremanje (spremi). Uvijek vraća točno jedan item; nikad ne baca.
@@ -29,7 +29,12 @@ try { B = $('Odaberi stranice').first().json || {}; k = B.kontekst || {}; } catc
 const spremi = Array.isArray(B.spremi) ? B.spremi.slice() : [];
 const ulaz = $input.all().map(i => i.json || {});
 const stranice = ulaz.filter(j => j.tip !== undefined || j.greska !== undefined || j.ok !== undefined).filter(j => j.akcija === undefined);
+{ let redB = []; try { redB = $('Odaberi stranice').all().map(i => (i.json || {}).url); } catch (e) {}
+  const mjesto = j => { const i = redB.indexOf(j.urlTrazen || j.url); return i < 0 ? redB.length : i; };
+  stranice.sort((a, b) => mjesto(a) - mjesto(b)); }
 const vrijednost = kljuc => (idx[kljuc] && idx[kljuc].v !== undefined) ? idx[kljuc].v : null;
+const prolazno = s => ['timeout', 'mreza', 'server', 'zastarjelo'].includes(s.vrstaGreske) || (s.vrstaGreske === 'odbijeno' && Number(s.statusCode) === 429);
+let interna = null;   // interna greška alata na pitanju kupca: odgovor ide Marti, a vlasnik dobije Telegram
 const zaglavlje = (gen) => {
   const s = ['UŽIVO s martimex.hr · ' + vrijeme(now)];
   if (gen && gen.starostS !== null && gen.starostS !== undefined) s.push('stranica generirana prije ' + gen.starostS + ' s' + (gen.rezerva ? ' (rezervni dohvat)' : ''));
@@ -193,11 +198,12 @@ function dopuniMapuBrenda(s) {
   if (!slug) for (const b of brendovi) { const m = vrijednost('brend:' + b); if (m && m.naziv && norm(m.naziv) === norm(p.brend)) { slug = b; break; } }
   if (!slug) return;
   const path = String(s.url).replace(/^https?:\/\/[^\/]+/, '');
-  const stari = vrijednost('brend:' + slug);
-  const red = dopune[slug] || ((stari && Array.isArray(stari.proizvodi)) ? Object.assign({}, stari, { proizvodi: stari.proizvodi.slice() }) : { naziv: p.brend, proizvodi: [], stranice: null, azurirano: null, djelomicno: true });
+  if (k.indeksGreska || !Object.keys(idx).some(kl => kl.startsWith('brend:'))) return;
+  if (vrijednost('brend:' + slug)) return;
+  const red = dopune[slug] || { naziv: p.brend, proizvodi: [], stranice: null, azurirano: null, djelomicno: true };
   if (red.proizvodi.some(x => x[0] === path)) return;
   red.proizvodi.push([path, p.naziv || '', p.kategorija || '']);
-  if (!dopune[slug]) { dopune[slug] = red; spremi.push({ kljuc: 'brend:' + slug, at: (idx['brend:' + slug] && idx['brend:' + slug].at) || now, v: red }); }
+  if (!dopune[slug]) { dopune[slug] = red; spremi.push({ kljuc: 'brend:' + slug, at: now, v: red }); }
 }
 
 let odgovor;
@@ -209,21 +215,28 @@ try {
   // ---------- zadatak: sitemapi ----------
   if (zadatak === 'sitemapi') {
     const r = k.rezultat || { ok: false, opis: 'bez rezultata' };
-    odgovor = { ok: r.ok === true, zadatak, opis: r.opis };
+    odgovor = { ok: r.ok === true, zadatak, opis: r.opis || r.greska || 'bez opisa' };
   }
   // ---------- zadatak: brendovi ----------
   else if (zadatak === 'brendovi') {
-    if (k.rezultat) odgovor = { ok: k.rezultat.ok === true, zadatak, opis: k.rezultat.opis };
+    if (k.rezultat) odgovor = { ok: k.rezultat.ok === true, zadatak, opis: k.rezultat.opis || k.rezultat.greska || 'bez opisa' };
     else {
       const st = Object.assign({ red: [], ciklus: 0 }, k.stanjeBrendova || {});
       const red = Array.isArray(st.red) ? st.red.slice() : [];
       const opisi = []; let greske = 0;
       const nove = {}; const propali = new Set();   // mapa po brendu skuplja SVE stranice iz ove serije
+      // nijedna od barem 3 stranice serije nije stigla (web ne odgovara): ista serija ide natrag na početak reda bez trošenja
+      // pokušaja, najviše 6 puta zaredom (~1 h); zatim vrijedi uobičajeno pravilo (dva pokušaja), da red ne zapne
+      const odgoda = Number(st.odgoda) || 0;
+      const sveNedostupne = stranice.length >= 3 && stranice.every(s => s.ok !== true && prolazno(s)) && odgoda < 6;
+      if (sveNedostupne) for (const s of stranice.slice().reverse()) if (s.brend) red.unshift([s.brend, Number(s.pg) || 1, Number(s.pokusaj) || 0]);
       for (const s of stranice) {
+        if (sveNedostupne) { greske++; opisi.push(s.brend + ' str. ' + (Number(s.pg) || 1) + ': ' + (s.greska || 'nema popisa')); continue; }
         const slug = s.brend; const pg = Number(s.pg) || 1;
         if (!slug) continue;
-        if (s.ok !== true || !s.popis) {
+        if (s.ok !== true || !s.popis || !(s.popis.proizvodi || []).length) {
           greske++;
+          if (s.ok === true) s.greska = 'na stranici nema nijedne kartice proizvoda';
           if ((s.pokusaj || 0) < 1) red.push([slug, pg, (s.pokusaj || 0) + 1]); else propali.add(slug);
           opisi.push(slug + ' str. ' + pg + ': ' + (s.greska || 'nema popisa') + ((s.pokusaj || 0) < 1 ? ' (ponovit će se)' : ' (odustajem)'));
           continue;
@@ -255,31 +268,47 @@ try {
         v.djelomicno = red.some(r => r[0] === slug) || propali.has(slug);
         spremi.push({ kljuc: 'brend:' + slug, at: now, v });
       }
-      st.red = red; st.zadnje = now;
+      st.red = red; st.zadnje = now; st.odgoda = sveNedostupne ? odgoda + 1 : 0;
       spremi.push({ kljuc: 'stanje:brendovi', at: now, v: st });
       const preostalo = red.length;
-      odgovor = { ok: greske < stranice.length || stranice.length === 0, zadatak, opis: 'Mapa brendova, ciklus ' + st.ciklus + ': ' + opisi.join('; ') + '. Preostalo u redu: ' + preostalo + ' stranica.' + (greske === stranice.length && stranice.length ? ' Nijedna stranica brenda nije pročitana.' : '') };
+      // mapa brendova je održavanje: spor ili nedostupan web nije greška (stranice se ponove); promjenu izgleda popisa javlja samoprovjera
+      odgovor = { ok: true, zadatak, opis: 'Mapa brendova, ciklus ' + st.ciklus + ': ' + opisi.join('; ') + '. Preostalo u redu: ' + preostalo + ' stranica.' + (sveNedostupne ? ' Nijedna stranica nije stigla (web ne odgovara); ista serija ponavlja se za 10 min.' : '') };
     }
   }
   // ---------- zadatak: samoprovjera ----------
   else if (zadatak === 'samoprovjera') {
-    const problemi = []; const okRedci = [];
+    // greška = iz pročitane stranice ne mogu se izvući podaci (promjena weba ili alata) ili web većinom ne odgovara;
+    // jedna ili dvije spore/nedostupne stranice samo su upozorenje (alat radi, web je trenutno spor)
+    const problemi = []; const web = []; const napomene = []; const okRedci = [];
+    if (k.rezultat && k.rezultat.ok === false) problemi.push('odabir stranica: ' + (k.rezultat.greska || k.rezultat.opis || 'interna greška'));
+    if (k.indeksGreska) problemi.push('tablica indeksa se nije mogla učitati');
+    // dio indeksa koji se dugo ne osvježava (npr. sitemap oznaka ili bloga) javlja se jednom dnevno, ovdje
+    for (const kl of Object.keys(idx)) { if (!/-sitemap$/.test(kl)) continue; const h = (now - (Number(idx[kl].at) || 0)) / 3600000; if (h > 36) problemi.push('sitemap ' + kl + ' nije osvježen ' + Math.round(h) + ' h'); }
     for (const s of stranice) {
       const oc = s.ocekuj || ''; const p = s.proizvod || null; const lp = s.popis || null;
       let ok = s.ok === true; let zasto = s.ok === true ? '' : (s.greska || 'greška');
+      // spor ili kratko nedostupan web = upozorenje; 404, preusmjerenje, ne-HTML, zabrana (401/403) ili kvar alata = greška
+      if (!ok && prolazno(s)) { web.push((s.urlTrazen || s.url) + ' (' + oc + '): ' + zasto); continue; }
       if (ok) {
         if (oc === 'varijante') { ok = !!(p && p.varijante && p.varijante.length >= 2 && p.varijante.every(v => v.cijena && v.zaliha !== 'zaliha nepoznata') && p.brend); zasto = ok ? p.varijante.length + ' varijanti, brend ' + p.brend : 'nema ≥2 varijante s cijenom i zalihom ili nema brenda'; }
         else if (oc === 'cijena') { ok = !!(p && ((p.jedno && p.jedno.cijena && p.jedno.zaliha !== 'zaliha nepoznata') || (p.varijante && p.varijante.length && p.varijante.every(v => v.cijena)))); zasto = ok ? 'cijena i zaliha pronađene' : 'nema cijene ili zalihe'; }
         else if (oc === 'nijanse') { ok = !!(p && p.varijante && p.varijante.length >= 2 && p.varijante.every(v => v.cijena && v.zaliha !== 'zaliha nepoznata')); zasto = ok ? p.varijante.length + ' nijansi s cijenom i zalihom' : 'nijanse s cijenom i zalihom nisu pronađene'; }
         else if (oc === 'popis') { ok = !!(lp && lp.proizvodi.length >= 10 && lp.proizvodi.every(x => x.naziv && x.url) && lp.proizvodi.filter(x => x.brend).length >= lp.proizvodi.length * 0.8 && lp.proizvodi.some(x => x.cijena || x.raspon) && s.stranicenje); zasto = ok ? lp.proizvodi.length + ' proizvoda s brendom i cijenom, stranica ' + s.stranicenje.trenutna + '/' + s.stranicenje.ukupno : 'popis nema ≥10 proizvoda s nazivom, brendom, cijenom ili nema paginacije'; }
+        else if (oc === 'akcija' && lp && lp.proizvodi.length === 0) { napomene.push((s.urlTrazen || s.url) + ' (akcija): trenutno nema proizvoda na akciji'); continue; }
         else if (oc === 'akcija') { ok = !!(lp && lp.proizvodi.some(x => x.redovna || x.naAkciji)); zasto = ok ? lp.proizvodi.filter(x => x.redovna || x.naAkciji).length + ' proizvoda s akcijom' : 'na /akcija/ nijedan proizvod nema oznaku akcije ni redovnu cijenu'; }
         else if (oc === 'tekst') { ok = String(s.markdown || '').length > 500; zasto = ok ? String(s.markdown || '').length + ' znakova teksta' : 'tekst stranice kraći od 500 znakova'; }
-        if (ok && s.starostS !== null && s.starostS !== undefined && s.starostS > 60) { ok = false; zasto = 'stranica generirana prije ' + s.starostS + ' s (očekivano svježe)'; }
+        if (ok && s.starostS !== null && s.starostS !== undefined && s.starostS > 60) { web.push((s.urlTrazen || s.url) + ' (' + oc + '): stranica generirana prije ' + s.starostS + ' s (očekivano svježe)'); continue; }
       }
       (ok ? okRedci : problemi).push((s.namjerno ? '[namjerno pokvaren] ' : '') + (s.urlTrazen || s.url) + ' (' + oc + '): ' + zasto);
     }
     if (!stranice.length) problemi.push('nijedna stranica nije pročitana');
-    odgovor = { ok: problemi.length === 0, zadatak, opis: (problemi.length ? 'SAMOPROVJERA NIJE PROŠLA: ' + problemi.join(' | ') + '. ' : 'Samoprovjera prošla. ') + 'U redu: ' + okRedci.join(' | ') };
+    // oznaka svježine (__wc_fb_page_generated) treba za provjeru starosti kopije; ako nestane, rezervni GET više ne radi
+    const bezOznake = stranice.filter(s => s.ok === true && (s.generirano === null || s.generirano === undefined));
+    if (bezOznake.length >= 2) problemi.push('na ' + bezOznake.length + ' stranica nema oznake svježine (__wc_fb_page_generated)');
+    const webVecinom = web.length > 2;
+    const upoz = (web.length ? (webVecinom ? 'martimex.hr ne odgovara za ' + web.length + ' od ' + stranice.length + ' stranica (ni kupci ne bi dobili odgovor): ' : 'Upozorenje (web spor ili nedostupan za ' + web.length + ' ' + mn(web.length, 'stranicu', 'stranice', 'stranica') + '; to nije greška alata): ') + web.join(' | ') + '. ' : '') + (napomene.length ? 'Napomena: ' + napomene.join(' | ') + '. ' : '');
+    const prosla = problemi.length === 0 && !webVecinom;
+    odgovor = { ok: prosla, zadatak, opis: (prosla ? 'Samoprovjera prošla. ' + upoz : 'SAMOPROVJERA NIJE PROŠLA: ' + (problemi.length ? problemi.join(' | ') + '. ' : '') + upoz) + 'U redu: ' + (okRedci.join(' | ') || 'nijedna') };
   }
   // ---------- Marti: upit ----------
   else {
@@ -287,6 +316,7 @@ try {
       odgovor = k.rezultat.ok === false ? { ok: false, greska: k.rezultat.greska } : { ok: true, tip: k.rezultat.tip || 'nije_pronadjeno', tekst: k.rezultat.tekst };
     } else if (!stranice.length) {
       odgovor = { ok: false, greska: 'Interna greška alata: nijedna stranica nije obrađena (akcija ' + (B.akcija || '?') + ').' + KONTAKT };
+      interna = 'nijedna stranica nije obrađena (akcija ' + (B.akcija || '?') + ')';
     } else {
       const tip = k.tip || (stranice.length && stranice[0].uloga === 'url' ? 'url' : 'proizvod');
       const obavijesti = obavijestiSvih(uspjele);
@@ -391,5 +421,10 @@ try {
   }
 } catch (e) {
   odgovor = { ok: false, greska: 'Interna greška alata pri sastavljanju odgovora (' + String(e && e.message || e).slice(0, 160) + ').' + KONTAKT };
+  interna = 'Sastavi odgovor: ' + String(e && e.message || e).slice(0, 200);
 }
-return [{ json: { odgovor, spremi, zadatak: k.zadatak || 'upit', webhook: k.webhook === true, trajanjeMs: k.pocetak ? Date.now() - k.pocetak : null } }];
+if (!interna && (k.zadatak || 'upit') === 'upit') {
+  if (k.internaGreska) interna = 'Odaberi stranice: ' + String(k.internaGreska).split('\n')[0].slice(0, 200);
+  else { const pala = stranice.find(s => s.vrstaGreske === 'interna'); if (pala) interna = 'Izvuci činjenice: ' + String(pala.greska || '').slice(0, 200); }
+}
+return [{ json: { odgovor, spremi, zadatak: k.zadatak || 'upit', webhook: k.webhook === true, interna, trajanjeMs: k.pocetak ? Date.now() - k.pocetak : null } }];
