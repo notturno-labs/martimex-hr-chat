@@ -16,6 +16,16 @@ const INTI = 'proizvod_makeup_usne_ruzevi_labsolu_rouge_intimatte_34_g.html';
 const DYLAN = 'proizvod_parfemi_parfemske_vode_dylan_blush_pink_set_eau_de_parfum_100_ml.html';
 const EROS = 'proizvod_parfemi_parfemske_vode_eros_eau_de_parfum.html';
 
+const httpUz = izmjene => url => {
+  const p = url.replace('https://martimex.hr', '').split('?')[0];
+  const name = p.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  const f = path.join(samples, (name || 'root') + '.html');
+  if (!fs.existsSync(f)) return { json: { statusCode: 404, headers: { 'content-type': 'text/html' }, body: '<html><body class="error404"><main></main></body></html>' } };
+  let body = svjez(fs.readFileSync(f, 'utf8'));
+  for (const [kljuc, fn] of Object.entries(izmjene)) if (name.includes(kljuc)) body = fn(body);
+  return { json: { statusCode: 200, headers: { 'content-type': 'text/html' }, body } };
+};
+
 // ---------- C: ispravne stranice prolaze ----------
 {
   for (const f of fs.readdirSync(samples).filter(f => f.endsWith('.html'))) {
@@ -64,11 +74,50 @@ const EROS = 'proizvod_parfemi_parfemske_vode_eros_eau_de_parfum.html';
   ok(BEZ_JSON_CIJENE(uzorak(DYLAN)) !== uzorak(DYLAN), 'test: uklanjanje cijene iz podataka proizvoda djeluje');
   h = BEZ_JSON_CIJENE(uzorak(DYLAN)).replace('<h2 class="t-700">124,00 €</h2>', '<h2 class="t-700"></h2>').replace(/application\/ld\+json/g, 'application/x-ld');
   c = C(h);
-  ok(c.ok === false && c.vrstaGreske === 'izvlacenje' && /nije pronađena cijena/.test(c.greska), 'C: proizvod bez cijene -> izvlacenje (' + c.greska + ')');
+  ok(c.ok === true && c.proizvod.jedno && c.proizvod.jedno.cijena === '' && c.proizvod.jedno.bezCijene === true, 'C: web nigdje ne prikazuje cijenu -> bez cijene, ne 0,00 € (' + (c.greska || JSON.stringify(c.proizvod && c.proizvod.jedno)) + ')');
+  // kao „Lash Booster“ / „Matte Shine“ na webu: prazan blok cijene, prazna cijena u podacima i u ld+json, nije na stanju
+  const NIJE_U_PRODAJI = h0 => BEZ_JSON_CIJENE(h0).replace(/<div class="product__price-wrap"><div class="product__price"><h2 class="t-700">124,00 €<\/h2><\/div>/, '<div class="product__price-wrap">').replace(/"price":"?124"?/g, '"price":""');
+  h = NIJE_U_PRODAJI(uzorak(DYLAN));
+  c = C(h);
+  ok(c.ok === true && c.proizvod.jedno.cijena === '' && c.proizvod.jedno.bezCijene === true, 'C: proizvod bez prikazane cijene -> bez cijene (' + (c.greska || '') + ')');
+  {
+    const r = tiho(() => pipeline({ url: '/proizvod/parfemi/parfemske-vode/dylan-blush-pink-set-eau-de-parfum-100-ml/', format: 'json' }, { http: httpUz({ dylan_blush: NIJE_U_PRODAJI }) }));
+    ok(r.D.odgovor.ok === true && /cijena nije prikazana na webu/.test(r.D.odgovor.tekst) && !/0,00/.test(r.D.odgovor.tekst), 'D: bez cijene na webu -> „cijena nije prikazana na webu“, nikad 0,00 € (' + (r.D.odgovor.tekst || r.D.odgovor.greska || '').split('\n').slice(2, 3).join('') + ')');
+    const v = r.D.odgovor.podaci && r.D.odgovor.podaci.stranice[0].proizvod.varijante[0];
+    ok(v && v.cijena === null && v.bezCijeneNaWebu === true, 'JSON: bez cijene na webu -> cijena null');
+  }
+  // u ld+json cijena postoji, a u podacima proizvoda i prikazu ne -> nedosljedno
+  h = BEZ_JSON_CIJENE(uzorak(DYLAN)).replace('<h2 class="t-700">124,00 €</h2>', '<h2 class="t-700"></h2>');
+  c = C(h);
+  ok(c.ok === false && c.vrstaGreske === 'izvlacenje', 'C: cijena samo u ld+json -> izvlacenje (' + c.greska + ')');
+  // prikazana cijena u neočekivanom obliku
+  h = uzorak(DYLAN).replace('<h2 class="t-700">124,00 €</h2>', '<h2 class="t-700">od 124,00 €</h2>');
+  c = C(h);
+  ok(c.ok === false && c.vrstaGreske === 'izvlacenje' && /neočekivanom obliku/.test(c.greska), 'C: neočekivan oblik prikazane cijene -> izvlacenje (' + c.greska + ')');
   // nedostaje samo podatak u JSON-u, a prikazana cijena postoji -> koristi se prikazana
   h = BEZ_JSON_CIJENE(uzorak(DYLAN)).replace(/application\/ld\+json/g, 'application/x-ld');
   c = C(h);
   ok(c.ok === true && c.proizvod.jedno && c.proizvod.jedno.cijena === '124,00 €', 'C: bez cijene u podacima koristi se prikazana (' + (c.proizvod && c.proizvod.jedno && c.proizvod.jedno.cijena) + (c.greska || '') + ')');
+}
+
+// ---------- C: zaokruživanje i varijante koje se ne pročitaju (nalazi pregleda) ----------
+{
+  // -50 % na 140,91 €: u podacima 70.455, web prikazuje 70,46 € (PHP zaokružuje pola gore); kupac mora dobiti 70,46 €
+  let h = uzorak(INTI);
+  const i = h.indexOf('data-price-var-id="51604"');
+  h = h.slice(0, i) + h.slice(i).replace('<h2 class="t-700" >32,12 €</h2><h4>49,41 €</h4>', '<h2 class="t-700" >70,46 €</h2><h4>140,91 €</h4>');
+  h = h.split('32.1165').join('70.455');
+  let c = C(h);
+  const v = c.proizvod && c.proizvod.varijante.find(x => x.id === '51604');
+  ok(c.ok === true && v && v.cijena === '70,46 €', 'C: cijena 70.455 -> prikazanih 70,46 €, ne 70,45 € (' + (v && v.cijena) + (c.greska || '') + ')');
+  // nijedna od 2 varijante nije pročitana (choose i data-var-name promijenjeni) -> ne smije postati „jedna cijena“
+  h = uzorak(EROS).split('choose(').join('pick(').split('data-var-name=').join('data-var-title=');
+  c = C(h);
+  ok(c.ok === false && c.vrstaGreske === 'izvlacenje' && /nijedna nije pročitana/.test(c.greska), 'C: 0 od 2 varijante pročitano -> izvlacenje (' + (c.greska || JSON.stringify(c.proizvod && c.proizvod.jedno)) + ')');
+  // ld+json s praznom cijenom ili bez cijene ne postaje 0,00 € ni „undefined“
+  h = uzorak(DYLAN).replace(/"price":"?124"?/, '"price":""');
+  c = C(h);
+  ok(c.ok === true && c.proizvod.jedno.cijena === '124,00 €', 'C: prazna cijena u ld+json ne smeta (' + (c.greska || c.proizvod.jedno.cijena) + ')');
 }
 
 // ---------- C: popis ----------
@@ -84,24 +133,23 @@ const EROS = 'proizvod_parfemi_parfemske_vode_eros_eau_de_parfum.html';
   h = uzorak('brand_versace.html').replace(/(<div class="product-card__price-wrap)/g, '<div class="x-price-wrap');
   c = C(h, 'https://martimex.hr/brand/versace/');
   ok(c.ok === false && c.vrstaGreske === 'izvlacenje' && /bez cijene/.test(c.greska), 'C: popis bez cijena -> izvlacenje (' + c.greska + ')');
+  // cijena na kartici postoji, ali u drugom elementu (h4) -> nije pročitana
+  h = uzorak('brand_versace.html');
+  const pw = h.indexOf('<div class="product-card__price-wrap');
+  const kraj = h.indexOf('<div class="product-card"', pw);
+  h = h.slice(0, pw) + h.slice(pw, kraj).replace(/<(\/?)(h3|h5|h6)\b/g, '<$1h4') + h.slice(kraj);
+  c = C(h, 'https://martimex.hr/brand/versace/');
+  ok(c.ok === false && c.vrstaGreske === 'izvlacenje' && /nije pročitana/.test(c.greska), 'C: nepročitana cijena kartice -> izvlacenje (' + c.greska + ')');
 }
 
 // ---------- D: izvlacenje u odgovoru, dojava vlasniku i prigušivanje ----------
-const httpUz = izmjene => url => {
-  const p = url.replace('https://martimex.hr', '').split('?')[0];
-  const name = p.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
-  const f = path.join(samples, (name || 'root') + '.html');
-  if (!fs.existsSync(f)) return { json: { statusCode: 404, headers: { 'content-type': 'text/html' }, body: '<html><body class="error404"><main></main></body></html>' } };
-  let body = svjez(fs.readFileSync(f, 'utf8'));
-  for (const [kljuc, fn] of Object.entries(izmjene)) if (name.includes(kljuc)) body = fn(body);
-  return { json: { statusCode: 200, headers: { 'content-type': 'text/html' }, body } };
-};
 {
   const kvar = { eros_eau_de_parfum: h => h.replace(/"price":"?99\.5"?/, '"price":"89.5"') };
   let staticno = {};
   global.$getWorkflowStaticData = () => staticno;
   let r = tiho(() => pipeline({ upit: 'versace eros eau de parfum' }, { http: httpUz(kvar) }));
-  ok(r.D.odgovor.ok === false && /nisu se mogli pouzdano pročitati/.test(r.D.odgovor.greska) && /Ne navodi cijene/.test(r.D.odgovor.greska), 'D: nedosljedna stranica -> ok:false bez cijene (' + (r.D.odgovor.greska || '').slice(0, 120) + ')');
+  ok(r.D.odgovor.ok === false && /ne mogu pouzdano pročitati/.test(r.D.odgovor.greska) && /Ne navodi cijene/.test(r.D.odgovor.greska) && !/\d+,\d{2}/.test(r.D.odgovor.greska), 'D: nedosljedna stranica -> ok:false bez ijednog iznosa za Marti (' + (r.D.odgovor.greska || '').slice(0, 160) + ')');
+  ok(/89,50/.test(r.D.interna || ''), 'D: detalji nedosljednosti (iznosi) idu samo vlasniku');
   ok(r.D.interna && /promijenjen izgled weba/.test(r.D.interna), 'D: vlasnik dobiva dojavu o nedosljednoj stranici');
   ok(staticno.zadnjaDojava && staticno.zadnjaDojava.izvlacenje > 0, 'D: vrijeme dojave zapamćeno');
   r = tiho(() => pipeline({ upit: 'versace eros eau de parfum' }, { http: httpUz(kvar) }));
@@ -174,10 +222,62 @@ const httpUz = izmjene => url => {
   ok(r.B.kontekst.odabranTocno === null, 'B: upit bez riječi naziva (brend + set) -> nema se što provjeriti');
   // napomena u tekstu kad je stranica dostupna
   r = tiho(() => pipeline({ upit: 'versace eros eau de parfum' }));
-  const B = { kontekst: Object.assign({}, r.B.kontekst, { odabranTocno: false }) };
+  const B = { kontekst: Object.assign({}, r.B.kontekst, { odabranTocno: false, tokeni: ['eros', 'flame'] }) };
   const st = C(uzorak(EROS), 'https://martimex.hr/proizvod/parfemi/parfemske-vode/eros-eau-de-parfum/');
   const d = run(CODE.D, 'all', [{ json: Object.assign(st, { markdown: '' }) }], { 'Pripremi upit': [{ json: { idx: {} } }], 'Odaberi stranice': [{ json: Object.assign({ url: st.url }, B) }] })[0].json;
   ok(/odabran po sličnosti/.test(d.odgovor.tekst), 'D: napomena o sličnosti kad naziv nije točan');
+}
+
+// ---------- D: napomena o sličnosti ne smeta kad upit sadrži nijansu ili riječ pitanja; ide prije popisa varijanti ----------
+{
+  const st = C(uzorak(CREAM), 'https://martimex.hr/proizvod/makeup/usne/ruzevi/labsolu-rouge-cream-34-g/');
+  const D = tokeni => run(CODE.D, 'all', [{ json: Object.assign({}, st, { markdown: '' }) }], { 'Pripremi upit': [{ json: { idx: {} } }], 'Odaberi stranice': [{ json: { url: st.url, kontekst: { tip: 'proizvod', odabranTocno: false, tokeni, format: 'json' } } }] })[0].json.odgovor;
+  let o = D(['labsolu', 'rouge', 'cream', '295', 'french', 'rendez', 'vous']);
+  ok(!/po sličnosti/.test(o.tekst) && o.podaci.odabranPoSlicnosti === false, 'D: nijansa iz upita postoji na stranici -> bez napomene');
+  o = D(['labsolu', 'rouge', 'cream', 'dostupnost']);
+  ok(!/po sličnosti/.test(o.tekst), 'D: riječ pitanja (dostupnost) ne izaziva napomenu');
+  o = D(['labsolu', 'rouge', 'cream', '999']);
+  ok(/po sličnosti/.test(o.tekst) && o.podaci.odabranPoSlicnosti === true, 'D: nijansa koje nema -> napomena (i u JSON-u)');
+  ok(o.tekst.indexOf('po sličnosti') < o.tekst.indexOf('PROIZVOD:'), 'D: napomena stoji prije bloka proizvoda (ne odreže je skraćivanje)');
+}
+// ---------- D: više kandidata, a pročitan samo jedan -> uputa da pita kupca ----------
+{
+  const st = C(uzorak(INTI), 'https://martimex.hr/proizvod/makeup/usne/ruzevi/labsolu-rouge-intimatte-34-g/');
+  const pala = { ok: false, vrstaGreske: 'timeout', greska: 'web nije odgovorio', url: 'https://martimex.hr/proizvod/makeup/usne/ruzevi/labsolu-rouge-cream-34-g/', tip: 'greska' };
+  const o = run(CODE.D, 'all', [{ json: Object.assign({}, st, { markdown: '' }) }, { json: pala }], { 'Pripremi upit': [{ json: { idx: {} } }], 'Odaberi stranice': [{ json: { url: st.url, kontekst: { tip: 'vise_proizvoda', tokeni: ['labsolu', 'rouge'] } } }] })[0].json.odgovor;
+  ok(/odgovaralo više proizvoda/.test(o.tekst), 'D: od više kandidata pročitan jedan -> Marti pita kupca');
+}
+// ---------- JSON: strogi iznosi, drugi brend označen ----------
+{
+  const st = C(uzorak(EROS), 'https://martimex.hr/proizvod/parfemi/parfemske-vode/eros-eau-de-parfum/', { brendProvjera: 'dolcegabbana', brendImena: ['dolcegabbana', 'Dolce&Gabbana'] });
+  st.proizvod.varijante[0].najniza = 'NC u zadnjih 30 dana 48,00 €';
+  st.proizvod.varijante[1].najniza = 'od 10,00 € do 20,00 €';
+  const o = run(CODE.D, 'all', [{ json: Object.assign({}, st, { markdown: '' }) }], { 'Pripremi upit': [{ json: { idx: {} } }], 'Odaberi stranice': [{ json: { url: st.url, kontekst: { tip: 'proizvod', brendProvjera: 'dolcegabbana', brendNaziv: 'Dolce&Gabbana', brend: 'dolcegabbana', format: 'json' } } }] })[0].json.odgovor;
+  const pg = o.podaci.stranice[0];
+  ok(pg.izostavljeno && /drugi brend/.test(pg.izostavljeno), 'JSON: stranica drugog brenda označena kao izostavljena');
+  ok(pg.proizvod.varijante[0].najnizaCijena30d === 48 && pg.proizvod.varijante[1].najnizaCijena30d === null, 'JSON: iznos samo iz jednog iznosa u eurima (48 i null za raspon)');
+}
+
+// ---------- B: spol, nota, spojena veličina i riječi pitanja (nalazi pregleda) ----------
+{
+  const b = u => tiho(() => pipeline({ upit: u })).B;
+  let r = b('Versace Dylan Blue za žene');
+  ok(/dylan-blue-pour-femme/.test(r.url), 'B: „Dylan Blue za žene“ -> Pour Femme (' + r.url + ')');
+  r = b('Armani Code za žene');
+  ok(/code-femme/.test(r.url), 'B: „Armani Code za žene“ -> Code Femme (' + r.url + ')');
+  r = b('Elizabeth Arden White Tea Eau Florale');
+  ok(/white-tea-eau-florale/.test(r.url), 'B: „White Tea Eau Florale“ -> Eau Florale (' + r.url + ')');
+  r = b('Versace Eros Eau de Toilette za žene');
+  ok(/eros-pour-femme/.test(r.url), 'B: „Eros EDT za žene“ -> Eros Pour Femme (' + r.url + ')');
+  r = b('Carolina Herrera Bad Boy za muškarce');
+  ok(/bad-boy/.test(r.url) && r.kontekst.odabranTocno === true, 'B: „boy“ iz naziva ostaje riječ naziva (' + r.url + ')');
+  for (const u of ['YSL Y eau de parfum 100ml', 'Lancome labsolu rouge cream 3,4g', 'Versace Eros eau de parfum koje veličine imate', 'Versace Eros eau de parfum za muža']) {
+    r = b(u); ok(r.kontekst.odabranTocno === true, 'B: „' + u + '“ -> točan naziv (bez lažne napomene)');
+  }
+  r = b('Versace Dylan Blue 100ml');
+  ok(/dylan-blue-eau-de-toilette/.test(r.url), 'B: „Dylan Blue 100ml“ -> EDT, ne deo (' + r.url + ')');
+  r = b('Archliner Ink 02');
+  ok(r.kontekst.odabranTocno === false, 'B: broj iz upita kojeg nema u adresi -> nije točan naziv');
 }
 
 // ---------- B: broj proizvoda brenda samo uz potpunu mapu ----------
@@ -210,6 +310,29 @@ const httpUz = izmjene => url => {
   ok(/nije osvježen 40 h/.test(opis('schedule', 6)), 'samoprovjera 06:15: zastarjeli sitemap javljen');
   ok(!/nije osvježen/.test(opis('schedule', 12)), 'samoprovjera 12:15: zastarjeli sitemap se ne ponavlja (' + opis('schedule', 12).slice(0, 80) + ')');
   ok(/nije osvježen/.test(opis('webhook', 12)), 'samoprovjera pokrenuta webhookom: zastarjeli sitemap javljen');
+}
+
+// ---------- samoprovjera svaka 3 h: ista greška jednom (i ujutro ponovno), nova odmah, prolaz briše pamćenje ----------
+{
+  const { DateTime } = require('luxon');
+  let sd = {};
+  global.$getWorkflowStaticData = () => sd;
+  const sp = (ura, problem) => {
+    const t = DateTime.fromObject({ hour: ura, minute: 15 }, { zone: 'Europe/Zagreb' }).toMillis();
+    const pravi = Date.now; Date.now = () => t;
+    const str = problem ? [{ json: { ok: false, vrstaGreske: problem, greska: problem, url: 'https://martimex.hr/x/', ocekuj: 'varijante', tip: 'greska' } }]
+      : [{ json: { ok: true, tip: 'stranica', url: 'https://martimex.hr/dostava-i-isporuka/', ocekuj: 'tekst', markdown: 'x'.repeat(600), generirano: Math.floor(t / 1000), starostS: 1 } }];
+    try { return run(CODE.D, 'all', str, { 'Pripremi upit': [{ json: { idx: {} } }], 'Odaberi stranice': [{ json: { kontekst: { zadatak: 'samoprovjera', izvor: 'schedule' } } }] })[0].json.odgovor; }
+    finally { Date.now = pravi; }
+  };
+  let o = sp(9, 'izvlacenje'); ok(o.ok === false, 'samoprovjera 09:15: nova greška -> dojava');
+  o = sp(12, 'izvlacenje'); ok(o.ok === true && o.vecJavljeno === true, 'samoprovjera 12:15: ista greška -> bez ponovne dojave');
+  o = sp(15, '404'); ok(o.ok === false, 'samoprovjera 15:15: druga greška -> dojava odmah');
+  o = sp(18, '404'); ok(o.ok === true && o.vecJavljeno, 'samoprovjera 18:15: ista druga greška -> bez dojave');
+  o = sp(6, '404'); ok(o.ok === false, 'samoprovjera 06:15 (jutarnja): ista greška se ponovno javlja');
+  o = sp(9, null); ok(o.ok === true && !o.vecJavljeno && sd.samoprovjera === null, 'samoprovjera prošla -> pamćenje obrisano');
+  o = sp(12, '404'); ok(o.ok === false, 'nakon prolaza ista greška ponovno se javlja');
+  delete global.$getWorkflowStaticData;
 }
 
 console.log('\nTESTOVI v1.6: ' + pass + ' prolazi, ' + fail + ' ne prolazi');

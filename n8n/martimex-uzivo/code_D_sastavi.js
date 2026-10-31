@@ -51,11 +51,11 @@ const greskaTekst = (s) => {
   if (v === 'zastarjelo') return 'Za ' + (s.url || '') + ' ' + s.greska + '.';
   if (v === 'odbijeno') return 'martimex.hr je odbio zahtjev (' + s.greska + ').';
   if (v === 'nijehtml') return (s.url || '') + ' ne vraća web stranicu (' + s.greska + ').';
-  if (v === 'izvlacenje') return 'Podaci sa stranice ' + (s.url || '') + ' nisu se mogli pouzdano pročitati (' + (s.greska || 'nepoznato') + '); cijenu i dostupnost provjeri na toj poveznici.';
+  if (v === 'izvlacenje') return 'Podaci sa stranice ' + (s.url || '') + ' trenutno se ne mogu pouzdano pročitati (podaci na stranici nisu dosljedni); cijenu i dostupnost provjeri na toj poveznici.';
   return 'martimex.hr trenutno vraća grešku za ' + (s.url || '') + ' (' + (s.greska || 'nepoznato') + ').';
 };
 const red = v => {
-  let cijena = v.cijena || 'cijena nepoznata';
+  let cijena = v.cijena || (v.bezCijene ? 'cijena nije prikazana na webu' : 'cijena nepoznata');
   if (v.naAkciji) cijena += ' (akcija' + (v.akcijaPct ? ' -' + v.akcijaPct + ' %' : '') + (v.redovna ? ', redovno ' + v.redovna : '') + (v.najniza ? ', najniža cijena u zadnjih 30 dana ' + v.najniza : '') + ')';
   return '- ' + (v.oznaka || 'jedna varijanta') + ' | ' + cijena + ' | ' + (v.zaliha || 'zaliha nepoznata');
 };
@@ -210,12 +210,14 @@ function dopuniMapuBrenda(s) {
 }
 
 // ---------- JSON način (format: 'json'): iste činjenice kao polja ----------
-const iznos = s => { const t = String(s ?? '').replace(/[^\d,.\-]/g, ''); if (!t) return null; const n = parseFloat(t.includes(',') ? t.replace(/\./g, '').replace(',', '.') : t); return isFinite(n) ? n : null; };
+// točno jedan iznos u eurima (npr. „1.234,56 €“, „NC … 48,00 €“); raspon, više iznosa ili tekst bez iznosa = null
+const iznos = s => { if (s === null || s === undefined) return null; const m = String(s).match(/\d{1,3}(?:\.\d{3})+,\d{2}(?=\s?€)|\d+,\d{2}(?=\s?€)/g); if (!m || m.length !== 1) return null; const n = parseFloat(m[0].replace(/\./g, '').replace(',', '.')); return isFinite(n) ? n : null; };
 const naZalihi = z => z === 'na zalihi' ? true : z === 'nije na zalihi' ? false : null;
-const varijantaJson = v => ({ oznaka: v.oznaka || null, nijansa: !!v.nijansa, cijena: iznos(v.cijena), cijenaTekst: v.cijena || null, naAkciji: !!v.naAkciji, akcijaPct: Number(v.akcijaPct) || 0, redovnaCijena: iznos(v.redovna), najnizaCijena30d: iznos(v.najniza), naZalihi: naZalihi(v.zaliha), zaliha: v.zaliha || null });
+const varijantaJson = v => ({ oznaka: v.oznaka || null, nijansa: !!v.nijansa, cijena: iznos(v.cijena), cijenaTekst: v.cijena || null, naAkciji: !!v.naAkciji, akcijaPct: Number(v.akcijaPct) || 0, redovnaCijena: iznos(v.redovna), najnizaCijena30d: iznos(v.najniza), naZalihi: naZalihi(v.zaliha), zaliha: v.zaliha || null, bezCijeneNaWebu: !!v.bezCijene });
 function stranicaJson(s) {
   const o = { url: s.url || null, ok: s.ok === true, tip: s.tip || null };
-  if (s.ok !== true) { o.vrstaGreske = s.vrstaGreske || null; o.greska = s.greska || null; return o; }
+  if (s.ok !== true) { o.vrstaGreske = s.vrstaGreske || null; o.greska = s.vrstaGreske === 'izvlacenje' ? 'podaci na stranici nisu dosljedni, pa se ne koriste' : (s.greska || null); return o; }
+  if (s.drugiBrend) o.izostavljeno = 'drugi brend (ne odgovara traženom brendu)';
   o.generirano = s.generirano ? new Date(s.generirano * 1000).toISOString() : null;
   o.starostS = (s.starostS === null || s.starostS === undefined) ? null : s.starostS;
   o.rezervniDohvat = !!s.rezerva;
@@ -236,6 +238,17 @@ function stranicaJson(s) {
   }
   return o;
 }
+
+// riječi pitanja (ne dio naziva) i provjera pokriva li stranica sve riječi upita (naziv, brend, kategorija, nijanse/veličine)
+const RIJECI_PITANJA = new Set(['dostupnost', 'dostupno', 'dostupan', 'dostupna', 'stanje', 'stanju', 'zaliha', 'zalihi', 'cijena', 'cijene', 'cijenu', 'kosta', 'kostaju', 'ima', 'imate', 'imaju', 'li', 'nijansa', 'nijanse', 'nijansu', 'boja', 'boju', 'broj', 'koliko', 'koja', 'koji', 'koje', 'akcija', 'akciji', 'popust']);
+function pokrivenoNaStranici(s) {
+  const p = (s && s.proizvod) || {};
+  const rijeci = norm([p.naziv, p.brend, p.kategorija, String(s.url || '').replace(/^https?:\/\/[^\/]+/, '')].concat((p.varijante || []).map(v => v.oznaka)).join(' ')).split(' ').filter(Boolean);
+  const spojeno = norm(p.naziv).replace(/ /g, '');   // L’Absolu -> labsolu
+  const tok = (k.tokeni || []).map(t => norm(t)).filter(t => t && !RIJECI_PITANJA.has(t) && !OPCE.has(t));
+  return tok.length > 0 && tok.every(t => (t.length >= 4 && spojeno.includes(t)) || rijeci.some(w => w === t || (t.length >= 4 && (w.startsWith(stem(t)) || stem(w) === stem(t))) || (t.length >= 3 && w.includes(t))));
+}
+let poSlicnosti = false;
 
 let odgovor;
 try {
@@ -343,6 +356,18 @@ try {
     const upoz = (web.length ? (webVecinom ? 'martimex.hr ne odgovara za ' + web.length + ' od ' + stranice.length + ' stranica (ni kupci ne bi dobili odgovor): ' : 'Upozorenje (web spor ili nedostupan za ' + web.length + ' ' + mn(web.length, 'stranicu', 'stranice', 'stranica') + '; to nije greška alata): ') + web.join(' | ') + '. ' : '') + (napomene.length ? 'Napomena: ' + napomene.join(' | ') + '. ' : '');
     const prosla = problemi.length === 0 && !webVecinom;
     odgovor = { ok: prosla, zadatak, opis: (prosla ? 'Samoprovjera prošla. ' + upoz : 'SAMOPROVJERA NIJE PROŠLA: ' + (problemi.length ? problemi.join(' | ') + '. ' : '') + upoz) + 'U redu: ' + (okRedci.join(' | ') || 'nijedna') };
+    // samoprovjera iz rasporeda radi svaka 3 h: ista greška javlja se jednom (i ponovno u jutarnjoj provjeri), nova ili promijenjena odmah;
+    // kad samoprovjera prođe, pamćenje se briše (podaci workflowa vrijede samo u produkciji)
+    if (k.izvor === 'schedule') {
+      try {
+        const sd = $getWorkflowStaticData('global');
+        const potpis = prosla ? '' : problemi.concat(webVecinom ? ['web ne odgovara'] : []).map(x => String(x).replace(/\d+/g, '#')).sort().join(' | ');
+        const zadnja = (sd.samoprovjera && typeof sd.samoprovjera === 'object') ? sd.samoprovjera : null;
+        if (!prosla && !jutarnja && zadnja && zadnja.potpis === potpis && now - Number(zadnja.at) < 20 * 3600000) {
+          odgovor = { ok: true, zadatak, vecJavljeno: true, opis: 'Ista greška samoprovjere već je javljena (' + vrijeme(Number(zadnja.at)) + '); ponovna dojava u jutarnjoj provjeri ili čim se greška promijeni. ' + odgovor.opis };
+        } else sd.samoprovjera = prosla ? null : { potpis, at: now };
+      } catch (e) { /* bez spremanja stanja: javlja se svaki put */ }
+    }
   }
   // ---------- Marti: upit ----------
   else {
@@ -380,8 +405,13 @@ try {
             r.push('Stranica brenda (svi proizvodi s cijenama): https://martimex.hr/brand/' + k.brend + '/');
           } else {
             const puni = tip === 'url' || istiBrend.length === 1;
+            const drugiSpol = istiBrend.length === 1 && tip !== 'url' && k.odabranDrugiSpol ? k.odabranDrugiSpol : null;
+            poSlicnosti = istiBrend.length === 1 && k.odabranTocno === false && tip !== 'url' && (!!drugiSpol || !pokrivenoNaStranici(istiBrend[0]));
+            if (drugiSpol) r.push('Napomena: traženo je za ' + (drugiSpol === 'ženski' ? 'žene' : 'muškarce') + ', a odabrani proizvod je po nazivu za suprotni spol; provjeri s kupcem koji proizvod traži.');
+            else if (poSlicnosti) r.push('Napomena: proizvod je odabran po sličnosti naziva (točan naziv iz upita nije pronađen); ako nije siguran da je to traženi proizvod, provjeri s kupcem.');
+            // ostali kandidati nisu pročitani (spor web, nedosljedni podaci); uklonjen proizvod (404, preusmjerenje) nije kandidat
+            if (istiBrend.length === 1 && k.tip === 'vise_proizvoda' && neuspjele.some(x => x.vrstaGreske !== '404' && x.vrstaGreske !== 'preusmjerenje')) r.push('Napomena: upitu je odgovaralo više proizvoda, a pročitan je samo ovaj; ako iz razgovora nije jasno koji proizvod kupac misli, pitaj ga.');
             for (const s of istiBrend) r.push(blokProizvoda(s, !!k.zeliOpis, puni));
-            if (istiBrend.length === 1 && k.odabranTocno === false && tip !== 'url') r.push('Napomena: proizvod je odabran po sličnosti naziva (točan naziv iz upita nije pronađen); ako nije siguran da je to traženi proizvod, provjeri s kupcem.');
             if (istiBrend.length > 1) { tipOut = 'vise_proizvoda'; r.push('Marti: ako iz razgovora nije jasno koji proizvod kupac misli, pitaj ga (navedi nazive), ne pogađaj.'); }
             else if (tipOut === 'vise_proizvoda') tipOut = 'proizvod';
             if (drugi.length) r.push('Izostavljeno (drugi brend): ' + drugi.map(s => s.proizvod.naziv + ' – ' + s.proizvod.brend).join(', '));
@@ -470,7 +500,7 @@ if (!interna && (k.zadatak || 'upit') === 'upit') {
 }
 // ista vrsta dojave najviše jednom u 30 min (podaci workflowa vrijede samo u produkciji; ručni test uvijek javlja)
 let dojavaPrigusena = false;
-if (interna) {
+if (interna && k.webhook === true && (k.zadatak || 'upit') === 'upit') {
   try {
     const sd = $getWorkflowStaticData('global');
     const zadnje = (sd.zadnjaDojava && typeof sd.zadnjaDojava === 'object') ? sd.zadnjaDojava : {};
@@ -480,7 +510,7 @@ if (interna) {
   } catch (e) { /* bez spremanja stanja: dojava ide uvijek */ }
 }
 if (k.format === 'json' && (k.zadatak || 'upit') === 'upit' && odgovor && typeof odgovor === 'object') {
-  try { odgovor.podaci = { verzija: 1, dohvaceno: new Date(now).toISOString(), stranice: stranice.map(stranicaJson) }; }
+  try { odgovor.podaci = { verzija: 1, dohvaceno: new Date(now).toISOString(), odabranPoSlicnosti: poSlicnosti, stranice: stranice.map(stranicaJson) }; }
   catch (e) { odgovor.podaci = { verzija: 1, dohvaceno: new Date(now).toISOString(), stranice: [], greska: 'podaci nisu složeni (' + String(e && e.message || e).slice(0, 120) + ')' }; }
 }
 return [{ json: { odgovor, spremi, zadatak: k.zadatak || 'upit', webhook: k.webhook === true, interna: dojavaPrigusena ? null : interna, internaPrigusena: dojavaPrigusena ? interna : null, trajanjeMs: k.pocetak ? Date.now() - k.pocetak : null } }];

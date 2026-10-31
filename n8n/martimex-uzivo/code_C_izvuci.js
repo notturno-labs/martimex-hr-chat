@@ -28,7 +28,9 @@ function decode(s) {
     .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 }
 const stripTags = s => decode(String(s || '').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
-const fmtPrice = v => { const n = Number(String(v).replace(',', '.')); return isFinite(n) ? n.toFixed(2).replace('.', ',') + ' €' : String(v); };
+// prazna ili neispravna cijena = '' (nikad 0,00 €: web tada cijenu ne prikazuje)
+// zaokružuje kao web (WooCommerce, pola prema gore): 70.455 -> 70,46 €, a ne 70,45 € kao toFixed
+const fmtPrice = v => { if (v === undefined || v === null || String(v).trim() === '') return ''; const n = Number(String(v).replace(',', '.')); if (!isFinite(n)) return ''; const c = Math.round(Number((Math.abs(n) * 100).toPrecision(12))) * Math.sign(n); return (c / 100).toFixed(2).replace('.', ',') + ' €'; };
 const stockText = v => (v === true || v === 'true') ? 'na zalihi' : (v === false || v === 'false') ? 'nije na zalihi' : 'zaliha nepoznata';
 function jsonIzAtributa(s) {
   const un = String(s).replace(/\\(u[0-9a-fA-F]{4}|.)/g, (m, g) => g[0] === 'u' ? String.fromCharCode(parseInt(g.slice(1), 16)) : g);
@@ -124,7 +126,9 @@ function kartica(card) {
     if (sve.length === 1) { cijena = sve[0].price; redovna = sve[0].former || ''; najniza = sve[0].lowest || ''; }
   }
   const naAkciji = !!(redovna || sve.some(p => p.former) || oznake.some(o => /akcija|sale|%/i.test(o)));
-  return { url: href, naziv, brend, vrsta, cijena, raspon, redovna, najniza, naAkciji, promo: promos, oznake: oznake.filter(o => !/%/.test(o)), varijante, nijeNaZalihi: varijante.length > 0 && varijante.every(v => v.nijeNaZalihi), djelomicnoBezZalihe: varijante.some(v => v.nijeNaZalihi) && !varijante.every(v => v.nijeNaZalihi) };
+  // blok cijene ima iznos u eurima, a cijena nije pročitana (promijenjen predložak kartice)
+  const cijenaNeprocitana = !cijena && !raspon && /\d,\d{2}\s?€/.test(stripTags(pwInner));
+  return { url: href, naziv, brend, vrsta, cijena, raspon, cijenaNeprocitana, redovna, najniza, naAkciji, promo: promos, oznake: oznake.filter(o => !/%/.test(o)), varijante, nijeNaZalihi: varijante.length > 0 && varijante.every(v => v.nijeNaZalihi), djelomicnoBezZalihe: varijante.some(v => v.nijeNaZalihi) && !varijante.every(v => v.nijeNaZalihi) };
 }
 
 // ---------- glavna obrada jedne stranice ----------
@@ -247,7 +251,8 @@ try {
       if (prod && typeof prod.inStock === 'boolean') stock = stockText(prod.inStock);
       else { const spStockM = spAt >= 0 ? html.slice(spAt, spAt + 4000).match(/inStock(?:\\u0022|&quot;|")\s*:\s*(true|false)/) : null; stock = spStockM ? stockText(spStockM[1]) : (ldOffers[0] ? ldOffers[0].stock : 'zaliha nepoznata'); }
       let cijena = '';
-      if (prod && prod.price !== undefined && prod.price !== null && prod.price !== '') cijena = fmtPrice(prod.price); else if (ldOffers[0]) cijena = ldOffers[0].price;
+      // ld+json je zamjena samo kad podataka proizvoda nema; prazna cijena u podacima ostaje prazna (provjera ispod)
+      if (prod && prod.price !== undefined && prod.price !== null && prod.price !== '') cijena = fmtPrice(prod.price); else if (!prod && ldOffers[0]) cijena = ldOffers[0].price;
       const ppM = zone.match(/<div class="product__price[^"]*"[^>]*>([\s\S]*?)<\/div>/);
       const hs = ppM ? [...ppM[1].matchAll(/<h[2-6][^>]*>([\s\S]*?)<\/h[2-6]>/g)].map(m => stripTags(m[1])) : [];
       const lowM = zone.match(/class="lowest-price[^"]*"[^>]*>([\s\S]*?)<\/h6>/);
@@ -275,28 +280,41 @@ try {
     };
     for (const v of varijante) {
       const bl = v.id ? cijenaBloka(v.id) : null;
-      const prikazana = bl && KAO_CIJENA.test(bl.prva) ? bl.prva : '';
-      if (!v.cijena && prikazana) v.cijena = fmtPrice(iznos(prikazana));
+      const sirovo = bl ? bl.prva : '';
+      const prikazana = KAO_CIJENA.test(sirovo) ? sirovo : '';
+      if (sirovo && !prikazana && /\d/.test(sirovo)) izvlacenje.push('varijanta ' + v.oznaka + ': prikazana cijena u neočekivanom obliku („' + sirovo.slice(0, 40) + '“)');
       if (prikazana && v.cijena && !isto(prikazana, v.cijena)) izvlacenje.push('varijanta ' + v.oznaka + ': prikazana cijena ' + prikazana + ', u podacima ' + v.cijena);
+      if (prikazana) v.cijena = fmtPrice(iznos(prikazana));   // kupac vidi prikazanu cijenu (zaokruženu na webu)
       else if (imaBlokove && v.id && !bl) izvlacenje.push('varijanta ' + v.oznaka + ': na stranici nema bloka cijene');
       if (v.cijena) provjeriRedovnu(v, 'varijanta ' + v.oznaka);
+      else v.bezCijene = true;   // ni podaci ni prikaz nemaju cijenu: web je ne prikazuje (npr. nije u prodaji)
     }
+    // gumbi varijanti i blokovi cijena po varijanti: ako postoje, a nijedna varijanta nije pročitana, stranica se ne smije čitati kao proizvod s jednom cijenom
+    const gumbi = new Set();
+    for (const m of zone.matchAll(/<[a-z]+\b[^>]*\bclass="[^"]*\bjs-var-btn\b[^"]*"[^>]*>/gi)) { const idM = m[0].match(/data-variation-id="(\d+)"/); if (idM) gumbi.add(idM[1]); }
+    const blokoviCijena = new Set([...zone.matchAll(/data-price-var-id="(\d+)"/g)].map(m => m[1]));
+    if (!varijante.length && (gumbi.size > 0 || blokoviCijena.size > 1)) izvlacenje.push('na stranici ima ' + Math.max(gumbi.size, blokoviCijena.size) + ' varijanti, a nijedna nije pročitana');
     if (varijante.length) {
       // svaki gumb varijante na stranici mora biti pročitan
-      const gumbi = new Set();
-      for (const m of zone.matchAll(/<[a-z]+\b[^>]*\bclass="[^"]*\bjs-var-btn\b[^"]*"[^>]*>/gi)) { const idM = m[0].match(/data-variation-id="(\d+)"/); if (idM) gumbi.add(idM[1]); }
       const procitane = new Set(varijante.map(v => String(v.id)));
       const neprocitane = [...gumbi].filter(id => !procitane.has(id));
       if (neprocitane.length) izvlacenje.push('nisu pročitane sve varijante (' + varijante.length + ' od ' + (varijante.length + neprocitane.length) + ')');
-      if (varijante.every(v => !v.cijena)) izvlacenje.push('nijedna varijanta nema cijenu');
+      // bez ijedne cijene i bez blokova cijene: nepoznat predložak (cijena u ld+json provjerava se odmah ispod)
+      if (varijante.every(v => !v.cijena) && !imaBlokove) izvlacenje.push('nijedna varijanta nema cijenu, a na stranici nema blokova cijene');
       const ldCijene = ldOffers.map(o => o.price).filter(p => isFinite(iznos(p)));
       if (ldCijene.length && !ldCijene.every(p => varijante.some(v => isto(p, v.cijena)))) izvlacenje.push('cijena u ld+json (' + ldCijene.join(', ') + ') ne odgovara nijednoj varijanti');
     } else if (jedno) {
-      const prikazana = KAO_CIJENA.test(jedno.prikazana) ? jedno.prikazana : '';
-      if (!jedno.cijena && prikazana) jedno.cijena = fmtPrice(iznos(prikazana));
-      if (!jedno.cijena) izvlacenje.push('na stranici proizvoda nije pronađena cijena');
-      else {
-        if (prikazana && !isto(prikazana, jedno.cijena)) izvlacenje.push('prikazana cijena ' + prikazana + ', u podacima ' + jedno.cijena);
+      const sirovo = jedno.prikazana || '';
+      const prikazana = KAO_CIJENA.test(sirovo) ? sirovo : '';
+      if (sirovo && !prikazana && /\d/.test(sirovo)) izvlacenje.push('prikazana cijena u neočekivanom obliku („' + sirovo.slice(0, 40) + '“)');
+      if (prikazana && jedno.cijena && !isto(prikazana, jedno.cijena)) izvlacenje.push('prikazana cijena ' + prikazana + ', u podacima ' + jedno.cijena);
+      if (prikazana) jedno.cijena = fmtPrice(iznos(prikazana));
+      if (!jedno.cijena) {
+        // web ne prikazuje cijenu: prazan blok cijene, prazna cijena u podacima proizvoda i u ld+json (npr. proizvod nije u prodaji)
+        const praznoSvugdje = !!prod && !sirovo && ldOffers.every(o => !o.price);
+        if (praznoSvugdje) jedno.bezCijene = true;
+        else izvlacenje.push('na stranici proizvoda nije pronađena cijena');
+      } else {
         if (ldOffers.length && ldOffers.every(o => isFinite(iznos(o.price))) && !ldOffers.some(o => isto(o.price, jedno.cijena))) izvlacenje.push('cijena u ld+json (' + ldOffers.map(o => o.price).join(', ') + ') ne odgovara cijeni ' + jedno.cijena);
         provjeriRedovnu(jedno, 'proizvod');
       }
@@ -365,9 +383,12 @@ try {
       // provjera potpunosti (v1.6): svaka kartica proizvoda mora biti pročitana i većina mora imati cijenu
       let brojKartica = 0; for (let at = main.indexOf('<div class="product-card"'); at >= 0; at = main.indexOf('<div class="product-card"', at + 10)) brojKartica++;
       const bezCijene = proizvodi.filter(p => !p.cijena && !p.raspon).length;
+      const neprocitane = proizvodi.filter(p => p.cijenaNeprocitana).length;
       const izv = [];
       if (proizvodi.length < brojKartica) izv.push('pročitano ' + proizvodi.length + ' od ' + brojKartica + ' kartica proizvoda');
-      if (bezCijene >= 2 && bezCijene * 2 >= proizvodi.length) izv.push(bezCijene + ' od ' + proizvodi.length + ' proizvoda bez cijene');
+      if (neprocitane) izv.push('na ' + neprocitane + ' kartica cijena postoji, ali nije pročitana');
+      // većina kartica bez ikakve cijene na većem popisu = promijenjen izgled kartice (mali popis može imati samo proizvode koji nisu u prodaji)
+      if (proizvodi.length >= 6 && bezCijene * 2 >= proizvodi.length) izv.push(bezCijene + ' od ' + proizvodi.length + ' proizvoda bez cijene');
       if (izv.length) return { json: Object.assign(osnova, { ok: false, vrstaGreske: 'izvlacenje', greska: 'popis proizvoda nije pročitan potpuno, pa se ne koristi (' + izv.join('; ') + ')', statusCode: kl.statusCode, generirano, starostS, tip: 'greska' }) };
       rezultat.html = '<p></p>'; return { json: rezultat };
     }
