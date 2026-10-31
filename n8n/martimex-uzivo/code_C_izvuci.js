@@ -1,4 +1,4 @@
-// Code node "Izvuci činjenice" (Martimex uživo) – v1.5, izvršava se po stavci.
+// Code node "Izvuci činjenice" (Martimex uživo) – v1.6, izvršava se po stavci.
 // Ulaz: HTTP odgovor stranice (fullResponse: statusCode, headers, body), nakon prvog ili ponovljenog dohvata.
 // Klasificira odgovor (nikad ok za grešku, preusmjerenje, ne-HTML ili stare podatke), izvlači činjenice iz JSON-a teme
 // (proizvod: varijante, cijene, akcija, zaliha, promo; popis: kartice proizvoda; informativna stranica: očišćen HTML za Markdown).
@@ -229,7 +229,7 @@ try {
       const label = String(v.color || v.label || v.name || '').trim() || ('varijacija ' + v.id);
       const { reg, low } = regLow(v.id);
       const pct = Number(v.salePercentage) || 0;
-      varijante.push({ oznaka: label, nijansa: !!(v.color && String(v.color).trim()), cijena: (v.price !== undefined && v.price !== null && v.price !== '') ? fmtPrice(v.price) : '', akcijaPct: pct, redovna: reg, najniza: low, naAkciji: v.onSale === true || pct > 0 || !!reg, zaliha: stockText(v.inStock === true ? true : v.inStock === false ? false : null) });
+      varijante.push({ id: String(v.id), oznaka: label, nijansa: !!(v.color && String(v.color).trim()), cijena: (v.price !== undefined && v.price !== null && v.price !== '') ? fmtPrice(v.price) : '', akcijaPct: pct, redovna: reg, najniza: low, naAkciji: v.onSale === true || pct > 0 || !!reg, zaliha: stockText(v.inStock === true ? true : v.inStock === false ? false : null) });
     }
     if (!varijante.length) {
       const vRe = /<[a-z]+\b[^>]*\bdata-var-name="([^"]*)"[^>]*>/gi; let vm;
@@ -238,7 +238,7 @@ try {
         const priceM = tag.match(/data-var-price="([^"]*)"/); const saleM = tag.match(/data-var-sale-percentage="(\d+)"/);
         const stockM = tag.match(/inStock(?:\\u0022|&quot;|")\s*:\s*(true|false)/); const colorM = tag.match(/data-var-color="([^"]*)"/);
         const vidM = tag.match(/data-variation-id="(\d+)"/); const { reg, low } = regLow(vidM ? vidM[1] : null); const pct = saleM ? Number(saleM[1]) : 0;
-        varijante.push({ oznaka: (colorM && colorM[1].trim()) ? decode(colorM[1]).trim() : decode(vm[1]), nijansa: !!(colorM && colorM[1].trim()), cijena: priceM ? fmtPrice(priceM[1]) : '', akcijaPct: pct, redovna: reg, najniza: low, naAkciji: pct > 0 || !!reg, zaliha: stockText(stockM ? stockM[1] : null) });
+        varijante.push({ id: vidM ? vidM[1] : null, oznaka: (colorM && colorM[1].trim()) ? decode(colorM[1]).trim() : decode(vm[1]), nijansa: !!(colorM && colorM[1].trim()), cijena: priceM ? fmtPrice(priceM[1]) : '', akcijaPct: pct, redovna: reg, najniza: low, naAkciji: pct > 0 || !!reg, zaliha: stockText(stockM ? stockM[1] : null) });
       }
     }
     let jedno = null;
@@ -254,7 +254,56 @@ try {
       const reg = hs.length >= 2 ? hs[1] : (ppM && /former-price/.test(ppM[1]) ? stripTags((ppM[1].match(/former-price[^>]*>([\s\S]*?)<\/h/) || [])[1] || '') : '');
       const low = lowM ? stripTags(lowM[1]).replace(/^NC u zadnjih 30 dana:\s*/i, '') : '';
       const pct = prod ? (Number(prod.salePercentage) || 0) : 0;
-      jedno = { cijena, akcijaPct: pct, redovna: reg, najniza: low, naAkciji: (prod && prod.onSale === true) || pct > 0 || !!reg, zaliha: stock };
+      jedno = { cijena, akcijaPct: pct, redovna: reg, najniza: low, naAkciji: (prod && prod.onSale === true) || pct > 0 || !!reg, zaliha: stock, prikazana: hs[0] || '' };
+    }
+    // ---------- unakrsna provjera (v1.6): ista cijena mora stajati u podacima varijante, u prikazanoj cijeni i u ld+json;
+    // ako se ne slažu ili nisu pročitane sve varijante, stranica se ne koristi (ok:false, izvlacenje) umjesto da se kaže kriva cijena
+    const izvlacenje = [];
+    const KAO_CIJENA = /^\d{1,3}(?:\.\d{3})*,\d{2}\s?€$/;
+    const iznos = s => { const t = String(s ?? '').replace(/[^\d,.\-]/g, ''); if (!t) return NaN; return parseFloat(t.includes(',') ? t.replace(/\./g, '').replace(',', '.') : t); };
+    const isto = (a, b2) => { const x = iznos(a), y = iznos(b2); return isFinite(x) && isFinite(y) && Math.abs(x - y) <= 0.011; };
+    const cijenaBloka = id => {
+      const pb = zone.match(new RegExp('data-price-var-id="' + id + '"[^>]*>([\\s\\S]*?)<\\/div>'));
+      if (!pb) return null;
+      const hs2 = [...pb[1].matchAll(/<h[2-6][^>]*>([\s\S]*?)<\/h[2-6]>/g)].map(m => stripTags(m[1])).filter(Boolean);
+      return { prva: hs2[0] || '' };
+    };
+    const imaBlokove = /data-price-var-id="/.test(zone);
+    const provjeriRedovnu = (o, oznaka) => {
+      if (!o.redovna) return;
+      if (!KAO_CIJENA.test(o.redovna) || !(iznos(o.redovna) > iznos(o.cijena))) izvlacenje.push(oznaka + ': redovna cijena „' + o.redovna + '“ nije ispravna uz cijenu ' + o.cijena);
+    };
+    for (const v of varijante) {
+      const bl = v.id ? cijenaBloka(v.id) : null;
+      const prikazana = bl && KAO_CIJENA.test(bl.prva) ? bl.prva : '';
+      if (!v.cijena && prikazana) v.cijena = fmtPrice(iznos(prikazana));
+      if (prikazana && v.cijena && !isto(prikazana, v.cijena)) izvlacenje.push('varijanta ' + v.oznaka + ': prikazana cijena ' + prikazana + ', u podacima ' + v.cijena);
+      else if (imaBlokove && v.id && !bl) izvlacenje.push('varijanta ' + v.oznaka + ': na stranici nema bloka cijene');
+      if (v.cijena) provjeriRedovnu(v, 'varijanta ' + v.oznaka);
+    }
+    if (varijante.length) {
+      // svaki gumb varijante na stranici mora biti pročitan
+      const gumbi = new Set();
+      for (const m of zone.matchAll(/<[a-z]+\b[^>]*\bclass="[^"]*\bjs-var-btn\b[^"]*"[^>]*>/gi)) { const idM = m[0].match(/data-variation-id="(\d+)"/); if (idM) gumbi.add(idM[1]); }
+      const procitane = new Set(varijante.map(v => String(v.id)));
+      const neprocitane = [...gumbi].filter(id => !procitane.has(id));
+      if (neprocitane.length) izvlacenje.push('nisu pročitane sve varijante (' + varijante.length + ' od ' + (varijante.length + neprocitane.length) + ')');
+      if (varijante.every(v => !v.cijena)) izvlacenje.push('nijedna varijanta nema cijenu');
+      const ldCijene = ldOffers.map(o => o.price).filter(p => isFinite(iznos(p)));
+      if (ldCijene.length && !ldCijene.every(p => varijante.some(v => isto(p, v.cijena)))) izvlacenje.push('cijena u ld+json (' + ldCijene.join(', ') + ') ne odgovara nijednoj varijanti');
+    } else if (jedno) {
+      const prikazana = KAO_CIJENA.test(jedno.prikazana) ? jedno.prikazana : '';
+      if (!jedno.cijena && prikazana) jedno.cijena = fmtPrice(iznos(prikazana));
+      if (!jedno.cijena) izvlacenje.push('na stranici proizvoda nije pronađena cijena');
+      else {
+        if (prikazana && !isto(prikazana, jedno.cijena)) izvlacenje.push('prikazana cijena ' + prikazana + ', u podacima ' + jedno.cijena);
+        if (ldOffers.length && ldOffers.every(o => isFinite(iznos(o.price))) && !ldOffers.some(o => isto(o.price, jedno.cijena))) izvlacenje.push('cijena u ld+json (' + ldOffers.map(o => o.price).join(', ') + ') ne odgovara cijeni ' + jedno.cijena);
+        provjeriRedovnu(jedno, 'proizvod');
+      }
+    }
+    if (jedno) delete jedno.prikazana;
+    if (izvlacenje.length) {
+      return { json: Object.assign(osnova, { ok: false, vrstaGreske: 'izvlacenje', greska: 'podaci sa stranice proizvoda nisu dosljedni, pa se ne koriste (' + izvlacenje.slice(0, 3).join('; ').slice(0, 300) + ')', statusCode: kl.statusCode, generirano, starostS, tip: 'greska' }) };
     }
     const naziv = (prod && prod.name) ? decode(String(prod.name)) : (ldName || title);
     const brendIme = (prod && prod.brandName) ? decode(String(prod.brandName)) : ldBrand;
@@ -312,7 +361,16 @@ try {
     const opisPopisa = stripTags((main.match(/<div class="shop-content__description[^"]*"[^>]*>([\s\S]*?)<\/div>/) || [])[1] || '').slice(0, 400);
     rezultat.popis = { naslov: h1 ? stripTags(h1) : title, proizvodi, potkategorije, opis: opisPopisa, brojProizvoda: proizvodi.length };
     if (tip !== 'popis' && proizvodi.length) rezultat.tip = 'popis';
-    if (rezultat.tip === 'popis') { rezultat.html = '<p></p>'; return { json: rezultat }; }
+    if (rezultat.tip === 'popis') {
+      // provjera potpunosti (v1.6): svaka kartica proizvoda mora biti pročitana i većina mora imati cijenu
+      let brojKartica = 0; for (let at = main.indexOf('<div class="product-card"'); at >= 0; at = main.indexOf('<div class="product-card"', at + 10)) brojKartica++;
+      const bezCijene = proizvodi.filter(p => !p.cijena && !p.raspon).length;
+      const izv = [];
+      if (proizvodi.length < brojKartica) izv.push('pročitano ' + proizvodi.length + ' od ' + brojKartica + ' kartica proizvoda');
+      if (bezCijene >= 2 && bezCijene * 2 >= proizvodi.length) izv.push(bezCijene + ' od ' + proizvodi.length + ' proizvoda bez cijene');
+      if (izv.length) return { json: Object.assign(osnova, { ok: false, vrstaGreske: 'izvlacenje', greska: 'popis proizvoda nije pročitan potpuno, pa se ne koristi (' + izv.join('; ') + ')', statusCode: kl.statusCode, generirano, starostS, tip: 'greska' }) };
+      rezultat.html = '<p></p>'; return { json: rezultat };
+    }
   }
 
   // informativna stranica / članak / početna: očišćen HTML za Markdown node

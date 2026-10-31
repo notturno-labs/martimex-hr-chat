@@ -1,4 +1,4 @@
-// Code node "Pripremi upit" (Martimex uživo) – v1.5
+// Code node "Pripremi upit" (Martimex uživo) – v1.6
 // Ulaz: svi redci Data Tablea "Marti - indeks weba" (ili jedan prazan item kad je tablica prazna).
 // Čita zahtjev (webhook / ručni test / Schedule Set nodeovi), parsira indeks i odlučuje treba li sitemape čitati uživo.
 // Izlaz: ili jedan item { akcija:'odaberi', kontekst, idx } ili N itema { url, akcija:'sitemapi' } (prvi nosi kontekst i idx).
@@ -50,7 +50,9 @@ function citajZahtjev() {
   let zadatak = String(first(b.zadatak, q.zadatak, j.zadatak)).toLowerCase().trim();
   if (!['sitemapi', 'brendovi', 'samoprovjera'].includes(zadatak)) zadatak = 'upit';
   const pokvari = /^(1|true|da|yes)$/i.test(String(first(b.pokvari, q.pokvari, j.pokvari)));
-  return { izvor, zadatak, upit: upit.slice(0, 300), url: url.slice(0, 500), pokvari, webhook: izvor === 'webhook' };
+  // format 'json': uz tekst se vraćaju i strukturirani podaci (odgovor.podaci); sve ostalo = samo tekst
+  const format = /^\s*json\s*$/i.test(String(first(b.format, q.format, j.format))) ? 'json' : 'tekst';
+  return { izvor, zadatak, upit: upit.slice(0, 300), url: url.slice(0, 500), pokvari, format, webhook: izvor === 'webhook' };
 }
 
 // redci { prefiks:"<kljuc>#<i>", at, broj, rows } -> idx[kljuc] = { at, v }

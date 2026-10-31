@@ -63,7 +63,7 @@ function pipeline(body, opts) {
   const akcija = B[0].json.akcija;
   let D;
   if (akcija === 'dohvati') {
-    const http = B.map((b, i) => { const r = fakeHttp(b.json.url); r.__i = i; r.__paired = { 'Odaberi stranice': b, 'Dohvati stranice': r }; return r; });
+    const http = B.map((b, i) => { const r = (opts.http || fakeHttp)(b.json.url); r.__i = i; r.__paired = { 'Odaberi stranice': b, 'Dohvati stranice': r }; return r; });
     nodes['Dohvati stranice'] = http;
     const t2 = Date.now();
     const C = run(CODE.C, 'each', http, nodes); nodes['Izvuci činjenice'] = C;

@@ -1,12 +1,14 @@
-// Code node "Sastavi odgovor" (Martimex uživo) – v1.5
+// Code node "Sastavi odgovor" (Martimex uživo) – v1.6
 // Ulaz: stavke iz "HTML u Markdown" (po jedna po pročitanoj stranici) ili stavka 'odgovori' iz "Odaberi stranice" (bez dohvata).
 // Sastavlja kratak tekst za Marti ({ ok, tip, tekst } ili { ok:false, greska }), rezultate zadataka (sitemapi, brendovi, samoprovjera)
 // i popis dijelova indeksa za spremanje (spremi). Uvijek vraća točno jedan item; nikad ne baca.
+// Uz format 'json' (u zahtjevu) odgovor dodatno nosi polje podaci: iste činjenice kao brojevi i polja (cijena, akcija, zaliha po varijanti).
 const MAX_PROIZVOD = 800;
 const MAX_POPIS = 4500;
 const MAX_STRANICA = 12000;
 const KONTAKT = ' Ne navodi cijene ni dostupnost napamet; pokušaj ponovno ili uputi kupca na poveznicu.';
 const ZG = 'Europe/Zagreb';
+const DOJAVA_RAZMAK_MS = 30 * 60 * 1000;   // ista vrsta interne greške javlja se vlasniku najviše jednom u 30 min
 const now = Date.now();
 
 const norm = s => String(s || '').toLowerCase().replace(/đ/g, 'd').normalize('NFD').replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -49,6 +51,7 @@ const greskaTekst = (s) => {
   if (v === 'zastarjelo') return 'Za ' + (s.url || '') + ' ' + s.greska + '.';
   if (v === 'odbijeno') return 'martimex.hr je odbio zahtjev (' + s.greska + ').';
   if (v === 'nijehtml') return (s.url || '') + ' ne vraća web stranicu (' + s.greska + ').';
+  if (v === 'izvlacenje') return 'Podaci sa stranice ' + (s.url || '') + ' nisu se mogli pouzdano pročitati (' + (s.greska || 'nepoznato') + '); cijenu i dostupnost provjeri na toj poveznici.';
   return 'martimex.hr trenutno vraća grešku za ' + (s.url || '') + ' (' + (s.greska || 'nepoznato') + ').';
 };
 const red = v => {
@@ -206,6 +209,34 @@ function dopuniMapuBrenda(s) {
   if (!dopune[slug]) { dopune[slug] = red; spremi.push({ kljuc: 'brend:' + slug, at: now, v: red }); }
 }
 
+// ---------- JSON način (format: 'json'): iste činjenice kao polja ----------
+const iznos = s => { const t = String(s ?? '').replace(/[^\d,.\-]/g, ''); if (!t) return null; const n = parseFloat(t.includes(',') ? t.replace(/\./g, '').replace(',', '.') : t); return isFinite(n) ? n : null; };
+const naZalihi = z => z === 'na zalihi' ? true : z === 'nije na zalihi' ? false : null;
+const varijantaJson = v => ({ oznaka: v.oznaka || null, nijansa: !!v.nijansa, cijena: iznos(v.cijena), cijenaTekst: v.cijena || null, naAkciji: !!v.naAkciji, akcijaPct: Number(v.akcijaPct) || 0, redovnaCijena: iznos(v.redovna), najnizaCijena30d: iznos(v.najniza), naZalihi: naZalihi(v.zaliha), zaliha: v.zaliha || null });
+function stranicaJson(s) {
+  const o = { url: s.url || null, ok: s.ok === true, tip: s.tip || null };
+  if (s.ok !== true) { o.vrstaGreske = s.vrstaGreske || null; o.greska = s.greska || null; return o; }
+  o.generirano = s.generirano ? new Date(s.generirano * 1000).toISOString() : null;
+  o.starostS = (s.starostS === null || s.starostS === undefined) ? null : s.starostS;
+  o.rezervniDohvat = !!s.rezerva;
+  if (s.tip === 'proizvod' && s.proizvod) {
+    const p = s.proizvod;
+    o.proizvod = { naziv: jedanRazmak(p.naziv) || null, brend: p.brend || null, kategorija: p.kategorija || null, promo: p.promo || [],
+      varijante: (p.varijante && p.varijante.length) ? p.varijante.map(varijantaJson) : (p.jedno ? [varijantaJson(Object.assign({ oznaka: null }, p.jedno))] : []),
+      bezZalihe: !!p.bezZalihe, drugiBrend: !!s.drugiBrend };
+  } else if (s.tip === 'popis' && s.popis) {
+    const lp = s.popis; const st = s.stranicenje || null;
+    o.popis = { naslov: lp.naslov || null, stranica: st ? st.trenutna : 1, ukupnoStranica: st ? st.ukupno : 1, sljedeca: (st && st.sljedeca) || null,
+      proizvodi: (lp.proizvodi || []).map(x => ({ naziv: jedanRazmak(x.naziv) || null, brend: x.brend || null, vrsta: x.vrsta || null, url: x.url, cijena: iznos(x.cijena), cijenaTekst: x.cijena || x.raspon || null,
+        naAkciji: !!x.naAkciji, redovnaCijena: iznos(x.redovna), najnizaCijena30d: iznos(x.najniza), promo: x.promo || [], oznake: x.oznake || [], nijeNaZalihi: !!x.nijeNaZalihi, djelomicnoBezZalihe: !!x.djelomicnoBezZalihe,
+        varijante: (x.varijante || []).map(v => ({ oznaka: v.oznaka || null, nijansa: !!v.nijansa, cijena: iznos(v.cijena), redovnaCijena: iznos(v.redovna), nijeNaZalihi: !!v.nijeNaZalihi })) })) };
+  } else {
+    o.naslov = s.naslov || null;
+    o.tekst = tekstStranice(s, [], MAX_STRANICA, []).tekst || '';
+  }
+  return o;
+}
+
 let odgovor;
 try {
   const zadatak = k.zadatak || 'upit';
@@ -282,8 +313,11 @@ try {
     const problemi = []; const web = []; const napomene = []; const okRedci = [];
     if (k.rezultat && k.rezultat.ok === false) problemi.push('odabir stranica: ' + (k.rezultat.greska || k.rezultat.opis || 'interna greška'));
     if (k.indeksGreska) problemi.push('tablica indeksa se nije mogla učitati');
-    // dio indeksa koji se dugo ne osvježava (npr. sitemap oznaka ili bloga) javlja se jednom dnevno, ovdje
-    for (const kl of Object.keys(idx)) { if (!/-sitemap$/.test(kl)) continue; const h = (now - (Number(idx[kl].at) || 0)) / 3600000; if (h > 36) problemi.push('sitemap ' + kl + ' nije osvježen ' + Math.round(h) + ' h'); }
+    // dio indeksa koji se dugo ne osvježava (npr. sitemap oznaka ili bloga) javlja se jednom dnevno: samo u jutarnjoj
+    // samoprovjeri iz rasporeda (06:15) i kad je samoprovjera pokrenuta ručno ili webhookom
+    let jutarnja = true;
+    try { jutarnja = k.izvor !== 'schedule' || DateTime.fromMillis(now).setZone(ZG).hour < 9; } catch (e) { jutarnja = true; }
+    if (jutarnja) for (const kl of Object.keys(idx)) { if (!/-sitemap$/.test(kl)) continue; const h = (now - (Number(idx[kl].at) || 0)) / 3600000; if (h > 36) problemi.push('sitemap ' + kl + ' nije osvježen ' + Math.round(h) + ' h'); }
     for (const s of stranice) {
       const oc = s.ocekuj || ''; const p = s.proizvod || null; const lp = s.popis || null;
       let ok = s.ok === true; let zasto = s.ok === true ? '' : (s.greska || 'greška');
@@ -347,6 +381,7 @@ try {
           } else {
             const puni = tip === 'url' || istiBrend.length === 1;
             for (const s of istiBrend) r.push(blokProizvoda(s, !!k.zeliOpis, puni));
+            if (istiBrend.length === 1 && k.odabranTocno === false && tip !== 'url') r.push('Napomena: proizvod je odabran po sličnosti naziva (točan naziv iz upita nije pronađen); ako nije siguran da je to traženi proizvod, provjeri s kupcem.');
             if (istiBrend.length > 1) { tipOut = 'vise_proizvoda'; r.push('Marti: ako iz razgovora nije jasno koji proizvod kupac misli, pitaj ga (navedi nazive), ne pogađaj.'); }
             else if (tipOut === 'vise_proizvoda') tipOut = 'proizvod';
             if (drugi.length) r.push('Izostavljeno (drugi brend): ' + drugi.map(s => s.proizvod.naziv + ' – ' + s.proizvod.brend).join(', '));
@@ -423,8 +458,29 @@ try {
   odgovor = { ok: false, greska: 'Interna greška alata pri sastavljanju odgovora (' + String(e && e.message || e).slice(0, 160) + ').' + KONTAKT };
   interna = 'Sastavi odgovor: ' + String(e && e.message || e).slice(0, 200);
 }
+let vrstaInterne = interna ? 'sastavi' : null;
 if (!interna && (k.zadatak || 'upit') === 'upit') {
-  if (k.internaGreska) interna = 'Odaberi stranice: ' + String(k.internaGreska).split('\n')[0].slice(0, 200);
-  else { const pala = stranice.find(s => s.vrstaGreske === 'interna'); if (pala) interna = 'Izvuci činjenice: ' + String(pala.greska || '').slice(0, 200); }
+  if (k.internaGreska) { interna = 'Odaberi stranice: ' + String(k.internaGreska).split('\n')[0].slice(0, 200); vrstaInterne = 'odaberi'; }
+  else {
+    const pala = stranice.find(s => s.vrstaGreske === 'interna');
+    const nedosljedna = stranice.find(s => s.vrstaGreske === 'izvlacenje');
+    if (pala) { interna = 'Izvuci činjenice: ' + String(pala.greska || '').slice(0, 200); vrstaInterne = 'izvuci'; }
+    else if (nedosljedna) { interna = 'Izvuci činjenice (' + (nedosljedna.url || '') + '): ' + String(nedosljedna.greska || '').slice(0, 260) + '. Kupac nije dobio cijenu s te stranice; vjerojatno je promijenjen izgled weba.'; vrstaInterne = 'izvlacenje'; }
+  }
 }
-return [{ json: { odgovor, spremi, zadatak: k.zadatak || 'upit', webhook: k.webhook === true, interna, trajanjeMs: k.pocetak ? Date.now() - k.pocetak : null } }];
+// ista vrsta dojave najviše jednom u 30 min (podaci workflowa vrijede samo u produkciji; ručni test uvijek javlja)
+let dojavaPrigusena = false;
+if (interna) {
+  try {
+    const sd = $getWorkflowStaticData('global');
+    const zadnje = (sd.zadnjaDojava && typeof sd.zadnjaDojava === 'object') ? sd.zadnjaDojava : {};
+    const kljuc = vrstaInterne || 'ostalo';
+    if (Number(zadnje[kljuc]) > 0 && now - Number(zadnje[kljuc]) < DOJAVA_RAZMAK_MS) dojavaPrigusena = true;
+    else sd.zadnjaDojava = Object.assign({}, zadnje, { [kljuc]: now });   // novi objekt, da n8n sigurno zabilježi promjenu
+  } catch (e) { /* bez spremanja stanja: dojava ide uvijek */ }
+}
+if (k.format === 'json' && (k.zadatak || 'upit') === 'upit' && odgovor && typeof odgovor === 'object') {
+  try { odgovor.podaci = { verzija: 1, dohvaceno: new Date(now).toISOString(), stranice: stranice.map(stranicaJson) }; }
+  catch (e) { odgovor.podaci = { verzija: 1, dohvaceno: new Date(now).toISOString(), stranice: [], greska: 'podaci nisu složeni (' + String(e && e.message || e).slice(0, 120) + ')' }; }
+}
+return [{ json: { odgovor, spremi, zadatak: k.zadatak || 'upit', webhook: k.webhook === true, interna: dojavaPrigusena ? null : interna, internaPrigusena: dojavaPrigusena ? interna : null, trajanjeMs: k.pocetak ? Date.now() - k.pocetak : null } }];

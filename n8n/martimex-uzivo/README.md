@@ -3,6 +3,8 @@
 Kopija koda iz n8n workflowa „Marti – Martimex uživo“ i lokalni testni okvir za brzu iteraciju.
 Workflow je jedan alat za asistenticu Marti: deterministički (bez AI-ja) odabere 1–3 stranice martimex.hr,
 pročita ih uživo i vrati kratke činjenice `{ ok, tip, tekst }` ili `{ ok:false, greska }`.
+Od v1.6 cijena se koristi samo ako se na stranici slaže na tri mjesta (podaci varijante, prikazana cijena, ld+json)
+i ako su pročitane sve varijante; inače alat vraća `ok:false` s poveznicom umjesto moguće krive cijene.
 
 Ovdje nema ključeva, ID-ova vjerodajnica ni internih adresa. Mjerodavna verzija koda je ona u n8n-u;
 ova mapa je samo kopija za pregled razlika i lokalno testiranje.
@@ -24,8 +26,36 @@ ova mapa je samo kopija za pregled razlika i lokalno testiranje.
 | `test_brendovi.js` | – | jedinični test spremanja mape brendova (više stranica istog brenda u jednoj seriji) |
 | `test_zadaci.js` | – | testovi zadataka (v1.5): samoprovjera (spora stranica = upozorenje, kvar = greška), sitemapi (tolerancija, dojava nakon 2 h jednom dnevno, zaštita od naglog pada adresa), brendovi (ponavljanje serije kad web ne odgovara) |
 | `test_v15_dodatno.js` | – | testovi ostalih ispravaka v1.5 (greška čitanja tablice, ponovljeni dijelovi zapisa, slab url, aliasi brendova, provjera brenda, neupotrebljiv indeks, dojava interne greške) |
+| `test_v16.js` | – | testovi v1.6: unakrsna provjera cijena (prikazana cijena, ld+json, sve varijante, redovna cijena), potpunost popisa, JSON način, prigušivanje dojava, napomena o odabiru po sličnosti, samoprovjera svaka 3 h |
 | `index_extra.json` | – | mali dio indeksa (brendovi, kategorije, stranice) za lokalne testove |
 | `opisi_nodeova.md` | – | opis svakog nodea korak po korak; isti tekst stoji kao sticky bilješka uz node u n8n-u |
+
+## JSON način (v1.6)
+
+Uz `format: "json"` u tijelu ili query stringu odgovor uz isti `tekst` nosi i `podaci`:
+
+```json
+{
+  "ok": true, "tip": "proizvod", "tekst": "UŽIVO s martimex.hr · …",
+  "podaci": {
+    "verzija": 1, "dohvaceno": "2026-10-31T16:00:00.000Z",
+    "stranice": [{
+      "url": "https://martimex.hr/proizvod/…/", "ok": true, "tip": "proizvod",
+      "generirano": "2026-10-31T15:59:58.000Z", "starostS": 2, "rezervniDohvat": false,
+      "proizvod": {
+        "naziv": "…", "brend": "…", "kategorija": "…", "promo": ["-10% uz kod …"], "bezZalihe": false, "drugiBrend": false,
+        "varijante": [{ "oznaka": "50 ml", "nijansa": false, "cijena": 99.5, "cijenaTekst": "99,50 €", "naAkciji": false,
+                        "akcijaPct": 0, "redovnaCijena": null, "najnizaCijena30d": null, "naZalihi": true, "zaliha": "na zalihi" }]
+      }
+    }]
+  }
+}
+```
+
+- Popis (`tip: "popis"`): `popis.proizvodi[]` s `naziv`, `brend`, `url`, `cijena` (broj ili null kad je prikazan raspon), `cijenaTekst`, `naAkciji`, `redovnaCijena`, `promo`, `nijeNaZalihi`, `varijante[]`; uz to `stranica`, `ukupnoStranica`, `sljedeca`. Popis je cijela stranica popisa, bez filtra po brendu ili akciji koji se primjenjuje u tekstu.
+- Informativna stranica: `naslov` i `tekst`.
+- Stranica koja nije pročitana: `ok: false`, `vrstaGreske` (`404`, `timeout`, `izvlacenje`…) i `greska`.
+- Zadaci (`sitemapi`, `brendovi`, `samoprovjera`) ne vraćaju `podaci`.
 
 ## Lokalni test
 
@@ -36,6 +66,8 @@ npm install                      # luxon, node-html-markdown
 node harness.js '{"upit":"versace eros eau de parfum"}'
 node harness.js '{"url":"/kategorija/parfemi/?gender=32&sort=4&maxPrice=80&pg=2"}'
 node harness.js '{"zadatak":"samoprovjera"}'
+node harness.js '{"upit":"versace eros eau de parfum","format":"json"}'
+node test_v16.js && node test_v15_dodatno.js && node test_zadaci.js
 ```
 
 Stranica bez spremljenog uzorka u testu se ponaša kao 404.
