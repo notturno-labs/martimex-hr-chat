@@ -23,6 +23,7 @@ ova mapa je samo kopija za pregled razlika i lokalno testiranje.
 | `escape_push.py` | – | provjera prije slanja: nevidljive i kombinirajuće znakove pretvara u `\uXXXX` (kod ih ionako ne smije sadržavati) |
 | `test_brendovi.js` | – | jedinični test spremanja mape brendova (više stranica istog brenda u jednoj seriji) |
 | `index_extra.json` | – | mali dio indeksa (brendovi, kategorije, stranice) za lokalne testove |
+| `opisi_nodeova.md` | – | opis svakog nodea korak po korak; isti tekst stoji kao sticky bilješka uz node u n8n-u |
 
 ## Lokalni test
 
