@@ -1,9 +1,10 @@
 # Marti – Martimex uživo: opis nodeova
 
-Isti tekstovi stoje kao sticky bilješke uz svaki node u n8n-u (workflow „Marti – Martimex uživo“, v1.6). Brojevi u naslovima odgovaraju redoslijedu koraka; slova A–E su ulazi (okidači), G1 i G2 obrada kvarova.
+Isti tekstovi stoje kao sticky bilješke uz svaki node u n8n-u (workflow „Marti – Martimex uživo“, v1.7). Brojevi u naslovima odgovaraju redoslijedu koraka; slova A–E su ulazi (okidači), G1 i G2 obrada kvarova.
 
-## Marti – Martimex uživo (v1.6): kako radi
-Jedan alat za Marti. Marti pošalje pitanje kupca, workflow pronađe 1–3 stranice martimex.hr, pročita ih **uživo** i vrati kratak tekst s činjenicama. AI se ne koristi: svaka odluka je pravilo u kodu.
+## Marti – Martimex uživo (v1.7): kako radi
+Jedan alat za Marti. Marti pošalje što kupac traži, workflow pronađe 1–3 stranice martimex.hr, pročita ih **uživo** i vrati kratak tekst s činjenicama. AI se ne koristi: svaka odluka je pravilo u kodu.\
+**Što Marti šalje:** `upit` = kako se JEDNA stvar zove na webshopu, 1–5 riječi: brend + naziv proizvoda, sam brend, kategorija s filtrima ili tema s detaljem („dostava Split“). Ne šalje cijelu rečenicu kupca, iako je workflow podnosi. `url` = točna adresa kad je Marti već ima.
 
 **Glavni put (pitanje kupca, obično 1,5–4 s):**\
 A Zahtjev od Marti → 1 Učitaj indeks → 2 Pripremi upit → 3 Treba sitemape uživo? → 5 Odaberi stranice → 6 Što dalje? → 7 Dohvati stranice → 8 Treba drugi dohvat? → 11 Spoji dohvate → 12 Izvuci činjenice → 13 HTML u Markdown → 14 Sastavi odgovor → 15 Je li zahtjev od Marti? → 16 Vrati odgovor → 19 Redci za spremanje → 20 Spremi indeks\
@@ -24,7 +25,7 @@ Sporedni putovi: 4 Dohvati sitemape (kad je indeks stariji od 30 min, ili kad se
 *Webhook – glavni ulaz*\
 Ovdje Marti (Voiceflow alat „Martimex uzivo“) šalje pitanje kupca.
 - Adresa: `POST /webhook/marti-martimex-uzivo`
-- Tijelo (JSON ili obrazac): `upit` = što kupac traži, kratko; `url` = točna adresa na martimex.hr. Dovoljno je jedno od toga.
+- Tijelo (JSON ili obrazac): `upit` = naziv jedne stvari kako se zove na webshopu, 1–5 riječi (brend + naziv proizvoda, brend, kategorija s filtrima ili tema s detaljem); `url` = točna adresa na martimex.hr. Dovoljno je jedno od toga. Adresa poslana u polju `upit` čita se kao url.
 - Neobavezno `format: "json"`: uz tekst stižu i strukturirani podaci (`podaci`) za druge sustave. Marti ga ne treba.
 - Zaštita: header `x-api-key`. Ključ provjerava sam n8n prema Header Auth credentialu odabranom na ovom nodeu. Bez ispravnog ključa vraća 403 i workflow se uopće ne pokrene.
 - Node ne odgovara odmah. Odgovor šalje „16 Vrati odgovor“ (ili „G1 Vrati grešku“), uvijek s HTTP 200.
@@ -111,7 +112,7 @@ Ako tablica ne odgovori, workflow nastavlja s praznim indeksom.
 
 *Code*
 1. Prepozna odakle je poziv došao (Marti, ručni test ili raspored) i pročita `upit`, `url`, `zadatak` i `format` (json ili tekst).
-2. Očisti ulaz: nevidljive znakove, navodnike i zagrade. Vrijednosti poput „-“, „null“ ili „{upit}“ znače da polje nije poslano. Upit se skrati na 300 znakova, url na 500.
+2. Očisti ulaz: nevidljive znakove, navodnike i zagrade. Vrijednosti poput „-“, „null“ ili „{upit}“ znače da polje nije poslano. Upit se skrati na 300 znakova, url na 500. Kad u `upit` stigne samo adresa s martimex.hr ili putanja stranice (npr. /kontakt-furla/), a `url` je prazan, ona se premjesti u `url`.
 3. Iz redaka tablice složi indeks. Veliki zapisi spremljeni su u dijelovima (`ključ#0`, `ključ#1`…), pa ih spoji i provjeri da nijedan dio ne nedostaje.
 4. Prepozna i grešku čitanja tablice (tada se indeks ne smatra praznim, a serija brendova se preskače). Ponovljeni redak istog dijela zapisa ne kvari zapis.
 5. Izračuna koliko je indeks star i odluči treba li sitemape pročitati odmah: za zadatak sitemapi uvijek; za pitanje bez url-a ako je indeks stariji od 30 min ili ga nema (zadatak brendovi nikad: bez popisa brendova serija se preskače).
@@ -144,18 +145,20 @@ Svakoj stranici za čitanje zada timeout: pitanje kupca i samoprovjera 8 s, bren
 
 **Poslan `url`:** provjeri da je stranica s martimex.hr (odbija druge domene, /wp-admin, košaricu, račun, pretragu i datoteke) i čita baš nju; url ima prednost pred upitom, osim kad uz upit stigne nešto što nije adresa (npr. „nepoznato“) ili samo početna stranica. Ako uz url stigne i `upit`, on služi samo da se duga stranica skrati na traženi dio. Ako adrese proizvoda nema u indeksu, pripremi do 2 slična proizvoda (barem 60 % istih riječi u adresi) za slučaj da stranica ne postoji.
 
-**Poslan `upit`:** riječi se pojednostave (mala slova, bez kvačica, „edp“ = parfum, sinonimi krema/cream…). Prepozna:
-- temu (dostava, plaćanje, povrat, otkazivanje, poslovnice, kontakt, loyalty, poklon bon, akcija, novo, Chanel, FAQ…),
-- brend, i po nadimku (YSL, D&G, JPG, MK…), te poznate brendove kojih nema u webshopu (Dior, Gucci…),
-- kategoriju, spol, sortiranje („najjeftinije“), cijenu („do 80“, „iznad 50“), akciju, promo kod, note (cvjetni, voćni), niche i setove.
+**Poslan `upit`:** riječi se pojednostave (mala slova, bez kvačica i apostrofa, L’Homme = lhomme, „edp“ = parfum, sinonimi krema/cream…). Prepozna:
+- temu (dostava, plaćanje, povrat, otkazivanje, košarica i registracija, poslovnice, kontakt, loyalty, poklon bon, pokloni uz kupnju, akcija, novo, Chanel, FAQ…; i engleske riječi poput shipping, refund). Teme se boduju: jasna riječ 1 bod, opća („narudžba“, „pitanje“) 0,5, vrlo jasna („košarica“, „lozinka“) 1,5; broje se i izrazi („rok za povrat“). Pobjeđuje tema s najviše bodova, a kad su dvije jednake, čitaju se obje stranice,
+- brend, i po nadimku (YSL, D&G, JPG, MK…), padežu (Versacea) ili s jednim krivim slovom, te poznate brendove kojih nema u webshopu (Dior, Gucci…: proizvod istog naziva drugog brenda uzme se samo uz točan naziv ili barem 2 pogođene riječi, uz napomenu),
+- kategoriju, spol, sortiranje („najjeftinije“, „najpopularniji“, „novo“), cijenu („do 80“, „ispod 50“, „iznad 100“), akciju (i Black Friday), promo kod, note (cvjetni, voćni), niche i setove.
 
 **Odluka:**
 1. promo kod bez proizvoda i bez brenda → popis najpopularnijih parfema (na njemu se vide aktivni kodovi);
-2. tema bez brenda i kategorije → 1–2 informativne stranice (akcija i novo → popis);
-3. naziv proizvoda → bodovanje adresa proizvoda iz indeksa (uz prepoznatu kategoriju samo iz nje; uz potpunu mapu brenda samo proizvodi tog brenda, a nov proizvod koji još nije ni u jednoj mapi samo uz točan naziv): riječi naziva, točan naziv, EDP/EDT, kazna za setove; proizvodi drugog brenda otpadaju. Uzme jasnog pobjednika ili do 3 podjednako dobra, plus do 3 slična (slični se samo navedu kao poveznice, ne čitaju se). Spol iz upita („za žene“) daje prednost proizvodu s oznakom femme/donna…, a „za muškarce“ s oznakom homme/uomo…; nota iz upita („Eau Florale“) proizvodu s tom riječi. Veličina („100ml“, „3,4 g“) i riječi pitanja („veličine“, „za muža“) nisu dio naziva. Za jednog pobjednika zabilježi sadrži li adresa sve riječi i brojeve naziva iz upita i nije li za suprotni spol (ako ne, korak 14 doda napomenu);
-4. brend nema proizvod tog naziva → odmah „nije pronađeno“ (bez osvježavanja indeksa) i najbliži proizvodi tog brenda; broj proizvoda brenda navede samo kad je mapa brenda potpuna (označena tako i s dovoljno proizvoda za broj stranica); ako indeks nije upotrebljiv, `ok:false` umjesto tvrdnje da nema;
-5. samo brend, kategorija, spol ili filtri → stranica popisa s filtrima;
-6. ništa nije prepoznato → ako je indeks stariji od 2 min, osvježi sitemape i pokuša još jednom (ne za brend koji poznato nije u ponudi, npr. Dior); inače „NIJE PRONAĐENO“ s najbližim brendovima, kategorijama i proizvodima.
+2. tema bez brenda i kategorije → 1–2 informativne stranice (akcija i novo → popis). Jasna tema postupka (dostava, povrat, plaćanje, poslovnice…) vrijedi i uz brend ili kategoriju: „Versace dostava“ → dostava. Sam glagol („mogu li naručiti maskaru“) ne nadjačava kategoriju;
+3. ideja za poklon bez naziva proizvoda („poklon za mamu“, „što kupiti tati za rođendan“) → popis poklon setova s filtrima spola i cijene, uz poveznicu na poklon bon;
+4. naziv proizvoda → bodovanje adresa proizvoda iz indeksa (uz prepoznatu kategoriju samo iz nje; uz potpunu mapu brenda samo proizvodi tog brenda, a nov proizvod koji još nije ni u jednoj mapi samo uz točan naziv): riječi naziva, točan naziv, EDP/EDT, kazna za setove (set nije točan pogodak ako upit ne kaže „set“); proizvodi drugog brenda otpadaju. Uzme jasnog pobjednika ili do 3 podjednako dobra, plus do 3 slična (slični se samo navedu kao poveznice, ne čitaju se). Spol iz upita („za žene“) daje prednost proizvodu s oznakom femme/donna…, a „za muškarce“ s oznakom homme/uomo…; nota iz upita („Eau Florale“) proizvodu s tom riječi. Veličina („100ml“, „3,4 g“) i riječi pitanja („veličine“, „za muža“) nisu dio naziva. Za jednog pobjednika zabilježi sadrži li adresa sve riječi i brojeve naziva iz upita i nije li za suprotni spol (ako ne, korak 14 doda napomenu);
+5. brend nema proizvod tog naziva → odmah „nije pronađeno“ (bez osvježavanja indeksa) i najbliži proizvodi tog brenda; broj proizvoda brenda navede samo kad je mapa brenda potpuna (označena tako i s dovoljno proizvoda za broj stranica); ako indeks nije upotrebljiv, `ok:false` umjesto tvrdnje da nema;
+6. nijedan proizvod ne sadrži sve riječi upita (npr. duga rečenica kupca) → promo kod, tema ili članak bloga čija adresa sadrži riječi upita, a tek onda „nije pronađeno“. Temu ovdje bira jasna riječ ili opća riječ koja nije dvosmislena (rok, osoba, broj, brisanje same ne biraju). Uz brend vrijedi samo jasna tema postupka („vratiti YSL ruž ako ne odgovara nijansa“ → povrat);
+7. samo brend, kategorija, spol ili filtri → stranica popisa s filtrima;
+8. ništa nije prepoznato → ako je indeks stariji od 2 min, osvježi sitemape i pokuša još jednom (ne za brend koji poznato nije u ponudi, npr. Dior); inače „NIJE PRONAĐENO“ s najbližim brendovima, kategorijama i proizvodima.
 
 **Izlaz:** `akcija` = dohvati (stranice za čitanje), sitemapi (najprije osvježi indeks) ili odgovori (gotov odgovor bez čitanja weba). Greška u logici odabira postane `ok:false` (bez Telegram poruke, osim za zadatak iz rasporeda); iznimka pri obradi upravo pročitanih sitemapa bilježi se kao neuspjeli sitemap.
 
@@ -243,10 +246,10 @@ Od svih pročitanih stranica složi **jedan** kratak odgovor.
 - Zaglavlje: „UŽIVO s martimex.hr · datum i vrijeme · stranica generirana prije X s“.
 - **Proizvod:** naziv · brend · vrsta, adresa, redak po veličini ili nijansi (cijena, akcija, zaliha), promo kod, kratka nota, obavijest s weba i do 3 „SLIČNO“ (bez cijena, samo ako stane). Proizvodi drugog brenda se izostave. Kad kupac pita za miris, note, sastav ili upotrebu (ili je poslan url), umjesto kratke note dođe opis s weba.
 - **Više proizvoda:** do 3 bloka i uputa Marti da pita kupca koji misli.
-- **Popis:** naslov, „stranica X od Y“, filtri riječima, sljedeća stranica, aktivni promo kodovi i redak po proizvodu.
+- **Popis:** naslov, „stranica X od Y“, filtri riječima, sljedeća stranica, aktivni promo kodovi i redak po proizvodu. Kad upit traži akciju, ostaju samo proizvodi na akciji ili s promo kodom.
 - **Informativna stranica:** tekst stranice. Duga stranica se skrati na odlomke koji odgovaraju upitu (npr. samo zagrebačke poslovnice), dugi popisi se sažmu, a ostali odlomci se navedu po naslovu.
 - **Neuspjeh:** `ok:false` s razlogom, npr. 404 s prijedlogom prave adrese. Nedosljedna stranica (korak 12): poruka da se podaci ne mogu pouzdano pročitati, s poveznicom i bez ijednog iznosa (detalji idu samo vlasniku).
-- **Odabir po sličnosti:** ako stranica jedinog proizvoda (naziv, nijanse, veličine) ne sadrži sve riječi iz upita ili je proizvod za suprotni spol od traženog, na vrh doda napomenu da Marti provjeri s kupcem. Kad je upitu odgovaralo više proizvoda, a pročitan je samo jedan, Marti dobije uputu da pita kupca.
+- **Odabir po sličnosti:** ako stranica jedinog proizvoda (naziv, nijanse, veličine) ne sadrži sve riječi iz upita ili je proizvod za suprotni spol od traženog, na vrh doda napomenu da Marti provjeri s kupcem. Isto kad kupac navede brend kojeg nema u ponudi, a pronađen je proizvod istog naziva drugog brenda. Kad je upitu odgovaralo više proizvoda, a pročitan je samo jedan, Marti dobije uputu da pita kupca.
 - **JSON način** (`format: "json"`): odgovoru doda `podaci` sa svim stranicama: po varijanti `cijena`, `redovnaCijena`, `najnizaCijena30d` (brojevi), `akcijaPct`, `naAkciji`, `naZalihi` (true/false/null); za popis svaki proizvod; za informativnu stranicu tekst; za grešku `vrstaGreske`. Tekst ostaje isti.
 - **Najveća duljina:** 800 znakova po proizvodu + 700 (s opisom s weba + 2.400), popis 5.300, stranica 13.500; duži tekst se skrati.
 

@@ -1,4 +1,4 @@
-// Code node "Pripremi upit" (Martimex uživo) – v1.6
+// Code node "Pripremi upit" (Martimex uživo) – v1.7
 // Ulaz: svi redci Data Tablea "Marti - indeks weba" (ili jedan prazan item kad je tablica prazna).
 // Čita zahtjev (webhook / ručni test / Schedule Set nodeovi), parsira indeks i odlučuje treba li sitemape čitati uživo.
 // Izlaz: ili jedan item { akcija:'odaberi', kontekst, idx } ili N itema { url, akcija:'sitemapi' } (prvi nosi kontekst i idx).
@@ -47,6 +47,8 @@ function citajZahtjev() {
   let url = cisti(first(b.url, q.url, j.url, b.link, b.poveznica, b.putanja));
   if (PRAZNO.test(upit)) upit = '';
   if (PRAZNO.test(url)) url = '';
+  // adresa poslana u polju upit (a url je prazan): čita se kao url
+  if (!url && /^(https?:\/\/)?(www\.)?martimex\.hr(\/|$)|^\/[a-z0-9][a-z0-9\-_\/]*(\?\S*)?$/i.test(upit) && !/\s/.test(upit)) { url = upit; upit = ''; }
   let zadatak = String(first(b.zadatak, q.zadatak, j.zadatak)).toLowerCase().trim();
   if (!['sitemapi', 'brendovi', 'samoprovjera'].includes(zadatak)) zadatak = 'upit';
   const pokvari = /^(1|true|da|yes)$/i.test(String(first(b.pokvari, q.pokvari, j.pokvari)));

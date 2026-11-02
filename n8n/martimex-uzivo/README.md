@@ -6,6 +6,8 @@ pročita ih uživo i vrati kratke činjenice `{ ok, tip, tekst }` ili `{ ok:fals
 Od v1.6 cijena se koristi samo ako se na stranici slaže na tri mjesta (podaci varijante, prikazana cijena, ld+json)
 i ako su pročitane sve varijante; inače alat vraća `ok:false` s poveznicom umjesto moguće krive cijene.
 Prije objave v1.6 provjerena je na 140 stvarnih stranica (114 proizvoda, 26 popisa): nijedna ispravna stranica nije odbijena.
+Od v1.7 Marti u `upit` šalje naziv jedne stvari kako se zove na webshopu (vidi „Što Marti šalje“), a odabir stranica
+boduje riječi teme, pa i duga rečenica kupca (npr. o košarici ili roku za povrat) vodi na pravu stranicu.
 
 Ovdje nema ključeva, ID-ova vjerodajnica ni internih adresa. Mjerodavna verzija koda je ona u n8n-u;
 ova mapa je samo kopija za pregled razlika i lokalno testiranje.
@@ -27,9 +29,29 @@ ova mapa je samo kopija za pregled razlika i lokalno testiranje.
 | `test_brendovi.js` | – | jedinični test spremanja mape brendova (više stranica istog brenda u jednoj seriji) |
 | `test_zadaci.js` | – | testovi zadataka (v1.5): samoprovjera (spora stranica = upozorenje, kvar = greška), sitemapi (tolerancija, dojava nakon 2 h jednom dnevno, zaštita od naglog pada adresa), brendovi (ponavljanje serije kad web ne odgovara) |
 | `test_v15_dodatno.js` | – | testovi ostalih ispravaka v1.5 (greška čitanja tablice, ponovljeni dijelovi zapisa, slab url, aliasi brendova, provjera brenda, neupotrebljiv indeks, dojava interne greške) |
+| `test_v17.js` | – | testovi v1.7: teme iz stvarnih razgovora (košarica, rok za povrat, pokloni uz kupnju, prigovor), tema uz brend („Versace dostava“), set ne potiskuje parfem istog imena, ideje za poklon, nepoznat brend, adresa poslana u polju `upit`, akcija s promo kodom |
+| `test_baterija_v17.js` | – | 397 formulacija kupaca i Marti s očekivanom stranicom (tema, popis, proizvod, nije pronađeno); dopuštena su najviše 2 odstupanja |
+| `test_kontrola_v17.js` | – | 80 kontrolnih upita koji su radili i prije v1.7 (proizvodi, brendovi, kategorije, filtri); svako odstupanje je greška |
 | `test_v16.js` | – | testovi v1.6: unakrsna provjera cijena (prikazana cijena, ld+json, sve varijante, redovna cijena, zaokruživanje kao na webu), proizvod bez cijene na webu (nikad 0,00 €), potpunost popisa, JSON način, prigušivanje dojava, napomena o odabiru po sličnosti, spol/nota/veličina u upitu, samoprovjera svaka 3 h (ista greška jednom dnevno) |
 | `index_extra.json` | – | mali dio indeksa (brendovi, kategorije, stranice) za lokalne testove |
 | `opisi_nodeova.md` | – | opis svakog nodea korak po korak; isti tekst stoji kao sticky bilješka uz node u n8n-u |
+
+## Što Marti šalje (v1.7)
+
+Voiceflow alat „Martimex uzivo“ ima dva ulaza. Agent ih puni ovako:
+
+| Kupac pita | `upit` | `url` |
+|---|---|---|
+| za proizvod | brend + naziv: `Versace Eros EDP`, `Lancome La Vie Est Belle` | `-` |
+| za brend | brend: `Lancome` | `-` |
+| za vrstu proizvoda | kategorija s filtrima: `muški parfemi do 80`, `maskare akcija` | `-` |
+| o kupnji, dostavi, povratu… | tema s detaljem: `dostava Split`, `rok za povrat`, `registracija`, `promo kod` | `-` |
+| o stranici koju već zna | `-` ili riječ odlomka koji treba | točna adresa s martimex.hr |
+
+- `upit` ima 1–5 riječi i nikad nije cijela rečenica kupca. Riječi poput „koliko košta“ ili „imate li“ se izostave.
+- Kad odgovor uputi na drugu stranicu, agent smije napraviti još jedan poziv s tom adresom ili boljim upitom.
+- Workflow ipak podnosi i dugu rečenicu: teme se boduju (jasna riječ 1 bod, opća 0,5, vrlo jasna 1,5), a kad nijedan
+  proizvod ne sadrži sve riječi upita, prije „nije pronađeno“ traži temu, promo kod i članak bloga.
 
 ## JSON način (v1.6)
 
@@ -68,6 +90,7 @@ node harness.js '{"upit":"versace eros eau de parfum"}'
 node harness.js '{"url":"/kategorija/parfemi/?gender=32&sort=4&maxPrice=80&pg=2"}'
 node harness.js '{"zadatak":"samoprovjera"}'
 node harness.js '{"upit":"versace eros eau de parfum","format":"json"}'
+node test_v17.js && node test_baterija_v17.js && node test_kontrola_v17.js
 node test_v16.js && node test_v15_dodatno.js && node test_zadaci.js
 ```
 
@@ -79,7 +102,7 @@ Stranica bez spremljenog uzorka u testu se ponaša kao 404.
    Umjesto toga koristi `/\p{M}/gu` i `String.fromCharCode(...)`. Provjera: `python3 escape_push.py code_B_odaberi.js /tmp/B.js` ne smije ništa promijeniti.
 2. MCP `update_workflow`: `setNodeParameter`, node „Odaberi stranice“, path `/jsCode`, vrijednost = sadržaj datoteke.
 3. `get_workflow_details` i usporedba pohranjenog `jsCode` s datotekom (mora biti identičan).
-4. Produkcijski test webhookom, zatim `publish_workflow`.
+4. Ručni test nacrta (`execute_workflow`, način manual), zatim `publish_workflow` i jedan produkcijski poziv webhookom.
 
 `build_sdk.py` čita ID-ove iz varijabli okoline `TABLE_ID`, `TELEGRAM_CREDENTIAL_ID` i `TELEGRAM_CHAT_ID`;
 bez njih u kodu ostaju oznake `__…__` koje treba zamijeniti prije izrade novog workflowa.

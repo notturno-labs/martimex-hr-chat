@@ -1,4 +1,4 @@
-// Code node "Sastavi odgovor" (Martimex uživo) – v1.6
+// Code node "Sastavi odgovor" (Martimex uživo) – v1.7
 // Ulaz: stavke iz "HTML u Markdown" (po jedna po pročitanoj stranici) ili stavka 'odgovori' iz "Odaberi stranice" (bez dohvata).
 // Sastavlja kratak tekst za Marti ({ ok, tip, tekst } ili { ok:false, greska }), rezultate zadataka (sitemapi, brendovi, samoprovjera)
 // i popis dijelova indeksa za spremanje (spremi). Uvijek vraća točno jedan item; nikad ne baca.
@@ -409,6 +409,8 @@ try {
             poSlicnosti = istiBrend.length === 1 && k.odabranTocno === false && tip !== 'url' && (!!drugiSpol || !pokrivenoNaStranici(istiBrend[0]));
             if (drugiSpol) r.push('Napomena: traženo je za ' + (drugiSpol === 'ženski' ? 'žene' : 'muškarce') + ', a odabrani proizvod je po nazivu za suprotni spol; provjeri s kupcem koji proizvod traži.');
             else if (poSlicnosti) r.push('Napomena: proizvod je odabran po sličnosti naziva (točan naziv iz upita nije pronađen); ako nije siguran da je to traženi proizvod, provjeri s kupcem.');
+            // napomena iz odabira (npr. brend koji nije u ponudi, a proizvod istog naziva je drugog brenda) ide na vrh
+            if (k.napomena && /^Napomena:/.test(k.napomena)) r.push(k.napomena);
             // ostali kandidati nisu pročitani (spor web, nedosljedni podaci); uklonjen proizvod (404, preusmjerenje) nije kandidat
             if (istiBrend.length === 1 && k.tip === 'vise_proizvoda' && neuspjele.some(x => x.vrstaGreske !== '404' && x.vrstaGreske !== 'preusmjerenje')) r.push('Napomena: upitu je odgovaralo više proizvoda, a pročitan je samo ovaj; ako iz razgovora nije jasno koji proizvod kupac misli, pitaj ga.');
             for (const s of istiBrend) r.push(blokProizvoda(s, !!k.zeliOpis, puni));
@@ -428,7 +430,7 @@ try {
           let napAkcija = '';
           let napBrend = '';
           if (k.filtrirajBrend) { const nb = norm(k.filtrijBrend || k.filtrirajBrend); const istog = lista.filter(p => norm(p.brend) === nb || norm(p.brend).replace(/ /g, '') === nb.replace(/ /g, '')); napBrend = istog.length ? 'Prikazani su samo proizvodi brenda ' + k.filtrirajBrend + ' (' + istog.length + ' od ' + lista.length + ' na ovoj stranici popisa).' : 'Na ovoj stranici popisa nema proizvoda brenda ' + k.filtrirajBrend + ' (' + lista.length + ' drugih proizvoda).'; if (istog.length) lista = istog; }
-          if (k.akcijaFilter) { const naAkciji = lista.filter(p => p.naAkciji || p.redovna); if (naAkciji.length) { napAkcija = 'Prikazani su samo proizvodi na akciji (' + naAkciji.length + ' od ' + lista.length + ' na ovoj stranici).'; lista = naAkciji; } else napAkcija = 'Na ovoj stranici popisa nijedan proizvod nije označen kao akcija.'; }
+          if (k.akcijaFilter) { const naAkciji = lista.filter(p => p.naAkciji || p.redovna || (p.promo && p.promo.length)); if (naAkciji.length) { napAkcija = 'Prikazani su samo proizvodi na akciji ili s promo kodom (' + naAkciji.length + ' od ' + lista.length + ' na ovoj stranici).'; lista = naAkciji; } else napAkcija = 'Na ovoj stranici popisa nijedan proizvod nije na akciji niti ima promo kod.'; }
           const st = s.stranicenje;
           r.push('POPIS: ' + (lp.naslov || s.naslov || s.url) + ' · ' + lista.length + ' ' + mn(lista.length, 'proizvod', 'proizvoda', 'proizvoda') + ' na stranici' + (st && st.ukupno > 1 ? ' · stranica ' + st.trenutna + ' od ' + st.ukupno : ' · sve na jednoj stranici'));
           r.push(s.url);
