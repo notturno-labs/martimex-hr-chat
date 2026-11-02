@@ -155,7 +155,7 @@ function tekstStranice(s, tokeni, max, tokeniTeme) {
     if (run.length >= 12) {
       const pog = spec.length ? run.filter(l => pogodi(l, spec) > 0) : [];
       if (pog.length) sazete.push(...pog.slice(0, 10), '(iz popisa od ' + run.length + ' stavki prikazane su samo one koje odgovaraju upitu; cijeli popis je na stranici)');
-      else if (spec.length) sazete.push('[sažetak alata: popis od ' + run.length + ' stavki, npr. ' + run.slice(0, 3).join(', ') + ' … ' + run[run.length - 1] + '; nijedna stavka popisa ne sadrži „' + (tokeni || []).join(' ') + '“]');
+      else if (spec.length) sazete.push('[sažetak alata: popis od ' + run.length + ' stavki, npr. ' + run.slice(0, 3).join(', ') + ' … ' + run[run.length - 1] + '; riječ „' + (tokeni || []).join(' ') + '“ nije doslovno među stavkama, ali stavke su naselja s poštanskim brojem (ne otoci): to ne znači da mjesto kupca nije na popisu. Pitaj kupca za naselje ili poštanski broj i pozovi alat s url stranice i tim nazivom]');
       else sazete.push('[sažetak alata: popis od ' + run.length + ' stavki, npr. ' + run.slice(0, 3).join(', ') + ' … ' + run[run.length - 1] + '; cijeli popis je na stranici, a pozivom s url i upit dobiva se samo traženi dio]');
     } else sazete.push(...run);
     run = [];
@@ -187,7 +187,8 @@ function tekstStranice(s, tokeni, max, tokeniTeme) {
   // riječ koja se pojavljuje u većini odlomaka (npr. „loyalty“ na stranici o loyaltyju) ne razlikuje odlomke
   const razlikuje = lista => { if (blokovi.length < 3) return lista; const d = lista.filter(st => blokovi.filter(b => pogodi(tekstBloka(b), [st]) > 0).length <= Math.max(1, Math.floor(blokovi.length * 0.6))); return d.length ? d : lista; };
   spec.splice(0, spec.length, ...razlikuje(spec)); tema.splice(0, tema.length, ...razlikuje(tema));
-  const ocj = blokovi.map(b => ({ b, sp: pogodi(tekstBloka(b), spec), te: pogodi(tekstBloka(b), tema) }));
+  let ocj = blokovi.map(b => ({ b, sp: pogodi(tekstBloka(b), spec), te: pogodi(tekstBloka(b), tema) }));
+  if (!ocj.some(x => x.sp > 0 || x.te > 0) && tema.some(t => t.length > 7)) { const t7 = tema.map(t => t.slice(0, 7)); ocj = blokovi.map(b => ({ b, sp: 0, te: pogodi(tekstBloka(b), t7) })); }
   const imaSpec = spec.length > 0 && ocj.some(x => x.sp > 0);
   if (cijeli.length <= (imaSpec ? 1200 : 3500)) return cijela;
   const maxTe = Math.max(0, ...ocj.map(x => x.te));
@@ -477,7 +478,7 @@ try {
           if (zajednickiPromo) r.push('Promo kod ' + (promoBroj[zajednickiPromo] === lista.length ? 'vrijedi za sve prikazane proizvode' : 'vrijedi za ' + promoBroj[zajednickiPromo] + ' od ' + lista.length + ' prikazanih proizvoda') + ': ' + zajednickiPromo + (promoBroj[zajednickiPromo] === lista.length ? '' : ' (ostali nemaju promo kod, osim ako je naveden u retku)'));
           const oznaciBez = !!zajednickiPromo && promoBroj[zajednickiPromo] < lista.length;
           const vidjeni = new Set(); let dvostruki = 0; const odRedova = r.length;
-          for (const p of lista) { const kljuc = norm(p.naziv) + '|' + norm(p.brend) + '|' + (p.cijena || p.raspon || ''); if (vidjeni.has(kljuc)) { dvostruki++; continue; } vidjeni.add(kljuc); r.push(redakPopisa(p, !!jedanBrend, zajednickiPromo, oznaciBez)); }
+          for (const p of lista) { const kljuc = norm(p.naziv) + '|' + norm(p.brend) + '|' + (p.cijena || p.raspon || '') + '|' + (p.nijeNaZalihi ? 'nz' : '') + '|' + (p.promo || []).join(';'); if (vidjeni.has(kljuc)) { dvostruki++; continue; } vidjeni.add(kljuc); r.push(redakPopisa(p, !!jedanBrend, zajednickiPromo, oznaciBez)); }
           if (!popisRedci) popisRedci = { od: odRedova, n: r.length - odRedova };
           if (dvostruki) r.push('(' + dvostruki + ' ' + mn(dvostruki, 'proizvod je', 'proizvoda su', 'proizvoda su') + ' na webu na dvije adrese s istim nazivom i cijenom; prikazan je jednom)');
           if (!lista.length && !lp.proizvodi.length) r.push('(popis je prazan)');
@@ -510,9 +511,13 @@ try {
         const limit = tipOut === 'stranica' ? MAX_STRANICA + 1500 : (tipOut === 'popis' ? MAX_POPIS + 800 : MAX_PROIZVOD * Math.max(1, proizvodi.length) + (k.zeliOpis ? 2400 : 700));
         if (tipOut === 'popis' && popisRedci && tekst.length > limit) {
           let n = popisRedci.n;
+          const iza = (re) => r.findIndex((x, j) => j >= popisRedci.od + popisRedci.n && re.test(x));
+          { const ip = iza(/^Potkategorije: /); if (ip >= 0) r[ip] = r[ip].replace(/https:\/\/martimex\.hr/g, ''); }
+          for (const re of [/^Potkategorije: /, /^Na webu /]) { if (r.join('\n').length <= limit) break; const i = iza(re); if (i >= 0) r.splice(i, 1); }
+          const skriveni = [];
           const rezerva = 160;
-          while (n > 3 && r.join('\n').length + (n < popisRedci.n ? rezerva : 0) > limit) { r.splice(popisRedci.od + n - 1, 1); n--; }
-          if (n < popisRedci.n) r.splice(popisRedci.od + n, 0, '(+ još ' + (popisRedci.n - n) + ' ' + mn(popisRedci.n - n, 'proizvod', 'proizvoda', 'proizvoda') + ' s ove stranice popisa nije prikazano zbog duljine; za njih pozovi alat s url popisa)');
+          while (n > 3 && r.join('\n').length + (n < popisRedci.n ? rezerva + skriveni.join('; ').length : 0) > limit) { skriveni.unshift(String(r[popisRedci.od + n - 1]).replace(/^- /, '').split(' | ')[0]); r.splice(popisRedci.od + n - 1, 1); n--; }
+          if (n < popisRedci.n) r.splice(popisRedci.od + n, 0, '(+ još ' + (popisRedci.n - n) + ' ' + mn(popisRedci.n - n, 'proizvod', 'proizvoda', 'proizvoda') + ' s ove stranice nije prikazano zbog duljine: ' + skriveni.join('; ') + '; za cijenu pozovi alat s nazivom proizvoda)');
           tekst = r.join('\n');
         }
         if (tekst.length > limit) tekst = kratko(tekst, limit) + '\n[skraćeno]';

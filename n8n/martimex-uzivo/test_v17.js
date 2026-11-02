@@ -336,5 +336,47 @@ const put = u => String(u || '').replace('https://martimex.hr', '');
   ];
   for (const [u, re] of P) { const r = sel(u); ok(r.akcija === 'dohvati' && re.test(r.urls[0] || ''), '„' + u + '“ → ' + re + ' (' + r.urls.map(put).join(' + ').slice(0, 140) + ')'); }
 }
+// treći krug pregleda (2.11.): loyalty članstvo, kratke reklamacije, masaža, povrat novca, „jeftiniji od“, posvojne zamjenice, primatelji, genitiv brenda
+{
+  const sel = u => { const l = console.log; console.log = () => {}; try { return require('./test_baterija_v17.js').selB({ upit: u }); } finally { console.log = l; } };
+  const T = [
+    ['kako postati član', /\/loyalty-program\//],
+    ['članska kartica', /\/loyalty-program\//],
+    ['gold status koliko traje', /\/loyalty-program\//],
+    ['gold kartica otkazivanje', /\/loyalty-program\//],
+    ['beauty centar telefon', /\/beauty-centri\//],
+    ['krivi parfem', /\/povrat-i-reklamacija\//],
+    ['oštećena ambalaža', /\/povrat-i-reklamacija\//],
+    ['anticelulitna masaza', /\/beauty-centri\//],
+    ['kada vracate novac', /\/povrat-i-reklamacija\//],
+    ['muški parfem jeftiniji od 50 eura', /maxPrice=50/],
+    ['parfem za moju mamu', /\/kategorija\/parfemi\/\?gender=31/],
+    ['parfem za mog tatu', /\/kategorija\/parfemi\/\?gender=32/],
+    ['moj muž voli versace', /\/brand\/versace\//],
+    ['poklon za baku', /\/vrsta\/setovi\//],
+    ['što kupiti djevojci za rođendan', /\/vrsta\/setovi\//],
+    ['koje parfeme imate od valentina', /\/brand\/valentino\//],
+    ['parfemi od Armanija', /\/brand\/armani\//],
+    ['promo kod ne radi', /\/kategorija\/parfemi\/\?sort=1/],
+    ['povrat Apple Pay', /\/povrat-i-reklamacija\//],
+    ['Apple Pay', /\/placanje-robe\//],
+    ['toaletna voda moschino', /\/brand\/moschino\//],
+    ['toaletna torbica moschino', /toaletna-torbica-moschino/],
+    ['Lancôme maska', /\/brand\/lancome\//],
+    ['gel za kosu', /gel/],
+  ];
+  for (const [u, re] of T) { const r = sel(u); ok(r.akcija === 'dohvati' && re.test(r.urls[0] || ''), '„' + u + '“ → ' + re + ' (' + r.urls.map(put).join(' + ').slice(0, 140) + ')'); }
+  for (const u of ['sampon za ostecenu kosu', 'John Frieda ostecena kosa', 'Juvena masažer za lice']) { const r = sel(u); ok(!r.urls.some(x => /povrat-i-reklamacija|beauty-centri/.test(x)), '„' + u + '“ nije povrat ni beauty (' + r.urls.map(put).join(' + ') + ')'); }
+  ok(!sel('black friday maskare').urls.length || !/black-friday/.test((B('black friday maskare').kontekst || {}).napomena || ''), 'Black Friday uz maskare bez članka o parfemima');
+}
+// treći krug (D): popis naselja bez tvrdnje da mjesta nema; predugi popis imenuje izostavljene proizvode
+{
+  const samples = fs.existsSync(path.join(__dirname, 'samples')) ? path.join(__dirname, 'samples') : path.join(__dirname, '..', 'samples');
+  if (fs.existsSync(path.join(samples, 'dostava_i_isporuka.html'))) {
+    const l = console.log; console.log = () => {};
+    let d; try { d = pipeline({ upit: 'dostava Mljet' }).D.odgovor; } finally { console.log = l; }
+    ok(!/nijedna stavka popisa ne sadrži/.test(d.tekst || ''), 'dostava Mljet: bez tvrdnje da mjesta nema na popisu');
+  }
+}
 console.log('\nTESTOVI v1.7: ' + pass + ' prolazi, ' + fail + ' ne prolazi');
 process.exitCode = fail ? 1 : 0;
