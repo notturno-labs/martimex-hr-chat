@@ -280,5 +280,61 @@ const put = u => String(u || '').replace('https://martimex.hr', '');
   const ua = B({ url: 'https://martimex.hr/kategorija/parfemi/?pg=2', upit: 'akcija' });
   ok((ua.kontekst || {}).akcijaFilter === true, 'url + upit „akcija“: filtar akcije ostaje na sljedećoj stranici');
 }
+// drugi krug pregleda (2.11.): vodeća riječ mora biti imenica teme, druga tema ne istiskuje vlastitu stranicu, brojevi, „za njega“, brend + vrsta
+{
+  const sel = u => { const l = console.log; console.log = () => {}; try { return require('./test_baterija_v17.js').selB({ upit: u }); } finally { console.log = l; } };
+  const T = [
+    ['kako otkazati loyalty karticu', ['/loyalty-program/', '/martimex-loyalty-card/']],
+    ['vratiti loyalty karticu', ['/loyalty-program/', '/martimex-loyalty-card/']],
+    ['uvjeti loyalty programa', ['/loyalty-program/', '/martimex-loyalty-card/']],
+    ['prijava u loyalty program', ['/loyalty-program/', '/martimex-loyalty-card/']],
+    ['registracija loyalty', ['/loyalty-program/']],
+    ['prijava reklamacije', ['/povrat-i-reklamacija/']],
+    ['uvjeti besplatne dostave', ['/dostava-i-isporuka/']],
+    ['nazvati poslovnicu Zagreb', ['/poslovnice/']],
+    ['vratiti lozinku', ['/najcesca-pitanja/']],
+    ['chanel rezervacija termina', ['/chanel/', '/chanel-beauty-appointment/']],
+    ['loyalty otkazivanje', ['/loyalty-program/']],
+    ['kontakt poslovnica', ['/kontakt/', '/poslovnice/']],
+    ['furla Zagreb', ['/furla/', '/kontakt-furla/', '/poslovnice/']],
+    ['furla kontakt', ['/furla/', '/kontakt-furla/']],
+  ];
+  for (const [u, prve] of T) { const r = sel(u); const p = r.urls.map(put); ok(prve.every((x, i) => p[i] === x), '„' + u + '“ → ' + prve.join(' + ') + ' (' + p.join(' + ') + ')'); }
+  ok(!sel('kako otkazati loyalty karticu').urls.some(x => /otkazivanje-povrat/.test(x)), '„kako otkazati loyalty karticu“ bez obrasca za otkazivanje narudžbe');
+  const P = [
+    ['top 10 parfema', /\/kategorija\/parfemi\/\?sort=1$/],
+    ['10 najboljih parfema', /\/kategorija\/parfemi\/\?sort=1$/],
+    ['top 10 muških parfema', /\/kategorija\/parfemi\/\?gender=32&sort=1/],
+    ['Versace parfem 80 eura', /\/brand\/versace\//],
+    ['parfem za njega', /\/kategorija\/parfemi\/\?gender=32/],
+    ['parfem za nju', /\/kategorija\/parfemi\/\?gender=31/],
+    ['Dylan Blue za njega', /dylan-blue-eau-de-toilette/],
+    ['toaletna voda mini', /\/kategorija\/parfemi\/toaletne-vode\//],
+    ['mini parfemi', /\/kategorija\/parfemi\//],
+    ['Curaro Parfum 100 ml', /curaro-parfum/],
+    ['Alien Goddess', /alien-goddess/],
+    ['Curl Goddess', /lash-idole-curl-goddess/],
+    ['Versace setovi', /\/brand\/versace\//],
+    ['Shiseido krema za lice', /\/brand\/shiseido\//],
+    ['furla torbica', /furla-toaletna-torbica/],
+  ];
+  for (const [u, re] of P) { const r = sel(u); ok(r.akcija === 'dohvati' && re.test(r.urls[0] || ''), '„' + u + '“ → ' + re + ' (' + r.urls.map(put).join(' + ').slice(0, 140) + ')'); }
+  ok(!sel('Damask Rose').urls.some(x => /gender=31/.test(x)), '„Damask Rose“ nije spol (dama)');
+}
+// masovna usporedba (2.11.): točan naziv ima prednost pred popisom kategorije; brend u adresi vlastitog proizvoda; parfem uz naziv iz druge kategorije
+{
+  const sel = u => { const l = console.log; console.log = () => {}; try { return require('./test_baterija_v17.js').selB({ upit: u }); } finally { console.log = l; } };
+  const P = [
+    ['styling gel', /styling-gel-178ml/],
+    ['chloe mala', /chloe-mala-torbica/],
+    ['pupa kozmeticka torbica za poklon', /pupa-kozmeticka-torbica/],
+    ['Payot torba poklon', /payot-torba/],
+    ['code femme ARMANI', /code-femme-eau-de-parfum/],
+    ['lip contour kit parfem', /lip-contour-kit/],
+    ['happy skin parfem', /happy-skin/],
+    ['Collistar men freshness set muški parfem', /men-freshness-set/],
+  ];
+  for (const [u, re] of P) { const r = sel(u); ok(r.akcija === 'dohvati' && re.test(r.urls[0] || ''), '„' + u + '“ → ' + re + ' (' + r.urls.map(put).join(' + ').slice(0, 140) + ')'); }
+}
 console.log('\nTESTOVI v1.7: ' + pass + ' prolazi, ' + fail + ' ne prolazi');
 process.exitCode = fail ? 1 : 0;

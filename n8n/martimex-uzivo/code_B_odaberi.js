@@ -49,7 +49,7 @@ const TEME = [
   { id: 'otkazivanje', url: ['/otkazivanje-povrat/', '/povrat-i-reklamacija/'], re: [/^odustaj[a-z]* od (kupnj|narudzb)/, /^otkaz[a-z]* (narudzb|kupnj)/, /^otkaz/, /^otkazat/, /^odusta/, /^raskid/, /^storn/, /^ponist/, /^cancel/] },
   { id: 'poslovnice', url: ['/poslovnice/'], re: [/^poslovnic/, /^trgovin/, /^ducan/, /^parfumerij/, /^radno/, /^lokacij/, /^nalazite/, /^fizick/, /^prodavaonic/, /^radite$/, /^uzivo$/, /^arena cent/, /^city cent/, /^westgate/, /^supernova/, /^king cross/], opce: [/^adres/, /^vrijem/, /^subot/, /^nedjelj/, /^praznik/, /^blagdan/, /^otvoren/, /^zatvoren/, MJESTO_RE] },
   { id: 'kontakt', url: ['/kontakt/'], re: [/^kontakt/, /^telefon/, /^mail/, /^e ?mail/, /^mejl/, /^sluzb/, /^podrsk/, /^nazvat/, /^nazov/, /^zvati/, /^javiti/, /^razgovar/, /^whats/, /^viber/, /^operater/, /^agent/, /^suradnj/, /^contact/], opce: [/^broj$/, /^osob[aeu]$/, /^osobom$/] },
-  { id: 'loyalty', url: ['/loyalty-program/', '/martimex-loyalty-card/'], re: [/^loyalt/, /^lojalt/, /^bod$/, /^bodov/, /^bodove/, /^vjernost/, /^vjern/, /^pogodnost/, /^clanov/, /^clanstv/, /^uclan/, /^martimex kartic/, /^loyalty kartic/], opce: [/^gold/, /^clan$/, /^clan[aui]$/, /^program/, /^kartic/] },
+  { id: 'loyalty', url: ['/loyalty-program/', '/martimex-loyalty-card/'], re: [/^loyalt/, /^lojalt/, /^bod$/, /^bodov/, /^bodove/, /^vjernost/, /^vjern/, /^pogodnost/, /^clanov/, /^clanstv/, /^uclan/, /^martimex kartic/, /^loyalty kartic/, /^registr[a-z]* (u |za )?(loyalt|lojalt|gold|kartic|program)/], opce: [/^gold/, /^clan$/, /^clan[aui]$/, /^program/, /^kartic/] },
   { id: 'poklon-bon', url: ['/poklon-bon/'], re: [/^bon$/, /^bona$/, /^bonu$/, /^bonov/, /^vaucer/, /^voucher/, /^darovn/, /^poklon ?bon/, /^poklon ?kartic/, /^gift ?card/, /^giftcard/], opce: [/^gift/] },
   { id: 'pokloni-uz-kupnju', url: ['/pokloni-uz-kupnju/'], re: [/^gratis/, /^poklon[ia]? uz/, /^uz (svaku )?kupnj/], opce: [/^besplat/, /^uzor/] },
   { id: 'faq', url: ['/najcesca-pitanja/'], jace: [/^kosaric/, /^dovrs/, /^registr/, /^lozink/, /^kreni$/], re: [/^kreni$/, /^faq/, /^najcesc/, /^naruc/, /^registr/, /^kosaric/, /^lozink/, /^prijav/, /^korisnick/, /^dovrs/, /^prigovor/, /^zalb/, /^profil[aeiu]?$/, /^login/, /^ulogir/, /^moj racun/, /^kreni na placanje/, /^r1$/], opce: [/^narudzb/, /^potvrd/, /^pitanj/, /^racun$/, /^promjen/, /^promijen/, /^kupi/, /^kupnj/, /^status/] },
@@ -74,12 +74,16 @@ const KONTEKST_NARUDZBE_RE = /^(stig|stiz|paket|posiljk|narudzb|dostav|kutij|pri
 // usluge beauty centra (manikura, pedikura, depilacija): jasna riječ teme beauty samo kad upit ne traži proizvod (krema za depilaciju, set za manikuru)
 const USLUGA_RE = /^(manikur|pedikur|depil)/;
 const VRSTA_PROIZVODA_RE = /^(krem|set$|setov|ulj|gel$|losion|serum|sampon|maska|sprej|spray|pjen|sapun|balzam|mlijek|piling|parfem|miris|lak$|lakov|turpij|skaric|pribor|aparat|uredaj|traka|trake|vosak|voska)/;
+// ključna riječ teme (imenica, kako je piše Marti: „loyalty …“, „kontakt …“, „naručivanje …“); glagol ili opća riječ (otkazati, vratiti, prijava, uvjeti) to nije
+const TEMA_KLJUC_RE = /^(dostav|placanj|povrat$|povrata$|povratu$|reklamacij|poslovnic|radno$|kontakt|loyalt|lojalt|gratis|narucivanj|najcesc|faq$|registracij|lozink|kosaric|privatnost|nama$|beauty$|chanel|furla$|savjet|blog$|bon$|poklon$|promo$)/;
+// opće riječi uz vrstu ili kategoriju koje ne određuju proizvod (mini, original, vodootporna, travel…)
+const OPCE_NAZIV_RE = /^(mini|maxi|original|originalni|originalna|travel|putn[a-z]*|xmas|gift|deluxe|velik[a-z]*|mal[aiou]|mali)$/;
 // opće riječi koje same ne smiju odabrati temu u koraku 6b (rok trajanja, starija osoba, broj nijanse, brisanje šminke, koliko vremena traje miris…)
 const NEODLUCNE = /^(rok|osob|broj|brisanj|vrijem|vremen|besplat|gift|gold|program|clan|kod$|nov|torb|subot|vikend|uzor|novac|novca|novce|tko$|firm|blagdan|praznik|ostecen|slomljen|polomljen|razbij|nedostaj|neispravn|pogres|kriv|depil|manikur|pedikur)/;
 const JAKE_TEME = new Set(['dostava', 'placanje', 'povrat', 'otkazivanje', 'poslovnice', 'kontakt', 'loyalty', 'poklon-bon', 'chanel', 'akcija', 'novo']);
 // pitanja o postupku (dostava šampona, vratiti ruž, Versace dostava): jasna riječ teme nadjačava kategoriju i brend
 const TEME_POSTUPKA = new Set(['dostava', 'placanje', 'povrat', 'otkazivanje', 'faq', 'kontakt', 'poslovnice', 'loyalty', 'poklon-bon', 'pokloni-uz-kupnju', 'uvjeti', 'privatnost', 'chanel', 'furla', 'o-nama']);
-const ROD = [[/^(muski|muskarc|muskarac|muske|musku|muskog|muskom|gospod|decki|decko|decka|decku|frajer|njemu|momk|tata$|tati$|tatu$|sina$|sinu$|brat$|bratu$|covjek$|covjeka$|covjeku$)/, 32, 'muski'], [/^(zensk|zena|zene|zenu|zeni|zenama|dama|dami|damu|djevojk|cura|curi|curu|njoj|mama|mami|mamu$|mame$|majk|sestr|kceri?$)/, 31, 'zenski'], [/^unisex/, 33, 'unisex'], [/^(djecj|djeca|djece|dijete|djecu|djetet|beb)/, null, 'djecji']];
+const ROD = [[/^(muski|muskarc|muskarac|muske|musku|muskog|muskom|gospod|deck[aiou]$|frajer|njemu$|momk|tata$|tati$|tatu$|sina$|sinu$|brat$|bratu$|covjek$|covjeka$|covjeku$)/, 32, 'muski'], [/^(zensk|zen[aeiu]$|zenama$|dam[aeiu]$|djevojk|cur[aeiu]$|njoj$|nju$|mam[aeiu]$|majk|sestr|kceri?$)/, 31, 'zenski'], [/^unisex/, 33, 'unisex'], [/^(djecj|djeca|djece|dijete|djecu|djetet|beb)/, null, 'djecji']];
 const SORT = [[/^(najjeftin|jeftin|povoljn|najpovoljn)/, 4], [/^(najskup|skup|skuplj|luksuzn)/, 3], [/^(najnovij|novitet|nov[aeiou]?$)/, 2], [/^(popularn|najpopularn|najprodavan|bestsel|najtrazen|najbolj|top$)/, 1], [/^(preporu)/, 5]];
 const BLOCKED = ['/wp-admin', '/wp-login', '/wp-json', '/wp-content', '/wp-includes', '/wp-cron', '/wp-config', '/wp-signup', '/wp-activate', '/xmlrpc', '/index.php', '/moj-racun', '/naplata', '/cart', '/kosarica', '/wishlist', '/lista-zelja', '/martimex-content', '/feed', '/pretraga', '/sample-page', '/shop'];
 const FILE_RE = /\.(xml|xsl|json|pdf|jpe?g|png|gif|webp|svg|ico|css|js|map|zip|gz|txt|log|bak|env|php|sql|csv|woff2?|ttf)$/i;
@@ -368,7 +372,9 @@ try {
     const uNazivuMem = new Map();
     const uNazivuBrend = c => { if (c.rijeci.length !== 1) return 0; if (!uNazivuMem.has(c.slug)) uNazivuMem.set(c.slug, proizvodiRows.some(r => { const w = slugIz(r[0]).split('-'); return w.includes(c.rijeci[0]) && tokeniSvi.some(t => t !== c.rijeci[0] && t.length >= 3 && !STOP.has(t) && w.includes(t)); }) ? 1 : 0); return uNazivuMem.get(c.slug); };
     kandidati.sort((a, b) => (b.tezina - a.tezina) || (uNazivuBrend(a) - uNazivuBrend(b)) || (poz(a) - poz(b)) || (b.slug.length - a.slug.length));
-    if (kandidati.length) { brend = kandidati[0].slug; brendTokeni = kandidati[0].rijeci; }
+    const usredNaziva = c => c.rijeci.length === 1 && proizvodiRows.some(r => { const w = slugIz(r[0]).split('-'); const i = w.indexOf(c.rijeci[0]); return i > 0 && tokeniSvi.some(t => t !== c.rijeci[0] && t.length >= 3 && !STOP.has(t) && w.includes(t)); });
+    const samoNaziv = kandidati.length === 1 && poz(kandidati[0]) > 0 && usredNaziva(kandidati[0]);
+    if (kandidati.length && !samoNaziv) { brend = kandidati[0].slug; brendTokeni = kandidati[0].rijeci; }
   }
   const brendDuge = brend ? brend.split('-').filter(w => w.length >= 5) : [];
   const aliasRijeci = new Set(brend ? Object.keys(ALIASI).filter(a => ALIASI[a] === brend).flatMap(a => a.split(' ')) : []);
@@ -380,7 +386,10 @@ try {
   // 4) spol / vrsta / sortiranje / cijena / note
   let gender = null; let spolSlug = null; let sort = null; let minPrice = null; let maxPrice = null; let noteUrl = null; let vrstaUrl = null;
   const ostali = [];
+  // „za njega“ (za muškarca): primatelj, osim uz riječ njege (krema, serum, lice, kosa…)
+  const zaNjega = tokeniSvi.some((x, i) => x === 'njega' && tokeniSvi[i - 1] === 'za') && !tokeniSvi.some(x => x !== 'njega' && /^(krem|serum|hidrat|tonik|toner|piling|ciscen|fluid|ampul|kontur|lic[aeiu]?$|kos[aeiu]$|kosu$|tijel|ruk[aeu]$|nokt|koz[aeiu]$|kozu$)/.test(x));
   for (const t of tokeniBezBrenda) {
+    if (t === 'njega' && zaNjega) { gender = 32; spolSlug = 'muski'; continue; }
     const r = ROD.find(([re]) => re.test(t)); if (r) { gender = r[1]; spolSlug = r[2]; continue; }
     const s = SORT.find(([re]) => re.test(t));
     // „nova/novi/novo“ i „top“ su sortiranje, osim kad su sa susjednom riječi dio naziva proizvoda (Skin Nova, Top Coat)
@@ -399,7 +408,8 @@ try {
     if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) { const t = minPrice; minPrice = maxPrice; maxPrice = t; }
   }
   const brojevi = new Set(ostali.filter(t => /^\d+$/.test(t) && (t === String(minPrice) || t === String(maxPrice))));
-  const tokeniProizvoda = ostali.filter(t => !brojevi.has(t) && !cijenaRijeci.has(t) && !/^(eur|eura|euro|e|kn|kuna|cijene|cijena)$/.test(t));
+  const brojeviBezNaziva = new Set(tokeniSvi.filter((x, i) => /^\d{1,4}$/.test(x) && (/^(eur|eura|euro|e|kn|kuna)$/.test(tokeniSvi[i + 1] || '') || (/^\d{1,3}$/.test(x) && (/^(top|najbolj|najpopularn)/.test(tokeniSvi[i - 1] || '') || /^(najbolj|najpopularn)/.test(tokeniSvi[i + 1] || ''))))));
+  const tokeniProizvoda = ostali.filter(t => !brojevi.has(t) && !cijenaRijeci.has(t) && !brojeviBezNaziva.has(t) && !/^(eur|eura|euro|e|kn|kuna|cijene|cijena)$/.test(t));
   const crniPetak = /\b(black ?friday|cyber ?monday)\b/.test(spojeno);
   const akcijaFilter = crniPetak || tokeniProizvoda.some(t => /^(akcij|snizen|sale|popust|rasprodaj|outlet)/.test(t));
   const PROMO_RE = /^(promo|kod|koda|kodovi|kodova|kupon|kuponi|kupona|aktivni|aktivan|vrijedi|vrijede)$/;
@@ -452,8 +462,10 @@ try {
   let drugaVodeca = null;
   {
     const i0 = tokeniSvi.findIndex(t => !STOP.has(t) && !PITANJA.has(t));
-    const L = i0 >= 0 ? temeHit.find(x => x.jakih > 0 && x.jasne.includes(tokeniSvi[i0]) && x.tema.id !== 'akcija' && x.tema.id !== 'novo') : null;
-    if (L && tema && L !== tema && tema.bod > L.bod && tema.bod - L.bod <= 0.5) { if (tema.tema.id !== 'akcija' && tema.tema.id !== 'novo') drugaVodeca = tema; tema = L; }
+    const t0 = tokeniSvi[i0] || '', iza = tokeniSvi.slice(i0 + 1, i0 + 3).join(' ');
+    const kljuc = TEMA_KLJUC_RE.test(t0) || (/^(otkazivanj|odustajanj)/.test(t0) && /(narudzb|kupnj)/.test(iza)) || (/^uvjet/.test(t0) && /^poslovanj/.test(tokeniSvi[i0 + 1] || ''));
+    const L = (i0 >= 0 && kljuc) ? temeHit.find(x => x.jakih > 0 && x.jasne.includes(t0) && x.tema.id !== 'akcija' && x.tema.id !== 'novo') : null;
+    if (L && tema && L !== tema && tema.bod >= L.bod && tema.bod - L.bod <= 0.5) { if (tema.tema.id !== 'akcija' && tema.tema.id !== 'novo' && tema.jasne.some(x => TEMA_KLJUC_RE.test(x))) drugaVodeca = tema; tema = L; }
   }
   const smislenih = Math.max(1, tokeniSvi.filter((t, i) => !STOP.has(t) || (tema && tema.pokriveni.has(i))).length);
   const pokriveniTeme = tema ? new Set([...tema.pokriveni, ...(drugaVodeca ? drugaVodeca.pokriveni : [])]) : new Set();
@@ -465,7 +477,7 @@ try {
   // jasna riječ teme koja nije glagol ni riječ pitanja (naručiti, kupiti): samo takva tema nadjačava kategoriju ili izbor proizvoda
   const smislenaJasna = x => !!x && x.jakih > 0 && x.jasne.some(t => !STOP.has(t) && !PITANJA.has(t));
   // dvije podjednako jake teme (npr. „mogu li bon iskoristiti u poslovnici“): čitaju se obje stranice (po jedna, najviše 2)
-  const drugaJednaka = drugaVodeca || (tema && tema.bod >= 1 && temeHit.find(x => x !== tema && x.bod === tema.bod && x.tema.id !== 'akcija' && x.tema.id !== 'novo')) || null;
+  const drugaJednaka = drugaVodeca || (tema && tema.bod >= 1 && temeHit.find(x => x !== tema && x.tema.id !== 'akcija' && x.tema.id !== 'novo' && smislenaJasna(x) && (x.bod === tema.bod || (tema.bod - x.bod <= 0.5 && JAKE_TEME.has(x.tema.id) && x.jasne.some(y => TEMA_KLJUC_RE.test(y)))))) || null;
   // članak bloga čiji naslov (adresa) sadrži riječi upita
   const OPCE_CLANAK = /^(parfem|miris|najbolj|najpopularn|top$|koji$|kako$|zensk|zen[aeiu]$|musk|unisex|djecj|black$|friday$|akcij|snizen|popust|nju$|njega$|njemu$|njoj$|njih$|njima$|iskustv|recenzij|misljenj)/;
   const istaRijec = (x, t) => x === t || (t.length >= 5 && x.length >= 5 && (() => { let n = 0; while (n < x.length && n < t.length && x[n] === t[n]) n++; return n >= Math.max(5, Math.min(x.length, t.length) - 2); })());
@@ -485,8 +497,9 @@ try {
       const u = 'https://martimex.hr' + t.tema.url[0] + (gender ? '?gender=' + gender : '');
       return izlaz('dohvati', [{ url: u, uloga: 'popis' }], { tip: 'popis', tema: t.tema.id, tokeni: tokeniOstatak, akcijaFilter: false, zeliOpis });
     }
-    const druga = t === tema ? drugaJednaka : null;
-    let urlovi = (druga ? [t.tema.url[0], druga.tema.url[0]] : t.tema.url.slice(0, 2)).map(u => 'https://martimex.hr' + u);
+    // Furla ima svoju stranicu kontakta: opći kontakt nije druga tema
+    const druga = (t === tema && !(t.tema.id === 'furla' && drugaJednaka && drugaJednaka.tema.id === 'kontakt')) ? drugaJednaka : null;
+    let urlovi = (druga ? [...new Set([t.tema.url[0], druga.tema.url[0], t.tema.url[1], druga.tema.url[1]].filter(Boolean))].slice(0, 3) : t.tema.url.slice(0, 2)).map(u => 'https://martimex.hr' + u);
     if (!druga && t.tema.id === 'povrat' && tokeniSvi.some(x => OSTECENJE_RE.test(x)) && tokeniSvi.some(x => /^(stig|stiz|paket|posiljk|dostav|kurir|dosl)/.test(x))) urlovi = ['https://martimex.hr/povrat-i-reklamacija/', 'https://martimex.hr/dostava-i-isporuka/'];
     if (!druga && (t.tema.id === 'furla' || (t.tema.id === 'beauty' && tokeniSvi.some(x => MJESTO_RE.test(x)))) && !urlovi.some(u => /\/poslovnice\/$/.test(u))) urlovi.push('https://martimex.hr/poslovnice/');
     if (t.tema.id === 'savjeti') { const c = clanakZa(tokeniBezBrenda.filter(x => !t.hits.includes(x)), 1); if (c) urlovi = [urlovi[0], c.url]; }
@@ -531,7 +544,6 @@ try {
 
   // vrsta proizvoda uz kategoriju („krema za sunčanje“, „sprej za kosu“): popis kategorije, ne pojedini proizvodi
   const VRSTA_RIJEC_RE = /^(krem[aeiu]?|kreme|serum[aeiu]?|serumi|ulj[aeiu]|ulja|sprej[aeu]?|losion[aei]?|mlijek[aou]|gel[aoui]?|pjen[aeiu]|maska|maske|masku|balzam[aeiu]?|fluid[aeiu]?|tonik[aeiu]?|piling[aeiu]?)$/;
-  if (!brend && kategorija && !kategorija.bezNjege && !katVrh && tokeniOstatak.length && tokeniOstatak.every(t => VRSTA_RIJEC_RE.test(t))) return popis(kategorija.url);
 
   // 6) proizvodi: rangiranje slugova (algoritam iz "Izvuci i filtriraj URL-ove")
   const WEAK_RE = /^(parfum|parfem|parfemska|parfemi|voda|toilette|toaletna|extrait|set|cologne|kolonjska|homme|femme|men|women|man|woman|intense|for|him|her|spray|sprej)$/;
@@ -572,7 +584,7 @@ try {
       if (ograniciNaMapu && !mapaPutanje.has(path) && sviMapirani.has(path)) continue;   // proizvod drugog brenda
       if (tudjePutanje.has(path) && !(mapaPutanje && mapaPutanje.has(path))) continue;
       // kategorija prepoznata bez riječi „njega“ ne isključuje proizvode drugih kategorija (Anti-Age Booster u „njega za blistav ten“), samo daje prednost
-      if (!bezKategorije && kategorija && !kategorija.bezNjege && !katVrh && !path.includes('/' + kategorija.segs[kategorija.segs.length - 1] + '/')) continue;
+      if (!bezKategorije && kategorija && !kategorija.bezNjege && !(katVrh && /\/(promo|uncategorized)\/|\/mirisi-za-(dom|auto)\//.test(path)) && !path.includes('/' + kategorija.segs[kategorija.segs.length - 1] + '/')) continue;
       const slug = slugIz(url);
       const hay = ' ' + norm(path).replace(/\s+/g, ' ') + ' ';
       let score = 0; let strongHit = 0; const pogodjeni = new Set();
@@ -580,6 +592,7 @@ try {
         const t = toks[i]; const w = (WEAK_RE.test(t) || /^\d+$/.test(t)) ? 1 : 3;
         if (t.length === 1) { if (hay.includes(' ' + t + ' ')) { score += 3; strongHit++; pogodjeni.add(t); } continue; }
         if (hay.includes(' ' + t + ' ')) { score += w; if (w === 3) strongHit++; pogodjeni.add(t); }
+        else if (/^\d+$/.test(t)) { if (new RegExp(' ' + t + '(ml|g|gr) ').test(hay)) { score += 1; pogodjeni.add(t); } }
         else if (hay.includes(' ' + stems[i])) { score += w === 3 ? 2 : 1; if (w === 3) strongHit++; pogodjeni.add(t); }
         else if (SINONIMI[t] && SINONIMI[t].some(a => hay.includes(' ' + a))) { score += w === 3 ? 2 : 1; if (w === 3) strongHit++; pogodjeni.add(t); }
         else if (w === 3 && t.length >= 3 && hay.includes(t)) score += 1;
@@ -641,8 +654,21 @@ try {
     const imaNaziv = bezNepoznatog.some(t => !MUSKE_OZNAKE.has(t) && !ZENSKE_OZNAKE.has(t) && !STOP.has(t) && !PITANJA.has(t) && !/^\d+$/.test(t));
     if (imaNaziv && l.length && (l[0].tocno || (l[0].pokriva === true && l[0].jakiPog >= 2))) { lista = l.filter(r => r.tocno || r.pokriva === true); k.napomena = 'Napomena: kupac je naveo brend „' + nepoznatBrendRano.replace(/(^|\s)\S/g, c => c.toUpperCase()) + '“, koji nije u ponudi webshopa. Pronađen je proizvod istog naziva drugog brenda (brend piše ispod): provjeri s kupcem misli li na njega.'; }
   }
+  // brend i uz njega samo vrsta proizvoda (Versace setovi, Shiseido krema za lice, Prada poklon set): popis brenda, ne proizvodi drugih brendova
+  const samoVrsta = !!brend && tokeniOstatak.length > 0 && tokeniOstatak.every(t => VRSTA_RIJEC_RE.test(t) || OPCE_NAZIV_RE.test(t) || /^(set|setovi|setove|setova|poklon|pokloni|poklona|paket|paketi|torb|svijec|difuzor|kozmetick|lic[aeiu]?$|kos[aeiu]$|kosu$|tijel|ruk[aeu]$|parfem|miris|toaletn|parfemsk|voda$|vode$)/.test(t));
+  const brendVrstaIzlaz = () => popis(brendUrl(brend), { kategorijaNapomena: 'Upit je brend i vrsta proizvoda („' + tokeniOstatak.join(' ') + '“): popis brenda nije filtriran po vrsti; za konkretan proizvod pozovi alat s njegovim nazivom.' });
+  // proizvod istog brenda te vrste (Furla toaletna torbica) ima prednost; proizvodi drugih brendova se ne nude
+  const proizvodiBrendaVrste = () => {
+    const bw = brend.split('-');
+    const bezPoklona = tokeniOstatak.filter(t => !/^(poklon|pokloni|poklona|gift)$/.test(t));
+    const l = rangiraj(bezPoklona.length ? bezPoklona : tokeniOstatak, false).filter(r => (mapaPutanje && mapaPutanje.has(r.path)) || bw.every(w => r.slug.split('-').includes(w)));
+    return (l.length && (l[0].tocno || l[0].pokriva === true)) ? l : null;
+  };
+  let vrstaLista = null;
+  if (samoVrsta && !mapaPotpuna) { vrstaLista = proizvodiBrendaVrste(); if (!vrstaLista) return brendVrstaIzlaz(); }
   if (tokeniOstatak.length && !nepoznatBrendRano) {
-    lista = rangiraj(tokeniOstatak, ograniceno);
+    lista = vrstaLista || rangiraj(tokeniOstatak, ograniceno);
+    if (!lista.length && ograniceno && samoVrsta) { const l = proizvodiBrendaVrste(); if (l) lista = l; else return brendVrstaIzlaz(); }
     if (!lista.length && ograniceno) { ograniceno = false; lista = rangiraj(tokeniOstatak, false); k.napomena = 'Nijedan proizvod brenda ' + brendNaziv(brend) + ' u mapi brenda ne odgovara nazivu; pretraženi su svi proizvodi i brend se provjerava na stranici.'; }
   }
 
@@ -650,14 +676,24 @@ try {
   const topPokriva = lista.length > 0 && (lista[0].tocno || lista[0].pokriva === true);
   // kategorija i uz nju samo riječi vrste njege (kremu za sunčanje): popis kategorije kad nijedan proizvod ne pokriva upit
   if (!brend && kategorija && !kategorija.bezNjege && tokeniOstatak.length && tokeniOstatak.every(t => NJEGA_RIJECI.test(t)) && !topPokriva) return popis(kategorija.url);
+  // brend koji je i tema (Furla) uz mjesto ili riječ poslovnice/kontakta (furla Zagreb, furla adresa, furla subota): stranice teme
+  const temaBrenda = brend ? temeHit.find(x => x.tema.id === brend) : null;
+  if (temaBrenda && tokeniOstatak.length && !topPokriva && tokeniOstatak.every(t => MJESTO_RE.test(t) || /^(adres|radno|vrijem|subot|nedjelj|praznik|otvoren|zatvoren|telefon|broj|kontakt|mail|butik|trgovin|ducan|lokacij|gdje)/.test(t))) return temaIzlaz(temaBrenda);
   // brend + jasna tema postupka, a nijedan proizvod brenda ne pokriva upit (vratiti YSL ruž ako ne odgovara nijansa, furla butik zagreb)
   if (brend && tokeniOstatak.length && !topPokriva && temaPostupka && tema.jasne.some(t => !STOP.has(t) && !PITANJA.has(t) && !brendTokeni.includes(t))) return temaIzlaz(tema);
   // kategorija prepoznata iz riječi naziva (Collistar Multi Active Deodorant, Juvena roller za lice): kad nijedan proizvod te kategorije
   // ne pokriva naziv, traže se proizvodi i izvan nje (sa svim riječima upita)
-  if (kategorija && !kategorija.bezNjege && !katVrh && !nepoznatBrendRano && tokeniOstatak.length && !(lista.length && (lista[0].tocno || lista[0].pokriva === true))) {
+  if (kategorija && !kategorija.bezNjege && !katVrh && !nepoznatBrendRano && tokeniOstatak.some(t => !OPCE_NAZIV_RE.test(t) && !VRSTA_RIJEC_RE.test(t)) && !(lista.length && (lista[0].tocno || lista[0].pokriva === true))) {
     const l2 = rangiraj(tokeniBezAkcije, ograniceno, true);
     if (l2.length && (l2[0].tocno || l2[0].pokriva === true) && l2[0].uSlugu) lista = l2;
   }
+  // parfemi (vrh kategorije) + naziv proizvoda iz druge kategorije (lip contour kit parfem): bez filtra kategorije kad proizvod pokriva barem 2 riječi naziva
+  if (katVrh && !nepoznatBrendRano && tokeniOstatak.length && !(lista.length && (lista[0].tocno || lista[0].pokriva === true))) {
+    const l3 = rangiraj(tokeniOstatak, ograniceno, true);
+    if (l3.length && (l3[0].tocno || l3[0].pokriva === true) && l3[0].jakiPog >= 2) lista = l3;
+  }
+  // kategorija + samo opće riječi (mini, travel…) ili vrsta (krema, gel…): popis kategorije, osim kad postoji proizvod točno tog naziva (Styling Gel)
+  if (!brend && kategorija && !kategorija.bezNjege && tokeniOstatak.length && tokeniOstatak.every(t => OPCE_NAZIV_RE.test(t) || (!katVrh && VRSTA_RIJEC_RE.test(t))) && !(lista.length && lista[0].tocno) && !rangiraj(tokeniBezAkcije, ograniceno, true).some(r => r.tocno)) return popis(kategorija.url);
   // proizvod je pogođen slabo: nijedan, ili su pogođene manje od 2 riječi naziva ili manje od pola (riječ više, npr. „za poklon“, ne ruši dobar pogodak)
   const slabProizvod = !lista.length || (lista[0].jakiN > 0 && (lista[0].jakiPog < 2 || lista[0].jakiPog < lista[0].jakiN * 0.5));
   if (!brend && tokeniOstatak.length && !topPokriva && slabProizvod && !nepoznatBrendRano) {

@@ -170,13 +170,14 @@ function tekstStranice(s, tokeni, max, tokeniTeme) {
     if (/^#{1,6}\s/.test(line)) {
       const nas = line.replace(/^#+\s*/, '');
       if (OZNAKA_NASLOV.test(nas) && (cur.naslov || cur.tekst.length)) { cur.tekst.push(nas.charAt(0).toUpperCase() + nas.slice(1).toLowerCase() + ':'); continue; }
+      if (/^(cijena:?\s*)?\d[\d.\s]*(,\d{1,2})?\s*(€|eur|kn)$/i.test(nas.trim()) && (cur.naslov || cur.tekst.length)) { cur.tekst.push('Cijena: ' + nas.trim()); continue; }
       if (cur.naslov || cur.tekst.length) blokovi.push(cur);
       cur = { naslov: nas, tekst: [] };
     } else cur.tekst.push(line);
   }
   if (cur.naslov || cur.tekst.length) blokovi.push(cur);
   // ukloni ponovljene blokove (npr. isti naslov za mobitel i računalo) i prazne naslove (oznake obrazaca)
-  { const vid = new Set(); const zadrzi = []; for (const b of blokovi) { const kl = norm(b.naslov + ' ' + b.tekst.join(' ')); const prazan = !b.tekst.join('').trim(); if (!kl || vid.has(kl) || (prazan && zadrzi.length)) continue; vid.add(kl); zadrzi.push(b); } blokovi.length = 0; blokovi.push(...zadrzi); }
+  { const vid = new Set(); const zadrzi = []; for (const b of blokovi) { const kl = norm(b.naslov + ' ' + b.tekst.join(' ')); const prazan = !b.tekst.join('').trim() && !(b.naslov.length >= 40 || /[.!?]$/.test(b.naslov.trim())); if (!kl || vid.has(kl) || (prazan && zadrzi.length)) continue; vid.add(kl); zadrzi.push(b); } blokovi.length = 0; blokovi.push(...zadrzi); }
   const naslovi = blokovi.map(b => b.naslov).filter(Boolean);
   const cijeli = blokovi.map(b => (b.naslov ? '## ' + b.naslov + '\n' : '') + b.tekst.join('\n').trim()).join('\n\n').trim();
   const cijela = { tekst: kratko(cijeli, max), filtrirano: false, naslovi, skraceno: cijeli.length > max };
@@ -188,7 +189,7 @@ function tekstStranice(s, tokeni, max, tokeniTeme) {
   spec.splice(0, spec.length, ...razlikuje(spec)); tema.splice(0, tema.length, ...razlikuje(tema));
   const ocj = blokovi.map(b => ({ b, sp: pogodi(tekstBloka(b), spec), te: pogodi(tekstBloka(b), tema) }));
   const imaSpec = spec.length > 0 && ocj.some(x => x.sp > 0);
-  if (cijeli.length <= (imaSpec ? 1200 : 2000)) return cijela;
+  if (cijeli.length <= (imaSpec ? 1200 : 3500)) return cijela;
   const maxTe = Math.max(0, ...ocj.map(x => x.te));
   const odabrani = ocj.filter(x => imaSpec ? x.sp > 0 : (x.te > 0 && (maxTe < 2 || x.te >= maxTe)))
     .sort((a, b) => (3 * b.sp + b.te) - (3 * a.sp + a.te)).slice(0, 10).map(x => x.b);
@@ -509,7 +510,8 @@ try {
         const limit = tipOut === 'stranica' ? MAX_STRANICA + 1500 : (tipOut === 'popis' ? MAX_POPIS + 800 : MAX_PROIZVOD * Math.max(1, proizvodi.length) + (k.zeliOpis ? 2400 : 700));
         if (tipOut === 'popis' && popisRedci && tekst.length > limit) {
           let n = popisRedci.n;
-          while (n > 3 && r.join('\n').length > limit) { r.splice(popisRedci.od + n - 1, 1); n--; }
+          const rezerva = 160;
+          while (n > 3 && r.join('\n').length + (n < popisRedci.n ? rezerva : 0) > limit) { r.splice(popisRedci.od + n - 1, 1); n--; }
           if (n < popisRedci.n) r.splice(popisRedci.od + n, 0, '(+ još ' + (popisRedci.n - n) + ' ' + mn(popisRedci.n - n, 'proizvod', 'proizvoda', 'proizvoda') + ' s ove stranice popisa nije prikazano zbog duljine; za njih pozovi alat s url popisa)');
           tekst = r.join('\n');
         }
