@@ -129,7 +129,7 @@
   const MX_POSTAVKE = {
     boje: {                   // uvijek u obliku #rrggbb
       tinta:   '#000000', // crna kao trake u headeru i footeru: naziv, cijena
-      marka:   '#e2c3ba', // prašnjava roza kao AI ASISTENTICA u traci chata: marka (VERSACE)
+      marka:   '#000000', // crna kao naziv i cijena: marka ispisana slovima (VERSACE)
       roza:    '#e2c3ba', // prašnjava roza iza loga: izmaglica, crtica iznad cijene, val oko pečata
       puder:   '#f6ebe7', // najsvjetlija roza: rubovi aure oko bočice
       linija:  '#eee3de', // tanki dvostruki rub kartice (vanjski i unutarnji)
@@ -613,9 +613,6 @@
         letter-spacing: .18em;
         text-transform: uppercase;
         color: var(--mx-marka);
-        /* vrlo tanak crni obrub oko slova (sjena u četiri smjera, izvan slova,
-           pa slovo ne postane tanje): svijetla roza bolje se čita na bijeloj */
-        text-shadow: .4px 0 var(--mx-tinta), -.4px 0 var(--mx-tinta), 0 .4px var(--mx-tinta), 0 -.4px var(--mx-tinta);
         overflow-wrap: break-word;
       }
       /* naziv: u serifnom fontu, na oko jednako velik kao marka. Marka je sva u
