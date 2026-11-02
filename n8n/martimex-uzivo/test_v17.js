@@ -199,5 +199,86 @@ const put = u => String(u || '').replace('https://martimex.hr', '');
   const g = B('Gucci Good Girl');
   ok(/Gucci/.test((g.kontekst || {}).napomena || ''), 'brend koji nije u ponudi: napomena da je proizvod drugog brenda');
 }
+// nalazi pregleda (oblik upita iz Voiceflow ugovora): ključna riječ teme prva, brend u nazivu, kategorija u nazivu, spol iz oznake
+{
+  const sel = u => { const l = console.log; console.log = () => {}; try { const r = require('./test_baterija_v17.js').selB({ upit: u }); return r; } finally { console.log = l; } };
+  const T = [
+    ['loyalty registracija', ['/loyalty-program/', '/najcesca-pitanja/']],
+    ['otkazivanje narudžbe prijava', ['/otkazivanje-povrat/']],
+    ['odustajanje od kupnje registracija', ['/otkazivanje-povrat/']],
+    ['dostava košarica', ['/dostava-i-isporuka/', '/najcesca-pitanja/']],
+    ['kontakt radno vrijeme', ['/kontakt/', '/poslovnice/']],
+    ['chanel registracija', ['/chanel/']],
+    ['koliko se plaća poštarina', ['/dostava-i-isporuka/']],
+  ];
+  for (const [u, prve] of T) { const r = sel(u); const p = r.urls.map(put); ok(prve.every((x, i) => p[i] === x), '„' + u + '“ → ' + prve.join(' + ') + ' (' + p.join(' + ') + ')'); }
+  const P = [
+    ['Mugler Alien Goddess', /alien-goddess/, 'mugler'],
+    ['Alien Goddess Mugler', /alien-goddess/, 'mugler'],
+    ['Lancôme Lash Idôle Curl Goddess', /lash-idole-curl-goddess/, 'lancome'],
+    ['Collistar Multi Active Deodorant', /multi-active-deodorant/, 'collistar'],
+    ['Juvena masažer za lice', /juvena-masazer-za-lice/, 'juvena'],
+    ['Juvena roller za lice', /juvena-roller-za-lice/, 'juvena'],
+    ['Pupa Milano', /\/brand\/pupa\//, 'pupa'],
+    ['Emanuel Ungaro', /\/brand\/ungaro\//, 'ungaro'],
+    ['niche najnovije', /\/vrsta\/niche\/\?sort=2/, null],
+    ['ženski parfem love eau de parfum za poklon', /\/love-eau-de-parfum\//, null],
+    ['muški parfem silenzio parfum kao poklon', /silenzio-parfum/, null],
+    ['parfemska voda frammenti eau de parfum ljeto', /frammenti-eau-de-parfum/, null],
+    ['Paradoxe kao Dior', /paradoxe-eau-de-parfum/, null],
+    ['sto kupiti seki', /\/vrsta\/setovi\//, null],
+    ['sto kupiti bratu', /\/vrsta\/setovi\/\?gender=32/, null],
+    ['tretmani lica', /\/beauty-centri\//, null],
+  ];
+  for (const [u, re, br] of P) { const r = sel(u); ok(r.akcija === 'dohvati' && r.urls.some(x => re.test(x)) && (!br || r.brend === br), '„' + u + '“ → ' + re + (br ? ' (brend ' + br + ')' : '') + ' (' + r.urls.map(put).join(' + ').slice(0, 160) + ' | ' + r.brend + ')'); }
+  const dh = sel('Versace Dylan Blue pour homme');
+  ok(dh.urls.length && !dh.urls.some(x => /pour-femme/.test(x)), '„Versace Dylan Blue pour homme“ bez pour femme (' + dh.urls.map(put).join(' + ') + ')');
+  const dior = sel('Dior Homme');
+  ok(dior.akcija === 'odgovori' && dior.tip === 'nije_pronadjeno', '„Dior Homme“ → nije pronađeno (ne tuđi Pour Homme)');
+  const sav = sel('savjeti njega lica');
+  ok(!sav.urls.some(x => /ideje-za-rodendan/.test(x)), '„savjeti njega lica“ bez članka o rođendanu (' + sav.urls.map(put).join(' + ') + ')');
+}
+// ručni test nacrta (2.11.): set istog naziva nije druga mogućnost; promo kod kad nijedan proizvod nema kod
+{
+  const b = B('Versace Dylan Blush Pink');
+  ok(b.kontekst && b.kontekst.tip === 'proizvod' && /dylan-blush-pink-pour-femme-eau-de-parfum/.test(b.url), '„Versace Dylan Blush Pink“ → samo EDP, bez setova (' + put(b.url) + ', ' + (b.kontekst || {}).tip + ')');
+  const samples = fs.existsSync(path.join(__dirname, 'samples')) ? path.join(__dirname, 'samples') : path.join(__dirname, '..', 'samples');
+  const html = fs.readFileSync(path.join(samples, 'brand_versace.html'), 'utf8').replace(/__wc_fb_page_generated\s*=\s*\d+/, '__wc_fb_page_generated = ' + Math.floor(Date.now() / 1000));
+  const st = run(CODE.C, 'each', [{ json: { statusCode: 200, headers: { 'content-type': 'text/html' }, body: html } }], { 'Odaberi stranice': [{ json: { url: 'https://martimex.hr/kategorija/parfemi/?sort=1', uloga: 'popis', kontekst: {} } }], 'Dohvati stranice': [{ json: {} }] })[0].json;
+  st.popis.proizvodi.forEach(p => { p.promo = []; });
+  const kk = { tip: 'popis', promoUpit: true, napomena: 'Promo kodovi vrijede za pojedine proizvode i mogu vrijediti i izvan parfema: aktivni kodovi su u retku „Promo kodovi na ovoj stranici“ i u oznakama „| Promo: …“ uz proizvode. Za konkretan proizvod pozovi alat s njegovim nazivom.' };
+  const d = run(CODE.D, 'all', [{ json: Object.assign({}, st, { markdown: '' }) }], { 'Pripremi upit': [{ json: { idx: {} } }], 'Odaberi stranice': [{ json: { url: st.url, kontekst: kk } }] })[0].json.odgovor;
+  ok(/nijedan proizvod na ovoj stranici .*nema aktivan promo kod/.test(d.tekst), 'promo kod bez aktivnih kodova: odgovor to izričito kaže');
+  ok(!/aktivni kodovi su u retku/.test(d.tekst), 'promo kod bez aktivnih kodova: bez upute na nepostojeći redak');
+}
+// ručni test nacrta (2.11.), kritičari: sadržaj odgovora
+{
+  const { DateTime } = require('luxon');
+  const t = DateTime.fromObject({ year: 2026, month: 11, day: 2, hour: 14 }, { zone: 'Europe/Zagreb' }).toMillis();
+  const pravi = Date.now; Date.now = () => t;
+  let d;
+  try {
+    const md = '## Pokloni uz kupnju\n\n## Pupa\nUz kupnju Pupa Vamp! maskare, poklanjamo Vam Pupa kozmetičku torbicu.\n\n_*ponuda traje do 31. 10. 2026. ili do isteka zaliha_\n\n## Floraiku\nUz kupnju bilo kojeg Floraiku mirisa poklanjamo Just a Rose 5 ml.\n\n_*ponuda traje do 30. 11. 2026. ili do isteka zaliha_';
+    d = run(CODE.D, 'all', [{ json: { ok: true, tip: 'stranica', url: 'https://martimex.hr/pokloni-uz-kupnju/', naslov: 'Pokloni uz kupnju', ocekuj: 'tekst', markdown: md, generirano: Math.floor(t / 1000), starostS: 1, obavijesti: ['Besplatna dostava iznad 75€', 'Poklon uz svaku kupnju iznad 10€'] } }],
+      { 'Pripremi upit': [{ json: { idx: {} } }], 'Odaberi stranice': [{ json: { url: 'https://martimex.hr/pokloni-uz-kupnju/', kontekst: { tip: 'stranica', tema: 'pokloni-uz-kupnju', tokeni: [], tokeniTeme: ['pokloni'] } } }] })[0].json.odgovor;
+  } finally { Date.now = pravi; }
+  ok(/ponuda trajala do 31\. 10\. 2026\./.test(d.tekst) && !/30\. 11\. 2026\.,/.test(d.tekst), 'istekla ponuda (31. 10.) dobiva napomenu, važeća (30. 11.) ne');
+  ok(/Poklon uz svaku kupnju iznad 10€/.test(d.tekst), 'informativna stranica: obavijesti s vrha weba (poklon uz svaku kupnju) su u odgovoru');
+  const sel = u => { const l = console.log; console.log = () => {}; try { return require('./test_baterija_v17.js').selB({ upit: u }); } finally { console.log = l; } };
+  const P = [
+    ['rok za povrat', ['/povrat-i-reklamacija/', '/najcesca-pitanja/']],
+    ['parfem je stigao razbijen', ['/povrat-i-reklamacija/', '/dostava-i-isporuka/']],
+    ['furla torbe', ['/furla/', '/kontakt-furla/', '/poslovnice/']],
+    ['pedikura u Zagrebu', ['/beauty-centri/', '/beauty-saloni/', '/poslovnice/']],
+    ['krema za suncanje', ['/kategorija/njega/suncanje/']],
+  ];
+  for (const [u, ocek] of P) { const r = sel(u); const p = r.urls.map(put); ok(ocek.every((x, i) => p[i] === x), '„' + u + '“ → ' + ocek.join(' + ') + ' (' + p.join(' + ') + ')'); }
+  const hb = B('hermes terre'); const ht = ((hb.kontekst || {}).rezultat || {}).tekst || '';
+  ok(/nije na popisu brendova/.test(ht) && !/Najbliže/.test(ht), 'brend koji nije u ponudi: bez „najbližih“ proizvoda drugih brendova (' + ht.slice(0, 80) + ')');
+  const bf = B('black friday parfemi');
+  ok(/black-friday/.test((bf.kontekst || {}).napomena || ''), 'Black Friday: napomena s člankom s weba');
+  const ua = B({ url: 'https://martimex.hr/kategorija/parfemi/?pg=2', upit: 'akcija' });
+  ok((ua.kontekst || {}).akcijaFilter === true, 'url + upit „akcija“: filtar akcije ostaje na sljedećoj stranici');
+}
 console.log('\nTESTOVI v1.7: ' + pass + ' prolazi, ' + fail + ' ne prolazi');
 process.exitCode = fail ? 1 : 0;
