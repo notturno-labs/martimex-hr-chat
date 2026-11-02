@@ -43,13 +43,16 @@ Voiceflow alat „Martimex uzivo“ ima dva ulaza. Agent ih puni ovako:
 | Kupac pita | `upit` | `url` |
 |---|---|---|
 | za proizvod | brend + naziv: `Versace Eros EDP`, `Lancome La Vie Est Belle` | `-` |
-| za brend | brend: `Lancome` | `-` |
+| za brend | brend: `Lancome`; za jedan spol `Versace muški`; što je od brenda na akciji ili s promo kodom: `Versace akcija` (nikad brend + kategorija, npr. ne `Lancome maskare`) | `-` |
+| za Furla torbe i modne dodatke | `furla torbe` (posebna stranica, ne popis brenda) | `-` |
 | za vrstu proizvoda | kategorija s filtrima: `muški parfemi do 80`, `maskare akcija` | `-` |
 | o kupnji, dostavi, povratu… | tema s detaljem: `dostava Split`, `rok za povrat`, `registracija`, `promo kod` | `-` |
 | o stranici koju već zna | `-` ili riječ odlomka koji treba | točna adresa s martimex.hr |
 
 - `upit` ima 1–5 riječi i nikad nije cijela rečenica kupca. Riječi poput „koliko košta“ ili „imate li“ se izostave.
 - Kad odgovor uputi na drugu stranicu, agent smije napraviti još jedan poziv s tom adresom ili boljim upitom.
+- „popust“ nikad ne ide u `upit`, a „akcija“ ne ide uz naziv proizvoda (samo uz brend, kategoriju ili samostalno).
+- Za mjesto dostave agent šalje adresu stranice dostave i naziv mjesta u `upit` (`Mljet`); popis mjesta određuje samo dostavljača i načine plaćanja, a cijena je ista za cijelu Hrvatsku.
 - Workflow ipak podnosi i dugu rečenicu: teme se boduju (jasna riječ 1 bod, opća 0,5, vrlo jasna 1,5), a kad nijedan
   proizvod ne sadrži sve riječi upita, prije „nije pronađeno“ traži temu, promo kod i članak bloga.
 
