@@ -432,6 +432,10 @@
     return artikl;
   }
 
+  // Isto čitanje artikla koriste i drugi moduli: pogled-stranice.js ("Marti
+  // vidi stranicu") na stranici proizvoda šalje Marti iste podatke o artiklu
+  window.MartimexPitajMarti = Object.assign(window.MartimexPitajMarti || {}, { procitajArtikl: procitajArtikl });
+
   function kljucArtikla(a) {
     return (a.id || a.naziv) + '|' + (a.varijacija_id || a.varijanta || '');
   }

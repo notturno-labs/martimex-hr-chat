@@ -37,6 +37,23 @@
       proba.html?stranica=kontakt         → stranica Kontakt (gumb "Pitaj Marti" samo otvori chat)
       &kolacici=ceka                      → kao martimex.hr: chat se učita tek kad se prihvate kolačići (gumb u traci)
       &pitajmarti=debug                   → zapisi modula u konzoli preglednika
+      &kosarica=otvorena                  → otvorena košarica (bočni prozor), kao kad kupac klikne košaricu u zaglavlju
+      &pogledstranice=debug               → zapisi modula "Marti vidi stranicu" (pogled-stranice.js) u konzoli
+      &okruzenje=<alias>                  → chat se spoji na to Voiceflow okruženje (nacrt) umjesto "Radim gumb na webu"
+
+    Košarica (bočni prozor) i "Marti vidi stranicu": košarica se otvori
+    ikonom košarice u zaglavlju ili poveznicom "Košarica" u probnoj traci.
+    U njoj su Crystal Noir (na akciji) i Dylan Blue te polje za kod:
+    POPUST30 → "kupon nije primjenjiv na odabrane proizvode" (Crystal Noir
+    je već snižen), DOBRODOSLI10 → primijeni se 10 % na Dylan Blue, bilo
+    koji drugi kod (npr. P0PUST30 s nulom) → "kupon ne postoji"; poruka se
+    pokaže uz polje i kao kratka obavijest u kutu koja sama nestane.
+    Košarica NIJE kopija HTML-a s martimex.hr (on iz okruženja u kojem je
+    rađena nije bio dostupan): složena je po klasama iz martimex-stil.css
+    (.cart, .cart__single-item, .coupon-field, .cart__summary-line, .toast…).
+    Gumb "Što Marti vidi?" u probnoj traci pokaže točno onaj tekst koji bi
+    Marti dobila da u chatu pogleda stranicu (pogled-stranice.js), bez
+    Voiceflowa — tako se vidi što modul pročita na kojoj stranici.
   -->
   <!-- Stil s martimex.hr, kopiran u repozitorij (martimex-stil.css, uz ovu stranicu).
        Ne učitava se izravno s martimex.hr jer martimex.hr ime svoje datoteke sa stilom mijenja kad god obnovi
@@ -79,6 +96,23 @@
     }
     /* stranica Kontakt: obrazac na probi ne šalje poruku */
     .mxp-obavijest { margin: 12px 0 0; font-size: 14px; color: #505050; }
+
+    /* "Što Marti vidi?": ploča s tekstom koji bi Marti dobila (pogled-stranice.js) */
+    .mxp-pogled { position: fixed; z-index: 2147483600; top: 56px; right: 16px; display: flex; flex-direction: column; width: min(600px, calc(100vw - 32px)); max-height: calc(100vh - 80px); background: #fff; border: 1px solid #d9bfb4; border-radius: 10px; box-shadow: 0 12px 40px -12px rgba(0,0,0,.35); color: #1c1715; font: 13px/1.45 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+    .mxp-pogled-vrh { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #ecd6cc; background: #fdf0e9; border-radius: 10px 10px 0 0; }
+    .mxp-pogled-vrh b { flex: 1; }
+    .mxp-pogled-vrh button { padding: 3px 10px; border: 1px solid #d9bfb4; border-radius: 999px; background: #fff; font: inherit; cursor: pointer; }
+    .mxp-pogled pre { margin: 0; padding: 12px 14px; overflow: auto; white-space: pre-wrap; word-break: break-word; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    /* košarica na probi, rezervni stil: samo ako se stil s martimex.hr ne učita */
+    .mx-bez-stila .cart { position: fixed; top: 0; right: -200vw; z-index: 50; width: 100%; max-width: 500px; height: 100vh; overflow-y: auto; background: #fff; box-shadow: 0 0 10px rgba(0,0,0,.1); }
+    .mx-bez-stila body.cart-open .cart { transform: translateX(-200vw); }
+    .mx-bez-stila .cart__single-item { display: flex; gap: 12px; padding: 16px 24px; border-bottom: 1px solid #eee; }
+    .mx-bez-stila .cart__single-item-image img { width: 70px; height: 70px; object-fit: contain; }
+    .mx-bez-stila .cart__summary, .mx-bez-stila .cart__step { padding: 16px 24px; }
+    .mx-bez-stila .cart__summary-line { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .mx-bez-stila .toast { position: fixed; right: 24px; bottom: 24px; padding: 12px 16px; background: #fff; border: 1px solid #ddd; visibility: hidden; opacity: 0; }
+    .mx-bez-stila .toast--visible { visibility: visible; opacity: 1; }
 
     /* opis proizvoda: na probi se uvijek vidi cijeli (gumb "Pročitaj više" ovdje ne radi) */
     .product__description .post-content { max-height: none !important; overflow: visible !important; }
@@ -348,6 +382,10 @@
        čuva 10 minuta, pa bi nakon promjene stara kopija modula mogla raditi
        s novom stranicom). -->
   <script>document.write('<script src="pitaj-marti.js?v=' + Math.floor(Date.now() / 60000) + '"><\/script>');</script>
+  <!-- "Marti vidi stranicu" (pogled-stranice.js): još nije u popisu MODULI
+       nijednog loadera (na martimex.hr ga nema); ovdje se učita prije koda
+       chata, da njegova ekstenzija stigne do Voiceflowa. -->
+  <script>document.write('<script src="pogled-stranice.js?v=' + Math.floor(Date.now() / 60000) + '"><\/script>');</script>
 </head>
 <body class="wp-singular product-template-default single single-product woocommerce woocommerce-page">
   <script>
@@ -359,7 +397,8 @@
     <b>Proba „Pitaj Marti”</b>
     <span class="mxp-izbor" id="mxp-artikli" aria-label="Artikl"></span>
     <span class="mxp-izbor" id="mxp-stranice" aria-label="Stranica"></span>
-    <button type="button" id="mxp-novi" title="Obriše razgovor iz preglednika i učita stranicu ispočetka">Novi razgovor</button>
+    <button type="button" id="mxp-novi" title="Obriše razgovor iz preglednika (i dopuštenje „Pokaži stranicu”) i učita stranicu ispočetka">Novi razgovor</button>
+    <button type="button" id="mxp-pogled" title="Tekst koji bi Marti dobila da pogleda ovu stranicu (pogled-stranice.js)">Što Marti vidi?</button>
     <button type="button" id="mxp-kolacici" hidden title="Kao „Prihvati sve” na traci s kolačićima na martimex.hr">Prihvati kolačiće</button>
     <button type="button" class="mxp-zatvori" aria-label="Sakrij traku" onclick="this.parentNode.remove()">✕</button>
   </div>
@@ -390,11 +429,12 @@
       return '<a href="' + esc(MXP.adresa({ artikl: k === 'dylan-blue' ? '' : k, stranica: '' })) + '"' + (!MXP.kontakt && k === kljuc ? ' aria-current="page"' : '') + '>' + esc(natpisi[k]) + '</a>';
     }).join('');
     document.getElementById('mxp-stranice').innerHTML =
-      '<a href="' + esc(MXP.adresa({ stranica: 'kontakt', artikl: '' })) + '"' + (MXP.kontakt ? ' aria-current="page"' : '') + '>Kontakt</a>';
+      '<a href="' + esc(MXP.adresa({ stranica: 'kontakt', artikl: '' })) + '"' + (MXP.kontakt ? ' aria-current="page"' : '') + '>Kontakt</a>' +
+      '<a href="' + esc(MXP.adresa({ kosarica: 'otvorena' })) + '" id="mxp-kosarica-poveznica">Košarica</a>';
     document.getElementById('mxp-novi').addEventListener('click', function () {
       [window.sessionStorage, window.localStorage].forEach(function (sp) {
         try {
-          for (var i = sp.length - 1; i >= 0; i--) { var k = sp.key(i); if (k && k.indexOf('voiceflow') === 0) sp.removeItem(k); }
+          for (var i = sp.length - 1; i >= 0; i--) { var k = sp.key(i); if (k && (k.indexOf('voiceflow') === 0 || k.indexOf('mx-ps-') === 0)) sp.removeItem(k); }
         } catch (e) { /* nije bitno */ }
       });
       location.reload();
@@ -751,6 +791,158 @@
   })();
   </script>
 
+  <!-- Košarica (bočni prozor) i kratka obavijest u kutu. NIJE kopija HTML-a
+       s martimex.hr (nije bio dostupan): složena je po klasama iz
+       martimex-stil.css, da izgleda i čita se kao košarica na martimex.hr. -->
+  <template id="mxp-kosarica">
+    <div class="cart js-cart" role="dialog" aria-label="Košarica">
+      <div class="cart__title"><h4 class="h4 t-500">Košarica</h4> <span class="js-close-cart" role="button" tabindex="0" aria-label="Zatvori košaricu"> <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18.3 5.7 12 12m0 0-6.3 6.3M12 12 5.7 5.7M12 12l6.3 6.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg> </span></div>
+      <div class="cart__content">
+        <div class="cart__items">
+          <div class="cart__single-item" data-cijena="56" data-akcija="1">
+            <a class="cart__single-item-image" href="https://martimex.hr/proizvod/parfemi/parfemske-vode/crystal-noir-eau-de-parfum/"> <img referrerpolicy="no-referrer" src="https://martimex.hr/martimex-content/uploads/2024/10/Crystal-Noir_30ml_bottle.jpg" alt=""> </a>
+            <div class="cart__single-item-info">
+              <div class="cart__single-item-brand"><h6 class="h6 t-600">VERSACE</h6> <button type="button" class="btn cart__single-item-corner-btn" aria-label="Ukloni iz košarice"></button></div>
+              <a class="cart__single-item-title h5 t-500" href="https://martimex.hr/proizvod/parfemi/parfemske-vode/crystal-noir-eau-de-parfum/">Crystal Noir Eau de Parfum</a>
+              <p class="cart__single-item-var h6">Veličina: <span>30 ml</span></p>
+              <div class="cart__single-item-qty-price">
+                <div class="cart__single-item-qty"><button type="button" class="btn disabled" aria-label="Smanji količinu">−</button><input type="number" value="1" min="1" aria-label="Količina"><button type="button" class="btn" aria-label="Povećaj količinu">+</button></div>
+                <div><del class="h6">79,31 €</del> <span class="h5 t-600">56,00 €</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="cart__single-item" data-cijena="113">
+            <a class="cart__single-item-image" href="https://martimex.hr/proizvod/parfemi/toaletne-vode/dylan-blue-eau-de-toilette/"> <img referrerpolicy="no-referrer" src="https://martimex.hr/martimex-content/uploads/2024/10/Versace_DylanBlue_100ml.jpg" alt=""> </a>
+            <div class="cart__single-item-info">
+              <div class="cart__single-item-brand"><h6 class="h6 t-600">VERSACE</h6> <button type="button" class="btn cart__single-item-corner-btn" aria-label="Ukloni iz košarice"></button></div>
+              <a class="cart__single-item-title h5 t-500" href="https://martimex.hr/proizvod/parfemi/toaletne-vode/dylan-blue-eau-de-toilette/">Dylan Blue Eau de Toilette</a>
+              <p class="cart__single-item-var h6">Veličina: <span>100 ml</span></p>
+              <div class="cart__single-item-qty-price">
+                <div class="cart__single-item-qty"><button type="button" class="btn disabled" aria-label="Smanji količinu">−</button><input type="number" value="1" min="1" aria-label="Količina"><button type="button" class="btn" aria-label="Povećaj količinu">+</button></div>
+                <div><span class="h5 t-600">113,00 €</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cart__summary">
+          <div class="cart__free-shipping cart__free-shipping--reached"><p class="cart__free-shipping-title">Ostvarili ste besplatnu dostavu!</p><div class="cart__free-shipping-bar"><span style="width: 100%"></span></div></div>
+          <div class="coupon-field">
+            <label class="coupon-field__label h6" for="mxp-kod">Promo kod ili poklon bon</label>
+            <div class="coupon-field__input"><input id="mxp-kod" class="input-field" type="text" name="coupon_code" placeholder="Upiši kod" autocomplete="off"> <button type="button" class="btn btn--secondary btn--md" id="mxp-potvrdi"> <span class="btn__label">Potvrdi</span> </button></div>
+            <p class="coupon-field__error-message h6" id="mxp-kod-greska" hidden></p>
+            <div class="coupon-field__chips" id="mxp-kod-cipovi"></div>
+          </div>
+          <div class="cart__summary-lines">
+            <div class="cart__summary-line"><span class="h6">Međuzbroj</span><span class="h6 t-600" id="mxp-medjuzbroj">169,00 €</span></div>
+            <div class="cart__summary-line"><span class="h6">Popust</span><span class="h6 t-600" id="mxp-popust">0,00 €</span></div>
+            <div class="cart__summary-line"><span class="h6">Dostava</span><span class="h6 t-600">Besplatna</span></div>
+            <div class="cart__summary-line cart__summary-line--total"><span class="h5 t-600">Ukupno</span><span class="h5 t-600" id="mxp-ukupno">169,00 €</span></div>
+          </div>
+        </div>
+        <div class="cart__step"><a class="btn btn--primary btn--md" href="#"> <span class="btn__label">Nastavi na blagajnu</span> </a><h6>PDV je uključen u cijenu.</h6></div>
+      </div>
+    </div>
+    <div class="toast" id="mxp-toast" role="status"><p class="h6" id="mxp-toast-tekst"></p> <button type="button" class="btn toast__close" aria-label="Zatvori obavijest"> <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.7 12 12m0 0-6.3 6.3M12 12 5.7 5.7M12 12l6.3 6.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg> </button></div>
+  </template>
+
+  <!-- Košarica na probi: otvaranje, zatvaranje i polje za kod (kodovi su opisani na vrhu ove datoteke) -->
+  <script>
+  (function () {
+    'use strict';
+    var app = document.getElementById('app') || document.body;
+    app.appendChild(document.getElementById('mxp-kosarica').content.cloneNode(true));
+    var tijelo = document.body;
+    function otvori() { tijelo.classList.add('cart-open'); }
+    function zatvori() { tijelo.classList.remove('cart-open'); }
+    document.querySelectorAll('.js-open-cart').forEach(function (g) { g.addEventListener('click', function (e) { e.preventDefault(); otvori(); }); });
+    document.querySelectorAll('.js-close-cart').forEach(function (g) {
+      g.addEventListener('click', zatvori);
+      g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); zatvori(); } });
+    });
+    var poveznica = document.getElementById('mxp-kosarica-poveznica');
+    if (poveznica) poveznica.addEventListener('click', function (e) { e.preventDefault(); otvori(); });
+    if (new URLSearchParams(location.search).get('kosarica') === 'otvorena') otvori();
+
+    var polje = document.getElementById('mxp-kod');
+    var greska = document.getElementById('mxp-kod-greska');
+    var cipovi = document.getElementById('mxp-kod-cipovi');
+    var toast = document.getElementById('mxp-toast');
+    var toastTekst = document.getElementById('mxp-toast-tekst');
+    var skrij = 0;
+    function eur(n) { var d = n.toFixed(2).split('.'); return d[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + d[1] + ' €'; }
+    function obavijest(t) {
+      toastTekst.textContent = t;
+      toast.classList.add('toast--visible');
+      clearTimeout(skrij);
+      skrij = setTimeout(function () { toast.classList.remove('toast--visible'); }, 4000);
+    }
+    toast.querySelector('.toast__close').addEventListener('click', function () { toast.classList.remove('toast--visible'); });
+    function pogreska(t) { greska.textContent = t; greska.hidden = false; obavijest(t); }
+    var primijenjen = false;
+    function primijeni() {
+      var kod = polje.value.trim();
+      greska.hidden = true;
+      greska.textContent = '';
+      if (!kod) { pogreska('Upišite kod.'); return; }
+      var k = kod.toUpperCase();
+      if (k === 'POPUST30') { pogreska('Nažalost, ovaj kupon nije primjenjiv na odabrane proizvode.'); return; }
+      if (k !== 'DOBRODOSLI10') { pogreska('Kupon „' + kod + '” ne postoji!'); return; }
+      if (primijenjen) { pogreska('Kupon „' + k + '” je već primijenjen.'); return; }
+      // 10 % samo na artikle koji nisu na akciji (Dylan Blue)
+      var popust = 0;
+      document.querySelectorAll('.cart .cart__single-item').forEach(function (a) {
+        if (!a.getAttribute('data-akcija')) popust += parseFloat(a.getAttribute('data-cijena')) * 0.1;
+      });
+      primijenjen = true;
+      polje.value = '';
+      var cip = document.createElement('span');
+      cip.className = 'h6';
+      cip.textContent = k + ' ×';
+      cipovi.appendChild(cip);
+      document.getElementById('mxp-popust').textContent = '−' + eur(popust);
+      document.getElementById('mxp-ukupno').textContent = eur(169 - popust);
+      obavijest('Kupon je uspješno primijenjen.');
+    }
+    document.getElementById('mxp-potvrdi').addEventListener('click', primijeni);
+    polje.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); primijeni(); } });
+  })();
+  </script>
+
+  <!-- "Što Marti vidi?": tekst koji bi Marti dobila (pogled-stranice.js), bez Voiceflowa -->
+  <script>
+  (function () {
+    'use strict';
+    var gumb = document.getElementById('mxp-pogled');
+    if (!gumb) return;
+    var ploca = null, pre = null;
+    function zatvori() { if (ploca) { ploca.remove(); ploca = null; } }
+    gumb.addEventListener('click', function () {
+      if (!ploca) {
+        ploca = document.createElement('div');
+        ploca.className = 'mxp-pogled';
+        ploca.setAttribute('role', 'dialog');
+        ploca.setAttribute('aria-label', 'Što Marti vidi');
+        ploca.innerHTML = '<div class="mxp-pogled-vrh"><b>Što bi Marti vidjela na ovoj stranici</b><button type="button" data-k="osvjezi">Ponovno</button><button type="button" data-k="kopiraj">Kopiraj</button><button type="button" data-k="zatvori" aria-label="Zatvori">✕</button></div><pre></pre>';
+        pre = ploca.querySelector('pre');
+        ploca.addEventListener('click', function (e) {
+          var k = e.target.getAttribute && e.target.getAttribute('data-k');
+          if (k === 'zatvori') zatvori();
+          else if (k === 'osvjezi') procitaj();
+          else if (k === 'kopiraj' && navigator.clipboard) navigator.clipboard.writeText(pre.textContent).catch(function () { /* nije bitno */ });
+        });
+        document.body.appendChild(ploca);
+      }
+      procitaj();
+    });
+    function procitaj() {
+      var M = window.MartimexPogledStranice;
+      if (!M) { pre.textContent = 'Modul pogled-stranice.js nije učitan.'; return; }
+      pre.textContent = 'Čitam stranicu…';
+      M.tekst().then(function (t) { if (pre) pre.textContent = t; }, function (e) { if (pre) pre.textContent = 'Greška: ' + e; });
+    }
+  })();
+  </script>
+
   <!-- Marti chat (Martimex) – isti kod kao na martimex.hr, samo: loader.js se
        učitava iz iste mape kao ova stranica, a Voiceflow je okruženje "Radim
        gumb na webu" (nacrt) projekta V2 -->
@@ -768,7 +960,8 @@
       verify: { projectID: '6abcf8b2128a6fc786128cca' },
       url: 'https://general-runtime.voiceflow.com',
       voice: { url: 'https://runtime-api.voiceflow.com' },
-      environmentID: 'radim-gumb-na-webu',
+      // ?okruzenje=<alias> spoji chat na drugo Voiceflow okruženje (nacrt), npr. za probu "Marti vidi stranicu"
+      environmentID: (new URLSearchParams(location.search).get('okruzenje') || '').replace(/[^\w-]/g, '') || 'radim-gumb-na-webu',
       versionVariant: 'draft'
     };
 
