@@ -1,38 +1,40 @@
-// Ukratko: Loader 1. dio – jedan redak na stranici učita Marti chat 2.0, 1. dio (kartice artikala, izgled chata i gumba)
+// Ukratko: Loader mape v2-1 – jedan redak na stranici učita Marti chat 2.0, 1. dio (kartice artikala, izgled chata i gumba)
 /* ============================================================
-   MARTI CHAT – Loader 1. dio (loader-1-dio.js)
+   MARTI CHAT 2.0, 1. DIO – v2-1/loader.js
 
-   Verzija 2.0 Marti chata, 1. DIO:
+   Mapa v2-1/ je zaokružen paket 1. dijela verzije 2.0 Marti chata:
      - nove kartice artikala
      - novi izgled chata
      - novi izgled gumba koji otvara chat
    2. dio (gumbi "Pitaj Marti" na stranici artikla i na stranici
-   Kontakt, pitaj-marti.js) ovaj loader NE učitava.
+   Kontakt, pitaj-marti.js) nije u paketu i ovaj loader ga NE učitava.
+
+   Loader module i fontove uzima iz mape u kojoj je i sam (v2-1/), a ne
+   iz korijena repozitorija. Zato promjene u korijenu (razvoj 2. dijela,
+   isprobavanja) ne mijenjaju stranice koje učitavaju ovaj loader.
+   Mapa se mijenja samo namjerno – vidi README.md u ovoj mapi.
 
    Na stranicu se dodaje samo ovaj jedan redak (najbolje odmah iznad
-   </body>):
+   </body>; tako je i na probnoj stranici proba-1-dio.html):
 
-     <script src="https://notturno-labs.github.io/martimex-hr-chat/loader-1-dio.js"></script>
+     <script src="https://notturno-labs.github.io/martimex-hr-chat/v2-1/loader.js"></script>
 
    Na martimex.hr se chat smije učitati tek kad kupac na traci s
    kolačićima prihvati sve, pa tamo redak ima još data-kolacici="ceka":
 
-     <script src="https://notturno-labs.github.io/martimex-hr-chat/loader-1-dio.js" data-kolacici="ceka"></script>
+     <script src="https://notturno-labs.github.io/martimex-hr-chat/v2-1/loader.js" data-kolacici="ceka"></script>
 
    Tada loader ne učita ništa dok ne nađe kolačić cookiesAccepted=allCookies
    ili ne stigne događaj "martimex:cookies-accepted" s "allCookies".
 
    Taj jedan redak sam napravi sve ostalo:
      1. učita Voiceflow widget (izravno s Voiceflowa)
-     2. istovremeno učita module 1. dijela iz ovog repozitorija (MODULI niže)
-     3. pokrene chat: Voiceflow projekt "V2 - Martimex - Live", okruženje
-        Main, objavljena (Publish) verzija
+     2. istovremeno učita module iz ove mape (MODULI niže)
+     3. pokrene chat: Voiceflow projekt "v2 - prvi dio", okruženje Main,
+        objavljena (Publish) verzija
    Dosadašnji kod chata (običan Voiceflow kod ili kod koji učitava
    loader.js) treba sa stranice maknuti: ovaj redak ga zamjenjuje. Ako
    loader na stranici nađe drugi chat, ne učita ništa (da ne budu dva).
-
-   Probna stranica: proba-1-dio.html (na njoj piše samo MARTI).
-   loader.js i proba.html su zasebni i ovaj file ih ne dira.
    ============================================================ */
 (function () {
 
@@ -55,9 +57,9 @@
   `;
 
   // Voiceflow agent na koji se chat spaja (iste vrijednosti daje
-  // Voiceflowov kod za ugradnju projekta "V2 - Martimex - Live", okruženje Main)
+  // Voiceflowov kod za ugradnju projekta "v2 - prvi dio", okruženje Main)
   var VOICEFLOW = {
-    verify: { projectID: '6abcf8b2128a6fc786128cca' },
+    verify: { projectID: '6af2ea688e4fa5522c532d4f' },
     url: 'https://general-runtime.voiceflow.com',
     voice: { url: 'https://runtime-api.voiceflow.com' },
     environmentID: 'main',
@@ -69,16 +71,16 @@
   /* ---------- ISPOD OVOGA NE TREBAŠ DIRATI ---------- */
 
   var WIDGET = 'https://cdn.voiceflow.com/widget-next/bundle.mjs';
-  var ADRESA = 'https://notturno-labs.github.io/martimex-hr-chat/';  // ako se adresa ovog filea ne da pročitati
+  var ADRESA = 'https://notturno-labs.github.io/martimex-hr-chat/v2-1/';  // ako se adresa ovog filea ne da pročitati
 
-  var ja = document.currentScript || document.querySelector('script[src*="loader-1-dio.js"]');
-  var BASE = ja && ja.src ? new URL('./', ja.src).href : ADRESA;   // mapa ovog repozitorija
+  var ja = document.currentScript || document.querySelector('script[src*="v2-1/loader.js"]');
+  var BASE = ja && ja.src ? new URL('./', ja.src).href : ADRESA;   // mapa ovog filea (v2-1/)
   var cekajKolacice = !!ja && ja.getAttribute('data-kolacici') === 'ceka';
 
   // Chat smije biti na stranici samo jednom. Oznaka ujedno isključi stari
   // kod chata (onaj koji učitava loader.js) ako je ostao ispod ovog retka.
   if (window.__martimexChat) {
-    console.warn('[Martimex] Chat je već na stranici – loader-1-dio.js ne učitava ništa');
+    console.warn('[Martimex] Chat je već na stranici – v2-1/loader.js ne učitava ništa');
     return;
   }
   window.__martimexChat = true;
@@ -161,7 +163,7 @@
 
   function ucitajSve() {
     if (drugiChat()) {
-      console.warn('[Martimex] Na stranici je već Voiceflow chat (stari kod?) – loader-1-dio.js ne učitava ništa');
+      console.warn('[Martimex] Na stranici je već Voiceflow chat (stari kod?) – v2-1/loader.js ne učitava ništa');
       return;
     }
 
