@@ -1,6 +1,7 @@
+// Ukratko: Kartice proizvoda koje Marti preporuči
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v30)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v33)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartice idu jedna ispod druge. Kad stigne samo jedan proizvod,
@@ -9,25 +10,47 @@
   //  Payload koji funkcija šalje ostaje isti:
   //   { cards: [{ title, price, description, url, imageUrl }] }
   //  Neobavezna polja (prikažu se samo ako postoje):
-  //   oldPrice → precrtana stara cijena i postotak popusta
-  //   badge    → mala oznaka iznad marke, npr. "Novo"
+  //   oldPrice → artikl je na akciji: stara cijena se precrta, ispod nje je
+  //              nova, a pokraj njih voštani pečat s postotkom popusta
+  //   promo    → promo kod koji vrijedi za artikl:
+  //              { code: "MRTMX", percent: 30, validUntil: "2026-10-31" }
+  //              (isto kao ravna polja promoCode, promoPercent, promoPrice,
+  //              promoValidUntil). Umjesto percent može price (cijena s kodom);
+  //              dovoljno je jedno. validUntil je neobavezan; kad je prošao, kod
+  //              se ne prikazuje. Precrta se trenutna cijena, nova je cijena s
+  //              kodom, a ispod nje diskretno piše "uz kod MRTMX".
+  //              Kad su i akcija i kod: precrtana je redovna cijena, nova je
+  //              cijena s kodom, a pečat pokazuje ukupni popust
+  //   hideDescription: true → kartica bez crte i opisa: gornji dio (slika,
+  //              marka, naziv, cijena) i gumb ostaju isti. Vrijedi za cijeli
+  //              prikaz ({ cards: [...], hideDescription: true }, tako šalje
+  //              playbook "Trazilica")
+  //   brandLogo → adresa loga marke (https://...). Danas ga funkcije ne šalju:
+  //              logo se uzima sa stranice proizvoda (vidi LOGO MARKE niže), a
+  //              ovo polje je za kasnije, ako ga počnu slati n8n ili Voiceflow
   //
   //  Raspored kartice:
   //   ┌────────────────────────────┐
-  //   │ ┌───────┐   MARKA          │
-  //   │ │ SLIKA │   Naziv          │
-  //   │ │       │   Eau de Parfum  │
-  //   │ │       │   ──             │
-  //   │ └───────┘   CIJENA         │
+  //   │    ┌───────┐  MARKA        │
+  //   │    │ SLIKA │  Naziv        │
+  //   │    │       │  Eau de Toil. │
+  //   │    │       │  ──           │
+  //   │    └───────┘  CIJENA       │
   //   │ ────────────────────────── │
   //   │    Opis artikla, malo      │
   //   │    uži od kartice          │
   //   │     [ Pogledaj proizvod ]  │
   //   └────────────────────────────┘
   //   Na proizvod vodi samo gumb, i to u istom prozoru (bez novih kartica).
+  //   Kratak naziv (Versace Eros): gornji dio je podijeljen na dvije jednake
+  //   polovice (širine opisa); tekst počinje na desnoj, poravnat ulijevo, a
+  //   bočica je na sredini lijeve. Dulji naziv: slika i tekst centrirani su
+  //   kao cjelina (bočica je od lijevog ruba jednako daleko kao tekst od desnog).
   //
   //  Marka i naziv složeni su kao natpis na etiketi bočice:
-  //   - marka sitnim, razmaknutim velikim slovima (XERJOFF)
+  //   - marka je logo marke (crni, kao iznad naziva na stranici proizvoda),
+  //     poravnat ulijevo s tekstom ispod; kad logo nije poznat ili se ne
+  //     učita, marka je ispisana sitnim, razmaknutim velikim slovima (XERJOFF)
   //   - naziv je u otmjenom serifnom fontu (Cormorant Garamond) i na oko je
   //     jednako velik kao marka
   //   - vrsta mirisa ("Eau de Parfum", "Extrait de Parfum"...) odvaja se s
@@ -36,6 +59,10 @@
   //     vrsta s volumenom (EAU DE PARFUM · 100 ML) stane u jedan redak, a dulja
   //     se prelomi tako da točka između dijelova ne ostaje visjeti
   //   - kratka roza crtica odvaja naziv od cijene, a cijena je diskretna
+  //   - popust (akcija ili promo kod): preko stare cijene "rukom" je povučena
+  //     tanka kosa crta (ne obično precrtavanje fonta), ispod je nova cijena,
+  //     malo veća i tamnija, a desno od njih roza voštani pečat s postotkom
+  //     (−30 %), kao pečat na kutiji parfema
   //
   //  Fontovi (Jost za tekst, Cormorant Garamond za naziv) nalaze se u mapi
   //  fonts/ ovog repozitorija, pa kartica izgleda jednako na iPhoneu,
@@ -71,6 +98,11 @@
   //     po hrvatskim pravilima, da među riječima ne ostanu rupe
   //   - opis je uvučen od rubova kartice, a marka i naziv gore ne smiju ići
   //     desnije od opisa: tekst cijele kartice ima isti desni rub (--mx-uvlaka)
+  //   - raspored gornjeg dijela računa se po stvarnim recima teksta (i kad se
+  //     naziv prelomi), a centriranje duljeg naziva po stvarnoj širini bočice
+  //     izrezane iz fotografije, ne po prozirnom prostoru oko nje; ponovno se
+  //     računa kad se promijeni širina chata, učitaju fontovi ili logo marke. Kad stigne
+  //     bočica, gornji dio klizne na mjesto zajedno s njezinim dizanjem
   //   - gumb je mala prozirna pilula s tankim tamnim obrubom i sitnim
   //     razmaknutim velikim slovima; kad je miš iznad njega (a na mobitelu samo
   //     dok je prst na njemu) ispuni se tamnom bojom, a tekst postane bijel
@@ -84,8 +116,10 @@
   //
   //  Pojava: kad Marti pošalje preporuke, preko kartica prođe blaga
   //  ružičasta izmaglica sa sitnim kapljicama (kao sprej parfema) i
-  //  bočice se pojave iz nje, jedna za drugom. Animacija se vrti samo
-  //  prvi put; kad se povijest razgovora ponovno učita, kartice su odmah tu.
+  //  bočice se pojave iz nje, jedna za drugom. Kod popusta pero zatim
+  //  precrta staru cijenu, ispod nje izroni nova, a pokraj njih se utisne
+  //  pečat. Animacija se vrti samo prvi put; kad se povijest razgovora
+  //  ponovno učita, kartice su odmah tu.
   // ═════════════════════════════════════════════════════════════════════
 
 
@@ -94,13 +128,16 @@
   // ─────────────────────────────────────────────────────────────────────
   const MX_POSTAVKE = {
     boje: {                   // uvijek u obliku #rrggbb
-      tinta:   '#000000', // crna kao trake u headeru i footeru: marka, naziv, cijena
-      roza:    '#e2c3ba', // prašnjava roza iza loga: izmaglica, oznaka popusta
+      tinta:   '#000000', // crna kao trake u headeru i footeru: naziv, cijena
+      marka:   '#000000', // crna kao naziv i cijena: marka ispisana slovima (VERSACE)
+      roza:    '#e2c3ba', // prašnjava roza iza loga: izmaglica, crtica iznad cijene, val oko pečata
       puder:   '#f6ebe7', // najsvjetlija roza: rubovi aure oko bočice
-      linija:  '#eee3de', // tanki rubovi i traka napretka
+      linija:  '#eee3de', // tanki dvostruki rub kartice (vanjski i unutarnji)
       dim:     '#6b605c', // opis proizvoda
       kartica: '#ffffff', // pozadina kartice
-      gumb:    '#2b2522'  // gumb "Pogledaj proizvod": obrub i tekst, a kad je miš iznad (ili prst na) njemu, ispuna
+      gumb:    '#2b2522', // gumb "Pogledaj proizvod": obrub i tekst, a kad je miš iznad (ili prst na) njemu, ispuna
+      vosak:   '#dfbcb1', // voštani pečat s postotkom popusta
+      akcija:  '#a0675a'  // crta preko stare cijene, natpis "uz kod MRTMX", prsten i broj na pečatu
     },
 
     // Fontovi: sav tekst u Jostu, naziv proizvoda u Cormorant Garamondu.
@@ -111,30 +148,25 @@
 
     tekstGumba: 'Pogledaj proizvod',
 
-    // false → proizvod se otvara u istom prozoru; true → u novoj kartici preglednika
-    novaKartica: false,
     oznakaRegije: 'Preporučeni proizvodi',   // za čitače zaslona
-
-    // true → aura iza bočice je u bojama i tonovima same bočice (zamućena kopija fotografije)
-    // false → aura je uvijek u roza boji brenda
-    auraUBojiBocice: true,
-
-    // "Mancera ▻ Red Tobacco Eau de Parfum" → marka "Mancera" iznad naziva
-    razdvojiNaziv: true,
-
-    // "Blends Tony Iommi Eau de Parfum" → "Eau de Parfum" ide u zaseban,
-    // tiši redak ispod naziva (isto za Eau de Toilette, Extrait de Parfum...)
-    odvojiVrstu: true,
 
     // Najviše znakova opisa (reže se na cijeloj riječi). 0 = bez ograničenja
     opisZnakova: 320,
 
-    // Praćenje konverzija: true → svaki link na proizvod dobije parametar ispod
-    pracenjeKonverzija: false,
-    parametarPracenja: 'vfrec=true',
+    tekstUzKod: 'uz kod',     // ispod cijene s kodom: "uz kod MRTMX"
 
-    // true → "sprej" animacija samo kad preporuka stigne prvi put
-    animacijaSamoPrviPut: true
+    // Logo marke umjesto imena marke. Uzima se sa stranice proizvoda na kojoj
+    // je kupac (logo iznad naziva artikla), kad je ista marka kao na kartici,
+    // i pamti se u pregledniku, pa se poslije vidi i na drugim stranicama.
+    // Kad logo nije poznat ili se ne učita, marka je ispisana slovima.
+    // Slika loga se ne reže, nego se cijela poveća. Logotipi na martimex.hr su
+    // slike 100 × 50 s natpisom u sredini, pa su uz širinu 88 px slova loga
+    // velika kao naziv artikla (BORNTOSTANDOUT, Versace).
+    logoMarke: {
+      prikazi: true,          // false = marka je uvijek ispisana slovima
+      sirina: 88,             // px: širina slike loga
+      visina: 44              // px: visina slike loga (pola širine, kao slike na martimex.hr)
+    }
   };
 
 
@@ -149,6 +181,11 @@
     const BAZA = ((document.currentScript && document.currentScript.src) || 'https://notturno-labs.github.io/martimex-hr-chat/kartica-artikla.js')
       .replace(/[?#].*$/, '').replace(/[^\/]*$/, '');
     const B = P.boje;
+    const LM = (function (o) {
+      o = o || {};
+      const n = function (v, d, min, max) { v = Number(v); return isFinite(v) && v > 0 ? Math.min(max, Math.max(min, v)) : d; };
+      return { prikazi: o.prikazi !== false, sirina: n(o.sirina, 88, 20, 300), visina: n(o.visina, 44, 8, 150) };
+    })(P.logoMarke);
     const EUR = (function () {
       try { return new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR' }); }
       catch (e) { return { format: function (n) { return n.toFixed(2).replace('.', ',') + '\u00a0€'; } }; }
@@ -161,6 +198,11 @@
     // Kadar obrađene bočice (udio visine/širine prostora slike): bočica stoji
     // na "podlozi" na 90 % visine, najviše do 3 % od vrha, najviše 84 % širine.
     const KADAR = { vrh: 0.03, pod: 0.90, sirina: 0.84 };
+    // Koliko je vidljiva bočica široka (udio širine prostora slike) kad je nije
+    // moguće izrezati iz fotografije (slika s druge domene), pa se to ne zna
+    const PROCJENA_BOCE = 0.55;
+    // Ikona bočice kad proizvod nema sliku: nacrtana bočica široka je ~24 px
+    const SIRINA_IKONE = 24;
 
     // Miješanje boja u JS-u (umjesto CSS color-mix) da izgled radi i u starijim preglednicima
     function rgb(hex) {
@@ -175,24 +217,41 @@
       return 'rgb(' + [0, 1, 2].map(function (i) { return Math.round(a[i] * udio + b[i] * (1 - udio)); }).join(', ') + ')';
     }
 
+    // Obris voštanog pečata (PECAT × PECAT px): krug s blagim, nepravilnim
+    // valovima ruba, kao kapljica voska; uvijek isti
+    const PECAT = 40;
+    const OBRIS_PECATA = (function () {
+      const N = 36, c = PECAT / 2, t = [];
+      for (let i = 0; i < N; i++) {
+        const a = i / N * Math.PI * 2;
+        const r = c - 1.9 + 0.8 * Math.sin(a * 5 + 0.7) + 0.5 * Math.sin(a * 8 + 2.1) + 0.35 * Math.sin(a * 13 + 4);
+        t.push([c + r * Math.cos(a), c + r * Math.sin(a)]);
+      }
+      const sred = function (p, q) { return ((p[0] + q[0]) / 2).toFixed(2) + ' ' + ((p[1] + q[1]) / 2).toFixed(2); };
+      let d = 'M' + sred(t[N - 1], t[0]);
+      for (let i = 0; i < N; i++) d += ' Q' + t[i][0].toFixed(2) + ' ' + t[i][1].toFixed(2) + ' ' + sred(t[i], t[(i + 1) % N]);
+      return d + ' Z';
+    })();
+
     const IKONA_BOCA = '<svg viewBox="0 0 48 64" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M19 4.5h10v6.5H19z"/><path d="M21.5 11v4.5M26.5 11v4.5"/><rect x="9.5" y="15.5" width="29" height="44" rx="7"/><path d="M15.5 33.5h17M15.5 38.5h10" stroke-linecap="round" opacity=".55"/></svg>';
 
     // ── STIL ─────────────────────────────────────────────────────────────
     const CSS = `
       .mx {
         --mx-tinta: ${B.tinta};
+        --mx-marka: ${B.marka};
         --mx-roza: ${B.roza};
-        --mx-puder: ${B.puder};
         --mx-linija: ${B.linija};
         --mx-dim: ${B.dim};
         --mx-kartica: ${B.kartica};
         --mx-cijena: ${mijesaj(B.tinta, B.dim, .45)};
-        --mx-roza-45: ${prozirna(B.roza, .45)};
         --mx-roza-75: ${prozirna(B.roza, .75)};
         --mx-puder-88: ${prozirna(B.puder, .88)};
         --mx-rub-hover: ${mijesaj(B.roza, B.linija, .7)};
         --mx-ikona: ${mijesaj(B.roza, B.tinta, .55)};
         --mx-kap: ${mijesaj(B.roza, B.tinta, .8)};
+        --mx-vosak: ${B.vosak};
+        --mx-akcija: ${B.akcija};
         --mx-font: ${P.font};
         --mx-font-naziv: ${P.fontNaziva};
         --mx-uvlaka: 20px;            /* koliko je opis uvučen s obje strane; do tu smije ići i tekst gore */
@@ -249,7 +308,10 @@
         transition: border-color .5s var(--mx-meko);
       }
 
-      /* gornji dio: slika lijevo, marka / naziv / cijena desno */
+      /* gornji dio: slika lijevo, marka / naziv / cijena desno. centrirajVrh()
+         izmjeri tekst i namjesti margine slike (.mx-izlog): kratak naziv dijeli
+         gornji dio na dvije polovice (slika na sredini lijeve, tekst od početka
+         desne), a dulji je centriran kao cjelina */
       .mx-vrh {
         display: flex;
         align-items: center;
@@ -264,6 +326,7 @@
       .mx-izlog {
         position: relative;
         flex: none;
+        transition: margin-left .9s var(--mx-glatko), margin-right .9s var(--mx-glatko);   /* kad stigne bočica, gornji dio klizne na mjesto zajedno s njezinim dizanjem */
       }
       .mx-nisa {
         --mx-aura: ${prozirna(B.roza, .55)};
@@ -314,7 +377,7 @@
          (.mx-aura-okvir) je točno prostor slike, a maska je meki oval koji se prema
          rubovima ugasi u bijelo: aura nikad ne izlazi preko teksta, ruba kartice ni
          crte. Dok je ona tu, roza oblak (.mx-aura) je skriven; on ostaje za proizvod
-         bez slike (i za postavku auraUBojiBocice: false) */
+         bez slike */
       .mx-aura-okvir {
         position: absolute;
         top: 0; right: 0; bottom: 0; left: 0;
@@ -527,21 +590,6 @@
       }
       .mx-prazno svg { width: 40px; height: 54px; }
 
-      /* oznaka (npr. "Novo"): mala pilula iznad marke, nikad preko bočice */
-      .mx-oznaka {
-        display: inline-block;
-        margin: 3px 0 7px;            /* pilula nema prazan prostor iznad slova kao tekst: izjednačeno */
-        padding: 3px 8px;
-        border-radius: 999px;
-        font-size: 10px;
-        line-height: 1.25;
-        font-weight: 800;
-        letter-spacing: .02em;
-        white-space: nowrap;
-        background: var(--mx-tinta);
-        color: var(--mx-kartica);
-      }
-
       /* marka, naziv, cijena: poravnato lijevo */
       .mx-glava {
         flex: 1 1 0;
@@ -564,7 +612,7 @@
         font-weight: 600;
         letter-spacing: .18em;
         text-transform: uppercase;
-        color: var(--mx-tinta);
+        color: var(--mx-marka);
         overflow-wrap: break-word;
       }
       /* naziv: u serifnom fontu, na oko jednako velik kao marka. Marka je sva u
@@ -583,9 +631,29 @@
         overflow-wrap: break-word;
       }
       .mx-marka + .mx-naziv { margin-top: 4px; }
+      /* logo marke umjesto imena: crni logo kao na stranici proizvoda, cijela
+         slika (ne reže se) u veličini iz postavki, lijevi rub poravnat s tekstom
+         ispod. Slika ima prazan prostor iznad i ispod natpisa, pa je naziv blizu */
+      .mx-marka-logo {
+        display: block;
+        flex: none;
+        width: ${LM.sirina}px;
+        height: ${LM.visina}px;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        object-fit: contain;
+        object-position: left center;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+      .mx-marka-logo + .mx-naziv,
+      .mx-marka-logo + .mx-marka-rezerva + .mx-naziv { margin-top: 2px; }
+      .mx-marka-rezerva { display: none; }   /* ime marke uz logo: samo kad logo ne može */
       /* vrsta mirisa (Eau de Parfum · 100 ml...): ista slova kao marka (Jost, velika,
          razmaknuta), ali sitnija, tanja i siva, pa je diskretna kao i prije.
-         Veličina i razmak slova su takvi da "EAU DE PARFUM · 100 ML" (≈110 px)
+         Veličina i razmak slova su takvi da "EAU DE PARFUM · 100 ML" (≈124 px)
          stane u jedan redak na mobitelu, pokraj bočice.
          Dijelovi su zasebni komadići s točkom ispred sebe. Redak je pomaknut
          ulijevo za širinu točke i taj dio je odrezan (clip-path), pa se točka
@@ -597,7 +665,7 @@
         margin-top: 4px;
         margin-left: -1em;
         clip-path: inset(0 0 0 1em);
-        font-size: 8px;
+        font-size: 9px;
         line-height: 1.5;
         font-weight: 400;
         letter-spacing: .12em;
@@ -647,26 +715,135 @@
         font-variant-numeric: lining-nums;
         white-space: nowrap;
       }
-      .mx-popust-red {
+      /* popust: stara cijena precrtana, nova ispod nje, pečat s postotkom desno.
+         Pečat smije zauzeti i uvlaku desno od teksta (ukras je, ne tekst), pa ostaje
+         pokraj cijena i na uskom mobitelu */
+      .mx-cijene--popust { margin-right: calc(-1 * var(--mx-uvlaka)); }
+      .mx-snizenje {
         display: flex;
+        flex-wrap: wrap;              /* uzak chat: pečat ide ispod cijena, kartica ne postaje šira */
         align-items: center;
-        gap: 6px;
+        gap: 6px 12px;
+        max-width: 100%;
+      }
+      .mx-cijene-stup {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        min-width: 0;
+      }
+      /* stara cijena: sitnija i siva; preko nje je tanka kosa crta, kao potez
+         perom (ne obično precrtavanje fonta). Crta je nagnuta oko svoje sredine,
+         pa prelazi cijelu cijenu; pri pojavi se iscrta s lijeva */
+      .mx-stara {
+        position: relative;
+        display: inline-block;
+        font-size: 11px;
+        line-height: 1.3;
+        font-weight: 400;
+        letter-spacing: .04em;
+        color: var(--mx-dim);
+        font-variant-numeric: lining-nums;
+        text-decoration: none;
         white-space: nowrap;
       }
-      .mx-stara {
-        font-size: 11.5px;
-        line-height: 1.2;
-        color: var(--mx-dim);
-        text-decoration: line-through;
+      .mx-stara::after {
+        content: "";
+        position: absolute;
+        left: -2px;
+        right: -2px;
+        top: 54%;
+        height: 1px;
+        border-radius: 1px;
+        background: var(--mx-akcija);
+        transform: rotate(-8deg);
       }
-      .mx-popust {
-        padding: 2px 6px;
-        border-radius: 999px;
-        background: var(--mx-roza);
+      /* nova cijena: jasnija od obične (tamnija, malo veća), ali i dalje mirna */
+      .mx-nova {
+        display: block;
+        margin-top: 1px;
+        font-size: 14px;
+        line-height: 1.25;
+        font-weight: 500;
+        letter-spacing: .03em;
         color: var(--mx-tinta);
-        font-size: 10.5px;
-        line-height: 1.2;
-        font-weight: 800;
+        font-variant-numeric: lining-nums;
+        white-space: nowrap;
+      }
+      /* "uz kod MRTMX" ispod cijene s kodom: slova kao vrsta mirisa, u boji akcije */
+      .mx-uz-kod {
+        display: block;
+        margin-top: 3px;
+        font-size: 8px;
+        line-height: 1.4;
+        font-weight: 500;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        color: var(--mx-akcija);
+      }
+
+      /* voštani pečat: nepravilan rub (clip-path), vosak svjetliji gore lijevo i
+         tamniji uz rub, utisnut prsten i utisnut broj */
+      .mx-pecat {
+        position: relative;
+        flex: none;
+        width: ${PECAT}px;
+        height: ${PECAT}px;
+        transform: rotate(-12deg);
+        filter: drop-shadow(0 1px 1px rgba(95, 50, 40, .22)) drop-shadow(0 3px 4px rgba(95, 50, 40, .12));
+      }
+      .mx-pecat-vosak {
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        border-radius: 50%;           /* rezerva kad preglednik ne zna clip-path: path() */
+        clip-path: path('${OBRIS_PECATA}');
+        background:
+          radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .55) 0, rgba(255, 255, 255, 0) 42%),
+          radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 58%, ${prozirna(B.akcija, .28)} 100%),
+          var(--mx-vosak);
+      }
+      /* utisnuti prsten: tamna crta gore, svijetla dolje (kao udubljenje u vosku) */
+      .mx-pecat-vosak::before {
+        content: "";
+        position: absolute;
+        top: 6px; right: 6px; bottom: 6px; left: 6px;
+        border-radius: 50%;
+        border: 1px solid ${prozirna(B.akcija, .38)};
+        box-shadow: 0 1px 0 rgba(255, 255, 255, .55), inset 0 1px 0 rgba(255, 255, 255, .4);
+      }
+      .mx-pecat-tekst {
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-left: 1px;
+        font-size: 11px;
+        line-height: 1;
+        font-weight: 600;
+        letter-spacing: 0;
+        color: ${mijesaj(B.akcija, B.tinta, .45)};
+        text-shadow: 0 1px 0 rgba(255, 255, 255, .5);
+        font-variant-numeric: lining-nums;
+        white-space: nowrap;
+      }
+      .mx-pecat-tekst small {
+        margin-left: 1px;
+        font-size: 7px;
+        font-weight: 600;
+        transform: translateY(-2px);
+      }
+      /* minus u Jostu sjedi nisko (kao "_30"): podigne se do sredine brojki */
+      .mx-minus { display: inline-block; margin-right: .04em; transform: translateY(-.1em); }
+      /* val kad pečat "sjedne" na karticu */
+      .mx-pecat::after {
+        content: "";
+        position: absolute;
+        top: 2px; right: 2px; bottom: 2px; left: 2px;
+        border-radius: 50%;
+        border: 1px solid var(--mx-roza);
+        opacity: 0;
+        pointer-events: none;
       }
 
       /* tanka linija između gornjeg dijela i opisa: najjača u sredini, prema krajevima nestaje */
@@ -691,7 +868,7 @@
         -webkit-hyphens: auto;
         hyphens: auto;
         hyphenate-limit-chars: 7 3 3; /* dijele se samo dulje riječi */
-        font-size: 12.5px;
+        font-size: 14px;
         line-height: 1.6;
         color: var(--mx-dim);
         overflow-wrap: break-word;
@@ -749,9 +926,9 @@
       .mx-istaknuta { padding: 8px 4px 10px; }
       .mx-kartica--istaknuta { max-width: 380px; }
 
-      /* ── plutanje: bočica se neprestano polako diže i spušta, na svim uređajima.
-         Pomiču se samo margine (ne transform), iz istog razloga kao gore.
-         Kad se bočica digne, sjena ispod nje se suzi, a aura malo raširi. ── */
+      /* ── plutanje: bočica (zajedno s aurom, u omotu .mx-lebdi) se neprestano polako
+         diže i spušta, na svim uređajima. Kad se bočica digne, sjena ispod nje se
+         suzi i posvijetli. ── */
       .mx-ucitano:not(.mx-foto) .mx-lebdi,
       .mx-ucitano:not(.mx-foto) .mx-sjena {
         animation: 5.6s cubic-bezier(.37, 0, .63, 1) infinite both;   /* meko kao sinus, bez trzaja na okretu */
@@ -855,10 +1032,58 @@
         from { opacity: 0; }
       }
 
+      /* popust: kad se kartica pojavi, pero precrta staru cijenu, ispod nje izroni
+         nova, a zatim se pokraj njih utisne pečat (i od njega se raširi tanki val) */
+      .mx-pojava .mx-stara::after {
+        animation: mx-precrtaj .5s cubic-bezier(.6, 0, .3, 1) backwards;
+        animation-delay: calc(900ms + var(--mx-i, 0) * 110ms);
+      }
+      .mx-pojava .mx-nova,
+      .mx-pojava .mx-uz-kod {
+        animation: mx-nova .7s var(--mx-glatko) backwards;
+        animation-delay: calc(1250ms + var(--mx-i, 0) * 110ms);
+      }
+      .mx-pojava .mx-uz-kod { animation-delay: calc(1380ms + var(--mx-i, 0) * 110ms); }
+      .mx-pojava .mx-pecat {
+        animation: mx-pecat .62s cubic-bezier(.3, 1.35, .55, 1) backwards;
+        animation-delay: calc(1450ms + var(--mx-i, 0) * 110ms);
+      }
+      .mx-pojava .mx-pecat::after {
+        animation: mx-pecat-val .9s ease-out;
+        animation-delay: calc(1750ms + var(--mx-i, 0) * 110ms);
+      }
+      @keyframes mx-precrtaj {                /* clip-path je u smjeru same crte: otkriva je s lijeva */
+        from { clip-path: inset(0 100% 0 0); }
+        to   { clip-path: inset(0 0 0 0); }
+      }
+      @keyframes mx-nova {
+        from { opacity: 0; transform: translateY(4px); filter: blur(3px); }
+      }
+      @keyframes mx-pecat {
+        0%   { opacity: 0; transform: scale(1.8) rotate(-38deg); }
+        55%  { opacity: 1; transform: scale(.92) rotate(-9deg); }
+        100% { opacity: 1; transform: rotate(-12deg); }
+      }
+      @keyframes mx-pecat-val {
+        0%   { opacity: .9; transform: scale(.95); }
+        100% { opacity: 0; transform: scale(1.9); }
+      }
+
+      @media (forced-colors: active) {
+        .mx-stara { text-decoration: line-through; }
+        .mx-stara::after { display: none; }
+        /* visoki kontrast: crni logo bi na tamnoj podlozi nestao, pa ime slovima */
+        .mx-marka-logo { display: none; }
+        .mx-marka-rezerva { display: inline; }
+        .mx-marka-logo + .mx-marka-rezerva + .mx-naziv { margin-top: 4px; }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .mx-maglica { display: none; }
         .mx-pojava .mx-kartica { animation: mx-samo-prozirnost .35s linear backwards; animation-delay: 0s; }
-        .mx-kartica, .mx-kartica::before, .mx-nisa, .mx-boca, .mx-aura, .mx-aura-slika, .mx-aura-podloga, .mx-sjena { transition-duration: .01s !important; }
+        .mx-pojava .mx-stara::after, .mx-pojava .mx-nova, .mx-pojava .mx-uz-kod,
+        .mx-pojava .mx-pecat, .mx-pojava .mx-pecat::after { animation: none; }
+        .mx-kartica, .mx-kartica::before, .mx-izlog, .mx-nisa, .mx-boca, .mx-aura, .mx-aura-slika, .mx-aura-podloga, .mx-sjena { transition-duration: .01s !important; }
         .mx-gumb { transition: none; }
         .mx-lebdi, .mx-sjena { animation: none !important; }
       }
@@ -870,12 +1095,10 @@
       const jeShadow = typeof ShadowRoot !== 'undefined' && korijen instanceof ShadowRoot;
       const cilj = jeShadow ? korijen : (korijen === document ? document.head : null);
       const stil = document.createElement('style');
-      stil.setAttribute('data-mx-kartice', '30');
+      stil.setAttribute('data-mx-kartice', '33');
       stil.textContent = CSS;
       if (!cilj) { element.appendChild(stil); return; }       // element još nije u DOM-u
-      const stari = cilj.querySelector('style[data-mx-kartice]');
-      if (stari && stari.getAttribute('data-mx-kartice') === '30') return;
-      if (stari) stari.remove();                              // stara verzija stila (npr. v2)
+      if (cilj.querySelector('style[data-mx-kartice]')) return;
       cilj.appendChild(stil);
     }
 
@@ -922,6 +1145,132 @@
       else kartica.classList.add('mx-vidljivo');
     }
 
+    // ── RASPORED GORNJEG DIJELA ──────────────────────────────────────────
+    // Gornji dio (bočica + tekst) složi se po stvarnim recima teksta (i kad se
+    // marka ili naziv prelome) i po širini loga marke, pa ovo ne može sam CSS:
+    //  - kratak naziv: gornji dio se dijeli na dvije jednake polovice širine
+    //    opisa. Tekst počinje na desnoj polovici, poravnat ulijevo, a bočica je
+    //    na sredini lijeve polovice
+    //  - dulji naziv (ne stane u desnu polovicu): bočica i tekst centrirani su
+    //    kao cjelina, vidljiva bočica je od lijevog ruba kartice jednako daleko
+    //    kao najdulji redak teksta od desnog
+    // Tekst nikad ne ide desnije od opisa (--mx-uvlaka): kad za to nema mjesta,
+    // slika se pomakne koliko smije, a uz dug tekst ostaje uz lijevi rub, kao i
+    // dosad. Pečat popusta (ukras) smije i u uvlaku, kao i dosad.
+
+    // koliko je vidljiva bočica uvučena od lijevog ruba prostora slike (CSS px)
+    function rubBocice(nisa) {
+      if (nisa.classList.contains('mx-foto')) return 0;           // fotografija ispunjava cijeli okvir
+      if (nisa.classList.contains('mx-bez-slike')) return (VITRINA[0] - SIRINA_IKONE) / 2;
+      const udio = parseFloat(nisa.style.getPropertyValue('--mx-sirina-boce'));
+      return (1 - (nisa.classList.contains('mx-prozirno') && udio > 0 ? udio : PROCJENA_BOCE)) / 2 * VITRINA[0];
+    }
+
+    // glatko = true: pomak klizi (kad stigne bočica), inače je odmah na mjestu
+    function centrirajVrh(vrh, glatko) {
+      const izlog = vrh.querySelector('.mx-izlog');
+      const glava = vrh.querySelector('.mx-glava');
+      if (!izlog || !glava || !vrh.isConnected) return;
+      // mjeri se u osnovnom rasporedu (slika uz lijevi rub)
+      const prije = [izlog.style.marginLeft, izlog.style.marginRight];
+      izlog.style.transition = 'none';
+      izlog.style.marginLeft = '';
+      izlog.style.marginRight = '';
+      const g = glava.getBoundingClientRect();
+      if (!g.width) {
+        izlog.style.marginLeft = prije[0];
+        izlog.style.marginRight = prije[1];
+        izlog.style.transition = '';
+        return;
+      }
+      const mjera = glava.offsetWidth / g.width;   // kartica je pri pojavi malo umanjena (transform): sve u CSS px
+      // od lijevog ruba glave do kraja najduljeg retka (CSS px): sirina je ono što se
+      // vidi, a zauzeto uključuje i razmak iza zadnjeg slova, koji se ne vidi, ali
+      // zauzima mjesto u retku
+      let sirina = 0, zauzeto = 0;
+      const raspon = document.createRange();
+      const setac = document.createTreeWalker(glava, NodeFilter.SHOW_TEXT);
+      while (setac.nextNode()) {
+        const n = setac.currentNode, roditelj = n.parentElement;
+        if (!n.nodeValue.trim() || roditelj.closest('.mx-skriveno')) continue;
+        const razmak = parseFloat(getComputedStyle(roditelj).letterSpacing) || 0;
+        raspon.selectNodeContents(n);
+        const reci = raspon.getClientRects();
+        for (let i = 0; i < reci.length; i++) {
+          const kraj = (reci[i].right - g.left) * mjera;
+          zauzeto = Math.max(zauzeto, kraj);
+          sirina = Math.max(sirina, kraj - razmak);
+        }
+      }
+      // logo marke nije tekst: mjeri se kao slika (dok se ne učita, širok je 0)
+      glava.querySelectorAll('.mx-marka-logo').forEach(function (e) {
+        const r = e.getBoundingClientRect();
+        if (!r.width) return;
+        const kraj = (r.right - g.left) * mjera;
+        zauzeto = Math.max(zauzeto, kraj);
+        sirina = Math.max(sirina, kraj);
+      });
+      // pečat po rasporedu (offset), ne po onome što se vidi: pečat se
+      // pri pojavi utiskuje s povećanjem. Mjeri se od kartice, kao i glava
+      const desniRub = function (e) { return e ? e.offsetLeft + e.offsetWidth - glava.offsetLeft : 0; };
+      const pecatDo = desniRub(glava.querySelector('.mx-pecat'));
+      const uvlaka = parseFloat(getComputedStyle(glava).paddingRight) || 0;
+
+      // sve od lijevog ruba gornjeg dijela (CSS px); 1 px rezerve posvuda, da se
+      // redak ne prelomi zbog zaokruživanja
+      const W = vrh.clientWidth;
+      const slika = izlog.offsetWidth;
+      const razmak = glava.offsetLeft - izlog.offsetLeft - slika;   // između slike i teksta (gap)
+      let lijevo, desno = 0;                                       // margine slike
+      // 1) kratak naziv: polovice opisa (od uvlake do uvlake), granica je sredina
+      //    kartice, a razmak između slike i teksta dijele napola
+      const tekstOd = Math.round(W / 2 + razmak / 2);
+      if (tekstOd + zauzeto <= W - uvlaka - 1 && tekstOd + pecatDo <= W - 1) {
+        lijevo = Math.max(0, Math.round((uvlaka + W / 2 - razmak / 2) / 2 - slika / 2));
+        desno = tekstOd - lijevo - slika - razmak;
+      } else {
+        // 2) dulji naziv: pola slobodnog prostora (umanjenog za prazninu lijevo od
+        //    bočice) ide lijevo od slike, koliko granica dopušta
+        const slobodno = glava.clientWidth - Math.max(sirina, pecatDo);
+        const granica = Math.min(glava.clientWidth - uvlaka - zauzeto, glava.clientWidth - pecatDo) - 1;
+        lijevo = Math.max(0, Math.min(Math.round((slobodno - rubBocice(izlog.firstElementChild)) / 2), Math.floor(granica)));
+      }
+      const novi = [lijevo ? lijevo + 'px' : '', desno ? desno + 'px' : ''];
+      if (glatko) {
+        izlog.style.marginLeft = prije[0];
+        izlog.style.marginRight = prije[1];
+        void izlog.offsetWidth;
+        izlog.style.transition = '';
+      }
+      izlog.style.marginLeft = novi[0];
+      izlog.style.marginRight = novi[1];
+      if (!glatko) {
+        void izlog.offsetWidth;
+        izlog.style.transition = '';
+      }
+    }
+
+    // ponovno centriranje kad se promijeni širina kartice i kad se učitaju fontovi
+    const VRHOVI = new Set();
+    const PROMATRAC_SIRINE = typeof ResizeObserver === 'function'
+      ? new ResizeObserver(function (zapisi) {
+          zapisi.forEach(function (z) {
+            if (z.target.isConnected) centrirajVrh(z.target, false);
+            else { PROMATRAC_SIRINE.unobserve(z.target); VRHOVI.delete(z.target); }   // kartica je uklonjena
+          });
+        })
+      : null;
+    function pratiSirinu(vrh) {
+      if (!PROMATRAC_SIRINE) return;              // stariji preglednik: slika ostaje uz lijevi rub
+      VRHOVI.add(vrh);
+      PROMATRAC_SIRINE.observe(vrh);
+    }
+    if (PROMATRAC_SIRINE && document.fonts && document.fonts.addEventListener) {
+      document.fonts.addEventListener('loadingdone', function () {
+        VRHOVI.forEach(function (vrh) { centrirajVrh(vrh, false); });
+      });
+    }
+
     // ── PODACI ───────────────────────────────────────────────────────────
     function tekst(v) {
       if (v === null || v === undefined) return '';
@@ -934,20 +1283,34 @@
       return s.replace(/\s+/g, ' ').trim();
     }
 
+    // prva vrijednost koja je zadana (null, undefined i '' se preskaču)
+    function prvo() {
+      for (let i = 0; i < arguments.length; i++) {
+        if (arguments[i] !== null && arguments[i] !== undefined && arguments[i] !== '') return arguments[i];
+      }
+      return null;
+    }
+
     function uzmiKartice(trace) {
       let p = trace && trace.payload;
       if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { p = null; } }
-      const lista = (p && (p.cards || p.kartice)) || [];
+      const lista = (p && p.cards) || [];
       if (!Array.isArray(lista)) return [];
       return lista.filter(Boolean).map(function (c) {
+        // promo kod: { promo: { code, percent, price, validUntil } } ili ravna polja
+        const promo = (c.promo && typeof c.promo === 'object') ? c.promo : {};
         return {
-          naziv: tekst(c.title || c.name),
-          opis: tekst(c.description),
+          naziv: tekst(c.title),
+          opis: p.hideDescription === true ? '' : tekst(c.description),
           cijena: c.price,
-          stara: c.oldPrice != null ? c.oldPrice : (c.regularPrice != null ? c.regularPrice : c.regular_price),
-          slika: c.imageUrl || c.image || '',
-          url: c.url || c.link || '',
-          oznaka: tekst(c.badge)
+          stara: c.oldPrice,
+          slika: c.imageUrl || '',
+          logo: sigurniLink(prvo(c.brandLogo, c.brandLogoUrl) || ''),
+          url: c.url || '',
+          kod: tekst(prvo(promo.code, c.promoCode)),
+          kodPostotak: prvo(promo.percent, c.promoPercent),
+          kodCijena: prvo(promo.price, c.promoPrice),
+          kodRok: prvo(promo.validUntil, c.promoValidUntil)
         };
       });
     }
@@ -968,7 +1331,7 @@
     }
 
     function odvojiVrstu(naziv) {
-      const m = P.odvojiVrstu && naziv ? naziv.match(VRSTA) : null;
+      const m = naziv ? naziv.match(VRSTA) : null;
       if (!m) return { naziv: naziv, vrsta: '' };
       const ostatak = naziv.slice(0, m.index).trim();
       // "Libre Le Parfum": "Le Parfum" je dio imena, a ne vrsta
@@ -984,7 +1347,7 @@
 
     function razdvojiNaziv(pun) {
       const r = { marka: '', naziv: pun || '', vrsta: '' };
-      if (P.razdvojiNaziv && pun) {
+      if (pun) {
         const dijelovi = pun.split(RAZDJELNIK);
         if (dijelovi.length > 1) {
           const ostatak = dijelovi.slice(1).join(' ').trim();
@@ -1070,14 +1433,71 @@
       return t ? el('span', 'mx-cijena', t) : null;
     }
 
+    // Je li rok promo koda prošao: "2026-10-31", "2026-10-31T18:00" (i sa
+    // zonom, npr. "Z" ili "+02:00") ili "31. 10. 2026." (bez sata vrijedi do
+    // kraja tog dana). Rok upisan drugačije ne skriva kod.
+    function rokProsao(v) {
+      if (v === null || v === undefined || v === '') return false;
+      const s = String(v).trim();
+      // vrijeme sa zonom ("…T18:00Z", "…T18:00+02:00"): pretvori ga sam preglednik
+      if (/T\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})$/i.test(s)) {
+        const t = Date.parse(s);
+        if (!isNaN(t)) return t < Date.now();
+      }
+      let g, mj, d, h = 23, min = 59, sek = 59;
+      let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{2}))?/);
+      if (m) {
+        g = +m[1]; mj = +m[2]; d = +m[3];
+        if (m[4] !== undefined) { h = +m[4]; min = +m[5]; sek = 0; }
+      } else if ((m = s.match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\.?$/))) {
+        g = +m[3]; mj = +m[2]; d = +m[1];
+      } else {
+        return false;
+      }
+      const kraj = new Date(g, mj - 1, d, h, min, sek);
+      return !isNaN(kraj.getTime()) && kraj.getTime() < Date.now();
+    }
+
+    // Promo kod artikla → { tekst, postotak, cijena (s kodom; null kad se ne zna) }
+    // ili null. nCijena: trenutna cijena kao broj (ili null).
+    function promoKod(k, nCijena) {
+      if (!k.kod || rokProsao(k.kodRok)) return null;
+      let postotak = k.kodPostotak !== null ? Math.abs(brojIz(k.kodPostotak) || 0) : 0;
+      let sKodom = brojCijene(k.kodCijena);
+      if (!postotak && sKodom !== null && nCijena) postotak = (1 - sKodom / nCijena) * 100;
+      const tocan = postotak;                                  // za izračun cijene s kodom
+      postotak = Math.round(postotak * 10) / 10;               // za prikaz
+      if (!(postotak > 0 && postotak < 100)) return null;      // bez iznosa popusta kod se ne spominje
+      // cijena s kodom samo kad je i trenutna cijena čist broj (ne npr. "od 49 €")
+      if (nCijena === null) sKodom = null;
+      else if (sKodom === null) sKodom = Math.round(nCijena * (100 - tocan)) / 100;
+      if (sKodom !== null && !(sKodom < nCijena)) sKodom = null;
+      return { tekst: k.kod, postotak: postotak, cijena: sKodom };
+    }
+
+    // "−30 % uz kod MRTMX" (kad cijena s kodom nije poznata)
+    function natpisKoda(kod) {
+      return '\u2212' + String(kod.postotak).replace('.', ',') + '\u00a0% ' + P.tekstUzKod + ' ' + kod.tekst;
+    }
+
+    // voštani pečat s postotkom (čitaču zaslona postotak je već u tekstu cijene)
+    function pecat(p) {
+      const v = el('span', 'mx-pecat');
+      v.setAttribute('aria-hidden', 'true');
+      v.appendChild(el('span', 'mx-pecat-vosak'));
+      const t = el('span', 'mx-pecat-tekst');
+      t.appendChild(el('span', 'mx-minus', '\u2212'));
+      t.appendChild(document.createTextNode(String(p)));
+      t.appendChild(el('small', '', '%'));
+      v.appendChild(t);
+      return v;
+    }
+
     function sigurniLink(url) {
       if (!url) return '';
       try {
         const u = new URL(url, window.location.href);
         if (u.protocol !== 'https:' && u.protocol !== 'http:') return '';
-        if (P.pracenjeKonverzija && P.parametarPracenja) {
-          new URLSearchParams(P.parametarPracenja).forEach(function (vr, kljuc) { u.searchParams.set(kljuc, vr); });
-        }
         return u.href;
       } catch (e) { return ''; }
     }
@@ -1089,8 +1509,14 @@
       return (h >>> 0).toString(36);
     }
     function trebaPojava(tip, kartice) {
-      if (!P.animacijaSamoPrviPut) return true;
-      const potpis = hash(tip + '|' + kartice.map(function (k) { return k.url + '~' + k.naziv; }).join('|'));
+      const potpis = hash(tip + '|' + kartice.map(function (k) {
+        // popust je dio potpisa (samo kad ga ima, pa kartice bez popusta imaju isti potpis
+        // kao u v30): proizvod koji se već pojavio bez popusta pojavi se opet kad dobije popust
+        const c = brojIz(k.cijena), st = brojIz(k.stara);
+        const popust = (c !== null && st !== null && st > c) || k.kod
+          ? '~' + [k.cijena, k.stara, k.kod, k.kodPostotak, k.kodCijena].join('~') : '';
+        return k.url + '~' + k.naziv + popust;
+      }).join('|'));
       const KLJUC = 'mx_kartice_prikazano';
       const sad = Date.now();
       try {
@@ -1101,6 +1527,147 @@
         localStorage.setItem(KLJUC, JSON.stringify(lista.slice(-40)));
       } catch (e) { /* bez localStorage → uvijek animiraj */ }
       return true;
+    }
+
+    // ── LOGO MARKE ───────────────────────────────────────────────────────
+    // Na stranici proizvoda na martimex.hr iznad naziva artikla je logo marke,
+    // u poveznici na stranicu marke: <a href=".../brand/versace/"><img src=...>.
+    // Logo se odande uzme za karticu iste marke i zapamti u pregledniku
+    // (localStorage), pa kartica te marke poslije ima logo i na drugim
+    // stranicama (npr. u pretrazi). Na adresu loga se ne može doći iz imena
+    // marke (Versace → .../2024/10/Versace_logo1-2.svg), pa samo tako.
+    const KLJUC_LOGOTIPA = 'mx_logotipi_marki';
+    const NAJVISE_LOGOTIPA = 300;
+
+    // kao adresa stranice marke na martimex.hr (WordPress): "Dolce&Gabbana" →
+    // "dolcegabbana", "Van Cleef & Arpels" → "van-cleef-arpels", "Floraïku" → "floraiku"
+    function slugMarke(s) {
+      s = String(s || '');
+      if (s.normalize) s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return s.toLowerCase().replace(/['\u2019`&]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+    // ista marka i kad se razlikuju samo crtice ("dolce-gabbana" i "dolcegabbana")
+    // ili je jedan naziv dulji ("memo" i "memo-paris")
+    function istaMarka(a, b) {
+      if (!a || !b) return false;
+      return a.replace(/-/g, '') === b.replace(/-/g, '') || a.indexOf(b + '-') === 0 || b.indexOf(a + '-') === 0;
+    }
+
+    // ime marke na stranici proizvoda (JSON-LD ili Alpine podaci), jer se adresa
+    // stranice marke ponekad ne slaže s imenom (Rabanne → /brand/paco-rabanne/)
+    function markaStranice() {
+      try {
+        const skripte = document.querySelectorAll('script[type="application/ld+json"]');
+        for (let i = 0; i < skripte.length; i++) {
+          let d;
+          try { d = JSON.parse(skripte[i].textContent || ''); } catch (e) { continue; }
+          const lista = [].concat(d && d['@graph'] ? d['@graph'] : d);
+          for (let j = 0; j < lista.length; j++) {
+            const x = lista[j];
+            if (!x || [].concat(x['@type'] || []).indexOf('Product') === -1 || !x.brand) continue;
+            const ime = typeof x.brand === 'string' ? x.brand : (x.brand.name || '');
+            if (ime) return tekst(ime);
+          }
+        }
+        const sekcija = document.querySelector('section.product');
+        const A = window.Alpine;
+        const pod = sekcija && A && typeof A.$data === 'function' ? A.$data(sekcija) : null;
+        if (pod && pod.product && pod.product.brandName) return tekst(pod.product.brandName);
+      } catch (e) { /* nema podataka: samo adresa stranice marke */ }
+      return '';
+    }
+
+    function zapamceniLogotipi() {
+      try {
+        const o = JSON.parse(localStorage.getItem(KLJUC_LOGOTIPA) || '{}');
+        return o && typeof o === 'object' && !Array.isArray(o) ? o : {};
+      } catch (e) { return {}; }
+    }
+    function zapamtiLogotipe(nadjeni) {
+      try {
+        const sve = zapamceniLogotipi();
+        let promjena = false;
+        Object.keys(nadjeni).forEach(function (k) {
+          if (sve[k] === nadjeni[k]) return;
+          delete sve[k];                  // zadnji viđeni idu na kraj popisa
+          if (nadjeni[k]) sve[k] = nadjeni[k];
+          promjena = true;
+        });
+        if (!promjena) return;
+        const kljucevi = Object.keys(sve);
+        kljucevi.slice(0, Math.max(0, kljucevi.length - NAJVISE_LOGOTIPA)).forEach(function (k) { delete sve[k]; });
+        localStorage.setItem(KLJUC_LOGOTIPA, JSON.stringify(sve));
+      } catch (e) { /* bez localStorage: logo samo na stranici proizvoda */ }
+    }
+
+    // logotipi marki sa stranice proizvoda: { "versace": "https://..." }
+    function logotipiSaStranice() {
+      const nadjeni = {};
+      let poveznice = [];
+      try { poveznice = document.querySelectorAll('.product__title-wrap a[href*="/brand/"]'); } catch (e) { return nadjeni; }
+      for (let i = 0; i < poveznice.length; i++) {
+        try {
+          const m = (poveznice[i].getAttribute('href') || '').match(/\/brand\/([^\/?#]+)/);
+          const img = poveznice[i].querySelector('img');
+          if (!m || !img) continue;
+          const src = [img.currentSrc, img.getAttribute('src'), img.getAttribute('data-src'), img.getAttribute('data-lazy-src')]
+            .map(sigurniLink).filter(Boolean)[0];   // data: (rezervirano mjesto za lijeno učitavanje) se preskače
+          const slug = slugMarke(decodeURIComponent(m[1]));
+          if (src && slug) nadjeni[slug] = src;
+        } catch (e) { /* neispravna poveznica: preskoči */ }
+      }
+      // stranica proizvoda ima jedan logo: zapamti ga i pod imenom marke
+      const adrese = Object.keys(nadjeni);
+      if (adrese.length === 1) {
+        const ime = slugMarke(markaStranice());
+        if (ime && !nadjeni[ime]) nadjeni[ime] = nadjeni[adrese[0]];
+      }
+      if (adrese.length) zapamtiLogotipe(nadjeni);
+      return nadjeni;
+    }
+
+    function logoMarke(marka) {
+      if (!LM.prikazi) return '';
+      const slug = slugMarke(marka);
+      if (!slug) return '';
+      const izvori = [logotipiSaStranice(), zapamceniLogotipi()];
+      for (let i = 0; i < izvori.length; i++) {
+        if (izvori[i][slug]) return sigurniLink(izvori[i][slug]);
+        const k = Object.keys(izvori[i]).filter(function (x) { return istaMarka(x, slug); })[0];   // npr. "dolcegabbana"
+        if (k) return sigurniLink(izvori[i][k]);
+      }
+      return '';
+    }
+    function zaboraviLogo(src) {
+      const sve = zapamceniLogotipi(), losi = {};
+      Object.keys(sve).forEach(function (k) { if (sve[k] === src) losi[k] = ''; });
+      if (Object.keys(losi).length) zapamtiLogotipe(losi);
+    }
+
+    // čim se otvori stranica proizvoda, njezin logo marke se zapamti
+    if (LM.prikazi) {
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', logotipiSaStranice, { once: true });
+      else logotipiSaStranice();
+    }
+
+    // logo umjesto imena marke. Uz logo je i ime slovima, skriveno: pokaže se
+    // kad se logo ne učita i u načinu visokog kontrasta (Windows), gdje bi crni
+    // logo na tamnoj podlozi bio nevidljiv
+    function slikaLoga(src, marka, vrh, rezerva) {
+      const img = el('img', 'mx-marka-logo');
+      img.alt = marka || '';
+      img.decoding = 'async';
+      img.draggable = false;
+      img.referrerPolicy = 'no-referrer';
+      img.addEventListener('load', function () { centrirajVrh(vrh, true); }, { once: true });
+      img.addEventListener('error', function () {
+        zaboraviLogo(src);
+        img.remove();
+        if (rezerva) rezerva.classList.remove('mx-marka-rezerva');
+        centrirajVrh(vrh, true);
+      }, { once: true });
+      img.src = src;
+      return img;
     }
 
     // ── GRADNJA ──────────────────────────────────────────────────────────
@@ -1123,10 +1690,10 @@
     //  - pozadina (4 kuta): bijela ili svijetlosiva postaje prava prozirnost,
     //    tamna ili šarena fotografija ispuni okvir kao uokvirena slika
     //  - boja stakla oboji sjenu ispod bočice (crne, bijele, sive, prozirne → osnovna),
-    //    a tamnoj bočici aura se prigući
+    //    a tamna bočica dobije topao sjaj, a svijetla biserni (vidi tonoviBocice)
     //  - bočica se kvalitetno umanji točno na veličinu prikaza × gustoća piksela
     //    ekrana: preglednik je više ne mora umanjivati, pa je oštra i u pokretu
-    // Kad se slika ne može pročitati, ostaje CSS stapanje (multiply); aura je i
+    // Kad se slika ne može pročitati, ostaje CSS stapanje (darken); aura je i
     // tada u boji bočice, jer je zamućena kopija iste slike.
     function obradiFotografiju(img, nisa, velicina, zavrsi) {
       let gotovo = false;
@@ -1176,7 +1743,7 @@
           return;
         }
       }
-      if (P.auraUBojiBocice) tonoviBocice(u, prag, nisa);
+      tonoviBocice(u, prag, nisa);
 
       // 2) radna kopija (najviše 900 px): bijela pozadina → prozirnost,
       //    a usput se nađu stvarne granice bočice na fotografiji
@@ -1253,6 +1820,7 @@
       // sjena široka kao bočica, aura centrirana na bočicu
       const sirina = Math.max(0.3, Math.min(0.62, (bw * k / cw) * 1.15));
       nisa.style.setProperty('--mx-sjena-x', ((1 - sirina) / 2 * 100).toFixed(1) + '%');
+      nisa.style.setProperty('--mx-sirina-boce', (bw * k / cw).toFixed(3));   // za centriranje gornjeg dijela
       nisa.style.setProperty('--mx-sredina', ((KADAR.pod - bh * k / ch / 2) * 100).toFixed(1) + '%');
       // pola širine bočice, u postotcima polumjera ovalne maske (pola širine prostora):
       // od tuda se računa "rupa" u masci svijetle bočice, da sjaj počne odmah uz staklo
@@ -1413,17 +1981,15 @@
           u.setAttribute('aria-hidden', 'true');
           return u;
         };
-        const aura = P.auraUBojiBocice ? ukras('mx-aura-slika') : null;          // širok, mekan oreol
-        const sjaj = aura ? ukras('mx-aura-slika mx-aura-sjaj') : null;          // uzak sjaj uz rub bočice
-        const okvir = aura ? el('span', 'mx-aura-okvir') : null;
-        if (aura) {
-          okvir.appendChild(el('span', 'mx-aura-kupka'));   // svjetlosna kupka svijetle bočice
-          okvir.appendChild(aura);
-          okvir.appendChild(sjaj);
-          lebdi.appendChild(okvir);
-          lebdi.appendChild(ukras('mx-aura-podloga'));   // src dobije tek obrađena slika
-          nisa.classList.add('mx-aura-iz-slike');
-        }
+        const aura = ukras('mx-aura-slika');                   // širok, mekan oreol
+        const sjaj = ukras('mx-aura-slika mx-aura-sjaj');      // uzak sjaj uz rub bočice
+        const okvir = el('span', 'mx-aura-okvir');
+        okvir.appendChild(el('span', 'mx-aura-kupka'));   // svjetlosna kupka svijetle bočice
+        okvir.appendChild(aura);
+        okvir.appendChild(sjaj);
+        lebdi.appendChild(okvir);
+        lebdi.appendChild(ukras('mx-aura-podloga'));   // src dobije tek obrađena slika
+        nisa.classList.add('mx-aura-iz-slike');
         const img = el('img', 'mx-boca');
         img.alt = '';                 // naziv je već u tekstu kartice
         img.decoding = 'async';
@@ -1434,19 +2000,22 @@
         const gotovo = function () {
           if (spremno || !img.naturalWidth) return;
           spremno = true;
-          obradiFotografiju(img, nisa, velicina, function () { nisa.classList.add('mx-ucitano'); });
+          obradiFotografiju(img, nisa, velicina, function () {
+            nisa.classList.add('mx-ucitano');
+            centrirajVrh(vrh, true);    // sad se zna koliko je bočica široka
+          });
         };
         img.addEventListener('load', gotovo, { once: true });
         img.addEventListener('error', function () {
           img.remove();
-          if (aura) {                                     // bez slike: roza aura oko ikone
-            lebdi.querySelectorAll('.mx-aura-okvir, .mx-aura-podloga').forEach(function (u) { u.remove(); });
-            nisa.classList.remove('mx-aura-iz-slike');
-          }
+          // bez slike: roza aura oko ikone
+          lebdi.querySelectorAll('.mx-aura-okvir, .mx-aura-podloga').forEach(function (u) { u.remove(); });
+          nisa.classList.remove('mx-aura-iz-slike');
           prazanIzlog(nisa);
+          centrirajVrh(vrh, true);
         }, { once: true });
         img.src = k.slika;
-        if (aura) { aura.src = k.slika; sjaj.src = k.slika; }   // tek nakon bočice: zajedničko preuzimanje ostaje visokog prioriteta
+        aura.src = k.slika; sjaj.src = k.slika;   // tek nakon bočice: zajedničko preuzimanje ostaje visokog prioriteta
         lebdi.appendChild(img);
         if (img.complete) gotovo();
       } else {
@@ -1457,9 +2026,11 @@
 
       // MARKA, NAZIV, CIJENA
       const glava = el('div', 'mx-glava');
-      if (k.oznaka) glava.appendChild(el('span', 'mx-oznaka', k.oznaka));
       const d = razdvojiNaziv(k.naziv);
-      if (d.marka) glava.appendChild(el('span', 'mx-marka', d.marka));
+      const logo = LM.prikazi ? (k.logo || logoMarke(d.marka)) : '';
+      const imeMarke = d.marka ? el('span', logo ? 'mx-marka mx-marka-rezerva' : 'mx-marka', d.marka) : null;
+      if (logo) glava.appendChild(slikaLoga(logo, d.marka, vrh, imeMarke));
+      if (imeMarke) glava.appendChild(imeMarke);
       if (d.naziv) glava.appendChild(el('div', 'mx-naziv', d.naziv));
       if (d.vrsta) {
         // svaki dio vrste (Eau de Parfum, 100 ml, Tester) je zaseban komadić; točke
@@ -1472,28 +2043,48 @@
         glava.appendChild(vrsta);
       }
 
+      // POPUST: precrtana je redovna cijena (ili trenutna, kad popust daje samo
+      // kod), ispod nje nova (s kodom, kad ga ima), a pečat pokazuje popust
       const nCijena = brojIz(k.cijena);
       const nStara = brojIz(k.stara);
-      const popust = (nCijena !== null && nStara !== null && nStara > nCijena) ? Math.round((1 - nCijena / nStara) * 100) : 0;
+      const naAkciji = nCijena !== null && nStara !== null && nStara > nCijena;
+      const kod = promoKod(k, brojCijene(k.cijena));
+      const sKodom = !!kod && kod.cijena !== null;
+      const prije = naAkciji ? nStara : (sKodom ? nCijena : null);
+      const sada = sKodom ? kod.cijena : nCijena;
+      const popust = prije ? Math.round((1 - sada / prije) * 100) : 0;
       const ec = elementCijene(k.cijena);
       if (ec) {
-        const cijene = el('div', 'mx-cijene');
-        cijene.appendChild(ec);
+        const cijene = el('div', popust >= 1 ? 'mx-cijene mx-cijene--popust' : 'mx-cijene');
         if (popust >= 1) {
-          const red = el('div', 'mx-popust-red');
+          const red = el('div', 'mx-snizenje');
+          const stup = el('div', 'mx-cijene-stup');
           const stara = el('s', 'mx-stara');
           stara.appendChild(el('span', 'mx-skriveno', 'Prije: '));
-          stara.appendChild(document.createTextNode(cijena(k.stara)));
-          red.appendChild(stara);
-          red.appendChild(el('span', 'mx-popust', '\u2212' + popust + '\u00a0%'));
+          stara.appendChild(document.createTextNode(cijena(naAkciji ? k.stara : k.cijena)));
+          stup.appendChild(stara);
+          const nova = el('span', 'mx-nova');
+          nova.appendChild(el('span', 'mx-skriveno', 'Sada: '));
+          nova.appendChild(document.createTextNode(sKodom ? EUR.format(kod.cijena) : cijena(k.cijena)));
+          stup.appendChild(nova);
+          if (sKodom) stup.appendChild(el('span', 'mx-uz-kod', P.tekstUzKod + ' ' + kod.tekst));
+          else if (kod) stup.appendChild(el('span', 'mx-uz-kod', natpisKoda(kod)));
+          stup.appendChild(el('span', 'mx-skriveno', ' (popust ' + popust + '\u00a0%)'));
+          red.appendChild(stup);
+          red.appendChild(pecat(popust));
           cijene.appendChild(red);
+        } else {
+          cijene.appendChild(ec);
+          // cijena nije broj (npr. "od 49 €"): kod se samo spomene ispod nje
+          if (kod) cijene.appendChild(el('span', 'mx-uz-kod', natpisKoda(kod)));
         }
         glava.appendChild(cijene);
       }
       vrh.appendChild(glava);
       kartica.appendChild(vrh);
+      pratiSirinu(vrh);               // centrira se čim je kartica na stranici
 
-      // LINIJA + OPIS
+      // LINIJA + OPIS (bez opisa, npr. hideDescription, nema ni crte)
       const opis = skrati(k.opis, P.opisZnakova);
       if (opis) {
         const crta = el('div', 'mx-crta');
@@ -1510,16 +2101,10 @@
         const gumb = el('a', 'mx-gumb');
         gumb.href = link;
         gumb.draggable = false;
-        if (P.novaKartica) {
-          gumb.target = '_blank';
-          gumb.rel = 'noopener';
-        } else {
-          gumb.target = '_self';
-        }
+        gumb.target = '_self';
         gumb.appendChild(el('span', '', P.tekstGumba));
         const zaCitac = [d.marka, d.naziv, d.vrsta.split(' \u00b7 ').join(', ')].filter(Boolean).join(' ');
         if (zaCitac) gumb.appendChild(el('span', 'mx-skriveno', ': ' + zaCitac));
-        if (P.novaKartica) gumb.appendChild(el('span', 'mx-skriveno', ' (otvara se u novoj kartici)'));
         kartica.appendChild(gumb);
       }
       return kartica;
@@ -1548,7 +2133,8 @@
       }
       korijen.appendChild(magla);
       setTimeout(function () { magla.remove(); }, 2300);
-      setTimeout(function () { korijen.classList.remove('mx-pojava'); }, 140 + broj * 110 + 1150);
+      // pojava traje dok se ne utisne i zadnji pečat (crta, nova cijena, pečat)
+      setTimeout(function () { korijen.classList.remove('mx-pojava'); }, 140 + broj * 110 + 2500);
     }
 
     // ── PRIKAZI ──────────────────────────────────────────────────────────
@@ -1569,7 +2155,6 @@
 
     function pripremi(element) {
       ubaciStil(element);
-      ubaciFontove();
       element.style.width = '100%';
       // drugačije kartice na istom elementu: stare se uklanjaju
       Array.prototype.slice.call(element.children).forEach(function (n) {

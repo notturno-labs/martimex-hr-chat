@@ -1,0 +1,3 @@
+# Ukratko: HTTP zaglavlja na Cloudflareu – CORS da martimex.hr smije učitati fontove i datoteke s ove adrese (kao na GitHub Pagesu)
+/*
+  Access-Control-Allow-Origin: *

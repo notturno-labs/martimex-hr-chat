@@ -1,26 +1,32 @@
+// Ukratko: Učitava sve module chata s GitHuba
 /* ============================================================
    MARTI CHAT – loader.js
    Stranica (martimex.hr) sama učitava Voiceflow widget.
-   Ovaj file mu dodaje skripte s GitHuba (a kasnije po potrebi i CSS).
+   Ovaj file mu dodaje skripte s GitHuba.
    ============================================================ */
 (function () {
 
   /* ---------- POSTAVKE – ovo smiješ mijenjati ---------- */
 
-  // CSS s izgledom chata – za sada ga nema.
-  // Kad ga napraviš, ovdje upiši ime filea, npr. 'widget-style.css'.
-  var CSS_FILE = '';
-
   // Skripte koje se učitavaju prije pokretanja chata – jedno ime po retku.
   // Redak koji počinje s # se preskače (tako privremeno isključiš modul).
+  // jedan-ekran.js je izgled "Jedan ekran": chat bez početnog ekrana, s crnom
+  // trakom MARTI, pozornicom s logotipima brendova i Martinim pozdravom s
+  // ikonama na gumbima (vidi proba.html). Da se vide i perlice iz
+  // cekanje-odgovora.js, u Voiceflowu projekta s webshopa za prikaz
+  // čekanja odgovora odabere se "dots" (pa Publish).
+  // pozdrav-bez-tipkanja.js: Martin pozdrav s gumbima stigne bez točkica i
+  // natpisa "Trenutak, molim…", ne ispisuje se slovo po slovo, nego cijeli
+  // polagano izroni iz magle; sve ostale poruke ispisuju se slovo po slovo
+  // ("Stream text" iz Voiceflowa). Stavi # ispred njega i pozdrav se opet
+  // ispisuje kao ostale poruke.
   var MODULI = `
     kartica-artikla.js
     gumb-chata.js
-    pocetna-chata.js
+    cekanje-odgovora.js
+    jedan-ekran.js
+    pozdrav-bez-tipkanja.js
   `;
-
-  // Ostale Voiceflow postavke koje želiš dodati s GitHuba (za sada ništa).
-  var DODATNO = {};
 
   /* ---------- ISPOD OVOGA NE TREBAŠ DIRATI ---------- */
 
@@ -31,7 +37,7 @@
   var v = Math.floor(Date.now() / 60000);                         // nova oznaka svake minute
 
   window.MartimexExtensions = window.MartimexExtensions || [];
-  // Voiceflow postavke koje traže moduli (npr. pocetna-chata.js isključuje
+  // Voiceflow postavke koje traže moduli (npr. jedan-ekran.js isključuje
   // autostart); kad se modul isključi, nestane i njegova postavka
   window.MartimexVoiceflow = window.MartimexVoiceflow || {};
 
@@ -78,9 +84,8 @@
         .map(sigurno);
 
       var odModula = window.MartimexVoiceflow || {};
-      var cfg = Object.assign({}, DODATNO, odModula);
-      cfg.assistant = Object.assign({}, DODATNO.assistant, odModula.assistant, { extensions: ekstenzije });
-      if (CSS_FILE) cfg.assistant.stylesheet = BASE + CSS_FILE + '?v=' + v;
+      var cfg = Object.assign({}, odModula);
+      cfg.assistant = Object.assign({}, odModula.assistant, { extensions: ekstenzije });
 
       window.MartimexConfig = cfg;  // za kraću verziju koda na stranici
       if (typeof window.__martimexGitHub === 'function') window.__martimexGitHub(cfg);

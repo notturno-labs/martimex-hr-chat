@@ -1,0 +1,13 @@
+// Ukratko: Postavke za objavu na Cloudflareu – objavljuje se samo mapa v2-1/ (chat 2.0, 1. dio), bez ikakve promjene u njoj
+{
+  "name": "martimex-hr-chat",
+  "compatibility_date": "2026-11-01",
+  // prije objave sadržaj v2-1/ i _headers kopiraju se u privremenu mapu dist/, pa v2-1/ ostaje netaknuta
+  "build": {
+    "command": "rm -rf dist && mkdir dist && cp -R v2-1/. dist/ && cp _headers dist/"
+  },
+  // objavljuje se samo dist/, tj. sadržaj mape v2-1/ – loader je na adresi /loader.js
+  "assets": {
+    "directory": "./dist"
+  }
+}
