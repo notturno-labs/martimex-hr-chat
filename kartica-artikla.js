@@ -24,7 +24,9 @@
   //   hideDescription: true → kartica bez crte i opisa: gornji dio (slika,
   //              marka, naziv, cijena) i gumb ostaju isti. Vrijedi za cijeli
   //              prikaz ({ cards: [...], hideDescription: true }, tako šalje
-  //              playbook "Trazilica")
+  //              playbook "Trazilica"). U takvom prikazu marka je uvijek
+  //              ispisana slovima, kao kod preporuka, a ne logo (postavka
+  //              logoMarke.uTrazilici)
   //   brandLogo → adresa loga marke (https://...). Danas ga funkcije ne šalju:
   //              logo se uzima sa stranice proizvoda (vidi LOGO MARKE niže), a
   //              ovo polje je za kasnije, ako ga počnu slati n8n ili Voiceflow
@@ -164,6 +166,7 @@
     // velika kao naziv artikla (BORNTOSTANDOUT, Versace).
     logoMarke: {
       prikazi: true,          // false = marka je uvijek ispisana slovima
+      uTrazilici: false,      // false = u karticama iz tražilice (hideDescription) marka je ispisana slovima
       sirina: 88,             // px: širina slike loga
       visina: 44              // px: visina slike loga (pola širine, kao slike na martimex.hr)
     }
@@ -184,7 +187,7 @@
     const LM = (function (o) {
       o = o || {};
       const n = function (v, d, min, max) { v = Number(v); return isFinite(v) && v > 0 ? Math.min(max, Math.max(min, v)) : d; };
-      return { prikazi: o.prikazi !== false, sirina: n(o.sirina, 88, 20, 300), visina: n(o.visina, 44, 8, 150) };
+      return { prikazi: o.prikazi !== false, uTrazilici: o.uTrazilici === true, sirina: n(o.sirina, 88, 20, 300), visina: n(o.visina, 44, 8, 150) };
     })(P.logoMarke);
     const EUR = (function () {
       try { return new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR' }); }
@@ -1306,6 +1309,7 @@
           stara: c.oldPrice,
           slika: c.imageUrl || '',
           logo: sigurniLink(prvo(c.brandLogo, c.brandLogoUrl) || ''),
+          bezLoga: p.hideDescription === true && !LM.uTrazilici,   // tražilica: marka slovima
           url: c.url || '',
           kod: tekst(prvo(promo.code, c.promoCode)),
           kodPostotak: prvo(promo.percent, c.promoPercent),
@@ -2027,7 +2031,7 @@
       // MARKA, NAZIV, CIJENA
       const glava = el('div', 'mx-glava');
       const d = razdvojiNaziv(k.naziv);
-      const logo = LM.prikazi ? (k.logo || logoMarke(d.marka)) : '';
+      const logo = LM.prikazi && !k.bezLoga ? (k.logo || logoMarke(d.marka)) : '';
       const imeMarke = d.marka ? el('span', logo ? 'mx-marka mx-marka-rezerva' : 'mx-marka', d.marka) : null;
       if (logo) glava.appendChild(slikaLoga(logo, d.marka, vrh, imeMarke));
       if (imeMarke) glava.appendChild(imeMarke);
