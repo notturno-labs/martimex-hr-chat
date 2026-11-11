@@ -1,0 +1,9 @@
+// Ukratko: Postavke za objavu repozitorija na Cloudflareu (Worker sa statičnim datotekama, bez builda)
+{
+  "name": "martimex-hr-chat",
+  "compatibility_date": "2026-11-01",
+  // cijeli korijen repozitorija objavljuje se kao statične datoteke; što ne ide van, piše u .assetsignore
+  "assets": {
+    "directory": "."
+  }
+}
