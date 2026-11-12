@@ -16,6 +16,7 @@ Marti chat je AI asistentica webshopa martimex.hr. Repozitorij se objavljuje pre
 - Moduli u korijenu su radne verzije; na njima se radi 2. dio (`pitaj-marti.js`, gumb „Pitaj Marti” na stranici artikla i na stranici Kontakt).
 - `proba.html` (s `martimex-stil.css` i `loader.js`) je probna kopija webshopa za 2. dio, spojena na Voiceflow projekt „V2 - Martimex - Live”.
 - `proba-1-dio.html` je probna stranica 1. dijela i učitava `v2-1/loader.js`.
+- `proba-kartice.html` iscrtava primjere kartica artikala bez razgovora s Marti (ne troši kredite); s `?mapa=v2-1` koristi `v2-1/kartica-artikla.js`.
 
 ## Navike
 
