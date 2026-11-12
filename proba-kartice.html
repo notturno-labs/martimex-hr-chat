@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Proba kartica artikala</title>
+  <!-- Ukratko: Probna stranica za kartice artikala – primjeri podataka kakve šalje Voiceflow funkcija kartica, bez razgovora s Marti -->
+  <style>
+    body { margin: 0; padding: 24px 12px 48px; background: #f4f1ee; color: #222; font: 15px/1.5 system-ui, sans-serif; }
+    main { max-width: 420px; margin: 0 auto; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    h2 { font-size: 15px; margin: 32px 0 4px; }
+    p { margin: 0 0 12px; color: #555; }
+    .chat { background: #fff; border-radius: 12px; padding: 12px; }
+    a { color: inherit; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Proba kartica artikala</h1>
+    <p>Kartice su iscrtane datotekom <code id="datoteka">kartica-artikla.js</code>, iz istih podataka kakve šalje Voiceflow funkcija
+       kartica (trace <code>ext_product_card</code>). Stranica ne razgovara s Marti i ne troši kredite.
+       Cijene su snimka kataloga od 12.11.2026. i služe samo za provjeru izgleda.</p>
+    <p>Ista proba s datotekom koja je na martimex.hr: <a href="?mapa=v2-1">mapa v2-1/</a> · <a href="?">korijen</a></p>
+    <div id="primjeri"></div>
+  </main>
+
+  <script>
+    // Primjeri: { naslov, opis, trace } – trace je točno ono što funkcija kartica vraća u Voiceflowu
+    const PRIMJERI = [
+  {
+    "naslov": "Tražilica: jedan artikl s tri veličine",
+    "opis": "Kupac pita ima li artikla. Svaka veličina na zalihi dobiva svoju karticu; opisa nema.",
+    "trace": {
+      "type": "ext_product_card",
+      "payload": {
+        "cards": [
+          {
+            "rank": "1",
+            "title": "Versace ▻ Dylan Blue Eau de Toilette 30 ml",
+            "price": "71,00 €",
+            "description": "",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2024/10/Versace_DylanBlue_100ml.jpg",
+            "url": "https://martimex.hr/proizvod/parfemi/toaletne-vode/dylan-blue-eau-de-toilette/"
+          },
+          {
+            "rank": "2",
+            "title": "Versace ▻ Dylan Blue Eau de Toilette 50 ml",
+            "price": "88,50 €",
+            "description": "",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2024/10/Versace_DylanBlue_100ml.jpg",
+            "url": "https://martimex.hr/proizvod/parfemi/toaletne-vode/dylan-blue-eau-de-toilette/"
+          },
+          {
+            "rank": "3",
+            "title": "Versace ▻ Dylan Blue Eau de Toilette 100 ml",
+            "price": "113,00 €",
+            "description": "",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2024/10/Versace_DylanBlue_100ml.jpg",
+            "url": "https://martimex.hr/proizvod/parfemi/toaletne-vode/dylan-blue-eau-de-toilette/"
+          }
+        ],
+        "hideDescription": true
+      }
+    }
+  },
+  {
+    "naslov": "Tražilica: tražena veličina i set na akciji",
+    "opis": "Kupac pita za 100 ml: ta je veličina prva. Veličina i set na akciji imaju precrtanu staru cijenu i pečat s postotkom.",
+    "trace": {
+      "type": "ext_product_card",
+      "payload": {
+        "cards": [
+          {
+            "rank": "1",
+            "title": "Versace ▻ Eros Eau de Parfum 100 ml",
+            "price": "124,00 €",
+            "description": "",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2024/10/EROS-EDP-100ml.jpg",
+            "url": "https://martimex.hr/proizvod/parfemi/parfemske-vode/eros-eau-de-parfum/"
+          },
+          {
+            "rank": "2",
+            "title": "Versace ▻ Eros Eau de Parfum 50 ml",
+            "price": "69,65 €",
+            "description": "",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2024/10/EROS-EDP-100ml.jpg",
+            "url": "https://martimex.hr/proizvod/parfemi/parfemske-vode/eros-eau-de-parfum/",
+            "oldPrice": "99,50 €"
+          },
+          {
+            "rank": "3",
+            "title": "Versace ▻ Dylan Blue pour Homme Set Eau de Toilette 100 ml",
+            "price": "67,80 €",
+            "description": "",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2026/09/Dylan-Blue-pour-Homme-Set-Eau-de-Toilette-100-ml-800x800.jpg",
+            "url": "https://martimex.hr/proizvod/parfemi/toaletne-vode/dylan-blue-pour-homme-set-eau-de-toilette-100-ml/",
+            "oldPrice": "113,00 €"
+          }
+        ],
+        "hideDescription": true
+      }
+    }
+  },
+  {
+    "naslov": "Tražilica: više artikala odjednom",
+    "opis": "Kad bi kartica po veličinama bilo više od pet, svaki artikl dobiva jednu karticu s cijenom „od” najniže veličine na zalihi.",
+    "trace": {
+      "type": "ext_product_card",
+      "payload": {
+        "cards": [
+          {
+            "rank": "1",
+            "title": "Versace ▻ Dylan Blue Eau de Toilette",
+            "price": "od 71,00 €",
+            "description": "",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2024/10/Versace_DylanBlue_100ml.jpg",
+            "url": "https://martimex.hr/proizvod/parfemi/toaletne-vode/dylan-blue-eau-de-toilette/"
+          },
+          {
+            "rank": "2",
+            "title": "Versace ▻ Eros Eau de Parfum",
+            "price": "od 69,65 €",
+            "description": "",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2024/10/EROS-EDP-100ml.jpg",
+            "url": "https://martimex.hr/proizvod/parfemi/parfemske-vode/eros-eau-de-parfum/"
+          },
+          {
+            "rank": "3",
+            "title": "Versace ▻ Eros Eau de Toilette",
+            "price": "od 71,00 €",
+            "description": "",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2024/10/Eros_100ml_bottle.jpg",
+            "url": "https://martimex.hr/proizvod/parfemi/toaletne-vode/eros-eau-de-toilette/"
+          }
+        ],
+        "hideDescription": true
+      }
+    }
+  },
+  {
+    "naslov": "Preporuke: tri artikla s opisom",
+    "opis": "Jedna kartica po artiklu, s opisom koji napiše Marti. Cijena je „od” kad artikl ima više veličina, a točna kad je veličina odabrana ili jedina.",
+    "trace": {
+      "type": "ext_product_card",
+      "payload": {
+        "cards": [
+          {
+            "rank": "1",
+            "title": "Lancôme ▻ La Vie Est Belle Eau de Parfum",
+            "price": "od 89,67 €",
+            "description": "Slatki cvjetni miris s irisom i pralineom koji ostaje topao i elegantan cijeli dan – upravo onaj ženstveni, slađi potpis koji ste opisali.",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2024/10/LVEB_bottle.jpg",
+            "url": "https://martimex.hr/proizvod/parfemi/parfemske-vode/la-vie-est-belle-eau-de-parfum/"
+          },
+          {
+            "rank": "2",
+            "title": "Versace ▻ Dylan Blue pour Homme Set Eau de Toilette 100 ml",
+            "price": "67,80 €",
+            "description": "Svjež, aromatičan miris s citrusima i tamjanom; set je odličan izbor za poklon.",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2026/09/Dylan-Blue-pour-Homme-Set-Eau-de-Toilette-100-ml-800x800.jpg",
+            "url": "https://martimex.hr/proizvod/parfemi/toaletne-vode/dylan-blue-pour-homme-set-eau-de-toilette-100-ml/",
+            "oldPrice": "113,00 €"
+          },
+          {
+            "rank": "3",
+            "title": "Versace ▻ Eros Eau de Parfum 50 ml",
+            "price": "69,65 €",
+            "description": "Menta i zelena jabuka daju mu svjež početak, a vanilija i tonka toplinu koja traje cijelu večer.",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2024/10/EROS-EDP-100ml.jpg",
+            "url": "https://martimex.hr/proizvod/parfemi/parfemske-vode/eros-eau-de-parfum/",
+            "oldPrice": "99,50 €"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "naslov": "Preporuke: artikli bez popisa veličina i dug naziv",
+    "opis": "Artikl bez veličina ima jednu cijenu; kad je neka nijansa snižena, cijena počinje s „od”. Zadnja kartica provjerava prijelom dugog naziva.",
+    "trace": {
+      "type": "ext_product_card",
+      "payload": {
+        "cards": [
+          {
+            "rank": "1",
+            "title": "IDC INSTITUTE ▻ Hydrating Face Mask",
+            "price": "1,99 €",
+            "description": "Proizvod bez popisa veličina: prikazuje se jedna cijena.",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2026/10/Hydrating-Face-Mask-1-800x800.jpg",
+            "url": "https://martimex.hr/proizvod/njega/njega-lica/hidracijska-njega/hydrating-face-mask/"
+          },
+          {
+            "rank": "2",
+            "title": "Yves Saint Laurent ▻ Couture Mini Clutch Luxury Eyeshadow Palette 4 g",
+            "price": "od 58,94 €",
+            "description": "Neka je nijansa snižena, pa cijena počinje s „od“.",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2025/04/Couture-Mini-Clutch-Luxury-Eyeshadow-Palette-100-1-800x800.jpg",
+            "url": "https://martimex.hr/proizvod/makeup/oci/palete-oci/couture-mini-clutch-luxury-eyeshadow-palette-4-g/"
+          },
+          {
+            "rank": "3",
+            "title": "Collistar ▻ Bodycare Multi Active Deodorant Spray 24h With Aloe Milk Hypersensitive Skin (alcohol free, fragrance free) 100 ml",
+            "price": "23,00 €",
+            "description": "Dug naziv artikla za provjeru prijeloma.",
+            "imageUrl": "https://martimex.hr/martimex-content/uploads/2026/05/Bodycare-Multi-Active-Deodorant-Spray-24h-With-Aloe-Milk-Hypersensitive-Skin-100-ml-800x800.jpg",
+            "url": "https://martimex.hr/proizvod/njega/njega-tijela/deodoranti-njega-tijela/bodycare-multi-active-deodorant-spray-24h-with-aloe-milk-hypersensitive-skin-alcohol-free-fragrance-free-100-ml/"
+          }
+        ]
+      }
+    }
+  }
+];
+
+    // ?mapa=v2-1 učita produkcijsku datoteku iz mape v2-1/, inače radnu iz korijena
+    const mapa = new URLSearchParams(location.search).get('mapa') === 'v2-1' ? 'v2-1/' : '';
+    document.getElementById('datoteka').textContent = mapa + 'kartica-artikla.js';
+
+    const skripta = document.createElement('script');
+    skripta.src = mapa + 'kartica-artikla.js';
+    skripta.onload = function () {
+      const ekstenzija = (window.MartimexExtensions || []).find(function (e) { return e.name === 'ProductCard'; });
+      const popis = document.getElementById('primjeri');
+      if (!ekstenzija) { popis.textContent = 'Kartice se nisu učitale (nema ekstenzije ProductCard).'; return; }
+      PRIMJERI.forEach(function (p) {
+        const naslov = document.createElement('h2'); naslov.textContent = p.naslov;
+        const opis = document.createElement('p'); opis.textContent = p.opis;
+        const chat = document.createElement('div'); chat.className = 'chat';
+        const mjesto = document.createElement('div'); chat.appendChild(mjesto);
+        popis.appendChild(naslov); popis.appendChild(opis); popis.appendChild(chat);
+        if (ekstenzija.match({ trace: p.trace })) ekstenzija.render({ trace: p.trace, element: mjesto });
+        else mjesto.textContent = 'Trace nije prepoznat kao kartica.';
+      });
+    };
+    skripta.onerror = function () { document.getElementById('primjeri').textContent = 'Datoteka kartica se nije učitala.'; };
+    document.body.appendChild(skripta);
+  </script>
+</body>
+</html>
