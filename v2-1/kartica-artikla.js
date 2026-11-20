@@ -38,7 +38,7 @@
   //
   //  Raspored kartice:
   //   ┌──────────────────────────────┐
-  //   │ ┌──────────────────────────┐ │   svijetloružičasta ploča (#fbeee8), u sredini artikl
+  //   │ ┌──────────────────────────┐ │   svijetlosiva ploča (#f6f6f6), u sredini artikl
   //   │ │          SLIKA           │ │   (bijela pozadina fotografije postane
   //   │ └──────────────────────────┘ │   prozirna, pa se vidi ploča)
   //   │   Prada                      │   marka: Nunito, debela slova
@@ -84,7 +84,7 @@
       tinta:   '#171717', // marka, naziv, cijena, ikone osobina, gumb
       tekst:   '#3d3d3d', // natpisi osobina
       siva:    '#86868b', // vrsta i veličina (Parfemska voda · 50 ml), stara cijena, "uz kod"
-      ploca:   '#fbeee8', // svijetloružičasta ploča sa slikom artikla (boja zaglavlja webshopa martimex.hr #f7ded2, napola posvijetljena)
+      ploca:   '#f6f6f6', // svijetlosiva ploča sa slikom artikla (kao na slici prijedloga)
       kartica: '#ffffff', // pozadina kartice
       crta:    '#ececec'  // tanke okomite crte između osobina
     },
