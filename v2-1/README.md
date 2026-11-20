@@ -9,7 +9,7 @@ U ovoj mapi je 1. dio verzije 2.0 Marti chata: nove kartice artikala, novi izgle
 | Datoteka | Što radi |
 |---|---|
 | `loader.js` | jedini file koji stranica učitava; on učita sve ostalo iz ove mape i spoji chat na Voiceflow projekt „v2 - prvi dio” |
-| `kartica-artikla.js` | kartice artikala: svijetlosiva ploča sa slikom, marka, naziv, vrsta i veličina, cijena (akcija, promo kod), tri osobine s ikonama i crni gumb „Pogledaj proizvod” |
+| `kartica-artikla.js` | kartice artikala: svijetlosiva ploča sa slikom, marka, naziv, vrsta i veličina, cijena (akcija, promo kod), tri osobine s ikonama i crni gumb „Pogledaj proizvod”; više proizvoda stoji u vodoravnom vrtuljku (listanje prstom, mišem, strelicama ili točkicama) |
 | `gumb-chata.js` | izgled gumba koji otvara chat |
 | `jedan-ekran.js` | izgled prozora chata „Jedan ekran” |
 | `cekanje-odgovora.js` | perlice dok Marti piše odgovor |
