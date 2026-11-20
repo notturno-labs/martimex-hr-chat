@@ -9,14 +9,18 @@ U ovoj mapi je 1. dio verzije 2.0 Marti chata: nove kartice artikala, novi izgle
 | Datoteka | Što radi |
 |---|---|
 | `loader.js` | jedini file koji stranica učitava; on učita sve ostalo iz ove mape i spoji chat na Voiceflow projekt „v2 - prvi dio” |
-| `kartica-artikla.js` | nove kartice artikala |
+| `kartica-artikla.js` | kartice artikala: siva ploča sa slikom, marka, naziv, vrsta i veličina, cijena (akcija, promo kod), tri osobine s ikonama i crni gumb „Pogledaj proizvod” |
 | `gumb-chata.js` | izgled gumba koji otvara chat |
 | `jedan-ekran.js` | izgled prozora chata „Jedan ekran” |
 | `cekanje-odgovora.js` | perlice dok Marti piše odgovor |
 | `pozdrav-bez-tipkanja.js` | Martin pozdrav izroni bez tipkanja |
-| `fonts/` | fontovi Jost i Cormorant Garamond (licenca SIL OFL 1.1) |
+| `fonts/` | fontovi Jost (chat), Nunito i Playfair Display (kartice artikala); licenca SIL OFL 1.1 |
 
-Moduli su kopije 1:1 modula iz korijena repozitorija na dan 10. 11. 2026. (commit `bc90cc0`); od tada se ova mapa i korijen mijenjaju odvojeno.
+Moduli su kopije 1:1 modula iz korijena repozitorija na dan 10. 11. 2026. (commit `bc90cc0`); od tada se ova mapa i korijen mijenjaju odvojeno. Kartica artikla ovdje ima novi izgled od 20. 11. 2026. (bez opisa, s tri osobine); `kartica-artikla.js` u korijenu još je stara kartica.
+
+## Kartice artikala
+
+Kartice crta `kartica-artikla.js` iz poruke `ext_product_card` koju šalju Voiceflow funkcije kartica („Prikazi parfem card”, „Prikazi artikl card - Preporuka Ostalo”, „Prikazi artikl card - Trazilica”). Kartica nema opis artikla. Tri osobine ispod cijene (npr. „Svjež i čist”, „Moderna elegancija”, „Ured, večer i prilike”) piše Marti u playbookovima „Preporuka - Parfemi” i „Preporuka - Ostalo” (polje `osobine`, funkcija ga šalje kao `features`); ikonu svakoj osobini kartica bira sama prema riječima. Tražilica osobine ne šalje, pa su njezine kartice bez tog reda.
 
 ## Kako se koristi
 
