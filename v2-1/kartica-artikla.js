@@ -4,7 +4,10 @@
   //  MARTIMEX — kartice preporučenih proizvoda za Marti (v34)
   //
   //  ProductCardExtension → trace "ext_product_card"
-  //  Kartice idu jedna ispod druge. Izgled je kao na slici prijedloga
+  //  Jedan proizvod: jedna kartica. Više proizvoda: kartice stoje u vodoravnoj
+  //  traci (vrtuljak) koja se lista prstom, mišem, strelicama ili točkicama
+  //  ispod nje; svaka se kartica zaustavi na istom mjestu uz lijevi rub, a
+  //  desno proviruje sljedeća (vidi VRTULJAK niže). Izgled je kao na slici prijedloga
   //  (kartica 336 px: Prada Luna Rossa Carbon), ali bez opisa artikla, s malo
   //  većom markom (15 px), malo manjim nazivom (22 px) i gumbom zaobljenim kao
   //  kartica.
@@ -23,7 +26,8 @@
   //            kartica nema taj red (npr. kartice iz tražilice).
   //  Neobavezna polja (kao i dosad):
   //   oldPrice → artikl je na akciji: nova cijena, pokraj nje precrtana stara
-  //              i oznaka s postotkom popusta (−30 %)
+  //              i ružičasta oznaka s postotkom popusta (−30 %), u boji kojom
+  //              martimex.hr označava ponude i akcije
   //   promo    → promo kod koji vrijedi za artikl:
   //              { code: "MRTMX", percent: 30, validUntil: "2026-10-31" }
   //              (isto kao ravna polja promoCode, promoPercent, promoPrice,
@@ -86,7 +90,9 @@
       siva:    '#86868b', // vrsta i veličina (Parfemska voda · 50 ml), stara cijena, "uz kod"
       ploca:   '#f6f6f6', // svijetlosiva ploča sa slikom artikla (kao na slici prijedloga)
       kartica: '#ffffff', // pozadina kartice
-      crta:    '#ececec'  // tanke okomite crte između osobina
+      crta:    '#ececec', // tanke okomite crte između osobina
+      ruza:    '#f7ded2', // ružičasta martimex.hr (zaglavlje, "Ponude i akcije"): oznaka popusta
+      tocka:   '#d6cfca'  // točkice vrtuljka koje nisu odabrane
     },
 
     // Fontovi iz mape fonts/ ovog repozitorija; ako se iz nekog razloga ne
@@ -256,6 +262,8 @@
         --mx-ploca: ${B.ploca};
         --mx-kartica: ${B.kartica};
         --mx-crta: ${B.crta};
+        --mx-ruza: ${B.ruza};
+        --mx-tocka: ${B.tocka};
         --mx-font: ${P.font};
         --mx-font-naziv: ${P.fontNaziva};
         --mx-glatko: cubic-bezier(.16, 1, .3, 1);
@@ -285,13 +293,110 @@
         white-space: nowrap;
       }
 
-      /* ── popis (kartice jedna ispod druge) ── */
-      .mx-lista,
+      /* ── jedan proizvod ── */
       .mx-istaknuta {
         display: flex;
         flex-direction: column;
-        gap: 16px;
         padding: 6px 4px 14px;        /* mjesto za sjenu kartice */
+      }
+
+      /* ── više proizvoda: vrtuljak ──
+         Kartice stoje u traci koja se lista vodoravno; listanje je izvorno
+         (prst, dodirna ploha), pa je glatko na svim uređajima. Svaka kartica se
+         zaustavi uz lijevi rub (scroll-snap), a desno proviruje sljedeća. Iza
+         zadnje je toliko mjesta da se i ona zaustavi na istom mjestu. */
+      .mx-vrtuljak {
+        --mx-sirina: min(calc(100% - 40px), 340px);   /* širina kartice u traci: sljedeća proviruje 24 px (rub i ploča, bez slova) */
+        position: relative;
+      }
+      .mx-traka {
+        position: relative;
+        display: flex;
+        align-items: stretch;         /* sve kartice jednako visoke, gumbi u istoj liniji */
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 6px 0 18px;          /* mjesto za sjenu kartice */
+        scroll-snap-type: x mandatory;
+        scroll-padding-left: 4px;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        /* rubovi trake se blago gube, pa sjena i kartica koja proviruje nemaju oštar rez */
+        -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 4px, #000 calc(100% - 14px), transparent 100%);
+                mask-image: linear-gradient(90deg, transparent 0, #000 4px, #000 calc(100% - 14px), transparent 100%);
+      }
+      .mx-traka::-webkit-scrollbar { display: none; }
+      .mx-traka::before { content: ""; flex: 0 0 4px; }
+      .mx-traka::after { content: ""; flex: 0 0 calc(100% - var(--mx-sirina) - 4px); }
+      .mx-traka > .mx-kartica {
+        flex: 0 0 var(--mx-sirina);
+        width: var(--mx-sirina);
+        max-width: none;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;     /* jedan potez = jedna kartica */
+      }
+      .mx-traka > .mx-kartica + .mx-kartica { margin-left: 12px; }
+      .mx-traka:focus { outline: none; }
+      .mx-traka:focus-visible > .mx-aktivna { outline: 2px solid var(--mx-tinta); outline-offset: 2px; }
+      /* povlačenje mišem: dok traje, zaustavljanje je isključeno */
+      .mx-traka.mx-vuce { scroll-snap-type: none; -webkit-user-select: none; user-select: none; }
+      .mx-traka.mx-vuce * { pointer-events: none; }
+
+      /* točkice ispod trake (odabrana je izdužena), na računalu i strelice */
+      .mx-kontrole {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: -8px;
+        padding: 0 4px 6px;
+      }
+      .mx-tocke { display: flex; align-items: center; }
+      .mx-tocka,
+      .mx-strelica {
+        -webkit-appearance: none;
+        appearance: none;
+        margin: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .mx-tocka { display: block; padding: 10px 4px; }
+      .mx-tocka::before {
+        content: "";
+        display: block;
+        width: 6px;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--mx-tocka);
+        transition: width .45s var(--mx-glatko), background-color .45s var(--mx-glatko);
+      }
+      .mx-tocka[aria-current="true"]::before { width: 20px; background: var(--mx-tinta); }
+      .mx-tocka:focus, .mx-strelica:focus { outline: none; }
+      .mx-tocka:focus-visible::before { outline: 2px solid var(--mx-tinta); outline-offset: 3px; }
+      .mx-strelica { display: none; }
+      @media (hover: hover) and (pointer: fine) {
+        .mx-traka { cursor: grab; }
+        .mx-traka.mx-vuce { cursor: grabbing; }
+        .mx-strelica {
+          display: grid;
+          place-items: center;
+          width: 32px;
+          height: 32px;
+          padding: 0;
+          border-radius: 50%;
+          background: #ffffff;
+          color: var(--mx-tinta);
+          box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 2px 6px rgba(0, 0, 0, .06);
+          transition: background-color .2s ease, color .2s ease, opacity .25s ease;
+        }
+        .mx-strelica svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+        .mx-strelica:not(:disabled):hover { background: var(--mx-tinta); color: #ffffff; }
+        .mx-strelica:focus-visible { outline: 2px solid var(--mx-tinta); outline-offset: 2px; }
+        .mx-strelica:disabled { opacity: .3; cursor: default; }
       }
 
       /* ── kartica ── */
@@ -364,9 +469,13 @@
         display: flex;
         flex-direction: column;
         align-items: flex-start;
+        flex: 1 1 auto;
         min-width: 0;
         padding: 18.7px 18px 0;
       }
+      /* razmak iznad gumba: najmanje 24 px; u jednako visokim karticama vrtuljka
+         raste, pa su gumbi svih kartica u istoj liniji */
+      .mx-razmak { display: block; flex: 1 0 24px; }
       .mx-marka {
         max-width: 100%;
         font-size: 15px;
@@ -435,8 +544,8 @@
         align-self: center;
         padding: 3px 7px 3px 6px;
         border-radius: 4px;
-        background: var(--mx-tinta);
-        color: #ffffff;
+        background: var(--mx-ruza);   /* kao "Ponude i akcije" na martimex.hr */
+        color: var(--mx-tinta);
         font-size: 12px;
         line-height: 14px;
         font-weight: 700;
@@ -526,7 +635,7 @@
         align-self: stretch;
         flex: none;
         min-height: 44px;
-        margin-top: 24px;
+        margin-top: 0;
         padding: 0 16px;
         border: 0;
         border-radius: var(--mx-zaobljenje);
@@ -559,6 +668,7 @@
         animation: mx-pojava .8s var(--mx-glatko) backwards;
         animation-delay: calc(80ms + var(--mx-i, 0) * 110ms);
       }
+      .mx-pojava .mx-kontrole { animation: mx-samo-prozirnost .6s ease .45s backwards; }
       @keyframes mx-pojava {
         from { opacity: 0; transform: translateY(14px); }
       }
@@ -574,7 +684,8 @@
 
       @media (prefers-reduced-motion: reduce) {
         .mx-pojava .mx-kartica { animation: mx-samo-prozirnost .35s linear backwards; animation-delay: 0s; }
-        .mx-slika img, .mx-gumb { transition: none; }
+        .mx-slika img, .mx-gumb, .mx-tocka::before, .mx-strelica { transition: none; }
+        .mx-pojava .mx-kontrole { animation: none; }
       }
     `;
 
@@ -1184,6 +1295,7 @@
 
       // GUMB: jedini link na kartici
       if (link) {
+        tijelo.appendChild(el('span', 'mx-razmak'));
         const gumb = el('a', 'mx-gumb');
         gumb.href = link;
         gumb.draggable = false;
@@ -1195,6 +1307,171 @@
       }
       kartica.appendChild(tijelo);
       return kartica;
+    }
+
+    // ── VRTULJAK ─────────────────────────────────────────────────────────
+    // Više proizvoda: kartice u vodoravnoj traci. Prstom i dodirnom plohom
+    // traka se lista izvorno (glatko, s inercijom), a CSS je zaustavlja na
+    // svakoj kartici. Mišem se traka povuče (lagan potez = sljedeća kartica),
+    // a ispod su točkice i, na računalu, strelice. Tipke ← → (i Home/End)
+    // listaju kad je traka u fokusu.
+    const MIRNO = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+    const STRELICE = {
+      lijevo: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M10 3.5L5.5 8L10 12.5"/></svg>',
+      desno: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 3.5L10.5 8L6 12.5"/></svg>'
+    };
+
+    function gumbStrelice(smjer, oznaka) {
+      const g = el('button', 'mx-strelica mx-strelica--' + smjer);
+      g.type = 'button';
+      g.setAttribute('aria-label', oznaka);
+      g.innerHTML = STRELICE[smjer];
+      return g;
+    }
+
+    function izgradiVrtuljak(kartice, potpis) {
+      const n = kartice.length;
+      const korijen = noviKorijen('mx-vrtuljak', potpis);
+      korijen.setAttribute('role', 'region');
+      korijen.setAttribute('aria-roledescription', 'vrtuljak');
+      const traka = el('div', 'mx-traka');
+      traka.tabIndex = 0;
+      const elementi = kartice.map(function (k, i) {
+        const kartica = izgradiKarticu(k, i, false);
+        kartica.setAttribute('role', 'group');
+        kartica.setAttribute('aria-roledescription', 'proizvod');
+        kartica.setAttribute('aria-label', (i + 1) + ' od ' + n);
+        traka.appendChild(kartica);
+        return kartica;
+      });
+      korijen.appendChild(traka);
+
+      const kontrole = el('div', 'mx-kontrole');
+      const prethodna = gumbStrelice('lijevo', 'Prethodni proizvod');
+      const sljedeca = gumbStrelice('desno', 'Sljedeći proizvod');
+      const tocke = el('div', 'mx-tocke');
+      const popisTocaka = elementi.map(function (x, i) {
+        const t = el('button', 'mx-tocka');
+        t.type = 'button';
+        t.setAttribute('aria-label', 'Proizvod ' + (i + 1) + ' od ' + n);
+        tocke.appendChild(t);
+        return t;
+      });
+      kontrole.appendChild(prethodna);
+      kontrole.appendChild(tocke);
+      kontrole.appendChild(sljedeca);
+      korijen.appendChild(kontrole);
+
+      pokreniVrtuljak(traka, elementi, popisTocaka, prethodna, sljedeca);
+      return korijen;
+    }
+
+    function pokreniVrtuljak(traka, kartice, tocke, prethodna, sljedeca) {
+      const n = kartice.length;
+      let aktivna = -1;               // kartica uz lijevi rub
+      let cilj = null;                // kartica prema kojoj traka upravo klizi
+      let okvir = 0, mirovanje = 0;
+
+      // razmak između početaka dviju kartica i položaj kartice u traci (CSS px)
+      const korak = function () { return kartice[1].offsetLeft - kartice[0].offsetLeft; };
+      const polozaj = function (i) { return kartice[i].offsetLeft - kartice[0].offsetLeft; };
+
+      function postavi(i) {
+        if (i === aktivna) return;
+        aktivna = i;
+        tocke.forEach(function (t, j) { t.setAttribute('aria-current', j === i ? 'true' : 'false'); });
+        kartice.forEach(function (c, j) { c.classList.toggle('mx-aktivna', j === i); });
+        prethodna.disabled = i === 0;
+        sljedeca.disabled = i === n - 1;
+      }
+      function osvjezi() {
+        okvir = 0;
+        const k = korak();
+        postavi(k > 0 ? Math.max(0, Math.min(n - 1, Math.round(traka.scrollLeft / k))) : 0);
+      }
+      function idi(i) {
+        i = Math.max(0, Math.min(n - 1, i));
+        cilj = i;
+        traka.scrollTo({ left: polozaj(i), behavior: MIRNO.matches ? 'auto' : 'smooth' });
+      }
+      // brzi uzastopni klikovi idu dalje od kartice prema kojoj traka već klizi
+      const odakle = function () { return cilj !== null ? cilj : aktivna; };
+
+      traka.addEventListener('scroll', function () {
+        if (!okvir) okvir = requestAnimationFrame(osvjezi);
+        clearTimeout(mirovanje);
+        mirovanje = setTimeout(function () { cilj = null; }, 180);
+      }, { passive: true });
+
+      tocke.forEach(function (t, j) { t.addEventListener('click', function () { idi(j); }); });
+      prethodna.addEventListener('click', function () { idi(odakle() - 1); });
+      sljedeca.addEventListener('click', function () { idi(odakle() + 1); });
+      traka.addEventListener('keydown', function (e) {
+        if (e.target !== traka) return;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          idi(odakle() + (e.key === 'ArrowRight' ? 1 : -1));
+        } else if (e.key === 'Home' || e.key === 'End') {
+          e.preventDefault();
+          idi(e.key === 'Home' ? 0 : n - 1);
+        }
+      });
+
+      // Povlačenje mišem: traka prati miš, a nakon puštanja klizne na karticu
+      // u smjeru poteza (ili na najbližu, kad je potez spor). Klik koji završi
+      // povlačenje ne otvara proizvod. Promo kod se mišem može i označiti.
+      let vuce = null, bezKlika = false;
+      traka.addEventListener('pointerdown', function (e) {
+        if (e.pointerType !== 'mouse' || e.button !== 0 || (e.target.closest && e.target.closest('.mx-kod'))) return;
+        vuce = { id: e.pointerId, x: e.clientX, pocetak: traka.scrollLeft, aktivno: false, zadnjiX: e.clientX, zadnjeT: e.timeStamp, brzina: 0 };
+      });
+      traka.addEventListener('pointermove', function (e) {
+        if (!vuce || e.pointerId !== vuce.id) return;
+        const dx = e.clientX - vuce.x;
+        if (!vuce.aktivno) {
+          if (Math.abs(dx) < 6) return;
+          vuce.aktivno = true;
+          try { traka.setPointerCapture(e.pointerId); } catch (x) { /* nije važno */ }
+          if (window.getSelection) window.getSelection().removeAllRanges();
+          traka.classList.add('mx-vuce');
+        }
+        const dt = e.timeStamp - vuce.zadnjeT;
+        if (dt > 0) vuce.brzina = 0.6 * vuce.brzina + 0.4 * (e.clientX - vuce.zadnjiX) / dt;
+        vuce.zadnjiX = e.clientX;
+        vuce.zadnjeT = e.timeStamp;
+        traka.scrollLeft = vuce.pocetak - dx;
+      });
+      function pusti(e) {
+        if (!vuce || e.pointerId !== vuce.id) return;
+        const v = vuce;
+        vuce = null;
+        if (!v.aktivno) return;
+        bezKlika = true;
+        setTimeout(function () { bezKlika = false; }, 60);
+        const k = korak();
+        const sada = k > 0 ? traka.scrollLeft / k : 0;
+        idi(v.brzina < -0.2 ? Math.ceil(sada) : v.brzina > 0.2 ? Math.floor(sada) : Math.round(sada));
+        // zaustavljanje se vrati tek kad traka stane na kartici
+        let gotovo = false;
+        const vrati = function () {
+          if (gotovo) return;
+          gotovo = true;
+          traka.classList.remove('mx-vuce');
+          traka.removeEventListener('scrollend', vrati);
+        };
+        traka.addEventListener('scrollend', vrati);
+        setTimeout(vrati, 700);
+      }
+      traka.addEventListener('pointerup', pusti);
+      traka.addEventListener('pointercancel', pusti);
+      traka.addEventListener('click', function (e) {
+        if (!bezKlika) return;
+        e.preventDefault();
+        e.stopPropagation();
+        bezKlika = false;
+      }, true);
+
+      osvjezi();
     }
 
     // ── POJAVA ───────────────────────────────────────────────────────────
@@ -1242,9 +1519,13 @@
       const potpis = potpisPrikaza(trace.type, kartice);
       if (postojeciKorijen(element, potpis)) return BEZ_CISCENJA;
       pripremi(element);
-      // jedan proizvod: ista kartica (klasa mx-istaknuta ostaje radi starijih stilova)
-      const korijen = noviKorijen(kartice.length === 1 ? 'mx-istaknuta' : 'mx-lista', potpis);
-      kartice.forEach(function (k, i) { korijen.appendChild(izgradiKarticu(k, i, kartice.length === 1)); });
+      let korijen;
+      if (kartice.length === 1) {
+        korijen = noviKorijen('mx-istaknuta', potpis);
+        korijen.appendChild(izgradiKarticu(kartice[0], 0, true));
+      } else {
+        korijen = izgradiVrtuljak(kartice, potpis);
+      }
       element.appendChild(korijen);
       if (trebaPojava(trace.type, kartice)) pokreniPojavu(korijen, kartice.length);
       return BEZ_CISCENJA;
