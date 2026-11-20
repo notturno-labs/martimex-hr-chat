@@ -4,8 +4,10 @@
   //  MARTIMEX — kartice preporučenih proizvoda za Marti (v34)
   //
   //  ProductCardExtension → trace "ext_product_card"
-  //  Kartice idu jedna ispod druge. Izgled je točno kao na slici prijedloga
-  //  (kartica 336 px: Prada Luna Rossa Carbon), samo bez opisa artikla.
+  //  Kartice idu jedna ispod druge. Izgled je kao na slici prijedloga
+  //  (kartica 336 px: Prada Luna Rossa Carbon), ali bez opisa artikla, s malo
+  //  većom markom (15 px), malo manjim nazivom (22 px) i gumbom zaobljenim kao
+  //  kartica.
   //
   //  Payload koji šalju Voiceflow funkcije kartica:
   //   { cards: [{ title, price, url, imageUrl, features }] }
@@ -46,7 +48,7 @@
   //   │   ikona  │  ikona  │  ikona  │   tri osobine, između njih tanke crte
   //   │   Svjež  │ Moderna │  Ured,  │
   //   │  i čist  │elegancija i prilike
-  //   │ [     Pogledaj proizvod    ] │   crni gumb, jedini link na kartici
+  //   │ (     Pogledaj proizvod    ) │   crni gumb zaobljen kao kartica, jedini link
   //   └──────────────────────────────┘
   //  Na proizvod vodi samo gumb, i to u istom prozoru (bez novih kartica).
   //
@@ -242,9 +244,10 @@
     const IKONA_BOCA = '<svg viewBox="0 0 48 64" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M19 4.5h10v6.5H19z"/><path d="M21.5 11v4.5M26.5 11v4.5"/><rect x="9.5" y="15.5" width="29" height="44" rx="7"/><path d="M15.5 33.5h17M15.5 38.5h10" stroke-linecap="round" opacity=".55"/></svg>';
 
     // ── STIL ─────────────────────────────────────────────────────────────
-    // Okomiti razmaci su takvi da su osnovne crte teksta točno gdje su na
-    // slici prijedloga (marka 32 px ispod ploče, naziv 32 px ispod marke, vrsta
-    // 20 px ispod naziva, cijena 32 px ispod vrste)
+    // Okomiti razmaci su kao na slici prijedloga: od ploče do vrha slova marke
+    // 23 px, od marke do vrha slova naziva 15 px; osnovne crte naziva, vrste i
+    // cijene točno su gdje su na slici (vrsta 20 px ispod naziva, cijena 32 px
+    // ispod vrste)
     const CSS = `
       .mx {
         --mx-tinta: ${B.tinta};
@@ -256,6 +259,7 @@
         --mx-font: ${P.font};
         --mx-font-naziv: ${P.fontNaziva};
         --mx-glatko: cubic-bezier(.16, 1, .3, 1);
+        --mx-zaobljenje: 16px;        /* kutovi kartice; isti ima i gumb */
         position: relative;
         width: 100%;
         min-width: 0;
@@ -301,7 +305,7 @@
         min-width: 0;
         padding: 6px 6px 20px;
         background: var(--mx-kartica);
-        border-radius: 16px;
+        border-radius: var(--mx-zaobljenje);
         box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 8px 24px rgba(0, 0, 0, .055);
         color: inherit;
       }
@@ -365,8 +369,8 @@
       }
       .mx-marka {
         max-width: 100%;
-        font-size: 13px;
-        line-height: 18px;
+        font-size: 15px;
+        line-height: 20px;
         font-weight: 700;
         color: var(--mx-tinta);
         overflow-wrap: break-word;
@@ -375,8 +379,8 @@
         max-width: 100%;
         margin: 0;
         font-family: var(--mx-font-naziv);
-        font-size: 24px;
-        line-height: 30px;
+        font-size: 22px;
+        line-height: 28px;
         font-weight: 500;
         letter-spacing: 0;
         color: var(--mx-tinta);
@@ -512,7 +516,8 @@
         overflow-wrap: break-word;
       }
 
-      /* gumb: crni pravokutnik zaobljenih kutova, preko cijele širine teksta */
+      /* gumb: crni pravokutnik preko cijele širine teksta, kutovi zaobljeni kao
+         kutovi kartice */
       .mx-gumb {
         position: relative;
         display: flex;
@@ -524,7 +529,7 @@
         margin-top: 24px;
         padding: 0 16px;
         border: 0;
-        border-radius: 4px;
+        border-radius: var(--mx-zaobljenje);
         background-color: var(--mx-tinta);
         color: #ffffff;
         font-family: var(--mx-font);
