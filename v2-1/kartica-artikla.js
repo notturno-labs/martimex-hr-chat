@@ -38,9 +38,9 @@
   //
   //  Raspored kartice:
   //   ┌──────────────────────────────┐
-  //   │ ┌──────────────────────────┐ │   siva ploča (#f6f6f6), u sredini artikl
+  //   │ ┌──────────────────────────┐ │   ružičasta ploča (#f7ded2), u sredini artikl
   //   │ │          SLIKA           │ │   (bijela pozadina fotografije postane
-  //   │ └──────────────────────────┘ │   siva kao ploča)
+  //   │ └──────────────────────────┘ │   prozirna, pa se vidi ploča)
   //   │   Prada                      │   marka: Nunito, debela slova
   //   │   Luna Rossa Carbon          │   naziv: Playfair Display
   //   │   Parfemska voda · 50 ml     │   vrsta i veličina: sivo
@@ -84,7 +84,7 @@
       tinta:   '#171717', // marka, naziv, cijena, ikone osobina, gumb
       tekst:   '#3d3d3d', // natpisi osobina
       siva:    '#86868b', // vrsta i veličina (Parfemska voda · 50 ml), stara cijena, "uz kod"
-      ploca:   '#f6f6f6', // siva ploča sa slikom artikla
+      ploca:   '#f7ded2', // ružičasta ploča sa slikom artikla (boja zaglavlja webshopa martimex.hr)
       kartica: '#ffffff', // pozadina kartice
       crta:    '#ececec'  // tanke okomite crte između osobina
     },
@@ -310,7 +310,7 @@
         color: inherit;
       }
 
-      /* ploča sa slikom: obrađena fotografija je već na sivoj podlozi */
+      /* ploča sa slikom: obrađena fotografija je već na podlozi u boji ploče */
       .mx-slika {
         position: relative;
         width: 100%;
@@ -343,7 +343,7 @@
       }
       .mx-ucitano img { opacity: 1; }
       /* fotografija koju nije moguće obraditi (druga domena): cijela je u ploči,
-         a njezina bijela pozadina stapa se sa sivom */
+         a njezina bijela pozadina stapa se s bojom ploče */
       .mx-slika .mx-css {
         top: ${((1 - VISINA_FOTOGRAFIJE) / 2 * 100).toFixed(1)}%;
         height: ${(VISINA_FOTOGRAFIJE * 100).toFixed(1)}%;
@@ -905,8 +905,10 @@
 
     // Fotografija proizvoda se "čita" preko canvasa (moguće kad je slika s iste
     // domene kao stranica, npr. martimex.hr → martimex.hr):
-    //  - pozadina (4 kuta): bijela ili svijetlosiva postane siva boja ploče,
-    //    tamna ili šarena fotografija ispuni cijelu ploču (nacin "foto")
+    //  - pozadina (4 kuta): bijela ili svijetlosiva postane prozirna, pa se ispod
+    //    artikla vidi boja ploče, a boje artikla ostanu kakve jesu (rubovi i
+    //    sjene s fotografije ostanu mekani); tamna ili šarena fotografija ispuni
+    //    cijelu ploču (nacin "foto")
     //  - artikl se izreže i postavi u kadar: visok 78 % ploče, u sredini
     //  - slika se napravi točno u pikselima ekrana (oštra na mobitelu)
     // Kad se slika ne može pročitati, ostaje CSS stapanje (nacin "css").
@@ -953,8 +955,8 @@
         else { kraj('foto'); return; }
       }
 
-      // 2) radna kopija (najviše 900 px): svijetlosiva pozadina postane bijela,
-      //    a usput se nađu granice artikla na fotografiji
+      // 2) radna kopija (najviše 900 px): svijetlosiva pozadina postane bijela, a
+      //    bijelo prozirno; usput se nađu granice artikla na fotografiji
       const R = Math.min(1, 900 / Math.max(W, H));
       const rw = Math.max(8, Math.round(W * R)), rh = Math.max(8, Math.round(H * R));
       let radna, rg, rp;
@@ -971,26 +973,35 @@
       } catch (e) { kraj('css'); return; }
       const d = rp.data;
       const PRAG = 238;              // piksel tamniji od ovoga pripada artiklu (i sjeni ispod njega)
+      const SUM = 4;                 // JPEG šum oko čiste bijele
       let x0 = rw, y0 = rh, x1 = -1, y1 = -1;
       for (let i = 0, p = 0; i < d.length; i += 4, p++) {
-        if (pojacaj !== 1) {
-          d[i] = Math.min(255, d[i] * pojacaj);
-          d[i + 1] = Math.min(255, d[i + 1] * pojacaj);
-          d[i + 2] = Math.min(255, d[i + 2] * pojacaj);
-        }
-        if (d[i + 3] > 40 && Math.min(d[i], d[i + 1], d[i + 2]) < PRAG) {
+        if (d[i + 3] === 0) continue;
+        const r = Math.min(255, d[i] * pojacaj);
+        const gr = Math.min(255, d[i + 1] * pojacaj);
+        const b = Math.min(255, d[i + 2] * pojacaj);
+        const mn = Math.min(r, gr, b);
+        if (d[i + 3] > 40 && mn < PRAG) {
           const x = p % rw, y = (p - x) / rw;
           if (x < x0) x0 = x;
           if (x > x1) x1 = x;
           if (y < y0) y0 = y;
           if (y > y1) y1 = y;
         }
+        // bijelo → prozirno: koliko je piksel daleko od bijele, toliko je neproziran,
+        // a boja mu se "odvoji" od bijele, pa preko bilo koje podloge izgleda kao na fotografiji
+        const a = Math.max(0, 255 - SUM - mn) / (255 - SUM);
+        if (a <= 0) { d[i + 3] = 0; continue; }
+        d[i] = 255 - (255 - r) / a;
+        d[i + 1] = 255 - (255 - gr) / a;
+        d[i + 2] = 255 - (255 - b) / a;
+        d[i + 3] = a * d[i + 3];
       }
-      if (pojacaj !== 1) rg.putImageData(rp, 0, 0);
+      rg.putImageData(rp, 0, 0);
       if (x1 < x0 || y1 < y0) { x0 = 0; y0 = 0; x1 = rw - 1; y1 = rh - 1; }   // ništa nađeno: cijela slika
 
-      // 3) kadar u pikselima ekrana: siva podloga, artikl u sredini, visok 78 %
-      //    ploče; bijelo se "pomnoži" sa sivom (multiply), pa nestane
+      // 3) kadar u pikselima ekrana: podloga u boji ploče, artikl u sredini,
+      //    visok 78 % ploče
       const gustoca = Math.min(3, Math.max(2, Math.ceil(window.devicePixelRatio || 1)));
       const pw = ploca.clientWidth || PLOCA[0];
       const ph = ploca.clientHeight || Math.round(pw * PLOCA[1] / PLOCA[0]);
@@ -1018,7 +1029,6 @@
         const g = platno.getContext('2d');
         g.fillStyle = B.ploca;
         g.fillRect(0, 0, cw, ch);
-        g.globalCompositeOperation = 'multiply';
         g.imageSmoothingEnabled = true;
         g.imageSmoothingQuality = 'high';
         g.drawImage(izvor, 0, 0, iw, ih, ox, oy, rw * k, rh * k);
