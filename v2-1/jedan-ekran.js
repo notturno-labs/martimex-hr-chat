@@ -27,11 +27,12 @@
   //     je glavna stvar. Ispod nje je tanka roza crta prema razgovoru
   //   - razgovor je na toploj bjelokosti, bez mramora i bez teksture:
   //     Martine poruke su bijele kartice s jedva vidljivom sjenom, kupčeve
-  //     su tamne (tinta), ponuđeni odgovori su pilule s tankim tamnim
-  //     obrubom koje se pod mišem (ili prstom) ispune tamnom bojom; glavni
+  //     su tamne (tinta), ponuđeni odgovori su gumbi zaobljenih kutova (u
+  //     stilu gumba "Pogledaj proizvod" na kartici artikla) s tankim tamnim
+  //     obrubom koji se pod mišem (ili prstom) ispune tamnom bojom; glavni
   //     odgovori (status narudžbe, Loyalty Card, reklamacija, plaćanje,
   //     beauty savjetnik) imaju lijevo tanku ikonu (POSTAVKE: ikoneGumba),
-  //     koja na ispunjenoj piluli posvijetli
+  //     koja na ispunjenom gumbu posvijetli
   //   - polje za poruku je bijela kapsula s tankim toplim rubom; gumb za
   //     slanje je taman krug tek kad ima što poslati
   //   - čim kupac pošalje prvu poruku ili pritisne ponuđeni odgovor,
@@ -104,7 +105,7 @@
       razgovorZavrsen: 'Razgovor je završen'  // "Chat has ended"
     },
 
-    // Ikone na ponuđenim odgovorima (pilulama): tekst gumba (isti kao u
+    // Ikone na ponuđenim odgovorima (gumbima ispod poruke): tekst gumba (isti kao u
     // Voiceflowu) → ikona. Ikone su: savjetnik, narudzba, loyalty,
     // reklamacija, placanje. Gumbi kojih tu nema ostaju bez ikone
     ikoneGumba: {
@@ -239,15 +240,15 @@
     const KORISNIK = W + ' .vfrc-user-response > div';
     const MARTI = W + ' .vfrc-system-response .vfrc-message:not([class*="vfrc-message--extension"])';
     const TIPKA = W + ' div:has(> .vfrc-typing-indicator)';
-    const PILULA = W + ' .vfrc-system-response--actions .vfrc-button';
+    const PILULA = W + ' .vfrc-system-response--actions .vfrc-button';    // ponuđeni odgovori
     const POSALJI = W + ' #vfrc-send-message';
     const PRAZNO = W + ' .vfrc-input-container:has(.vfrc-chat-input:placeholder-shown) #vfrc-send-message';
     const GLAVNI = [W + ' ' + START, W + ' .vfrc-prompt .vfrc-button:first-child'];
     const SPOREDNI = W + ' .vfrc-prompt .vfrc-button:last-child:not(:first-child)';
     // Ikone ponuđenih odgovora (tanke linije; neke s malim punim krugom sa
     // znakom). "currentColor" je boja linija i kruga, "#fff" boja znaka u krugu; za
-    // svaku ikonu se izrade dvije verzije: tamna (obična pilula) i svijetla
-    // (pilula ispunjena tintom, pod mišem ili prstom)
+    // svaku ikonu se izrade dvije verzije: tamna (običan gumb) i svijetla
+    // (gumb ispunjen tintom, pod mišem ili prstom)
     const IKONE_GUMBA = {
       savjetnik: '<g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="16.5" width="24" height="27.5" rx="4"/><path d="M14 14 V16.5 M18 14 V16.5"/><rect x="11" y="6.5" width="10" height="7.5" rx="1.2"/><path d="M9 22 V30"/><path d="M35.2 20 V12.3 A2.3 2.3 0 0 1 39.8 12.3 V20 Z"/><rect x="33.5" y="20" width="8" height="4" rx="0.8"/><path d="M34.6 24 H40.4 A3.6 3.6 0 0 1 44 27.6 V41.5 A2.5 2.5 0 0 1 41.5 44 H33.5 A2.5 2.5 0 0 1 31 41.5 V27.6 A3.6 3.6 0 0 1 34.6 24 Z"/><path d="M34.2 33.6 H40.8"/></g>',
       narudzba: '<g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 L21 2.5 L40 11 L22 19.5 Z"/><path d="M3 11 V32 L22 40.5 V19.5"/><path d="M40 11 V24"/><path d="M22 40.5 L24.45 39.34"/><path d="M9.84 14.06 L27.84 5.56 M14.4 16.1 L32.4 7.6"/><path d="M9.84 14.06 V18.66 L14.4 20.7 V16.1"/></g><circle cx="36.5" cy="36" r="9.5" fill="currentColor"/><path d="M32.3 36.3 L35.3 39.2 L40.8 33.3" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
@@ -288,6 +289,12 @@
         --mx-j-font: ${P.font};
         /* sjena bijele kartice na bjelokosti: tanka topla linija i meka sjena ispod */
         --mx-j-sjena: 0 0 0 1px rgba(60, 40, 30, .05), 0 10px 26px -16px rgba(60, 40, 30, .32), 0 2px 5px -3px rgba(60, 40, 30, .12);
+        /* zaobljeni kutovi gumba, u stilu gumba "Pogledaj proizvod" na kartici
+           artikla (16 px na 44 px visine): "Započni novi razgovor" i ostali
+           gumbi ploče (48 px) 16 px; ponuđeni odgovori (36 px) u istom omjeru
+           13 px (s 16 px bi na toj visini opet bili pilule) */
+        --mx-j-zaobljenje-gumba: 16px;
+        --mx-j-zaobljenje-odgovora: 13px;
         --mx-j-glatko: cubic-bezier(.16, 1, .3, 1);
         --mx-j-meko: cubic-bezier(.45, 0, .2, 1);
         --mx-j-sklapanje: cubic-bezier(.45, 0, .18, 1);   /* sklapanje i širenje pozornice: krene odmah, dugo usporava */
@@ -597,8 +604,8 @@
         25%           { opacity: 1; transform: scale(1.1); }
       }
 
-      /* ponuđeni odgovori: pilule s tankim tamnim obrubom; pod mišem (ili
-         dok je prst na njima) se ispune tintom */
+      /* ponuđeni odgovori: gumbi zaobljenih kutova s tankim tamnim obrubom;
+         pod mišem (ili dok je prst na njima) se ispune tintom */
       ${W} .vfrc-system-response--actions {
         gap: 8px;
         margin: 14px 0 6px;
@@ -612,7 +619,7 @@
         min-height: 36px;
         padding: 8px 16px 9px;
         border: 0;
-        border-radius: 999px;
+        border-radius: var(--mx-j-zaobljenje-odgovora);
         background: transparent;
         color: var(--mx-j-tinta);
         box-shadow: inset 0 0 0 1px var(--mx-j-tinta-55);
@@ -628,7 +635,7 @@
       }
       ${PILULA}:active { background: var(--mx-j-tinta); color: ${B.puder}; box-shadow: inset 0 0 0 1px var(--mx-j-tinta); transform: scale(.97); }
       ${PILULA}:focus-visible { outline: 1px solid var(--mx-j-tinta); outline-offset: 3px; }
-      /* pilula s ikonom: ikona lijevo, tamna; kad se pilula ispuni tintom, svijetla */
+      /* gumb s ikonom: ikona lijevo, tamna; kad se gumb ispuni tintom, svijetla */
       ${PILULA}[data-mx-ikona] {
         padding-left: 41px;
         background-position: 14px center;
@@ -792,10 +799,11 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       /* zatamnjenje, ploča "Novi razgovor?" i izbornik uvijek iznad trake i pozornice */
       ${PROZOR} > .vfrc-chat--overlay { z-index: 6; }
       ${PROZOR} > .vfrc-prompt, ${PROZOR} > .vfrc-more-menu, ${PROZOR} > .vfrc-file-drop-overlay { z-index: 7; }
+      /* "Započni novi razgovor" i "Odustani": zaobljeni kutovi kao "Pogledaj proizvod" */
       ${GLAVNI.join(',\n      ')},
       ${W} .vfrc-prompt .vfrc-button {
         min-height: 48px;
-        border-radius: 999px;
+        border-radius: var(--mx-j-zaobljenje-gumba);
         font-family: var(--mx-j-font);
         font-size: 11.5px;
         font-weight: 500;
