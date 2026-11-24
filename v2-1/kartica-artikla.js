@@ -23,7 +23,7 @@
   //            kartica nema taj red (npr. kartice iz tražilice).
   //            Parfemi (v35): tri podatka, svaki s emojijem na početku –
   //            miris · kada · trajnost i aura, npr.
-  //            ["🌊 Svjež morski miris", "☀️ Ljeto, dan i ured", "🪶 Lagan i osvježavajući"].
+  //            ["🌊 Svjež morski miris", "☀️ Ljeto, dan i ured", "🪶 Nježna aura uz kožu"].
   //            Emoji se ne prikazuje: kartica umjesto njega nacrta tanku crnu
   //            ikonu iz palete (vidi IKONE PALETE i EMOJI U OSOBINAMA niže),
   //            a iz teksta ukloni svaki emoji.
@@ -415,7 +415,7 @@
           '(?:[\\uFE0E\\uFE0F\\u20E3]|[\\u{1F3FB}-\\u{1F3FF}]|\\u200D(?:\\p{Extended_Pictographic}|\\uFE0F))*', 'gu');
       } catch (e) {
         // preglednik bez \p{…}: znakovi izvan osnovne ravnine i česti simboli
-        return /[#*0-9]️?⃣|(?:[\uD83C-\uD83E][\uDC00-\uDFFF]|[⌀-➿⬀-⯿])(?:[︎️⃣]|\uD83C[\uDFFB-\uDFFF]|‍(?:[\uD83C-\uD83E][\uDC00-\uDFFF]|[⌀-➿]))*/g;
+        return /[#*0-9]\uFE0F?\u20E3|(?:[\uD83C-\uD83E][\uDC00-\uDFFF]|[\u2300-\u27BF\u2B00-\u2BFF])(?:[\uFE0E\uFE0F\u20E3]|\uD83C[\uDFFB-\uDFFF]|\u200D(?:[\uD83C-\uD83E][\uDC00-\uDFFF]|[\u2300-\u27BF]))*/g;
       }
     })();
 
@@ -425,14 +425,14 @@
       const nadeni = t.match(RE_EMOJI);
       return {
         emoji: nadeni ? nadeni[0] : '',
-        tekst: t.replace(RE_EMOJI, ' ').replace(/[︎️‍⃣]/g, '').replace(/\s+/g, ' ').trim()
+        tekst: t.replace(RE_EMOJI, ' ').replace(/[\uFE0E\uFE0F\u200D\u20E3]/g, '').replace(/\s+/g, ' ').trim()
       };
     }
 
     // ikona palete za emoji ('' kad je nema): bez FE0F i nijansi kože; niz
     // emojija spojenih s ZWJ traži se cio, a zatim samo njegov prvi znak
     function ikonaEmojija(e) {
-      const c = String(e || '').replace(/[︎️]/g, '').replace(/\uD83C[\uDFFB-\uDFFF]/g, '');
+      const c = String(e || '').replace(/[\uFE0E\uFE0F]/g, '').replace(/\uD83C[\uDFFB-\uDFFF]/g, '');
       if (!c) return '';
       if (PALETA[c]) return PALETA[c];
       const prvi = Array.from(c)[0];
