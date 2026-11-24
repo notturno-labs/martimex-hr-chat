@@ -9,5 +9,10 @@
   // objavljuje se samo dist/, tj. sadržaj mape v2-1/ – loader je na adresi /loader.js
   "assets": {
     "directory": "./dist"
-  }
+  },
+  // Preview za svaku granu: Cloudflare za grane koje nisu main pokreće
+  // "npx wrangler preview", a ta naredba traži ovaj blok. Prazan je jer worker
+  // nema veza (bindings), pa Preview ima iste postavke kao produkcija;
+  // produkcijsku objavu (wrangler deploy) ne mijenja
+  "previews": {}
 }
