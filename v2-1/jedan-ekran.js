@@ -33,9 +33,9 @@
   //     odgovori (status narudžbe, Loyalty Card, reklamacija, plaćanje,
   //     beauty savjetnik) imaju lijevo tanku ikonu (POSTAVKE: ikoneGumba),
   //     koja na ispunjenom gumbu posvijetli
-  //   - kartice artikala (kartica-artikla.js) zauzmu cijelu širinu
-  //     razgovora, od lijevog ruba avatara do desnog ruba poruka, pa uz njih
-  //     nema avatara; vrtuljak kartica ide do rubova prozora
+  //   - kartice artikala (kartica-artikla.js) su široke kao najširi Martin
+  //     oblačić i stoje u istom stupcu, uz avatar; vrtuljak kartica ide do
+  //     desnog ruba prozora, pa sljedeća kartica proviruje
   //   - polje za poruku je bijela kapsula s tankim toplim rubom; gumb za
   //     slanje je taman krug tek kad ima što poslati
   //   - čim kupac pošalje prvu poruku ili pritisne ponuđeni odgovor,
@@ -684,14 +684,15 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
         background: transparent;
         color: var(--mx-j-tinta);
       }
-      /* kartice artikala: preko cijele širine razgovora, od lijevog ruba
-         avatara do desnog ruba poruka, pa uz njih nema avatara. Vrtuljak
-         kartica ide do rubova prozora (kao Voiceflowov): --mx-rub-chata je
-         razmak od poruka do ruba prozora. Sva tri pravila su s :has(), pa
-         preglednik koji ga ne zna ostavi karticu uz avatar, kao prije */
-      ${W} .vfrc-system-response:has(.vfrc-message--extension-ProductCard) > .vfrc-avatar { display: none; }
-      ${W} .vfrc-system-response:has(.vfrc-message--extension-ProductCard) > div { width: 100%; margin-left: 0; }
-      ${W} .vfrc-system-response:has(.vfrc-message--extension-ProductCard) .vfrc-message--extension-ProductCard { --mx-rub-chata: var(--mx-j-rub-razgovora); }
+      /* kartice artikala (kartica-artikla.js) stoje u stupcu Martinih poruka,
+         uz avatar, i široke su kao najširi oblačić. Vrtuljak kartica ide do
+         desnog ruba prozora (--mx-chat-izlaz-desno je razmak od poruka do
+         ruba prozora), pa i kartica u vrtuljku može biti široka kao poruka
+         (--mx-chat-proviri 0 px), a sljedeća proviruje uz rub prozora */
+      ${W} .vfrc-message--extension-ProductCard {
+        --mx-chat-izlaz-desno: var(--mx-j-rub-razgovora);
+        --mx-chat-proviri: 0px;
+      }
 
       /* kraj razgovora: tanke crte i natpis između njih */
       ${W} .vfrc-chat--status { margin: 22px 0 8px; }

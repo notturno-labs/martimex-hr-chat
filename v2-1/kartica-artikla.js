@@ -1,18 +1,18 @@
 // Ukratko: Kartice proizvoda koje Marti preporuči
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v37)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v38)
   //
   //  ProductCardExtension → trace "ext_product_card"
-  //  Jedan proizvod: jedna kartica, preko cijele širine poruke (najviše
-  //  400 px). Više proizvoda: kartice stoje u vodoravnoj
-  //  traci (vrtuljak) koja se lista prstom, mišem, strelicama ili točkicama
-  //  ispod nje; svaka se kartica zaustavi na istom mjestu uz lijevi rub, a
-  //  desno proviruje sljedeća (vidi VRTULJAK niže). U chatu (jedan-ekran.js)
-  //  poruka s karticama zauzme cijelu širinu razgovora, bez avatara uz nju,
-  //  a vrtuljak ide do rubova prozora (v37: na mobitelu širokom 375 px
-  //  kartica je 335 px umjesto 283, u vrtuljku 319 umjesto 251, pa podaci
-  //  ispod cijene stanu u dva retka). Izgled je kao na slici prijedloga
+  //  Kartica je široka kao poruka, tj. kao najširi Martin oblačić (najviše
+  //  400 px), i stoji u istom stupcu, uz avatar (na mobitelu širokom 375 px
+  //  291 px). Jedan proizvod: jedna kartica. Više proizvoda: kartice stoje u
+  //  vodoravnoj traci (vrtuljak) koja se lista prstom, mišem, strelicama ili
+  //  točkicama ispod nje; svaka se kartica zaustavi na istom mjestu uz
+  //  lijevi rub poruke, a desno proviruje sljedeća (vidi VRTULJAK niže). U
+  //  chatu (jedan-ekran.js) traka ide do desnog ruba prozora, pa je i
+  //  kartica u vrtuljku široka kao poruka, a sljedeća proviruje uz rub
+  //  prozora. Izgled je kao na slici prijedloga
   //  (kartica 336 px: Prada Luna Rossa Carbon), ali bez opisa artikla, s malo
   //  većom markom (15 px), malo manjim nazivom (22 px) i gumbom zaobljenim kao
   //  kartica.
@@ -87,6 +87,10 @@
   //   - osobina od dvije ili više riječi uvijek je u dva retka podjednake
   //     duljine ("Svjež / i čist"); jednoslovna riječ (i, u, s...) ne ostaje
   //     na kraju retka
+  //   - kartica parfema s tri podatka: stupci su široki koliko treba tekst,
+  //     prvi počinje uz lijevi rub teksta kartice, a zadnji završava uz
+  //     desni, pa dulji podatak dobije više mjesta (v38); ostale kartice
+  //     imaju jednake stupce
   //   - bijela pozadina fotografije pretvara se u sivu boju ploče (canvas);
   //     kad to nije moguće (slika s druge domene), stapa se CSS-om. Tamna ili
   //     šarena fotografija ispuni cijelu ploču
@@ -548,7 +552,8 @@
         white-space: nowrap;
       }
 
-      /* ── jedan proizvod: kartica preko cijele širine poruke (najviše 400 px) ── */
+      /* ── jedan proizvod: kartica široka kao poruka (kao najširi Martin
+         oblačić), najviše 400 px ── */
       .mx-istaknuta {
         display: flex;
         flex-direction: column;
@@ -560,18 +565,21 @@
          (prst, dodirna ploha), pa je glatko na svim uređajima. Svaka kartica se
          zaustavi uz lijevi rub (scroll-snap), a desno proviruje sljedeća. Iza
          zadnje je toliko mjesta da se i ona zaustavi na istom mjestu.
-         U chatu traka ide do rubova prozora (kao Voiceflowov vrtuljak): chat
-         (jedan-ekran.js) u --mx-rub-chata javi koliko je od poruke do ruba
-         prozora. Prva kartica stoji uz lijevi rub poruke, a sljedeća
-         proviruje do desnog ruba prozora. Bez te vrijednosti traka je široka
-         kao poruka, a prva kartica je 4 px od njezina ruba (mjesto za sjenu). */
+         Traka počinje 4 px lijevo od poruke (mjesto za sjenu), pa svaka
+         kartica stane točno uz lijevi rub poruke, kao Martini oblačići.
+         U chatu (jedan-ekran.js) traka ide do desnog ruba prozora: chat u
+         --mx-chat-izlaz-desno javi koliko je od poruke do ruba prozora, a u
+         --mx-chat-proviri 0 px. Tada je kartica široka kao poruka (kao
+         najširi oblačić), a sljedeća proviruje uz rub prozora. Bez tih
+         vrijednosti traka završava s porukom, a kartica je od nje uža 36 px
+         (12 px razmaka, sljedeća proviruje 24 px). */
       .mx-vrtuljak {
-        --mx-rub: var(--mx-rub-chata, 0px);
-        --mx-uvlaka: max(4px, var(--mx-rub));    /* od lijevog ruba trake do prve kartice */
-        --mx-sirina: min(calc(100% - var(--mx-uvlaka) - 36px), 380px);   /* širina kartice u traci: 12 px razmaka, sljedeća proviruje 24 px (rub i ploča, bez slova) */
+        --mx-izlaz: var(--mx-chat-izlaz-desno, 0px);    /* koliko traka ide desno od poruke */
+        --mx-proviri: var(--mx-chat-proviri, 36px);     /* koliko je kartica uža od poruke */
+        --mx-sirina: min(calc(100% - 4px - var(--mx-izlaz) - var(--mx-proviri)), 400px);   /* širina kartice u traci */
         position: relative;
-        width: auto;                  /* s negativnim rubovima: širi od poruke */
-        margin: 0 calc(-1 * var(--mx-rub));
+        width: auto;                  /* s negativnim rubovima: šira od poruke */
+        margin: 0 calc(-1 * var(--mx-izlaz)) 0 -4px;
       }
       .mx-traka {
         position: relative;
@@ -581,19 +589,19 @@
         overflow-y: hidden;
         padding: 6px 0 18px;          /* mjesto za sjenu kartice */
         scroll-snap-type: x mandatory;
-        scroll-padding-left: var(--mx-uvlaka);
+        scroll-padding-left: 4px;
         overscroll-behavior-x: contain;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         /* rubovi trake se blago gube, pa sjena i kartica koja proviruje nemaju
-           oštar rez; na rubu prozora chata se ne gube (tamo je rez prirodan) */
-        --mx-maska: linear-gradient(90deg, transparent 0, #000 calc(4px - min(4px, var(--mx-rub))), #000 calc(100% - 14px + min(14px, var(--mx-rub))), transparent 100%);
+           oštar rez; na rubu prozora chata desno se ne gube (tamo je rez prirodan) */
+        --mx-maska: linear-gradient(90deg, transparent 0, #000 4px, #000 calc(100% - 14px + min(14px, var(--mx-izlaz))), transparent 100%);
         -webkit-mask-image: var(--mx-maska);
                 mask-image: var(--mx-maska);
       }
       .mx-traka::-webkit-scrollbar { display: none; }
-      .mx-traka::before { content: ""; flex: 0 0 var(--mx-uvlaka); }
-      .mx-traka::after { content: ""; flex: 0 0 calc(100% - var(--mx-sirina) - var(--mx-uvlaka)); }
+      .mx-traka::before { content: ""; flex: 0 0 4px; }
+      .mx-traka::after { content: ""; flex: 0 0 calc(100% - var(--mx-sirina) - 4px); }
       .mx-traka > .mx-kartica {
         flex: 0 0 var(--mx-sirina);
         width: var(--mx-sirina);
@@ -840,7 +848,8 @@
         white-space: nowrap;
       }
 
-      /* tri osobine: jednaki stupci, između njih tanka okomita crta */
+      /* tri osobine: jednaki stupci, između njih tanka okomita crta (kartica
+         parfema ima stupce široke koliko tekst, vidi niže) */
       .mx-osobine {
         display: grid;
         grid-template-columns: repeat(var(--mx-stupaca, 3), minmax(0, 1fr));
@@ -919,6 +928,28 @@
         color: var(--mx-siva);
         white-space: nowrap;
       }
+      /* Kartica parfema s tri podatka (mx-podataka-3): stupci su široki
+         koliko treba njihov tekst. Prvi počinje uz lijevi rub teksta kartice,
+         zadnji završava uz desni, a slobodan prostor podijeli se jednako u
+         dva razmaka između njih (najmanje 8 px, pa je tekst od crte najmanje
+         4 px, kao u jednakim stupcima); tanka crta je na sredini razmaka.
+         Tako dulji podatak dobije više mjesta i ostane u dva retka. S jednim
+         ili dva podatka stupci su jednaki, kao kod ostalih kartica. */
+      .mx-osobine.mx-podataka-3 { grid-template-columns: auto minmax(8px, 1fr) auto minmax(8px, 1fr) auto; }
+      .mx-podataka-3 > .mx-osobina { grid-row: 1; min-width: auto; padding: 0; }
+      .mx-podataka-3 > .mx-osobina:nth-child(2) { grid-column: 3; }
+      .mx-podataka-3 > .mx-osobina:nth-child(3) { grid-column: 5; }
+      .mx-podataka-3 > .mx-osobina + .mx-osobina::before { content: none; }
+      .mx-podataka-3::before,
+      .mx-podataka-3::after {
+        content: "";
+        grid-row: 1;
+        justify-self: center;
+        width: 1px;
+        background: var(--mx-crta);
+      }
+      .mx-podataka-3::before { grid-column: 2; }
+      .mx-podataka-3::after { grid-column: 4; }
 
       /* gumb: crni pravokutnik preko cijele širine teksta, kutovi zaobljeni kao
          kutovi kartice */
@@ -1567,7 +1598,7 @@
       // su iz palete i nijedna se ne ponavlja, a ispod svakog podatka je
       // oznaka (Miris · Kada nositi · Trajnost). Ostale kartice: kao dosad.
       const sPaletom = k.osobine.some(function (o) { return ikonaEmojija(o.emoji); });
-      const lista = el('ul', sPaletom ? 'mx-osobine mx-osobine--podaci' : 'mx-osobine');
+      const lista = el('ul', sPaletom ? 'mx-osobine mx-osobine--podaci mx-podataka-' + k.osobine.length : 'mx-osobine');
       lista.setAttribute('role', 'list');
       lista.style.setProperty('--mx-stupaca', String(k.osobine.length));
       const zauzete = {};
