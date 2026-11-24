@@ -9,7 +9,7 @@ U ovoj mapi je 1. dio verzije 2.0 Marti chata: nove kartice artikala, novi izgle
 | Datoteka | Što radi |
 |---|---|
 | `loader.js` | jedini file koji stranica učitava; on učita sve ostalo iz ove mape i spoji chat na Voiceflow projekt „v2 - prvi dio” |
-| `kartica-artikla.js` | kartice artikala: svijetlosiva ploča sa slikom, marka, naziv, vrsta i veličina, cijena (akcija, promo kod), tri osobine s ikonama (kod parfema miris · kada · trajnost i aura) i crni gumb „Pogledaj proizvod”; više proizvoda stoji u vodoravnom vrtuljku (listanje prstom, mišem, strelicama ili točkicama) |
+| `kartica-artikla.js` | kartice artikala: svijetlosiva ploča sa slikom, marka, naziv, vrsta i veličina, cijena (akcija, promo kod), tri osobine s ikonama (kod parfema miris · kada nositi · trajnost, sa sitnom oznakom ispod) i crni gumb „Pogledaj proizvod”; više proizvoda stoji u vodoravnom vrtuljku (listanje prstom, mišem, strelicama ili točkicama) |
 | `gumb-chata.js` | izgled gumba koji otvara chat |
 | `jedan-ekran.js` | izgled prozora chata „Jedan ekran” |
 | `cekanje-odgovora.js` | perlice dok Marti piše odgovor |
@@ -22,7 +22,9 @@ Moduli su kopije 1:1 modula iz korijena repozitorija na dan 10. 11. 2026. (commi
 
 Kartice crta `kartica-artikla.js` iz poruke `ext_product_card` koju šalju Voiceflow funkcije kartica („Prikazi parfem card”, „Prikazi artikl card - Preporuka Ostalo”, „Prikazi artikl card - Trazilica”). Kartica nema opis artikla. Tri osobine ispod cijene piše Marti (polje `osobine`, funkcija ga šalje kao `features`). Tražilica osobine ne šalje, pa su njezine kartice bez tog reda.
 
-**Parfemi** (playbook „Preporuka - Parfemi”): tri podatka, uvijek istim redom – **miris · kada · trajnost i aura**, npr. „🌊 Svjež morski miris”, „☀️ Ljeto, dan i ured”, „🪶 Nježna aura uz kožu”. Opis je običnim riječima, bez nabrajanja nota, i uvijek pozitivan. Svaki podatak počinje emojijem iz palete; kartica emoji ne prikazuje, nego umjesto njega nacrta tanku crnu ikonu (crta 1,33 px, bez boja). Paleta (86 ikona, 141 emoji) je u `alati/ikone-osobina.mjs`: alat iz paketa Tabler Icons upiše ikone u `kartica-artikla.js` (između oznaka „IKONE PALETE”) i ispiše popis palete za playbook. Novi emoji: dopiši ga u paletu u alatu, pokreni alat i novi popis prepiši u playbook (odjeljak EMOJI PALETTE). Emoji koji nije u paleti ili se ponavlja na istoj kartici dobije ikonu prema riječima.
+**Parfemi** (playbook „Preporuka - Parfemi”): tri podatka, uvijek istim redom – **miris · kada nositi · trajnost**, npr. „🌊 Svjež i morski”, „☀️ Ljeto i ured”, „🪶 Nježno uz kožu”. Opis je kratak, običnim riječima, bez nabrajanja nota, i uvijek pozitivan. Svaki podatak počinje emojijem iz palete; kartica emoji ne prikazuje, nego umjesto njega nacrta tanku crnu ikonu (crta 1,33 px, bez boja). Ispod ikone je podatak tamnim polumasnim slovima, a ispod njega sitna siva oznaka „Miris”, „Kada nositi”, „Trajnost” (oznake upisuje kartica, u istoj su liniji u sva tri stupca).
+
+Paleta je u `alati/ikone-osobina.mjs`. Kartica prepoznaje 141 emoji (86 ikona), a Marti u playbooku vidi kraći popis od 38 najvažnijih (svaki emoji u playbooku je tekst koji se plaća u svakom pozivu modela). Alat iz paketa Tabler Icons upiše ikone u `kartica-artikla.js` (između oznaka „IKONE PALETE”) i ispiše kraći popis za playbook. Novi emoji: dopiši ga u paletu u alatu (i u kraći popis ako ga Marti treba vidjeti), pokreni alat i novi popis prepiši u playbook (odjeljak EMOJI PALETTE). Emoji koji nije u paleti ili se ponavlja na istoj kartici dobije ikonu prema riječima.
 
 **Ostalo** (playbook „Preporuka - Ostalo”): osobine bez emojija (npr. „Duboka hidratacija”, „Za suhu kožu”, „Večernja rutina”); ikonu svakoj kartica bira sama prema riječima, između 21 vlastite ikone.
 

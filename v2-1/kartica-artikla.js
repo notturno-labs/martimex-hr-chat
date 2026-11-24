@@ -1,7 +1,7 @@
 // Ukratko: Kartice proizvoda koje Marti preporuči
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v35)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v36)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Jedan proizvod: jedna kartica. Više proizvoda: kartice stoje u vodoravnoj
@@ -21,12 +21,14 @@
   //   features tri kratke osobine artikla koje napiše Marti (ili polje
   //            "osobine"; stavka smije biti i { text, icon }). Bez osobina
   //            kartica nema taj red (npr. kartice iz tražilice).
-  //            Parfemi (v35): tri podatka, svaki s emojijem na početku –
-  //            miris · kada · trajnost i aura, npr.
-  //            ["🌊 Svjež morski miris", "☀️ Ljeto, dan i ured", "🪶 Nježna aura uz kožu"].
+  //            Parfemi: tri podatka, svaki s emojijem na početku – miris ·
+  //            kada nositi · trajnost, npr.
+  //            ["🌊 Svjež i morski", "☀️ Ljeto i ured", "🪶 Nježno uz kožu"].
   //            Emoji se ne prikazuje: kartica umjesto njega nacrta tanku crnu
   //            ikonu iz palete (vidi IKONE PALETE i EMOJI U OSOBINAMA niže),
-  //            a iz teksta ukloni svaki emoji.
+  //            a iz teksta ukloni svaki emoji. Podatak je tamnim polumasnim
+  //            slovima, a ispod njega sitna siva oznaka „Miris”, „Kada
+  //            nositi”, „Trajnost” (v36; POSTAVKE: oznakePodataka).
   //            Ostalo (bez emojija): ["Svjež i čist", "Moderna elegancija",
   //            "Ured, večer i prilike"]; svaka osobina dobije ikonu prema
   //            svojim riječima (svjež → list, elegancija → dijamant, ured →
@@ -56,10 +58,11 @@
   //   │   Luna Rossa Carbon          │   naziv: Playfair Display
   //   │   Parfemska voda · 50 ml     │   vrsta i veličina: sivo
   //   │   103,00 €                   │   cijena: Playfair Display
-  //   │   ikona  │  ikona  │  ikona  │   tri osobine (parfemi: miris · kada · trajnost
-  //   │          │         │         │   i aura), između njih tanke crte
-  //   │   Svjež  │ Moderna │  Ured,  │
-  //   │  i čist  │elegancija i prilike
+  //   │   ikona  │  ikona  │  ikona  │   tri osobine, između njih tanke crte
+  //   │   Svjež  │  Ljeto  │ Nježno  │   parfemi: podatak tamno i polumasno,
+  //   │ i morski │ i ured  │ uz kožu │   ispod sitna siva oznaka (oznake u
+  //   │   Miris  │  Kada   │Trajnost │   istoj liniji); ostale kartice: samo
+  //   │          │ nositi  │         │   tekst osobine, kao dosad
   //   │ (     Pogledaj proizvod    ) │   crni gumb zaobljen kao kartica, jedini link
   //   └──────────────────────────────┘
   //  Na proizvod vodi samo gumb, i to u istom prozoru (bez novih kartica).
@@ -116,6 +119,9 @@
 
     najviseOsobina: 3,        // koliko osobina stane u red ispod cijene
     znakovaOsobine: 32,       // dulja osobina se skrati (na cijeloj riječi)
+    // Kartica parfema (osobine s emojijem): sitna siva oznaka ispod svakog
+    // podatka, redom po mjestu
+    oznakePodataka: ['Miris', 'Kada nositi', 'Trajnost'],
 
     // Vrsta mirisa s kraja naziva, na hrvatskom (ključ je kako piše u nazivu,
     // malim slovima; kratice EDP, EDT i EDC vrijede kao puni naziv)
@@ -868,6 +874,35 @@
         text-wrap: balance;
         overflow-wrap: break-word;
       }
+      /* Kartica parfema (osobine s emojijem): ikona, ispod nje podatak tamnim
+         polumasnim slovima, a ispod podatka sitna siva oznaka (Miris · Kada
+         nositi · Trajnost). Stupci imaju tri reda, pa su oznake u istoj liniji
+         i kad je neki podatak u jednom retku. */
+      .mx-osobine--podaci .mx-osobina {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        justify-items: center;
+        align-items: start;     /* prvi redak podatka u istoj liniji u svim stupcima */
+      }
+      .mx-osobine--podaci .mx-ikona { grid-row: 1; }
+      .mx-osobine--podaci .mx-osobina-tekst {
+        grid-row: 2;
+        margin-top: 10px;
+        font-size: 13px;
+        line-height: 17px;
+        font-weight: 600;
+        color: var(--mx-tinta);
+      }
+      .mx-osobine--podaci .mx-osobina-oznaka {
+        grid-row: 3;
+        display: block;
+        margin-top: 5px;
+        font-size: 11px;
+        line-height: 14px;
+        font-weight: 400;
+        color: var(--mx-siva);
+        white-space: nowrap;
+      }
 
       /* gumb: crni pravokutnik preko cijele širine teksta, kutovi zaobljeni kao
          kutovi kartice */
@@ -1512,12 +1547,13 @@
 
     function izgradiOsobine(k, tijelo) {
       if (!k.osobine.length) return;
-      const lista = el('ul', 'mx-osobine');
+      // Kartica parfema (barem jedna osobina s emojijem iz palete): sve ikone
+      // su iz palete i nijedna se ne ponavlja, a ispod svakog podatka je
+      // oznaka (Miris · Kada nositi · Trajnost). Ostale kartice: kao dosad.
+      const sPaletom = k.osobine.some(function (o) { return ikonaEmojija(o.emoji); });
+      const lista = el('ul', sPaletom ? 'mx-osobine mx-osobine--podaci' : 'mx-osobine');
       lista.setAttribute('role', 'list');
       lista.style.setProperty('--mx-stupaca', String(k.osobine.length));
-      // Kartica parfema (barem jedna osobina s emojijem iz palete): sve ikone
-      // su iz palete i nijedna se ne ponavlja. Ostale kartice: kao dosad.
-      const sPaletom = k.osobine.some(function (o) { return ikonaEmojija(o.emoji); });
       const zauzete = {};
       k.osobine.forEach(function (o, i) {
         const stavka = el('li', 'mx-osobina');
@@ -1531,6 +1567,14 @@
           crtez = IKONE[ikonaOsobine(o.tekst, o.ikona, i)];
         }
         stavka.innerHTML = svg(crtez, 'mx-ikona');
+        // oznaka je u kodu ispred podatka (čitač zaslona: "Miris: Topao i
+        // slatkast"), a na zaslonu ispod njega (vidi .mx-osobine--podaci)
+        const oznaka = sPaletom && P.oznakePodataka ? P.oznakePodataka[i] : '';
+        if (oznaka) {
+          const o2 = el('span', 'mx-osobina-oznaka', oznaka);
+          o2.appendChild(el('span', 'mx-skriveno', ': '));
+          stavka.appendChild(o2);
+        }
         const t = el('span', 'mx-osobina-tekst');
         dvaReda(o.tekst).forEach(function (r, j) {
           if (j) t.appendChild(el('br'));
