@@ -1,7 +1,7 @@
 // Ukratko: Kartice proizvoda koje Marti preporuči
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v38)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v39)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartica je široka kao poruka, tj. kao najširi Martin oblačić (najviše
@@ -73,7 +73,8 @@
   //  Na proizvod vodi samo gumb, i to u istom prozoru (bez novih kartica).
   //
   //  Mjere (CSS px, kartica široka 336): ploča je od ruba kartice odmaknuta
-  //  6 px, široka 324 i visoka 232 (u šire kartice raste u istom omjeru);
+  //  6 px, široka 324 i visoka 198 (u šire i uže kartice mijenja se u istom
+  //  omjeru; do v38 bila je visoka 232, v39 je oko 15 % niža);
   //  tekst i gumb su 24 px od ruba; gumb je visok 44 px, a ispod njega je
   //  20 px do dna kartice. Svaka fotografija se "izreže" i postavi u kadar
   //  jednako: artikl je visok 78 % ploče i stoji u sredini, bez obzira na
@@ -163,8 +164,9 @@
     })();
 
     // Ploča sa slikom: osnovna veličina (CSS px) u kartici širokoj 336 px. U
-    // široj kartici ploča raste u istom omjeru.
-    const PLOCA = [324, 232];
+    // široj ili užoj kartici mijenja se u istom omjeru. Artikl je u ploči uvijek
+    // jednako postavljen (KADAR), pa niža ploča znači i malo manji artikl.
+    const PLOCA = [324, 198];
     // Koliko ploče artikl smije zauzeti (visina, širina) kad je fotografija
     // obrađena; na slici prijedloga bočica je visoka 78 % ploče
     const KADAR = { visina: 0.777, sirina: 0.84 };
