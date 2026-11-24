@@ -1,13 +1,18 @@
 // Ukratko: Kartice proizvoda koje Marti preporuči
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v36)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v37)
   //
   //  ProductCardExtension → trace "ext_product_card"
-  //  Jedan proizvod: jedna kartica. Više proizvoda: kartice stoje u vodoravnoj
+  //  Jedan proizvod: jedna kartica, preko cijele širine poruke (najviše
+  //  400 px). Više proizvoda: kartice stoje u vodoravnoj
   //  traci (vrtuljak) koja se lista prstom, mišem, strelicama ili točkicama
   //  ispod nje; svaka se kartica zaustavi na istom mjestu uz lijevi rub, a
-  //  desno proviruje sljedeća (vidi VRTULJAK niže). Izgled je kao na slici prijedloga
+  //  desno proviruje sljedeća (vidi VRTULJAK niže). U chatu (jedan-ekran.js)
+  //  poruka s karticama zauzme cijelu širinu razgovora, bez avatara uz nju,
+  //  a vrtuljak ide do rubova prozora (v37: na mobitelu širokom 375 px
+  //  kartica je 335 px umjesto 283, u vrtuljku 319 umjesto 251, pa podaci
+  //  ispod cijene stanu u dva retka). Izgled je kao na slici prijedloga
   //  (kartica 336 px: Prada Luna Rossa Carbon), ali bez opisa artikla, s malo
   //  većom markom (15 px), malo manjim nazivom (22 px) i gumbom zaobljenim kao
   //  kartica.
@@ -543,21 +548,30 @@
         white-space: nowrap;
       }
 
-      /* ── jedan proizvod ── */
+      /* ── jedan proizvod: kartica preko cijele širine poruke (najviše 400 px) ── */
       .mx-istaknuta {
         display: flex;
         flex-direction: column;
-        padding: 6px 4px 14px;        /* mjesto za sjenu kartice */
+        padding: 6px 0 14px;          /* mjesto za sjenu kartice */
       }
 
       /* ── više proizvoda: vrtuljak ──
          Kartice stoje u traci koja se lista vodoravno; listanje je izvorno
          (prst, dodirna ploha), pa je glatko na svim uređajima. Svaka kartica se
          zaustavi uz lijevi rub (scroll-snap), a desno proviruje sljedeća. Iza
-         zadnje je toliko mjesta da se i ona zaustavi na istom mjestu. */
+         zadnje je toliko mjesta da se i ona zaustavi na istom mjestu.
+         U chatu traka ide do rubova prozora (kao Voiceflowov vrtuljak): chat
+         (jedan-ekran.js) u --mx-rub-chata javi koliko je od poruke do ruba
+         prozora. Prva kartica stoji uz lijevi rub poruke, a sljedeća
+         proviruje do desnog ruba prozora. Bez te vrijednosti traka je široka
+         kao poruka, a prva kartica je 4 px od njezina ruba (mjesto za sjenu). */
       .mx-vrtuljak {
-        --mx-sirina: min(calc(100% - 40px), 340px);   /* širina kartice u traci: sljedeća proviruje 24 px (rub i ploča, bez slova) */
+        --mx-rub: var(--mx-rub-chata, 0px);
+        --mx-uvlaka: max(4px, var(--mx-rub));    /* od lijevog ruba trake do prve kartice */
+        --mx-sirina: min(calc(100% - var(--mx-uvlaka) - 36px), 380px);   /* širina kartice u traci: 12 px razmaka, sljedeća proviruje 24 px (rub i ploča, bez slova) */
         position: relative;
+        width: auto;                  /* s negativnim rubovima: širi od poruke */
+        margin: 0 calc(-1 * var(--mx-rub));
       }
       .mx-traka {
         position: relative;
@@ -567,17 +581,19 @@
         overflow-y: hidden;
         padding: 6px 0 18px;          /* mjesto za sjenu kartice */
         scroll-snap-type: x mandatory;
-        scroll-padding-left: 4px;
+        scroll-padding-left: var(--mx-uvlaka);
         overscroll-behavior-x: contain;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
-        /* rubovi trake se blago gube, pa sjena i kartica koja proviruje nemaju oštar rez */
-        -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 4px, #000 calc(100% - 14px), transparent 100%);
-                mask-image: linear-gradient(90deg, transparent 0, #000 4px, #000 calc(100% - 14px), transparent 100%);
+        /* rubovi trake se blago gube, pa sjena i kartica koja proviruje nemaju
+           oštar rez; na rubu prozora chata se ne gube (tamo je rez prirodan) */
+        --mx-maska: linear-gradient(90deg, transparent 0, #000 calc(4px - min(4px, var(--mx-rub))), #000 calc(100% - 14px + min(14px, var(--mx-rub))), transparent 100%);
+        -webkit-mask-image: var(--mx-maska);
+                mask-image: var(--mx-maska);
       }
       .mx-traka::-webkit-scrollbar { display: none; }
-      .mx-traka::before { content: ""; flex: 0 0 4px; }
-      .mx-traka::after { content: ""; flex: 0 0 calc(100% - var(--mx-sirina) - 4px); }
+      .mx-traka::before { content: ""; flex: 0 0 var(--mx-uvlaka); }
+      .mx-traka::after { content: ""; flex: 0 0 calc(100% - var(--mx-sirina) - var(--mx-uvlaka)); }
       .mx-traka > .mx-kartica {
         flex: 0 0 var(--mx-sirina);
         width: var(--mx-sirina);
@@ -656,7 +672,7 @@
         flex-direction: column;
         flex: none;
         width: 100%;
-        max-width: 380px;
+        max-width: 400px;
         min-width: 0;
         padding: 6px 6px 20px;
         background: var(--mx-kartica);

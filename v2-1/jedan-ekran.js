@@ -33,6 +33,9 @@
   //     odgovori (status narudžbe, Loyalty Card, reklamacija, plaćanje,
   //     beauty savjetnik) imaju lijevo tanku ikonu (POSTAVKE: ikoneGumba),
   //     koja na ispunjenom gumbu posvijetli
+  //   - kartice artikala (kartica-artikla.js) zauzmu cijelu širinu
+  //     razgovora, od lijevog ruba avatara do desnog ruba poruka, pa uz njih
+  //     nema avatara; vrtuljak kartica ide do rubova prozora
   //   - polje za poruku je bijela kapsula s tankim toplim rubom; gumb za
   //     slanje je taman krug tek kad ima što poslati
   //   - čim kupac pošalje prvu poruku ili pritisne ponuđeni odgovor,
@@ -295,6 +298,9 @@
            13 px (s 16 px bi na toj visini opet bili pilule) */
         --mx-j-zaobljenje-gumba: 16px;
         --mx-j-zaobljenje-odgovora: 13px;
+        /* razmak od poruka do lijevog i desnog ruba prozora (kao kod
+           Voiceflowa); do njega ide vrtuljak kartica artikala */
+        --mx-j-rub-razgovora: 20px;
         --mx-j-glatko: cubic-bezier(.16, 1, .3, 1);
         --mx-j-meko: cubic-bezier(.45, 0, .2, 1);
         --mx-j-sklapanje: cubic-bezier(.45, 0, .18, 1);   /* sklapanje i širenje pozornice: krene odmah, dugo usporava */
@@ -536,7 +542,7 @@
       }
 
       /* ═══ PORUKE ═══ */
-      ${PORUKE} { padding-top: 14px; }
+      ${PORUKE} { padding-top: 14px; padding-left: var(--mx-j-rub-razgovora); padding-right: var(--mx-j-rub-razgovora); }
       /* Voiceflowov uvod (veliki avatar i naslov) više ne treba: tu je pozornica */
       ${W} .vfrc-assistant-info { display: none; }
 
@@ -678,6 +684,14 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
         background: transparent;
         color: var(--mx-j-tinta);
       }
+      /* kartice artikala: preko cijele širine razgovora, od lijevog ruba
+         avatara do desnog ruba poruka, pa uz njih nema avatara. Vrtuljak
+         kartica ide do rubova prozora (kao Voiceflowov): --mx-rub-chata je
+         razmak od poruka do ruba prozora. Sva tri pravila su s :has(), pa
+         preglednik koji ga ne zna ostavi karticu uz avatar, kao prije */
+      ${W} .vfrc-system-response:has(.vfrc-message--extension-ProductCard) > .vfrc-avatar { display: none; }
+      ${W} .vfrc-system-response:has(.vfrc-message--extension-ProductCard) > div { width: 100%; margin-left: 0; }
+      ${W} .vfrc-system-response:has(.vfrc-message--extension-ProductCard) .vfrc-message--extension-ProductCard { --mx-rub-chata: var(--mx-j-rub-razgovora); }
 
       /* kraj razgovora: tanke crte i natpis između njih */
       ${W} .vfrc-chat--status { margin: 22px 0 8px; }
