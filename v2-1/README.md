@@ -11,7 +11,7 @@ U ovoj mapi je 1. dio verzije 2.0 Marti chata: nove kartice artikala, novi izgle
 | `loader.js` | jedini file koji stranica učitava; on učita sve ostalo iz ove mape i spoji chat na Voiceflow projekt „v2 - prvi dio” |
 | `kartica-artikla.js` | kartice artikala: svijetlosiva ploča sa slikom, marka, naziv, vrsta i veličina, cijena (akcija, promo kod), tri osobine s ikonama i crni gumb „Pogledaj proizvod”; više proizvoda stoji u vodoravnom vrtuljku (listanje prstom, mišem, strelicama ili točkicama) |
 | `gumb-chata.js` | izgled gumba koji otvara chat |
-| `jedan-ekran.js` | izgled prozora chata „Jedan ekran” |
+| `jedan-ekran.js` | izgled prozora chata „Jedan ekran” i pokretanje razgovora: razgovor kreće kad se chat otvori, a otvoreni chat nikad ne ostaje prazan (ako se pozdrav ne pokrene, za 1,5 s se pokrene iznova; i nakon „Započni novi razgovor”) |
 | `cekanje-odgovora.js` | perlice dok Marti piše odgovor |
 | `pozdrav-bez-tipkanja.js` | Martin pozdrav izroni bez tipkanja |
 | `fonts/` | fontovi Jost (chat), Nunito i Playfair Display (kartice artikala); licenca SIL OFL 1.1 |

@@ -52,6 +52,13 @@
   //     stranicu proizvoda), chat se otvori odmah sklopljen
   //   - razgovor kreće sam kad se chat otvori, ali
   //     tek tada: samo učitavanje stranice ne pokreće razgovor u Voiceflowu
+  //   - otvoreni chat nikad ne ostaje prazan: ako u njemu nema ni poruke ni
+  //     pozdrava koji stiže (Voiceflowu se veza nije spojila, kupac je
+  //     otišao na drugu stranicu dok je pozdrav stizao...), razgovor se za
+  //     1,5 s sam pokrene iznova; razgovor bez ijedne poruke koji je
+  //     preglednik zapamtio briše se pri učitavanju stranice. Dok pozdrav
+  //     tek stiže, gumb za novi razgovor u traci ne reagira (pritisak bi
+  //     Voiceflowu prekinuo pokretanje)
   //   - Voiceflowovi engleski tekstovi ("Start new chat", "Cancel",
   //     "Chat has ended") su na hrvatskom
   //
@@ -66,7 +73,8 @@
   //  element: pozornicu, odmah ispod Voiceflowova zaglavlja (ako je
   //  Voiceflow iscrta iznova, vrati se na mjesto). Voiceflowu se isključi
   //  "autostart", pa se razgovor pokrene tek otvaranjem chata (modul tada
-  //  pritisne Voiceflowov skriveni gumb za početak).
+  //  pritisne Voiceflowov skriveni gumb za početak; vidi POKRETANJE
+  //  RAZGOVORA u motoru).
   //  Ako modul zakaže, chat radi kao Voiceflowov.
   //  Gdje radi: učitava ga loader.js, pa vrijedi na martimex.hr i na
   //  testnoj stranici proba.html.
@@ -392,6 +400,11 @@
       ${ZAGLAVLJE} .vfrc-header--button:hover { color: #fff; background: rgba(255, 255, 255, .07); }
       ${ZAGLAVLJE} .vfrc-header--button:active { transform: scale(.94); }
       ${ZAGLAVLJE} .vfrc-header--button:focus-visible { outline: 1px solid var(--mx-j-roza); outline-offset: 2px; }
+      /* dok u chatu još nema ni jedne poruke (razgovor tek kreće), gumb za novi
+         razgovor ne reagira: nema se što pokrenuti iznova, a pritisak usred
+         pokretanja prekine Voiceflowu vezu i chat ostane prazan. Gumb za
+         zatvaranje (zadnji) radi uvijek. Oznaku na #voiceflow-chat stavlja motor */
+      :host([data-mx-bez-razgovora]) .vfrc-widget .vfrc-chat > .vfrc-header .vfrc-header--button:not(:last-child) { pointer-events: none; }
 
       /* ═══ POZORNICA S TRAKAMA LOGOTIPA (umetnuta ispod trake) ═══ */
       :host .mx-j {
@@ -1041,18 +1054,19 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
     // ═══════════════════════════════════════════════════════════════════
     //  VEZA S VOICEFLOWOM
     // ═══════════════════════════════════════════════════════════════════
-    const S = { kor: null, pozornica: null, sklopljeno: false, otvoren: false, promatracVelicine: null, prozor: null, ceka: false, tipka: false, tipkaCeka: 0 };
+    const S = {
+      kor: null, host: null, pozornica: null, sklopljeno: false, otvoren: false, promatracVelicine: null, prozor: null, ceka: false, tipka: false, tipkaCeka: 0,
+      javljeno: false,         // Voiceflow je javio otvaranje ili zatvaranje chata
+      // pokretanje razgovora (vidi POKRETANJE RAZGOVORA niže)
+      pokreniKadMoze: false,   // chat je upravo otvoren: razgovor kreće čim ga Voiceflow može pokrenuti
+      stanje: '', stanjeOd: 0, // stanje razgovora i od kada traje
+      popravaka: 0,            // koliko je puta na ovoj stranici razgovor ponovno pokrenut jer je zapeo
+      popravlja: false,        // ponovno pokretanje upravo traje
+      cuvar: 0,                // setInterval koji pazi na razgovor dok je chat otvoren, a razgovora još nema
+      ispravak: 0              // koliko je puta tražen Voiceflowov klijent za ispravak (true = ispravljen)
+    };
 
     function kupacJeOdgovorio(kor) { return !!kor.querySelector('.vfrc-chat .vfrc-user-response'); }
-    function imaRazgovor(kor) { return !!kor.querySelector('.vfrc-chat .vfrc-system-response, .vfrc-chat .vfrc-user-response'); }
-
-    // Razgovor još nije krenuo: Voiceflow tada ima svoj gumb za početak (ploča se ne vidi, vidi CSS)
-    function cekaPocetak(kor) {
-      const g = kor.querySelector(START);
-      if (!g || !g.parentElement) return false;
-      const ploca = g.closest('.vfrc-footer__start-button') || g.parentElement;
-      return !ploca.hasAttribute('inert') && getComputedStyle(g).display !== 'none' && !imaRazgovor(kor);
-    }
 
     function sklopi(odmah) {
       if (!S.pozornica || S.sklopljeno) return;
@@ -1107,17 +1121,23 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
     function uskladi() {
       S.ceka = false;
       const kor = S.kor;
-      if (!kor || !prikvaci(kor)) return;
-      if (trebaSklopiti(kor)) {
-        // prvi odgovor kupca: pozornica se sklopi (dok je chat zatvoren, odmah)
-        sklopi(!S.otvoren);
-      } else if (S.sklopljeno) {
-        // novi razgovor (gumb gore ili "Započni novi razgovor" nakon završenog):
-        // Voiceflow isprazni razgovor i pozornica se s trakama odmah vrati,
-        // još dok Marti tipka pozdrav (dok je chat zatvoren, bez animacije)
-        rasiri(!S.otvoren);
+      if (!kor) return;
+      // chat koji je Voiceflow pri učitavanju stranice sam otvorio (bio je
+      // otvoren na prošloj stranici) ne javi "voiceflow:open": dok Voiceflow
+      // nije javio ni otvaranje ni zatvaranje, otvorenost se čita iz prozora
+      if (!S.otvoren && !S.javljeno && otvorenPoProzoru(kor)) { otvoreno(); return; }
+      if (prikvaci(kor)) {
+        if (trebaSklopiti(kor)) {
+          // prvi odgovor kupca: pozornica se sklopi (dok je chat zatvoren, odmah)
+          sklopi(!S.otvoren);
+        } else if (S.sklopljeno) {
+          // novi razgovor (gumb gore ili "Započni novi razgovor" nakon završenog):
+          // Voiceflow isprazni razgovor i pozornica se s trakama odmah vrati,
+          // još dok Marti tipka pozdrav (dok je chat zatvoren, bez animacije)
+          rasiri(!S.otvoren);
+        }
       }
-      if (S.otvoren) zapocni();
+      pazi();
     }
     // (setTimeout, a ne requestAnimationFrame: radi i dok je kartica u pozadini)
     function uskladiUskoro() {
@@ -1126,26 +1146,30 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       setTimeout(uskladi, 0);
     }
 
-    // Otvaranjem chata razgovor kreće sam (ako još ne postoji)
-    function zapocni() {
-      const kor = S.kor;
-      if (!kor || !cekaPocetak(kor)) return;
-      const g = kor.querySelector(START);
-      try { g.click(); } catch (e) { /* nije bitno */ }
-    }
-
     function otvoreno() {
       S.otvoren = true;
+      S.pokreniKadMoze = true;                 // razgovor kreće čim ga Voiceflow može pokrenuti (ako ga još nema)
+      S.stanje = '';                           // čekanja (vidi pazi) se broje od otvaranja
       const kor = S.kor;
-      if (!kor || !prikvaci(kor)) return;     // prozor još ne postoji: uskladi() nastavi kad se pojavi
-      S.tipka = false;                         // polje više nema fokus (prozor se tek otvara)
-      if (trebaSklopiti(kor)) sklopi(true);    // postojeći razgovor: odmah sklopljeno, bez animacije
-      else rasiri(true);
-      zapocni();
+      if (!kor) return;                        // chat još nije tu: nastavi se kad se pojavi
+      if (prikvaci(kor)) {
+        S.tipka = false;                       // polje više nema fokus (prozor se tek otvara)
+        if (trebaSklopiti(kor)) sklopi(true);  // postojeći razgovor: odmah sklopljeno, bez animacije
+        else rasiri(true);
+      }
+      pazi();
     }
 
     function zatvoreno() {
       S.otvoren = false;
+      S.pokreniKadMoze = false;
+      if (S.kor) pazi();
+    }
+
+    // Je li prozor chata otvoren (zatvoren ne prima klikove); null ako ga još nema
+    function otvorenPoProzoru(kor) {
+      const prozor = kor.querySelector('.vfrc-chat__container');
+      return prozor ? getComputedStyle(prozor).pointerEvents !== 'none' : null;
     }
 
     // Voiceflow javlja otvaranje i zatvaranje chata porukom na window
@@ -1159,8 +1183,244 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
           try { d = JSON.parse(d); } catch (x) { return; }
         }
         const tip = d && d.type;
-        if (tip === 'voiceflow:open') otvoreno();
-        else if (tip === 'voiceflow:close') zatvoreno();
+        if (tip === 'voiceflow:open') { S.javljeno = true; otvoreno(); }
+        else if (tip === 'voiceflow:close') { S.javljeno = true; zatvoreno(); }
+      });
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  POKRETANJE RAZGOVORA
+    //  Voiceflowu je isključen autostart, pa razgovor pokreće ovaj modul:
+    //  kad se chat otvori, a razgovora još nema, pritisne Voiceflowov
+    //  (skriveni) gumb za početak — samo tada. Voiceflow taj gumb pokaže i
+    //  usred svog novog razgovora (gumb u traci nakon završenog razgovora),
+    //  a drugi pritisak tada pokrene drugi razgovor preko prvoga: Voiceflow
+    //  prekine vezu koja se tek spaja i chat ostane prazan.
+    //  Uz to modul pazi da otvoreni chat nikad ne ostane prazan. Prazan
+    //  ostane kad Voiceflowu pokretanje ne uspije (veza se ne spoji, kupac
+    //  prijeđe na drugu stranicu dok pozdrav stiže...): u njemu tada nema
+    //  ni poruke ni gumba za početak, a ništa se ne pokreće. Ako to traje
+    //  CEKANJA_POPRAVKA, razgovor se pokrene iznova, kao Voiceflowovim
+    //  "Započni novi razgovor" (isprazni chat, prekine vezu, novi razgovor).
+    //  Pri učitavanju stranice zapamćeni razgovor bez ijedne poruke se
+    //  obriše (ocistiZapamceni), pa chat kreće kao prvi put.
+    // ═══════════════════════════════════════════════════════════════════
+    // ms: koliko otvoreni prazni chat čeka prije 1., 2., ... ponovnog
+    // pokretanja (Voiceflow svoj novi razgovor pokrene za ~0,1 s, pa ga
+    // čekanje ne prekida); nakon zadnjega se odustaje
+    const CEKANJA_POPRAVKA = [1500, 3000, 6000, 12000, 20000];
+    // ms: pozdrav se pokreće (Marti "piše"), a ne stiže ništa — Voiceflow sam
+    // odustane najkasnije nakon ~30 s, pa je ovo samo zadnja zaštita
+    const ZAPELO = 45000;
+    const BEZ_RAZGOVORA = 'data-mx-bez-razgovora';   // oznaka na #voiceflow-chat dok u chatu nema poruka (vidi CSS)
+
+    // Voiceflowovo sučelje chata iznutra (isto koje koriste njegovi gumbi):
+    // traži se od elementa chata prema vrhu Reactova stabla. Javno sučelje
+    // (window.voiceflow.chat) ne zna isprazniti razgovor. Ako ga jednog dana
+    // ne nađe, modul se snalazi Voiceflowovim gumbima.
+    function vfApi() {
+      const el = S.kor && S.kor.querySelector('.vfrc-widget');
+      if (!el) return null;
+      const kljuc = Object.keys(el).find(function (k) { return k.indexOf('__reactFiber$') === 0; });
+      let f = kljuc ? el[kljuc] : null;
+      for (let i = 0; f && i < 300; i++, f = f.return) {
+        const v = f.memoizedProps && f.memoizedProps.value;
+        if (v && typeof v.launch === 'function' && typeof v.reset === 'function' &&
+            typeof v.getTurns === 'function' && typeof v.isStreamingData === 'function') return v;
+      }
+      return null;
+    }
+
+    // Voiceflowov klijent za vezu s Marti (Voiceflow ga drži u Reactovu
+    // stanju komponente koja daje sučelje chata)
+    function vfKlijent() {
+      const el = S.kor && S.kor.querySelector('.vfrc-widget');
+      if (!el) return null;
+      const kljuc = Object.keys(el).find(function (k) { return k.indexOf('__reactFiber$') === 0; });
+      let f = kljuc ? el[kljuc] : null;
+      for (let i = 0; f && i < 300; i++, f = f.return) {
+        let h = f.memoizedState;
+        for (let j = 0; h && typeof h === 'object' && 'next' in h && 'memoizedState' in h && j < 300; j++, h = h.next) {
+          const v = Array.isArray(h.memoizedState) ? h.memoizedState[0] : null;
+          if (v && typeof v === 'object' && 'initPromise' in v && typeof v.init === 'function' && typeof v.disconnect === 'function') return v;
+        }
+      }
+      return null;
+    }
+
+    // ISPRAVAK VOICEFLOWOVE GREŠKE. Voiceflow se s Marti spaja jednim
+    // spajanjem u isto vrijeme: dok ono traje, svaka poruka čeka baš njega.
+    // Kad se razgovor usred spajanja pokrene iznova, Voiceflow prekine vezu,
+    // ali zapamti prekinuto spajanje, pa novi razgovor čeka na njega dok ono
+    // nakon 10 s ne odustane — a s njim i novi razgovor: chat ostane prazan.
+    // Tako biva npr. kad kupac otvori chat s razgovorom s prošle stranice
+    // (Voiceflow se tada odmah spaja) i odmah pokrene novi razgovor.
+    // Ispravak: kad Voiceflow prekine vezu, zaboravi i spajanje koje je bilo
+    // u tijeku, pa se novi razgovor spoji iznova. Klijent se traži dok se ne
+    // nađe (najviše 40 puta); ako ga nema, sve radi kao prije, a prazan chat
+    // pokrene pazi().
+    function ispraviVoiceflow() {
+      if (S.ispravak === true || S.ispravak > 40 || !S.kor.querySelector('.vfrc-widget')) return;
+      S.ispravak++;
+      const k = vfKlijent();
+      if (!k) return;
+      S.ispravak = true;
+      if (k.__mxIspravljen) return;
+      const prekini = k.disconnect;
+      k.disconnect = function () {
+        k.initPromise = null;
+        return prekini.apply(k, arguments);
+      };
+      k.__mxIspravljen = true;
+    }
+
+    // Ima li dio razgovora što pokazati: kupčeva poruka, ili Martina poruka
+    // (osim oznake kraja razgovora) ili gumbi
+    function turnImaSadrzaj(t) {
+      if (!t || typeof t !== 'object') return false;
+      if (t.type !== 'system') return true;
+      const poruke = Array.isArray(t.messages) ? t.messages : [];
+      return poruke.some(function (m) { return m && m.type !== 'END'; }) || (Array.isArray(t.actions) && t.actions.length > 0);
+    }
+
+    // Stanje razgovora u chatu:
+    //  'razgovor'   u chatu je barem jedna poruka
+    //  'ceka-start' razgovora nema, a Voiceflowov gumb za početak se može pritisnuti
+    //  'pokrece'    razgovor kreće (gumb je pritisnut ili Marti "piše" pozdrav)
+    //  'prazno'     ništa od toga
+    function stanjeRazgovora(kor) {
+      if (kor.querySelector('.vfrc-chat .vfrc-system-response, .vfrc-chat .vfrc-user-response, .vfrc-chat .vfrc-file-upload-response')) return 'razgovor';
+      const api = vfApi();
+      try { if (api && api.getTurns().some(turnImaSadrzaj)) return 'razgovor'; } catch (e) { /* nije bitno */ }
+      const g = kor.querySelector(START);
+      if (g && g.parentElement) {
+        const ploca = g.closest('.vfrc-footer__start-button') || g.parentElement;
+        if (ploca.hasAttribute('inert')) return 'pokrece';           // pritisnut, Voiceflow ga upravo pokreće
+        if (getComputedStyle(g).display !== 'none') return 'ceka-start';
+      }
+      if (kor.querySelector('.vfrc-typing-indicator')) return 'pokrece';
+      try { if (api && api.isStreamingData()) return 'pokrece'; } catch (e) { /* nije bitno */ }
+      return 'prazno';
+    }
+
+    // Pri svakoj promjeni u chatu, pri otvaranju i zatvaranju, a dok je chat
+    // otvoren i bez poruka i svakih 300 ms
+    function pazi() {
+      const kor = S.kor;
+      if (!kor) return;
+      ispraviVoiceflow();
+      const st = stanjeRazgovora(kor);
+      const sad = Date.now();
+      if (st !== S.stanje) { S.stanje = st; S.stanjeOd = sad; }
+      if (S.host) {
+        if (st === 'razgovor') S.host.removeAttribute(BEZ_RAZGOVORA);
+        else if (!S.host.hasAttribute(BEZ_RAZGOVORA)) S.host.setAttribute(BEZ_RAZGOVORA, '');
+      }
+      if (st === 'razgovor') { S.pokreniKadMoze = false; S.popravaka = 0; cuvar(false); return; }
+      if (!S.otvoren) { cuvar(false); return; }    // zatvoren chat se ne dira
+      cuvar(true);
+      if (S.popravlja) return;
+      const trajanje = sad - S.stanjeOd;
+      if (st === 'ceka-start' && S.pokreniKadMoze) {
+        // tek otvoren chat: razgovor kreće odmah
+        S.pokreniKadMoze = false;
+        S.stanjeOd = sad;
+        try { kor.querySelector(START).click(); } catch (e) { /* nije bitno */ }
+        return;
+      }
+      if (st === 'pokrece') {
+        S.pokreniKadMoze = false;
+        if (trajanje >= ZAPELO && S.popravaka < CEKANJA_POPRAVKA.length) popravi(kor);
+        return;
+      }
+      // prazno, ili gumb za početak predugo stoji (Voiceflow ga usred svog
+      // novog razgovora pokaže samo na tren)
+      if (S.popravaka >= CEKANJA_POPRAVKA.length) return;          // odustalo se (piše u konzoli)
+      if (navigator.onLine === false) { S.stanjeOd = sad; return; }  // bez interneta: čeka se da se vrati
+      if (trajanje < CEKANJA_POPRAVKA[S.popravaka]) return;
+      if (st === 'ceka-start') {
+        S.popravaka++;
+        S.stanjeOd = sad;
+        try { kor.querySelector(START).click(); } catch (e) { /* nije bitno */ }
+      } else popravi(kor);
+    }
+
+    function cuvar(da) {
+      if (da && !S.cuvar) S.cuvar = setInterval(pazi, 300);
+      else if (!da && S.cuvar) { clearInterval(S.cuvar); S.cuvar = 0; }
+    }
+
+    // Razgovor se pokrene iznova: isprazni se chat, prekine se (zapela) veza s
+    // Voiceflowom i pokrene novi razgovor — isto što radi Voiceflowov
+    // "Započni novi razgovor". Ne čeka se da pozdrav stigne: to prati pazi().
+    function popravi(kor) {
+      S.popravlja = true;
+      S.popravaka++;
+      const posljednji = S.popravaka >= CEKANJA_POPRAVKA.length;
+      console.warn('[Martimex] Razgovor u chatu se nije pokrenuo – pokrećem ga iznova (' + S.popravaka + '. put' + (posljednji ? ', zadnji' : '') + ')');
+      const api = vfApi();
+      const gotovo = api
+        ? Promise.resolve()
+          .then(function () { return api.reset(); })
+          .then(function () {
+            Promise.resolve(api.launch()).catch(function (e) { console.warn('[Martimex] Novi razgovor se nije pokrenuo:', e); });
+          })
+        : iznovaGumbima(kor);
+      gotovo
+        .catch(function (e) { console.warn('[Martimex] Razgovor se nije pokrenuo iznova:', e); })
+        .then(function () {
+          S.popravlja = false;
+          S.stanje = '';                         // čekanje se broji iznova
+          uskladiUskoro();
+        });
+    }
+
+    // Bez Voiceflowova sučelja: njegov gumb za novi razgovor (u traci ili u
+    // izborniku), pa potvrda "Započni novi razgovor" ako je se pokaže
+    function iznovaGumbima(kor) {
+      let gumb = kor.querySelector('#restart-chat');
+      if (!gumb) {
+        const gumbi = kor.querySelectorAll('.vfrc-chat > .vfrc-header .vfrc-header--button');
+        gumb = gumbi.length > 1 ? gumbi[gumbi.length - 2] : null;   // zadnji je "zatvori"
+      }
+      if (!gumb) return Promise.resolve();
+      gumb.click();
+      return new Promise(function (gotovo) {
+        setTimeout(function () {
+          const ploca = kor.querySelector('.vfrc-prompt');
+          const potvrdi = ploca && ploca.querySelector('.vfrc-button');
+          if (potvrdi && getComputedStyle(ploca).pointerEvents !== 'none' && +getComputedStyle(ploca).opacity > 0) {
+            try { potvrdi.click(); } catch (e) { /* nije bitno */ }
+          }
+          gotovo();
+        }, 300);
+      });
+    }
+
+    // Pri učitavanju stranice (prije nego ga Voiceflow pročita): zapamćeni
+    // razgovor u kojem nema ni jedne poruke briše se — ostane od kupca koji
+    // je otvorio chat i otišao na drugu stranicu prije nego što je pozdrav
+    // stigao. Voiceflow ga pamti kao razgovor koji traje, pa bi na sljedećoj
+    // stranici chat bio prazan, bez pozdrava i bez gumba za početak.
+    // Ostaje samo Voiceflowova oznaka posjetitelja (userID). Ako je chat već
+    // pokrenut (modul je stigao prekasno), ne dira se ništa.
+    function ocistiZapamceni() {
+      if (window.voiceflow && window.voiceflow.chat && window.voiceflow.chat._shadowRoot) return;
+      [window.sessionStorage, window.localStorage].forEach(function (sp) {
+        try {
+          for (let i = sp.length - 1; i >= 0; i--) {
+            const kljuc = sp.key(i);
+            if (!kljuc || kljuc.indexOf('voiceflow-session-') !== 0) continue;
+            let sesija = null;
+            try { sesija = JSON.parse(sp.getItem(kljuc) || 'null'); } catch (e) { continue; }
+            if (!sesija || typeof sesija !== 'object' || !Array.isArray(sesija.turns) || !sesija.turns.length) continue;
+            if (sesija.status && ['ACTIVE', 'ENDED', 'IDLE'].indexOf(sesija.status) === -1) continue;   // npr. razgovor s agentom se ne dira
+            if (sesija.turns.some(turnImaSadrzaj)) continue;
+            if (sesija.userID) sp.setItem(kljuc, JSON.stringify({ userID: sesija.userID }));
+            else sp.removeItem(kljuc);
+          }
+        } catch (e) { /* spremište nedostupno (npr. zabranjeni kolačići) */ }
       });
     }
 
@@ -1245,9 +1505,11 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       vf.autostart = false;
       if (PAMCENJE) vf.assistant = Object.assign({}, vf.assistant, { persistence: PAMCENJE });
 
+      ocistiZapamceni();
       ubaciFontove();
       pratiOtvaranje();
       cekajHost(function (host) {
+        S.host = host;
         S.kor = host.shadowRoot;
         ubaciStil(S.kor);
         pratiPolje(S.kor);
