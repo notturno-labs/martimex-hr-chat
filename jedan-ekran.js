@@ -53,6 +53,8 @@
   //     tek tada: samo učitavanje stranice ne pokreće razgovor u Voiceflowu
   //   - Voiceflowovi engleski tekstovi ("Start new chat", "Cancel",
   //     "Chat has ended") su na hrvatskom
+  //   - nema Voiceflowove okrugle strelice "na dno razgovora" (pojavi se
+  //     kad kupac odskrola prema starijim porukama)
   //
   //  "Smanji pokrete" (postavka uređaja): trake stoje; pozornica se sklopi
   //  bez animacije. Trake su običan CSS (bez WebGL-a),
@@ -748,8 +750,10 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
       ${PRAZNO} { background: transparent; box-shadow: inset 0 0 0 1px var(--mx-j-linija); transform: none; cursor: default; }
       ${PRAZNO} svg { color: var(--mx-j-tih); }
 
-      /* gumb "na dno razgovora" */
-      ${NA_DNO} { border: 0; background: var(--mx-j-papir); color: var(--mx-j-tinta); box-shadow: var(--mx-j-sjena); }
+      /* Voiceflowov gumb "na dno razgovora" (okrugla strelica iznad polja za
+         poruku, pojavi se kad kupac odskrola prema starijim porukama) se ne
+         prikazuje */
+      ${NA_DNO} { display: none; }
 
       /* napomena ispod polja ("Powered by...", upozorenje o AI-ju) */
       ${NAPOMENA} {
