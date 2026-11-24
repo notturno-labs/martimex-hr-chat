@@ -1,7 +1,7 @@
 // Ukratko: Kartice proizvoda koje Marti preporuči
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v40)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v41)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Kartica je široka kao poruka, tj. kao najširi Martin oblačić (najviše
@@ -32,8 +32,8 @@
   //            Emoji se ne prikazuje: kartica umjesto njega nacrta tanku crnu
   //            ikonu iz palete (vidi IKONE PALETE i EMOJI U OSOBINAMA niže),
   //            a iz teksta ukloni svaki emoji. Podatak je tamnim polumasnim
-  //            slovima, a ispod njega sitna siva oznaka „Miris”, „Kada
-  //            nositi”, „Trajnost” (v36; POSTAVKE: oznakePodataka).
+  //            slovima, bez oznake ispod (sive oznake „Miris”, „Kada
+  //            nositi”, „Trajnost” iz v36 uklonjene su u v41).
   //            Ostalo (bez emojija): ["Svjež i čist", "Moderna elegancija",
   //            "Ured, večer i prilike"]; svaka osobina dobije ikonu prema
   //            svojim riječima (svjež → list, elegancija → dijamant, ured →
@@ -64,10 +64,8 @@
   //   │   Parfemska voda · 50 ml     │   vrsta i veličina: sivo
   //   │   103,00 €                   │   cijena: Playfair Display
   //   │   ikona  │  ikona  │  ikona  │   tri osobine, između njih tanke crte
-  //   │   Svjež  │  Ljeto  │ Nježno  │   parfemi: podatak tamno i polumasno,
-  //   │ i morski │ i ured  │ uz kožu │   ispod sitna siva oznaka (oznake u
-  //   │   Miris  │  Kada   │Trajnost │   istoj liniji); ostale kartice: samo
-  //   │          │ nositi  │         │   tekst osobine, kao dosad
+  //   │   Svjež  │  Ljeto  │ Nježno  │   parfemi: podatak tamno i polumasno;
+  //   │ i morski │ i ured  │ uz kožu │   ostale kartice: tekst osobine
   //   │ (     Pogledaj proizvod    ) │   crni gumb zaobljen kao kartica, jedini link
   //   └──────────────────────────────┘
   //  Na proizvod vodi samo gumb, i to u istom prozoru (bez novih kartica).
@@ -133,9 +131,6 @@
 
     najviseOsobina: 3,        // koliko osobina stane u red ispod cijene
     znakovaOsobine: 32,       // dulja osobina se skrati (na cijeloj riječi)
-    // Kartica parfema (osobine s emojijem): sitna siva oznaka ispod svakog
-    // podatka, redom po mjestu
-    oznakePodataka: ['Miris', 'Kada nositi', 'Trajnost'],
 
     // Vrsta mirisa s kraja naziva, na hrvatskom (ključ je kako piše u nazivu,
     // malim slovima; kratice EDP, EDT i EDC vrijede kao puni naziv)
@@ -914,33 +909,13 @@
         overflow-wrap: break-word;
       }
       /* Kartica parfema (osobine s emojijem): ikona, ispod nje podatak tamnim
-         polumasnim slovima, a ispod podatka sitna siva oznaka (Miris · Kada
-         nositi · Trajnost). Stupci imaju tri reda, pa su oznake u istoj liniji
-         i kad je neki podatak u jednom retku. */
-      .mx-osobine--podaci .mx-osobina {
-        display: grid;
-        grid-template-rows: auto 1fr auto;
-        justify-items: center;
-        align-items: start;     /* prvi redak podatka u istoj liniji u svim stupcima */
-      }
-      .mx-osobine--podaci .mx-ikona { grid-row: 1; }
+         polumasnim slovima */
       .mx-osobine--podaci .mx-osobina-tekst {
-        grid-row: 2;
         margin-top: 10px;
         font-size: 13px;
         line-height: 17px;
         font-weight: 600;
         color: var(--mx-tinta);
-      }
-      .mx-osobine--podaci .mx-osobina-oznaka {
-        grid-row: 3;
-        display: block;
-        margin-top: 5px;
-        font-size: 11px;
-        line-height: 14px;
-        font-weight: 400;
-        color: var(--mx-siva);
-        white-space: nowrap;
       }
       /* Kartica parfema s tri podatka (mx-podataka-3): stupci su široki
          koliko treba njihov tekst. Prvi počinje uz lijevi rub teksta kartice,
@@ -1620,8 +1595,7 @@
     function izgradiOsobine(k, tijelo) {
       if (!k.osobine.length) return;
       // Kartica parfema (barem jedna osobina s emojijem iz palete): sve ikone
-      // su iz palete i nijedna se ne ponavlja, a ispod svakog podatka je
-      // oznaka (Miris · Kada nositi · Trajnost). Ostale kartice: kao dosad.
+      // su iz palete i nijedna se ne ponavlja. Ostale kartice: kao dosad.
       const sPaletom = k.osobine.some(function (o) { return ikonaEmojija(o.emoji); });
       const lista = el('ul', sPaletom ? 'mx-osobine mx-osobine--podaci mx-podataka-' + k.osobine.length : 'mx-osobine');
       lista.setAttribute('role', 'list');
@@ -1639,14 +1613,6 @@
           crtez = IKONE[ikonaOsobine(o.tekst, o.ikona, i)];
         }
         stavka.innerHTML = svg(crtez, 'mx-ikona');
-        // oznaka je u kodu ispred podatka (čitač zaslona: "Miris: Topao i
-        // slatkast"), a na zaslonu ispod njega (vidi .mx-osobine--podaci)
-        const oznaka = sPaletom && P.oznakePodataka ? P.oznakePodataka[i] : '';
-        if (oznaka) {
-          const o2 = el('span', 'mx-osobina-oznaka', oznaka);
-          o2.appendChild(el('span', 'mx-skriveno', ': '));
-          stavka.appendChild(o2);
-        }
         const t = el('span', 'mx-osobina-tekst');
         dvaReda(o.tekst).forEach(function (r, j) {
           if (j) t.appendChild(el('br'));
