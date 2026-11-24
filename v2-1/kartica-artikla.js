@@ -1,13 +1,18 @@
 // Ukratko: Kartice proizvoda koje Marti preporuči
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v36)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v40)
   //
   //  ProductCardExtension → trace "ext_product_card"
-  //  Jedan proizvod: jedna kartica. Više proizvoda: kartice stoje u vodoravnoj
-  //  traci (vrtuljak) koja se lista prstom, mišem, strelicama ili točkicama
-  //  ispod nje; svaka se kartica zaustavi na istom mjestu uz lijevi rub, a
-  //  desno proviruje sljedeća (vidi VRTULJAK niže). Izgled je kao na slici prijedloga
+  //  Kartica je široka kao poruka, tj. kao najširi Martin oblačić (najviše
+  //  400 px), i stoji u istom stupcu, uz avatar (na mobitelu širokom 375 px
+  //  291 px). Jedan proizvod: jedna kartica. Više proizvoda: kartice stoje u
+  //  vodoravnoj traci (vrtuljak) koja se lista prstom, mišem, strelicama ili
+  //  točkicama ispod nje; svaka se kartica zaustavi na istom mjestu uz
+  //  lijevi rub poruke, a desno proviruje sljedeća (vidi VRTULJAK niže). U
+  //  chatu (jedan-ekran.js) traka ide do desnog ruba prozora, pa je i
+  //  kartica u vrtuljku široka kao poruka, a sljedeća proviruje uz rub
+  //  prozora. Izgled je kao na slici prijedloga
   //  (kartica 336 px: Prada Luna Rossa Carbon), ali bez opisa artikla, s malo
   //  većom markom (15 px), malo manjim nazivom (22 px) i gumbom zaobljenim kao
   //  kartica.
@@ -68,7 +73,8 @@
   //  Na proizvod vodi samo gumb, i to u istom prozoru (bez novih kartica).
   //
   //  Mjere (CSS px, kartica široka 336): ploča je od ruba kartice odmaknuta
-  //  6 px, široka 324 i visoka 232 (u šire kartice raste u istom omjeru);
+  //  6 px, široka 324 i visoka 198 (u šire i uže kartice mijenja se u istom
+  //  omjeru; do v38 bila je visoka 232, v39 je oko 15 % niža);
   //  tekst i gumb su 24 px od ruba; gumb je visok 44 px, a ispod njega je
   //  20 px do dna kartice. Svaka fotografija se "izreže" i postavi u kadar
   //  jednako: artikl je visok 78 % ploče i stoji u sredini, bez obzira na
@@ -82,12 +88,20 @@
   //   - osobina od dvije ili više riječi uvijek je u dva retka podjednake
   //     duljine ("Svjež / i čist"); jednoslovna riječ (i, u, s...) ne ostaje
   //     na kraju retka
+  //   - kartica parfema s tri podatka: stupci su široki koliko treba tekst,
+  //     prvi počinje uz lijevi rub teksta kartice, a zadnji završava uz
+  //     desni, pa dulji podatak dobije više mjesta (v38); ostale kartice
+  //     imaju jednake stupce
   //   - bijela pozadina fotografije pretvara se u sivu boju ploče (canvas);
   //     kad to nije moguće (slika s druge domene), stapa se CSS-om. Tamna ili
   //     šarena fotografija ispuni cijelu ploču
   //   - kad Marti pošalje preporuke, kartice blago izrone jedna za drugom.
   //     Samo prvi put; kad se povijest razgovora ponovno učita, odmah su tu.
   //     Isključeno ako je na uređaju uključeno "Smanji pokrete"
+  //   - vrtuljak: ispod kartica su točkice i strelice, i na mobitelu (v40).
+  //     Nakon pojave se kartice jednom kratko pomaknu ulijevo i vrate
+  //     (namig), pa kupac vidi da desno ima još kartica; nema ga ako je
+  //     kupac već listao ili je uključeno "Smanji pokrete" (vidi NAMIG)
   // ═════════════════════════════════════════════════════════════════════
 
 
@@ -154,8 +168,9 @@
     })();
 
     // Ploča sa slikom: osnovna veličina (CSS px) u kartici širokoj 336 px. U
-    // široj kartici ploča raste u istom omjeru.
-    const PLOCA = [324, 232];
+    // široj ili užoj kartici mijenja se u istom omjeru. Artikl je u ploči uvijek
+    // jednako postavljen (KADAR), pa niža ploča znači i malo manji artikl.
+    const PLOCA = [324, 198];
     // Koliko ploče artikl smije zauzeti (visina, širina) kad je fotografija
     // obrađena; na slici prijedloga bočica je visoka 78 % ploče
     const KADAR = { visina: 0.777, sirina: 0.84 };
@@ -543,21 +558,34 @@
         white-space: nowrap;
       }
 
-      /* ── jedan proizvod ── */
+      /* ── jedan proizvod: kartica široka kao poruka (kao najširi Martin
+         oblačić), najviše 400 px ── */
       .mx-istaknuta {
         display: flex;
         flex-direction: column;
-        padding: 6px 4px 14px;        /* mjesto za sjenu kartice */
+        padding: 6px 0 14px;          /* mjesto za sjenu kartice */
       }
 
       /* ── više proizvoda: vrtuljak ──
          Kartice stoje u traci koja se lista vodoravno; listanje je izvorno
          (prst, dodirna ploha), pa je glatko na svim uređajima. Svaka kartica se
          zaustavi uz lijevi rub (scroll-snap), a desno proviruje sljedeća. Iza
-         zadnje je toliko mjesta da se i ona zaustavi na istom mjestu. */
+         zadnje je toliko mjesta da se i ona zaustavi na istom mjestu.
+         Traka počinje 4 px lijevo od poruke (mjesto za sjenu), pa svaka
+         kartica stane točno uz lijevi rub poruke, kao Martini oblačići.
+         U chatu (jedan-ekran.js) traka ide do desnog ruba prozora: chat u
+         --mx-chat-izlaz-desno javi koliko je od poruke do ruba prozora, a u
+         --mx-chat-proviri 0 px. Tada je kartica široka kao poruka (kao
+         najširi oblačić), a sljedeća proviruje uz rub prozora. Bez tih
+         vrijednosti traka završava s porukom, a kartica je od nje uža 36 px
+         (12 px razmaka, sljedeća proviruje 24 px). */
       .mx-vrtuljak {
-        --mx-sirina: min(calc(100% - 40px), 340px);   /* širina kartice u traci: sljedeća proviruje 24 px (rub i ploča, bez slova) */
+        --mx-izlaz: var(--mx-chat-izlaz-desno, 0px);    /* koliko traka ide desno od poruke */
+        --mx-proviri: var(--mx-chat-proviri, 36px);     /* koliko je kartica uža od poruke */
+        --mx-sirina: min(calc(100% - 4px - var(--mx-izlaz) - var(--mx-proviri)), 400px);   /* širina kartice u traci */
         position: relative;
+        width: auto;                  /* s negativnim rubovima: šira od poruke */
+        margin: 0 calc(-1 * var(--mx-izlaz)) 0 -4px;
       }
       .mx-traka {
         position: relative;
@@ -571,9 +599,11 @@
         overscroll-behavior-x: contain;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
-        /* rubovi trake se blago gube, pa sjena i kartica koja proviruje nemaju oštar rez */
-        -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 4px, #000 calc(100% - 14px), transparent 100%);
-                mask-image: linear-gradient(90deg, transparent 0, #000 4px, #000 calc(100% - 14px), transparent 100%);
+        /* rubovi trake se blago gube, pa sjena i kartica koja proviruje nemaju
+           oštar rez; na rubu prozora chata desno se ne gube (tamo je rez prirodan) */
+        --mx-maska: linear-gradient(90deg, transparent 0, #000 4px, #000 calc(100% - 14px + min(14px, var(--mx-izlaz))), transparent 100%);
+        -webkit-mask-image: var(--mx-maska);
+                mask-image: var(--mx-maska);
       }
       .mx-traka::-webkit-scrollbar { display: none; }
       .mx-traka::before { content: ""; flex: 0 0 4px; }
@@ -592,7 +622,8 @@
       .mx-traka.mx-vuce { scroll-snap-type: none; -webkit-user-select: none; user-select: none; }
       .mx-traka.mx-vuce * { pointer-events: none; }
 
-      /* točkice ispod trake (odabrana je izdužena), na računalu i strelice */
+      /* ispod trake su točkice (odabrana je izdužena), a lijevo i desno od
+         njih strelice, na svim uređajima (na mobitelu malo veće, za prst) */
       .mx-kontrole {
         display: flex;
         align-items: center;
@@ -627,26 +658,33 @@
       .mx-tocka[aria-current="true"]::before { width: 20px; background: var(--mx-tinta); }
       .mx-tocka:focus, .mx-strelica:focus { outline: none; }
       .mx-tocka:focus-visible::before { outline: 2px solid var(--mx-tinta); outline-offset: 3px; }
-      .mx-strelica { display: none; }
+      .mx-strelica {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border-radius: 50%;
+        background: #ffffff;
+        color: var(--mx-tinta);
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 2px 6px rgba(0, 0, 0, .06);
+        transition: background-color .2s ease, color .2s ease, opacity .25s ease, transform .2s ease;
+      }
+      /* veća površina za dodir prstom (krug ostaje iste veličine) */
+      .mx-strelica::after { content: ""; position: absolute; top: -6px; right: -6px; bottom: -6px; left: -6px; }
+      .mx-strelica svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+      .mx-strelica:focus-visible { outline: 2px solid var(--mx-tinta); outline-offset: 2px; }
+      .mx-strelica:disabled { opacity: .3; cursor: default; }
+      .mx-strelica:not(:disabled):active { background: var(--mx-tinta); color: #ffffff; transform: scale(.94); }
+      @media (pointer: coarse) {
+        .mx-strelica { width: 36px; height: 36px; }
+        .mx-strelica svg { width: 15px; height: 15px; }
+      }
       @media (hover: hover) and (pointer: fine) {
         .mx-traka { cursor: grab; }
         .mx-traka.mx-vuce { cursor: grabbing; }
-        .mx-strelica {
-          display: grid;
-          place-items: center;
-          width: 32px;
-          height: 32px;
-          padding: 0;
-          border-radius: 50%;
-          background: #ffffff;
-          color: var(--mx-tinta);
-          box-shadow: 0 0 0 1px rgba(0, 0, 0, .08), 0 2px 6px rgba(0, 0, 0, .06);
-          transition: background-color .2s ease, color .2s ease, opacity .25s ease;
-        }
-        .mx-strelica svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
         .mx-strelica:not(:disabled):hover { background: var(--mx-tinta); color: #ffffff; }
-        .mx-strelica:focus-visible { outline: 2px solid var(--mx-tinta); outline-offset: 2px; }
-        .mx-strelica:disabled { opacity: .3; cursor: default; }
       }
 
       /* ── kartica ── */
@@ -656,7 +694,7 @@
         flex-direction: column;
         flex: none;
         width: 100%;
-        max-width: 380px;
+        max-width: 400px;
         min-width: 0;
         padding: 6px 6px 20px;
         background: var(--mx-kartica);
@@ -824,7 +862,8 @@
         white-space: nowrap;
       }
 
-      /* tri osobine: jednaki stupci, između njih tanka okomita crta */
+      /* tri osobine: jednaki stupci, između njih tanka okomita crta (kartica
+         parfema ima stupce široke koliko tekst, vidi niže) */
       .mx-osobine {
         display: grid;
         grid-template-columns: repeat(var(--mx-stupaca, 3), minmax(0, 1fr));
@@ -903,6 +942,28 @@
         color: var(--mx-siva);
         white-space: nowrap;
       }
+      /* Kartica parfema s tri podatka (mx-podataka-3): stupci su široki
+         koliko treba njihov tekst. Prvi počinje uz lijevi rub teksta kartice,
+         zadnji završava uz desni, a slobodan prostor podijeli se jednako u
+         dva razmaka između njih (najmanje 8 px, pa je tekst od crte najmanje
+         4 px, kao u jednakim stupcima); tanka crta je na sredini razmaka.
+         Tako dulji podatak dobije više mjesta i ostane u dva retka. S jednim
+         ili dva podatka stupci su jednaki, kao kod ostalih kartica. */
+      .mx-osobine.mx-podataka-3 { grid-template-columns: auto minmax(8px, 1fr) auto minmax(8px, 1fr) auto; }
+      .mx-podataka-3 > .mx-osobina { grid-row: 1; min-width: auto; padding: 0; }
+      .mx-podataka-3 > .mx-osobina:nth-child(2) { grid-column: 3; }
+      .mx-podataka-3 > .mx-osobina:nth-child(3) { grid-column: 5; }
+      .mx-podataka-3 > .mx-osobina + .mx-osobina::before { content: none; }
+      .mx-podataka-3::before,
+      .mx-podataka-3::after {
+        content: "";
+        grid-row: 1;
+        justify-self: center;
+        width: 1px;
+        background: var(--mx-crta);
+      }
+      .mx-podataka-3::before { grid-column: 2; }
+      .mx-podataka-3::after { grid-column: 4; }
 
       /* gumb: crni pravokutnik preko cijele širine teksta, kutovi zaobljeni kao
          kutovi kartice */
@@ -955,6 +1016,16 @@
         from { opacity: 0; }
       }
 
+      /* ── namig: kartice vrtuljka se jednom kratko pomaknu ulijevo i vrate,
+         pa se vidi da desno ima još kartica (vidi NAMIG u kodu) ── */
+      .mx-traka.mx-namig > .mx-kartica { animation: mx-namig 1.5s both; }
+      @keyframes mx-namig {
+        0%   { transform: translateX(0); animation-timing-function: cubic-bezier(.3, 0, .2, 1); }
+        38%  { transform: translateX(-64px); }
+        54%  { transform: translateX(-64px); animation-timing-function: cubic-bezier(.45, 0, .2, 1); }
+        100% { transform: translateX(0); }
+      }
+
       @media (forced-colors: active) {
         .mx-kartica { border: 1px solid CanvasText; }
         .mx-ikona { stroke: CanvasText; }
@@ -965,6 +1036,7 @@
         .mx-pojava .mx-kartica { animation: mx-samo-prozirnost .35s linear backwards; animation-delay: 0s; }
         .mx-slika img, .mx-gumb, .mx-tocka::before, .mx-strelica { transition: none; }
         .mx-pojava .mx-kontrole { animation: none; }
+        .mx-traka.mx-namig > .mx-kartica { animation: none; }
       }
     `;
 
@@ -1551,7 +1623,7 @@
       // su iz palete i nijedna se ne ponavlja, a ispod svakog podatka je
       // oznaka (Miris · Kada nositi · Trajnost). Ostale kartice: kao dosad.
       const sPaletom = k.osobine.some(function (o) { return ikonaEmojija(o.emoji); });
-      const lista = el('ul', sPaletom ? 'mx-osobine mx-osobine--podaci' : 'mx-osobine');
+      const lista = el('ul', sPaletom ? 'mx-osobine mx-osobine--podaci mx-podataka-' + k.osobine.length : 'mx-osobine');
       lista.setAttribute('role', 'list');
       lista.style.setProperty('--mx-stupaca', String(k.osobine.length));
       const zauzete = {};
@@ -1620,9 +1692,11 @@
     // Više proizvoda: kartice u vodoravnoj traci. Prstom i dodirnom plohom
     // traka se lista izvorno (glatko, s inercijom), a CSS je zaustavlja na
     // svakoj kartici. Mišem se traka povuče (lagan potez = sljedeća kartica),
-    // a ispod su točkice i, na računalu, strelice. Tipke ← → (i Home/End)
-    // listaju kad je traka u fokusu.
+    // a ispod su točkice i strelice (na svim uređajima). Tipke ← → (i
+    // Home/End) listaju kad je traka u fokusu.
     const MIRNO = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+    // kupac je na ovoj stranici već listao neki vrtuljak (tada mu namig ne treba)
+    let kupacListao = false;
     const STRELICE = {
       lijevo: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M10 3.5L5.5 8L10 12.5"/></svg>',
       desno: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 3.5L10.5 8L6 12.5"/></svg>'
@@ -1633,6 +1707,8 @@
       g.type = 'button';
       g.setAttribute('aria-label', oznaka);
       g.innerHTML = STRELICE[smjer];
+      // Safari na iPhoneu pokaže pritisak (:active) samo kad gumb sluša dodir
+      g.addEventListener('touchstart', function () {}, { passive: true });
       return g;
     }
 
@@ -1705,6 +1781,7 @@
       const odakle = function () { return cilj !== null ? cilj : aktivna; };
 
       traka.addEventListener('scroll', function () {
+        kupacListao = true;
         if (!okvir) okvir = requestAnimationFrame(osvjezi);
         clearTimeout(mirovanje);
         mirovanje = setTimeout(function () { cilj = null; }, 180);
@@ -1787,6 +1864,30 @@
       setTimeout(function () { korijen.classList.remove('mx-pojava'); }, 80 + broj * 110 + 900);
     }
 
+    // ── NAMIG ────────────────────────────────────────────────────────────
+    // Kad Marti pošalje više proizvoda, kartice se nakon pojave jednom kratko
+    // pomaknu ulijevo i vrate (CSS mx-namig), pa kupac vidi da desno ima još
+    // kartica. Namig čeka da vrtuljak bude na zaslonu; nema ga ako je kupac
+    // na ovoj stranici već listao neki vrtuljak (ili upravo lista ovaj) ni
+    // kad je na uređaju uključeno "Smanji pokrete".
+    function namigni(korijen, odgoda) {
+      const traka = korijen.querySelector('.mx-traka');
+      if (!traka || MIRNO.matches || kupacListao || typeof IntersectionObserver === 'undefined') return;
+      setTimeout(function () {
+        if (kupacListao) return;
+        const promatrac = new IntersectionObserver(function (zapisi) {
+          if (!zapisi.some(function (z) { return z.isIntersecting; })) return;
+          promatrac.disconnect();
+          setTimeout(function () {
+            if (kupacListao || !traka.isConnected) return;
+            traka.classList.add('mx-namig');
+            setTimeout(function () { traka.classList.remove('mx-namig'); }, 1600);
+          }, 250);
+        }, { threshold: 0.4 });
+        promatrac.observe(traka);
+      }, odgoda);
+    }
+
     // ── PRIKAZI ──────────────────────────────────────────────────────────
     // Voiceflow zna ponovno pozvati render za istu poruku (npr. kad stigne
     // sljedeća poruka). Tada postojeće kartice ostaju netaknute; da se grade
@@ -1834,7 +1935,11 @@
         korijen = izgradiVrtuljak(kartice, potpis);
       }
       element.appendChild(korijen);
-      if (trebaPojava(trace.type, kartice)) pokreniPojavu(korijen, kartice.length);
+      if (trebaPojava(trace.type, kartice)) {
+        pokreniPojavu(korijen, kartice.length);
+        // namig tek kad pojava završi (pojava traje 80 + n × 110 + 900 ms)
+        if (kartice.length > 1) namigni(korijen, 80 + kartice.length * 110 + 1000);
+      }
       return BEZ_CISCENJA;
     }
 

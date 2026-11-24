@@ -33,6 +33,9 @@
   //     odgovori (status narudžbe, Loyalty Card, reklamacija, plaćanje,
   //     beauty savjetnik) imaju lijevo tanku ikonu (POSTAVKE: ikoneGumba),
   //     koja na ispunjenom gumbu posvijetli
+  //   - kartice artikala (kartica-artikla.js) su široke kao najširi Martin
+  //     oblačić i stoje u istom stupcu, uz avatar; vrtuljak kartica ide do
+  //     desnog ruba prozora, pa sljedeća kartica proviruje
   //   - polje za poruku je bijela kapsula s tankim toplim rubom; gumb za
   //     slanje je taman krug tek kad ima što poslati
   //   - čim kupac pošalje prvu poruku ili pritisne ponuđeni odgovor,
@@ -295,6 +298,9 @@
            13 px (s 16 px bi na toj visini opet bili pilule) */
         --mx-j-zaobljenje-gumba: 16px;
         --mx-j-zaobljenje-odgovora: 13px;
+        /* razmak od poruka do lijevog i desnog ruba prozora (kao kod
+           Voiceflowa); do njega ide vrtuljak kartica artikala */
+        --mx-j-rub-razgovora: 20px;
         --mx-j-glatko: cubic-bezier(.16, 1, .3, 1);
         --mx-j-meko: cubic-bezier(.45, 0, .2, 1);
         --mx-j-sklapanje: cubic-bezier(.45, 0, .18, 1);   /* sklapanje i širenje pozornice: krene odmah, dugo usporava */
@@ -536,7 +542,7 @@
       }
 
       /* ═══ PORUKE ═══ */
-      ${PORUKE} { padding-top: 14px; }
+      ${PORUKE} { padding-top: 14px; padding-left: var(--mx-j-rub-razgovora); padding-right: var(--mx-j-rub-razgovora); }
       /* Voiceflowov uvod (veliki avatar i naslov) više ne treba: tu je pozornica */
       ${W} .vfrc-assistant-info { display: none; }
 
@@ -677,6 +683,15 @@ ${Object.keys(IKONE_GUMBA).map(function (k) {
         padding: 0;
         background: transparent;
         color: var(--mx-j-tinta);
+      }
+      /* kartice artikala (kartica-artikla.js) stoje u stupcu Martinih poruka,
+         uz avatar, i široke su kao najširi oblačić. Vrtuljak kartica ide do
+         desnog ruba prozora (--mx-chat-izlaz-desno je razmak od poruka do
+         ruba prozora), pa i kartica u vrtuljku može biti široka kao poruka
+         (--mx-chat-proviri 0 px), a sljedeća proviruje uz rub prozora */
+      ${W} .vfrc-message--extension-ProductCard {
+        --mx-chat-izlaz-desno: var(--mx-j-rub-razgovora);
+        --mx-chat-proviri: 0px;
       }
 
       /* kraj razgovora: tanke crte i natpis između njih */
