@@ -14,13 +14,21 @@
 //    mkdir tabler && tar -xzf tabler-icons-3.52.0.tgz -C tabler
 //    node alati/ikone-osobina.mjs tabler/package
 //  Alat zamijeni dio datoteke v2-1/kartica-artikla.js između oznaka
-//  "IKONE PALETE – početak" i "IKONE PALETE – kraj" i ispiše popis palete
-//  za Voiceflow playbook "Preporuka - Parfemi" (odjeljak EMOJI PALETTE).
+//  "IKONE PALETE – početak" i "IKONE PALETE – kraj" i ispiše popis za
+//  Voiceflow playbook "Preporuka - Parfemi" (odjeljak EMOJI PALETTE).
 //  Mape tabler/ i .tgz poslije obriši (ne idu u repozitorij).
 //
+//  Dva popisa:
+//   PALETA   – svi emojiji koje kartica prepoznaje (i rjeđi, i zamjene), da
+//              i neočekivan izbor dobije pravu ikonu
+//   PLAYBOOK – kraći popis koji Marti vidi u playbooku: samo emojiji koji
+//              kupcu stvarno trebaju (svaki emoji u playbooku je tekst koji
+//              se plaća u svakom pozivu modela)
+//
 //  Novi emoji: dopiši ga u PALETA (uz postojeću ikonu kao zamjenu ili kao
-//  novi redak s imenom Tabler ikone), pokreni alat i u playbook prepiši novi
-//  popis. Ikona s punom plohom (fill) se odbija.
+//  novi redak s imenom Tabler ikone); ako ga i Marti treba vidjeti, dodaj ga
+//  i u PLAYBOOK. Pokreni alat i u playbook prepiši ispisani popis. Ikona s
+//  punom plohom (fill) se odbija.
 // ═════════════════════════════════════════════════════════════════════
 
 import fs from 'fs';
@@ -123,6 +131,59 @@ const PALETA = [
     ['sunglasses', '🕶️ 😎', 'modern, cool'],
     ['crystal-ball', '🔮', 'mysterious'],
     ['palette', '🎨', 'artistic, niche'],
+  ]],
+];
+
+// Kraći popis za playbook: [skupina, [[ime ikone iz PALETA, kratko značenje za Marti]]].
+// Emoji se uzima iz PALETA (prvi, glavni). Ista ikona smije biti u dvije skupine.
+const PLAYBOOK = [
+  ['Scent', [
+    ['ripple', 'marine'],
+    ['droplet', 'fresh, clean'],
+    ['circles', 'clean, soapy, musky'],
+    ['lemon', 'citrus'],
+    ['leaf', 'green'],
+    ['plant-2', 'aromatic (lavender, mint)'],
+    ['flower', 'floral; also spring'],
+    ['cherry', 'fruity'],
+    ['candy', 'sweet'],
+    ['ice-cream-2', 'creamy, vanilla'],
+    ['coffee', 'coffee'],
+    ['flame', 'warm, intense'],
+    ['pepper', 'spicy'],
+    ['twig', 'woody'],
+    ['candle', 'incense, smoky'],
+    ['jacket', 'leather'],
+    ['cloud', 'powdery, soft'],
+    ['feather', 'light, airy'],
+    ['butterfly', 'playful, youthful'],
+  ]],
+  ['When to wear', [
+    ['sun', 'summer'],
+    ['leaf-maple', 'autumn'],
+    ['snowflake', 'winter'],
+    ['calendar', 'all year'],
+    ['sun-moon', 'day and evening'],
+    ['moon', 'evening'],
+    ['briefcase', 'office'],
+    ['glass-cocktail', 'nights out'],
+    ['glass-champagne', 'special occasions'],
+    ['heart', 'romantic moments'],
+    ['beach', 'summer holidays'],
+    ['run', 'sport'],
+  ]],
+  ['Longevity and aura', [
+    ['hourglass', 'long-lasting'],
+    ['wind', 'strong trail'],
+    ['sparkles', 'aura'],
+    ['feather', 'light'],
+    ['cloud', 'close to the skin'],
+  ]],
+  ['Style (any fact)', [
+    ['diamond', 'elegant'],
+    ['crown', 'opulent'],
+    ['bolt', 'energetic'],
+    ['crystal-ball', 'mysterious'],
   ]],
 ];
 
@@ -237,8 +298,17 @@ const novi = kod.slice(0, a) + blok + (krajReda === -1 ? '\n' : kod.slice(krajRe
 fs.writeFileSync(KARTICA, novi);
 console.log('[ikone-osobina] upisano ' + ikone.length + ' ikona i ' + emojiji.length + ' emojija u ' + path.relative(KORIJEN, KARTICA));
 
-// popis za playbook "Preporuka - Parfemi" (odjeljak EMOJI PALETTE)
+// popis za playbook "Preporuka - Parfemi" (odjeljak EMOJI PALETTE): glavni emoji
+// svake ikone iz PLAYBOOK, sa kratkim značenjem
+const glavni = new Map();
+for (const [, redovi] of PALETA) for (const [ime, popis] of redovi) glavni.set(ime, popis.split(/\s+/)[0]);
 console.log('\n--- EMOJI PALETTE (za playbook) ---');
-for (const [skupina, redovi] of PALETA) {
-  console.log('- ' + skupina + ': ' + redovi.map(([, popis, znacenje]) => popis.split(/\s+/)[0] + ' ' + znacenje).join(' · '));
+let uPlaybooku = 0;
+for (const [skupina, redovi] of PLAYBOOK) {
+  console.log('- ' + skupina + ': ' + redovi.map(([ime, znacenje]) => {
+    if (!glavni.has(ime)) greska('PLAYBOOK spominje ikonu "' + ime + '" koje nema u PALETA');
+    uPlaybooku++;
+    return glavni.get(ime) + ' ' + znacenje;
+  }).join(' · '));
 }
+console.log('(stavki u playbooku: ' + uPlaybooku + ')');
