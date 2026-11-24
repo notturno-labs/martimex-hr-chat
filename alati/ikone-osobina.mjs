@@ -137,7 +137,7 @@ function greska(poruka) {
 }
 
 // emoji bez znakova za izgled (FE0E, FE0F) i nijansi kože – tako ga traži i kartica
-const cisti = (e) => e.replace(/[︎️]|[\u{1F3FB}-\u{1F3FF}]/gu, '');
+const cisti = (e) => e.replace(/[\uFE0E\uFE0F]|[\u{1F3FB}-\u{1F3FF}]/gu, '');
 
 // mapa paketa @tabler/icons: ili sama mapa "package", ili njezina icons/outline
 const ulaz = process.argv[2];
