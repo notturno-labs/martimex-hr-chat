@@ -1,7 +1,7 @@
 // Ukratko: Kartice proizvoda koje Marti preporuči
 (function () {
   // ═════════════════════════════════════════════════════════════════════
-  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v34)
+  //  MARTIMEX — kartice preporučenih proizvoda za Marti (v35)
   //
   //  ProductCardExtension → trace "ext_product_card"
   //  Jedan proizvod: jedna kartica. Više proizvoda: kartice stoje u vodoravnoj
@@ -18,12 +18,19 @@
   //            naziv "Luna Rossa Carbon", a ispod naziva sivo "Parfemska voda ·
   //            50 ml" (vrsta mirisa na hrvatskom; kod ostalih proizvoda samo
   //            veličina s kraja naziva, npr. "50 ml")
-  //   features tri kratke osobine artikla koje napiše Marti, npr.
-  //            ["Svjež i čist", "Moderna elegancija", "Ured, večer i prilike"]
-  //            (ili polje "osobine"; stavka smije biti i { text, icon }). Svaka
-  //            dobije ikonu prema svojim riječima (svjež → list, elegancija →
-  //            dijamant, ured → aktovka...; vidi RIJECI niže). Bez osobina
+  //   features tri kratke osobine artikla koje napiše Marti (ili polje
+  //            "osobine"; stavka smije biti i { text, icon }). Bez osobina
   //            kartica nema taj red (npr. kartice iz tražilice).
+  //            Parfemi (v35): tri podatka, svaki s emojijem na početku –
+  //            miris · kada · trajnost i aura, npr.
+  //            ["🌊 Svjež morski miris", "☀️ Ljeto, dan i ured", "🪶 Lagan i osvježavajući"].
+  //            Emoji se ne prikazuje: kartica umjesto njega nacrta tanku crnu
+  //            ikonu iz palete (vidi IKONE PALETE i EMOJI U OSOBINAMA niže),
+  //            a iz teksta ukloni svaki emoji.
+  //            Ostalo (bez emojija): ["Svjež i čist", "Moderna elegancija",
+  //            "Ured, večer i prilike"]; svaka osobina dobije ikonu prema
+  //            svojim riječima (svjež → list, elegancija → dijamant, ured →
+  //            aktovka...; vidi RIJECI niže).
   //  Neobavezna polja (kao i dosad):
   //   oldPrice → artikl je na akciji: nova cijena, pokraj nje precrtana stara
   //              i ružičasta oznaka s postotkom popusta (−30 %), u boji kojom
@@ -49,7 +56,8 @@
   //   │   Luna Rossa Carbon          │   naziv: Playfair Display
   //   │   Parfemska voda · 50 ml     │   vrsta i veličina: sivo
   //   │   103,00 €                   │   cijena: Playfair Display
-  //   │   ikona  │  ikona  │  ikona  │   tri osobine, između njih tanke crte
+  //   │   ikona  │  ikona  │  ikona  │   tri osobine (parfemi: miris · kada · trajnost
+  //   │          │         │         │   i aura), između njih tanke crte
   //   │   Svjež  │ Moderna │  Ured,  │
   //   │  i čist  │elegancija i prilike
   //   │ (     Pogledaj proizvod    ) │   crni gumb zaobljen kao kartica, jedini link
@@ -244,6 +252,242 @@
 
     function svg(sadrzaj, klasa) {
       return '<svg class="' + klasa + '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + sadrzaj + '</svg>';
+    }
+
+    // ── IKONE PALETE – početak ────────────────────────────────────────
+    // Ovaj dio piše alat alati/ikone-osobina.mjs (tamo je i paleta); ne mijenjaj ga ručno.
+    // Ikone za tri podatka na kartici parfema: Marti napiše emoji, kartica nacrta
+    // njegovu ikonu (crtež 24 × 24, samo crta, kao IKONE gore).
+    // Ikone: Tabler Icons 3.52.0 (https://tabler.io/icons), MIT licenca:
+    //   Copyright (c) 2020-2026 Paweł Kuna
+    //   Permission is hereby granted, free of charge, to any person obtaining a copy
+    //   of this software and associated documentation files (the "Software"), to deal
+    //   in the Software without restriction, including without limitation the rights
+    //   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    //   copies of the Software, and to permit persons to whom the Software is
+    //   furnished to do so, subject to the following conditions:
+    //   The above copyright notice and this permission notice shall be included in all
+    //   copies or substantial portions of the Software.
+    //   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    //   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    //   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    //   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    //   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    //   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    //   SOFTWARE.
+    const IKONE_PALETE = {
+      ripple: '<path d="M3 7c3 -2 6 -2 9 0s6 2 9 0"/><path d="M3 17c3 -2 6 -2 9 0s6 2 9 0"/><path d="M3 12c3 -2 6 -2 9 0s6 2 9 0"/>',
+      droplet: '<path d="M7.502 19.423c2.602 2.105 6.395 2.105 8.996 0c2.602 -2.105 3.262 -5.708 1.566 -8.546l-4.89 -7.26c-.42 -.625 -1.287 -.803 -1.936 -.397a1.376 1.376 0 0 0 -.41 .397l-4.893 7.26c-1.695 2.838 -1.035 6.441 1.567 8.546"/>',
+      droplets: '<path d="M4.072 20.3a2.999 2.999 0 0 0 3.856 0a3.002 3.002 0 0 0 .67 -3.798l-2.095 -3.227a.6 .6 0 0 0 -1.005 0l-2.098 3.227a3.003 3.003 0 0 0 .671 3.798"/><path d="M16.072 20.3a2.999 2.999 0 0 0 3.856 0a3.002 3.002 0 0 0 .67 -3.798l-2.095 -3.227a.6 .6 0 0 0 -1.005 0l-2.098 3.227a3.003 3.003 0 0 0 .671 3.798"/><path d="M10.072 10.3a2.999 2.999 0 0 0 3.856 0a3.002 3.002 0 0 0 .67 -3.798l-2.095 -3.227a.6 .6 0 0 0 -1.005 0l-2.098 3.227a3.003 3.003 0 0 0 .671 3.798l.001 0"/>',
+      circles: '<path d="M8 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M2.5 17a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M13.5 17a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/>',
+      sailboat: '<path d="M2 20a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 2 -1a2.4 2.4 0 0 1 2 -1a2.4 2.4 0 0 1 2 1a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 2 -1a2.4 2.4 0 0 1 2 -1a2.4 2.4 0 0 1 2 1a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 2 -1"/><path d="M4 18l-1 -3h18l-1 3"/><path d="M11 12h7l-7 -9v9"/><path d="M8 7l-2 5"/>',
+      anchor: '<path d="M12 9v12m-8 -8a8 8 0 0 0 16 0m1 0h-2m-14 0h-2"/><path d="M9 6a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/>',
+      mountain: '<path d="M3 20h18l-6.921 -14.612a2.3 2.3 0 0 0 -4.158 0l-6.921 14.612"/><path d="M7.5 11l2 2.5l2.5 -2.5l2 3l2.5 -2"/>',
+      lemon: '<path d="M17.536 3.393c3.905 3.906 3.905 10.237 0 14.143c-3.906 3.905 -10.237 3.905 -14.143 0l14.143 -14.143"/><path d="M5.868 15.06a6.5 6.5 0 0 0 9.193 -9.192"/><path d="M10.464 10.464l4.597 4.597"/><path d="M10.464 10.464v6.364"/><path d="M10.464 10.464h6.364"/>',
+      'lemon-2': '<path d="M18 4a2 2 0 0 1 1.185 3.611c1.55 2.94 .873 6.917 -1.892 9.682c-2.765 2.765 -6.743 3.442 -9.682 1.892a2 2 0 1 1 -2.796 -2.796c-1.55 -2.94 -.873 -6.917 1.892 -9.682c2.765 -2.765 6.743 -3.442 9.682 -1.892a2 2 0 0 1 1.611 -.815"/>',
+      leaf: '<path d="M5 21c.5 -4.5 2.5 -8 7 -10"/><path d="M9 18c6.218 0 10.5 -3.288 11 -12v-2h-4.014c-9 0 -11.986 4 -12 9c0 1 0 3 2 5h3l.014 0"/>',
+      'plant-2': '<path d="M2 9a10 10 0 1 0 20 0"/><path d="M12 19a10 10 0 0 1 10 -10"/><path d="M2 9a10 10 0 0 1 10 10"/><path d="M12 4a9.7 9.7 0 0 1 2.99 7.5"/><path d="M9.01 11.5a9.7 9.7 0 0 1 2.99 -7.5"/>',
+      seedling: '<path d="M12 10a6 6 0 0 0 -6 -6h-3v2a6 6 0 0 0 6 6h3"/><path d="M12 14a6 6 0 0 1 6 -6h3v1a6 6 0 0 1 -6 6h-3"/><path d="M12 20l0 -10"/>',
+      wheat: '<path d="M12.014 21.514v-3.75"/><path d="M5.93 9.504l-.43 1.604c-.712 2.659 .866 5.391 3.524 6.105c.997 .268 1.993 .535 2.99 .801v-3.44c-.164 -2.105 -1.637 -3.879 -3.676 -4.426l-2.408 -.644"/><path d="M13.744 11.164c.454 -.454 .815 -.994 1.061 -1.587c.246 -.594 .372 -1.23 .372 -1.873c0 -.643 -.126 -1.279 -.372 -1.872c-.246 -.594 -.606 -1.133 -1.061 -1.588l-1.73 -1.73l-1.73 1.73c-.454 .454 -.815 .994 -1.06 1.588c-.246 .594 -.372 1.23 -.373 1.872c0 .643 .127 1.279 .373 1.873c.246 .594 .606 1.133 1.06 1.587"/><path d="M18.099 9.504l.43 1.604c.712 2.659 -.866 5.391 -3.525 6.105c-.997 .268 -1.994 .535 -2.99 .801v-3.44c.164 -2.105 1.637 -3.879 3.677 -4.426l2.408 -.644"/>',
+      teapot: '<path d="M10.29 3h3.42a2 2 0 0 1 1.988 1.78l1.555 14a2 2 0 0 1 -1.988 2.22h-6.53a2 2 0 0 1 -1.988 -2.22l1.555 -14a2 2 0 0 1 1.988 -1.78"/><path d="M7.47 12.5l-4.257 -5.019a.899 .899 0 0 1 .69 -1.481h13.09a3 3 0 0 1 3.007 3v3c0 1.657 -1.346 3 -3.007 3"/><path d="M7 17h10"/>',
+      flower: '<path d="M9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M12 2a3 3 0 0 1 3 3c0 .562 -.259 1.442 -.776 2.64l-.724 1.36l1.76 -1.893c.499 -.6 .922 -1 1.27 -1.205a2.968 2.968 0 0 1 4.07 1.099a3.011 3.011 0 0 1 -1.09 4.098c-.374 .217 -.99 .396 -1.846 .535l-2.664 .366l2.4 .326c1 .145 1.698 .337 2.11 .576a3.011 3.011 0 0 1 1.09 4.098a2.968 2.968 0 0 1 -4.07 1.098c-.348 -.202 -.771 -.604 -1.27 -1.205l-1.76 -1.893l.724 1.36c.516 1.199 .776 2.079 .776 2.64a3 3 0 0 1 -6 0c0 -.562 .259 -1.442 .776 -2.64l.724 -1.36l-1.76 1.893c-.499 .601 -.922 1 -1.27 1.205a2.968 2.968 0 0 1 -4.07 -1.098a3.011 3.011 0 0 1 1.09 -4.098c.374 -.218 .99 -.396 1.846 -.536l2.664 -.366l-2.4 -.325c-1 -.145 -1.698 -.337 -2.11 -.576a3.011 3.011 0 0 1 -1.09 -4.099a2.968 2.968 0 0 1 4.07 -1.099c.348 .203 .771 .604 1.27 1.205l1.76 1.894c-1 -2.292 -1.5 -3.625 -1.5 -4a3 3 0 0 1 3 -3"/>',
+      butterfly: '<path d="M12 18.176a3 3 0 1 1 -4.953 -2.449l-.025 .023a4.502 4.502 0 0 1 1.483 -8.75c1.414 0 2.675 .652 3.5 1.671a4.5 4.5 0 1 1 4.983 7.079a3 3 0 1 1 -4.983 2.25l-.005 .176"/><path d="M12 19v-10"/><path d="M9 3l3 2l3 -2"/>',
+      cherry: '<path d="M4 16.5a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0"/><path d="M14 18a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M9 13c.366 -2 1.866 -3.873 4.5 -5.6"/><path d="M17 15c-1.333 -2.333 -2.333 -5.333 -1 -9"/><path d="M5 6c3.667 -2.667 7.333 -2.667 11 0c-3.667 2.667 -7.333 2.667 -11 0"/>',
+      apple: '<path d="M4 11.319c0 3.102 .444 5.319 2.222 7.978c1.351 1.797 3.156 2.247 5.08 .988c.426 -.268 .97 -.268 1.397 0c1.923 1.26 3.728 .809 5.079 -.988c1.778 -2.66 2.222 -4.876 2.222 -7.977c0 -2.661 -1.99 -5.32 -4.444 -5.32c-1.267 0 -2.41 .693 -3.22 1.44a.5 .5 0 0 1 -.672 0c-.809 -.746 -1.953 -1.44 -3.22 -1.44c-2.454 0 -4.444 2.66 -4.444 5.319"/><path d="M7 12c0 -1.47 .454 -2.34 1.5 -3"/><path d="M12 7c0 -1.2 .867 -4 3 -4"/>',
+      grape: '<path d="M13 3a14.5 14.5 0 0 0 -1 6"/><path d="M12 8.9s-2.77 .52 -4.1 -.8s-.8 -4 -.8 -4s2.57 -.53 3.88 .8s1.02 4 1.02 4"/><path d="M14 19a2 2 0 1 0 -4 0a2 2 0 0 0 4 0"/><path d="M14 17a2 2 0 1 1 0 -4a2 2 0 0 1 0 4"/><path d="M10 17a2 2 0 1 1 0 -4a2 2 0 0 1 0 4"/><path d="M12 13a2 2 0 1 1 0 -4a2 2 0 0 1 0 4"/><path d="M16 13a2 2 0 1 1 0 -4a2 2 0 0 1 0 4"/><path d="M8 13a2 2 0 1 1 0 -4a2 2 0 0 1 0 4"/>',
+      candy: '<path d="M7.05 11.293l4.243 -4.243a2 2 0 0 1 2.828 0l2.829 2.83a2 2 0 0 1 0 2.828l-4.243 4.243a2 2 0 0 1 -2.828 0l-2.829 -2.831a2 2 0 0 1 0 -2.828"/><path d="M16.243 9.172l3.086 -.772a1.5 1.5 0 0 0 .697 -2.516l-2.216 -2.217a1.5 1.5 0 0 0 -2.44 .47l-1.248 2.913"/><path d="M9.172 16.243l-.772 3.086a1.5 1.5 0 0 1 -2.516 .697l-2.217 -2.216a1.5 1.5 0 0 1 .47 -2.44l2.913 -1.248"/>',
+      lollipop: '<path d="M7 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M21 10a3.5 3.5 0 0 0 -7 0"/><path d="M14 10a3.5 3.5 0 0 1 -7 0"/><path d="M14 17a3.5 3.5 0 0 0 0 -7"/><path d="M14 3a3.5 3.5 0 0 0 0 7"/><path d="M3 21l6 -6"/>',
+      'ice-cream-2': '<path d="M17.657 11a6 6 0 1 0 -11.315 0"/><path d="M6.342 11l5.658 11l5.657 -11l-11.315 0"/>',
+      cookie: '<path d="M8 13v.01"/><path d="M12 17v.01"/><path d="M12 12v.01"/><path d="M16 14v.01"/><path d="M11 8v.01"/><path d="M13.148 3.476l2.667 1.104a4 4 0 0 0 4.656 6.14l.053 .132a3 3 0 0 1 0 2.296q -.745 1.18 -1.024 1.852q -.283 .684 -.66 2.216a3 3 0 0 1 -1.624 1.623q -1.572 .394 -2.216 .661q -.712 .295 -1.852 1.024a3 3 0 0 1 -2.296 0q -1.203 -.754 -1.852 -1.024q -.707 -.292 -2.216 -.66a3 3 0 0 1 -1.623 -1.624q -.397 -1.577 -.661 -2.216q -.298 -.718 -1.024 -1.852a3 3 0 0 1 0 -2.296q .719 -1.116 1.024 -1.852q .257 -.62 .66 -2.216a3 3 0 0 1 1.624 -1.623q 1.547 -.384 2.216 -.661q .687 -.285 1.852 -1.024a3 3 0 0 1 2.296 0"/>',
+      cake: '<path d="M3 20h18v-8a3 3 0 0 0 -3 -3h-12a3 3 0 0 0 -3 3v8"/><path d="M3 14.803c.312 .135 .654 .204 1 .197a2.4 2.4 0 0 0 2 -1a2.4 2.4 0 0 1 2 -1a2.4 2.4 0 0 1 2 1a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 2 -1a2.4 2.4 0 0 1 2 -1a2.4 2.4 0 0 1 2 1a2.4 2.4 0 0 0 2 1c.35 .007 .692 -.062 1 -.197"/><path d="M12 4l1.465 1.638a2 2 0 1 1 -3.015 .099l1.55 -1.737"/>',
+      chocolate: '<path d="M12 21v-16"/><path d="M6 15h12"/><path d="M6 9h10.5"/><path d="M10.05 3a2.5 2.5 0 0 0 3.987 1.47a3 3 0 0 0 2.047 2.387a2.504 2.504 0 0 0 1.916 3.093v9.05a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h2.05"/>',
+      coffee: '<path d="M3 14c.83 .642 2.077 1.017 3.5 1c1.423 .017 2.67 -.358 3.5 -1c.83 -.642 2.077 -1.017 3.5 -1c1.423 -.017 2.67 .358 3.5 1"/><path d="M8 3a2.4 2.4 0 0 0 -1 2a2.4 2.4 0 0 0 1 2"/><path d="M12 3a2.4 2.4 0 0 0 -1 2a2.4 2.4 0 0 0 1 2"/><path d="M3 10h14v5a6 6 0 0 1 -6 6h-2a6 6 0 0 1 -6 -6v-5"/><path d="M16.746 16.726a3 3 0 1 0 .252 -5.555"/>',
+      milk: '<path d="M8 6h8v-2a1 1 0 0 0 -1 -1h-6a1 1 0 0 0 -1 1v2"/><path d="M16 6l1.094 1.759a6 6 0 0 1 .906 3.17v8.071a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-8.071a6 6 0 0 1 .906 -3.17l1.094 -1.759"/><path d="M10 16a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M10 10h4"/>',
+      acorn: '<path d="M18 10l-.45 4.1a8.36 8.36 0 0 1 -5.18 6.83a1 1 0 0 1 -.74 0a8.36 8.36 0 0 1 -5.18 -6.83l-.45 -4.1"/><path d="M13 3a4.9 4.9 0 0 0 -1 3"/><path d="M8 6h8a3 3 0 0 1 3 3a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1a3 3 0 0 1 3 -3"/>',
+      flame: '<path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.294 -2.333 5.588c0 3.704 3.134 6.706 7 6.706c3.866 0 7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/>',
+      candle: '<path d="M9 21h6v-10a1 1 0 0 0 -1 -1h-4a1 1 0 0 0 -1 1l0 10"/><path d="M12 2l1.465 1.638a2 2 0 1 1 -3.015 .099l1.55 -1.737"/>',
+      pepper: '<path d="M13 11c0 2.21 -2.239 4 -5 4s-5 -1.79 -5 -4a8 8 0 1 0 16 0a3 3 0 0 0 -6 0"/><path d="M16 8c0 -2 2 -4 4 -4"/>',
+      salt: '<path d="M12 13v.01"/><path d="M10 16v.01"/><path d="M14 16v.01"/><path d="M7.5 8h9l-.281 -2.248a2 2 0 0 0 -1.985 -1.752h-4.468a2 2 0 0 0 -1.986 1.752l-.28 2.248"/><path d="M7.5 8l-1.612 9.671a2 2 0 0 0 1.973 2.329h8.278a2 2 0 0 0 1.973 -2.329l-1.612 -9.671"/>',
+      twig: '<path d="M3 21l5 -4l3 -5l5 -2l5 -7"/><path d="M16 10h5"/><path d="M11 12v-8"/><path d="M8 17h7"/>',
+      tree: '<path d="M12 13l-2 -2"/><path d="M12 12l2 -2"/><path d="M12 21v-13"/><path d="M9.824 16a3 3 0 0 1 -2.743 -3.69a3 3 0 0 1 .304 -4.833a3 3 0 0 1 4.615 -3.707a3 3 0 0 1 4.614 3.707a3 3 0 0 1 .305 4.833a3 3 0 0 1 -2.919 3.695h-4l-.176 -.005"/>',
+      'christmas-tree': '<path d="M12 3l4 4l-2 1l4 4l-3 1l4 4h-14l4 -4l-3 -1l4 -4l-2 -1l4 -4"/><path d="M14 17v3a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-3"/>',
+      mushroom: '<path d="M20 11.1c0 -4.474 -3.582 -8.1 -8 -8.1s-8 3.626 -8 8.1a.9 .9 0 0 0 .9 .9h14.2a.9 .9 0 0 0 .9 -.9"/><path d="M10 12v7a2 2 0 1 0 4 0v-7"/>',
+      deer: '<path d="M3 3c0 2 1 3 4 3c2 0 3 1 3 3"/><path d="M21 3c0 2 -1 3 -4 3c-2 0 -3 .333 -3 3"/><path d="M12 18c-1 0 -4 -3 -4 -6c0 -2 1.333 -3 4 -3s4 1 4 3c0 3 -3 6 -4 6"/><path d="M15.185 14.889l.095 -.18a4 4 0 1 1 -6.56 0"/><path d="M17 3c0 1.333 -.333 2.333 -1 3"/><path d="M7 3c0 1.333 .333 2.333 1 3"/><path d="M7 6c-2.667 .667 -4.333 1.667 -5 3"/><path d="M17 6c2.667 .667 4.333 1.667 5 3"/><path d="M8.5 10l-1.5 -1"/><path d="M15.5 10l1.5 -1"/><path d="M12 15h.01"/>',
+      jacket: '<path d="M16 3l-4 5l-4 -5"/><path d="M12 19a2 2 0 0 1 -2 2h-4a2 2 0 0 1 -2 -2v-8.172a2 2 0 0 1 .586 -1.414l.828 -.828a2 2 0 0 0 .586 -1.414v-2.172a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v2.172a2 2 0 0 0 .586 1.414l.828 .828a2 2 0 0 1 .586 1.414v8.172a2 2 0 0 1 -2 2h-4a2 2 0 0 1 -2 -2"/><path d="M20 13h-3a1 1 0 0 0 -1 1v2a1 1 0 0 0 1 1h3"/><path d="M4 17h3a1 1 0 0 0 1 -1v-2a1 1 0 0 0 -1 -1h-3"/><path d="M12 19v-11"/>',
+      'glass-gin': '<path d="M8 21h8"/><path d="M12 15v6"/><path d="M5.5 5a6.5 2 0 1 0 13 0a6.5 2 0 1 0 -13 0"/><path d="M5.75 4.5c-.612 .75 -.75 2 -.75 3.5a7 7 0 0 0 14 0c0 -1.5 -.094 -2.75 -.75 -3.5"/>',
+      cloud: '<path d="M6.657 18c-2.572 0 -4.657 -2.007 -4.657 -4.483c0 -2.475 2.085 -4.482 4.657 -4.482c.393 -1.762 1.794 -3.2 3.675 -3.773c1.88 -.572 3.956 -.193 5.444 1c1.488 1.19 2.162 3.007 1.77 4.769h.99c1.913 0 3.464 1.56 3.464 3.486c0 1.927 -1.551 3.487 -3.465 3.487h-11.878"/>',
+      feather: '<path d="M4 20l10 -10m0 -5v5h5m-9 -1v5h5m-9 -1v5h5m-5 -5l4 -4l4 -4"/><path d="M19 10c.638 -.636 1 -1.515 1 -2.486a3.515 3.515 0 0 0 -3.517 -3.514c-.97 0 -1.847 .367 -2.483 1m-3 13l4 -4l4 -4"/>',
+      perfume: '<path d="M10 6v3"/><path d="M14 6v3"/><path d="M5 11a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2l0 -8"/><path d="M10 15a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M9 3h6v3h-6l0 -3"/>',
+      sun: '<path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/>',
+      'sun-low': '<path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M4 12h.01"/><path d="M12 4v.01"/><path d="M20 12h.01"/><path d="M12 20v.01"/><path d="M6.31 6.31l-.01 -.01"/><path d="M17.71 6.31l-.01 -.01"/><path d="M17.7 17.7l.01 .01"/><path d="M6.3 17.7l.01 .01"/>',
+      'temperature-sun': '<path d="M4 13.5a4 4 0 1 0 4 0v-8.5a2 2 0 1 0 -4 0v8.5"/><path d="M4 9h4"/><path d="M13 16a4 4 0 1 0 0 -8a4.07 4.07 0 0 0 -1 .124"/><path d="M13 3v1"/><path d="M21 12h1"/><path d="M13 20v1"/><path d="M19.4 5.6l-.7 .7"/><path d="M18.7 17.7l.7 .7"/>',
+      'leaf-maple': '<path d="M5 21c.5 -4.5 2.5 -8 7 -10"/><path d="M13 19c-2.733 0 -4.16 -3.11 -5 -5c-1.892 -.84 -4 -1.826 -4 -4.556c1.014 -.644 2.816 -.649 4 -.444c-.312 -2.071 -.37 -4.414 1 -6c2.364 .369 3 4 3 4c1.463 -1.368 4 -2 6 -2c0 2 -.63 4.538 -2 6q 3.687 .996 4 3c-1.586 1.36 -3.933 1.311 -6 1q .19 1.098 -1 4"/>',
+      snowflake: '<path d="M10 4l2 1l2 -1"/><path d="M12 2v6.5l3 1.72"/><path d="M17.928 6.268l.134 2.232l1.866 1.232"/><path d="M20.66 7l-5.629 3.25l.01 3.458"/><path d="M19.928 14.268l-1.866 1.232l-.134 2.232"/><path d="M20.66 17l-5.629 -3.25l-2.99 1.738"/><path d="M14 20l-2 -1l-2 1"/><path d="M12 22v-6.5l-3 -1.72"/><path d="M6.072 17.732l-.134 -2.232l-1.866 -1.232"/><path d="M3.34 17l5.629 -3.25l-.01 -3.458"/><path d="M4.072 9.732l1.866 -1.232l.134 -2.232"/><path d="M3.34 7l5.629 3.25l2.99 -1.738"/>',
+      snowman: '<path d="M12 3a4 4 0 0 1 2.906 6.75a6 6 0 1 1 -5.81 0a4 4 0 0 1 2.904 -6.75"/><path d="M17.5 11.5l2.5 -1.5"/><path d="M6.5 11.5l-2.5 -1.5"/><path d="M12 13h.01"/><path d="M12 16h.01"/>',
+      sunrise: '<path d="M3 17h1m16 0h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7m-9.7 5.7a4 4 0 0 1 8 0"/><path d="M3 21l18 0"/><path d="M12 9v-6l3 3m-6 0l3 -3"/>',
+      sunset: '<path d="M3 17h1m16 0h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7m-9.7 5.7a4 4 0 0 1 8 0"/><path d="M3 21l18 0"/><path d="M12 3v6l3 -3m-6 0l3 3"/>',
+      moon: '<path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008"/>',
+      'moon-stars': '<path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008"/><path d="M17 4a2 2 0 0 0 2 2a2 2 0 0 0 -2 2a2 2 0 0 0 -2 -2a2 2 0 0 0 2 -2"/><path d="M19 11h2m-1 -1v2"/>',
+      'sun-moon': '<path d="M9.173 14.83a4 4 0 1 1 5.657 -5.657"/><path d="M11.294 12.707l.174 .247a7.5 7.5 0 0 0 8.845 2.492a9 9 0 0 1 -14.671 2.914"/><path d="M3 12h1"/><path d="M12 3v1"/><path d="M5.6 5.6l.7 .7"/><path d="M3 21l18 -18"/>',
+      clock: '<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 7v5l3 3"/>',
+      calendar: '<path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/>',
+      briefcase: '<path d="M3 9a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2l0 -9"/><path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2"/><path d="M12 12l0 .01"/><path d="M3 13a20 20 0 0 0 18 0"/>',
+      'tools-kitchen-2': '<path d="M19 3v12h-5c-.023 -3.681 .184 -7.406 5 -12m0 12v6h-1v-3m-10 -14v17m-3 -17v3a3 3 0 1 0 6 0v-3"/>',
+      'glass-full': '<path d="M8 21l8 0"/><path d="M12 15l0 6"/><path d="M17 3l1 7c0 3.012 -2.686 5 -6 5s-6 -1.988 -6 -5l1 -7h10"/><path d="M6 10a5 5 0 0 1 6 0a5 5 0 0 0 6 0"/>',
+      'glass-cocktail': '<path d="M8 21h8"/><path d="M12 15v6"/><path d="M5 5a7 2 0 1 0 14 0a7 2 0 1 0 -14 0"/><path d="M5 5v.388c0 .432 .126 .853 .362 1.206l5 7.509c.633 .951 1.88 1.183 2.785 .517c.191 -.141 .358 -.316 .491 -.517l5 -7.509c.236 -.353 .362 -.774 .362 -1.206v-.388"/>',
+      'glass-champagne': '<path d="M9 21h6"/><path d="M12 16v5"/><path d="M8 5a4 2 0 1 0 8 0a4 2 0 1 0 -8 0"/><path d="M8 5c0 6.075 1.79 11 4 11s4 -4.925 4 -11"/>',
+      bottle: '<path d="M10 5h4v-2a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v2"/><path d="M14 3.5c0 1.626 .507 3.212 1.45 4.537l.05 .07a8.093 8.093 0 0 1 1.5 4.694v6.199a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2v-6.2c0 -1.682 .524 -3.322 1.5 -4.693l.05 -.07a7.823 7.823 0 0 0 1.45 -4.537"/><path d="M7 14.803a2.4 2.4 0 0 0 1 -.803a2.4 2.4 0 0 1 2 -1a2.4 2.4 0 0 1 2 1a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 2 -1a2.4 2.4 0 0 1 1 -.805"/>',
+      confetti: '<path d="M4 5h2"/><path d="M5 4v2"/><path d="M11.5 4l-.5 2"/><path d="M18 5h2"/><path d="M19 4v2"/><path d="M15 9l-1 1"/><path d="M18 13l2 -.5"/><path d="M18 19h2"/><path d="M19 18v2"/><path d="M14 16.518l-6.518 -6.518l-4.39 9.58a1 1 0 0 0 1.329 1.329l9.579 -4.39"/>',
+      balloon: '<path d="M14 8a2 2 0 0 0 -2 -2"/><path d="M6 8a6 6 0 1 1 12 0c0 4.97 -2.686 9 -6 9s-6 -4.03 -6 -9"/><path d="M12 17v1a2 2 0 0 1 -2 2h-3a2 2 0 0 0 -2 2"/>',
+      music: '<path d="M3 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/><path d="M13 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/><path d="M9 17v-13h10v13"/><path d="M9 8h10"/>',
+      'masks-theater': '<path d="M13.192 9h6.616a2 2 0 0 1 1.992 2.183l-.567 6.182a4 4 0 0 1 -3.983 3.635h-1.5a4 4 0 0 1 -3.983 -3.635l-.567 -6.182a2 2 0 0 1 1.992 -2.183"/><path d="M15 13h.01"/><path d="M18 13h.01"/><path d="M15 16.5c1 .667 2 .667 3 0"/><path d="M8.632 15.982a4.037 4.037 0 0 1 -.382 .018h-1.5a4 4 0 0 1 -3.983 -3.635l-.567 -6.182a2 2 0 0 1 1.992 -2.183h6.616a2 2 0 0 1 2 2"/><path d="M6 8h.01"/><path d="M9 8h.01"/><path d="M6 12c.764 -.51 1.528 -.63 2.291 -.36"/>',
+      heart: '<path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"/>',
+      'mail-heart': '<path d="M10.5 19h-5.5a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v4"/><path d="M3 7l9 6l2.983 -1.989l6.017 -4.011"/><path d="M18 22l3.35 -3.284a2.143 2.143 0 0 0 .005 -3.071a2.242 2.242 0 0 0 -3.129 -.006l-.224 .22l-.223 -.22a2.242 2.242 0 0 0 -3.128 -.006a2.143 2.143 0 0 0 -.006 3.071l3.355 3.296"/>',
+      rings: '<path d="M4 17a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M14 17a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M7 15v-11"/><path d="M17 15v-11"/><path d="M3 4h18"/>',
+      gift: '<path d="M3 9a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1l0 -2"/><path d="M12 8l0 13"/><path d="M19 12v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0 -5a4.8 8 0 0 1 4.5 5a4.8 8 0 0 1 4.5 -5a2.5 2.5 0 0 1 0 5"/>',
+      plane: '<path d="M16 10h4a2 2 0 0 1 0 4h-4l-4 7h-3l2 -7h-4l-2 2h-3l2 -4l-2 -4h3l2 2h4l-2 -7h3l4 7"/>',
+      beach: '<path d="M17.553 16.75a7.5 7.5 0 0 0 -10.606 0"/><path d="M18 3.804a6 6 0 0 0 -8.196 2.196l10.392 6a6 6 0 0 0 -2.196 -8.196"/><path d="M16.732 10c1.658 -2.87 2.225 -5.644 1.268 -6.196c-.957 -.552 -3.075 1.326 -4.732 4.196"/><path d="M15 9l-3 5.196"/><path d="M3 19.25a2.4 2.4 0 0 1 1 -.25a2.4 2.4 0 0 1 2 1a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 2 -1a2.4 2.4 0 0 1 2 -1a2.4 2.4 0 0 1 2 1a2.4 2.4 0 0 0 2 1a2.4 2.4 0 0 0 2 -1a2.4 2.4 0 0 1 2 -1a2.4 2.4 0 0 1 1 .25"/>',
+      run: '<path d="M11.007 5a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 17l5 1l.75 -1.5"/><path d="M15 21v-4l-4 -3l1 -6"/><path d="M7 12v-3l5 -1l3 3l3 1"/>',
+      yoga: '<path d="M4 20h4l1.5 -3"/><path d="M17 20l-1 -5h-5l1 -7"/><path d="M4 10l4 -1l4 -1l4 1.5l4 1.5"/><path d="M10.007 5a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>',
+      home: '<path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/>',
+      'building-skyscraper': '<path d="M3 21l18 0"/><path d="M5 21v-14l8 -4v18"/><path d="M19 21v-10l-6 -4"/><path d="M9 9l0 .01"/><path d="M9 12l0 .01"/><path d="M9 15l0 .01"/><path d="M9 18l0 .01"/>',
+      hourglass: '<path d="M6.5 7h11"/><path d="M6.5 17h11"/><path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1"/><path d="M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1"/>',
+      wind: '<path d="M5 8h8.5a2.5 2.5 0 1 0 -2.34 -3.24"/><path d="M3 12h15.5a2.5 2.5 0 1 1 -2.34 3.24"/><path d="M4 16h5.5a2.5 2.5 0 1 1 -2.34 3.24"/>',
+      sparkles: '<path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2m0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2m-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6"/>',
+      stars: '<path d="M17.8 19.817l-2.172 1.138a.392 .392 0 0 1 -.568 -.41l.415 -2.411l-1.757 -1.707a.389 .389 0 0 1 .217 -.665l2.428 -.352l1.086 -2.193a.392 .392 0 0 1 .702 0l1.086 2.193l2.428 .352a.39 .39 0 0 1 .217 .665l-1.757 1.707l.414 2.41a.39 .39 0 0 1 -.567 .411l-2.172 -1.138"/><path d="M6.2 19.817l-2.172 1.138a.392 .392 0 0 1 -.568 -.41l.415 -2.411l-1.757 -1.707a.389 .389 0 0 1 .217 -.665l2.428 -.352l1.086 -2.193a.392 .392 0 0 1 .702 0l1.086 2.193l2.428 .352a.39 .39 0 0 1 .217 .665l-1.757 1.707l.414 2.41a.39 .39 0 0 1 -.567 .411l-2.172 -1.138"/><path d="M12 9.817l-2.172 1.138a.392 .392 0 0 1 -.568 -.41l.415 -2.411l-1.757 -1.707a.389 .389 0 0 1 .217 -.665l2.428 -.352l1.086 -2.193a.392 .392 0 0 1 .702 0l1.086 2.193l2.428 .352a.39 .39 0 0 1 .217 .665l-1.757 1.707l.414 2.41a.39 .39 0 0 1 -.567 .411l-2.172 -1.138"/>',
+      star: '<path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873l-6.158 -3.245"/>',
+      diamond: '<path d="M6 5h12l3 5l-8.5 9.5a.7 .7 0 0 1 -1 0l-8.5 -9.5l3 -5"/><path d="M10 12l-2 -2.2l.6 -1"/>',
+      crown: '<path d="M12 6l4 6l5 -4l-2 10h-14l-2 -10l5 4l4 -6"/>',
+      bolt: '<path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"/>',
+      sunglasses: '<path d="M8 4h-2l-3 10"/><path d="M16 4h2l3 10"/><path d="M10 16h4"/><path d="M21 16.5a3.5 3.5 0 0 1 -7 0v-2.5h7v2.5"/><path d="M10 16.5a3.5 3.5 0 0 1 -7 0v-2.5h7v2.5"/><path d="M4 14l4.5 4.5"/><path d="M15 14l4.5 4.5"/>',
+      'crystal-ball': '<path d="M6.73 17.018a8 8 0 1 1 10.54 0"/><path d="M5 19a2 2 0 0 0 2 2h10a2 2 0 1 0 0 -4h-10a2 2 0 0 0 -2 2"/><path d="M11 7a3 3 0 0 0 -3 3"/>',
+      palette: '<path d="M12 21a9 9 0 0 1 0 -18c4.97 0 9 3.582 9 8c0 1.06 -.474 2.078 -1.318 2.828c-.844 .75 -1.989 1.172 -3.182 1.172h-2.5a2 2 0 0 0 -1 3.75a1.3 1.3 0 0 1 -1 2.25"/><path d="M7.5 10.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M11.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M15.5 10.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/>',
+    };
+    // emoji (bez FE0F i nijansi kože) → ikona
+    const PALETA = {
+      '🌊': 'ripple', '💧': 'droplet', '💦': 'droplets', '🫧': 'circles',
+      '⛵': 'sailboat', '⚓': 'anchor', '⛰': 'mountain', '🏔': 'mountain',
+      '🍋': 'lemon', '🍊': 'lemon-2', '🍃': 'leaf', '🌿': 'plant-2',
+      '🌱': 'seedling', '🌾': 'wheat', '🍵': 'teapot', '🫖': 'teapot',
+      '🌸': 'flower', '🌹': 'flower', '🌺': 'flower', '🌼': 'flower',
+      '🌷': 'flower', '💐': 'flower', '🪷': 'flower', '🪻': 'flower',
+      '🏵': 'flower', '🦋': 'butterfly', '🍒': 'cherry', '🍓': 'cherry',
+      '🍎': 'apple', '🍏': 'apple', '🍐': 'apple', '🍑': 'apple',
+      '🍇': 'grape', '🫐': 'grape', '🍬': 'candy', '🍯': 'candy',
+      '🍭': 'lollipop', '🍦': 'ice-cream-2', '🍨': 'ice-cream-2', '🍪': 'cookie',
+      '🍰': 'cake', '🎂': 'cake', '🍫': 'chocolate', '☕': 'coffee',
+      '🥛': 'milk', '🌰': 'acorn', '🥜': 'acorn', '🔥': 'flame',
+      '🕯': 'candle', '🌶': 'pepper', '🧂': 'salt', '🪵': 'twig',
+      '🌳': 'tree', '🌲': 'christmas-tree', '🎄': 'christmas-tree', '🍄': 'mushroom',
+      '🦌': 'deer', '🧥': 'jacket', '🥃': 'glass-gin', '☁': 'cloud',
+      '🪶': 'feather', '🧴': 'perfume', '☀': 'sun', '🌞': 'sun',
+      '🌤': 'sun-low', '🌡': 'temperature-sun', '🍂': 'leaf-maple', '🍁': 'leaf-maple',
+      '❄': 'snowflake', '☃': 'snowman', '⛄': 'snowman', '🌅': 'sunrise',
+      '🌇': 'sunset', '🌙': 'moon', '🌃': 'moon-stars', '🌌': 'moon-stars',
+      '🌗': 'sun-moon', '🕰': 'clock', '⏰': 'clock', '🕒': 'clock',
+      '🗓': 'calendar', '📅': 'calendar', '📆': 'calendar', '💼': 'briefcase',
+      '🍽': 'tools-kitchen-2', '🍷': 'glass-full', '🍸': 'glass-cocktail', '🍹': 'glass-cocktail',
+      '🥂': 'glass-champagne', '🍾': 'bottle', '🎉': 'confetti', '🥳': 'confetti',
+      '🎊': 'confetti', '🎈': 'balloon', '🎶': 'music', '🎵': 'music',
+      '💃': 'music', '🕺': 'music', '🎭': 'masks-theater', '❤': 'heart',
+      '💕': 'heart', '💖': 'heart', '💗': 'heart', '💘': 'heart',
+      '💞': 'heart', '🤍': 'heart', '♥': 'heart', '💌': 'mail-heart',
+      '💍': 'rings', '💒': 'rings', '🎁': 'gift', '🎀': 'gift',
+      '✈': 'plane', '🧳': 'plane', '🏖': 'beach', '🏝': 'beach',
+      '🏃': 'run', '🏋': 'run', '🚴': 'run', '🧘': 'yoga',
+      '🏠': 'home', '🏡': 'home', '🛋': 'home', '🏙': 'building-skyscraper',
+      '🌆': 'building-skyscraper', '⏳': 'hourglass', '⌛': 'hourglass', '⏱': 'hourglass',
+      '🌬': 'wind', '💨': 'wind', '✨': 'sparkles', '💫': 'stars',
+      '⭐': 'star', '🌟': 'star', '💎': 'diamond', '👑': 'crown',
+      '⚡': 'bolt', '🕶': 'sunglasses', '😎': 'sunglasses', '🔮': 'crystal-ball',
+      '🎨': 'palette',
+    };
+    // ── IKONE PALETE – kraj ──────────────────────────────────────────
+
+    // ── EMOJI U OSOBINAMA ────────────────────────────────────────
+    // Na kartici parfema Marti svaki od tri podatka počne emojijem iz palete
+    // ("🌊 Svjež morski miris"). Kartica emoji nikad ne prikazuje (iz teksta
+    // se uklanja svaki emoji, gdje god stajao), nego umjesto njega nacrta
+    // ikonu iz IKONE_PALETE. ©, ® i ™ ovdje se ne smatraju emojijem.
+    const RE_EMOJI = (function () {
+      try {
+        return new RegExp('[#*0-9]\\uFE0F?\\u20E3|(?![\\u00A9\\u00AE\\u2122])(?:\\p{Extended_Pictographic}|\\p{Regional_Indicator})' +
+          '(?:[\\uFE0E\\uFE0F\\u20E3]|[\\u{1F3FB}-\\u{1F3FF}]|\\u200D(?:\\p{Extended_Pictographic}|\\uFE0F))*', 'gu');
+      } catch (e) {
+        // preglednik bez \p{…}: znakovi izvan osnovne ravnine i česti simboli
+        return /[#*0-9]️?⃣|(?:[\uD83C-\uD83E][\uDC00-\uDFFF]|[⌀-➿⬀-⯿])(?:[︎️⃣]|\uD83C[\uDFFB-\uDFFF]|‍(?:[\uD83C-\uD83E][\uDC00-\uDFFF]|[⌀-➿]))*/g;
+      }
+    })();
+
+    // prvi emoji u tekstu i tekst bez ijednog emojija
+    function odvojiEmoji(t) {
+      t = String(t || '');
+      const nadeni = t.match(RE_EMOJI);
+      return {
+        emoji: nadeni ? nadeni[0] : '',
+        tekst: t.replace(RE_EMOJI, ' ').replace(/[︎️‍⃣]/g, '').replace(/\s+/g, ' ').trim()
+      };
+    }
+
+    // ikona palete za emoji ('' kad je nema): bez FE0F i nijansi kože; niz
+    // emojija spojenih s ZWJ traži se cio, a zatim samo njegov prvi znak
+    function ikonaEmojija(e) {
+      const c = String(e || '').replace(/[︎️]/g, '').replace(/\uD83C[\uDFFB-\uDFFF]/g, '');
+      if (!c) return '';
+      if (PALETA[c]) return PALETA[c];
+      const prvi = Array.from(c)[0];
+      return PALETA[prvi] || '';
+    }
+
+    // Kartica s ikonama palete: osobina bez dobrog emojija (nema ga, nije u
+    // paleti ili ista ikona već je na kartici) dobije ikonu prema riječima –
+    // prvo trajnost i aura, zatim skupine iz RIJECI – a inače zadanu za svoje
+    // mjesto (miris · kada · trajnost i aura)
+    const RIJECI_PALETE = [
+      ['hourglass', ['dugotraj', 'postojan', 'traje$', 'cijeli dan', 'cijelog dana']],
+      ['sparkles', ['aura$', 'auru$', 'aure$', 'aurom$', 'sjaj', 'blist']],
+      ['wind', ['trag$', 'traga$', 'tragom$', 'projekcij']],
+      ['feather', ['lagan', 'prozrac', 'nenametljiv', 'njezn']],
+      ['ripple', ['mors', 'more$', 'mora$', 'akvat', 'ocean']]
+    ];
+    const PRAVILA_PALETE = RIJECI_PALETE.map(function (s) {
+      return {
+        ikona: s[0],
+        re: new RegExp('(?:^|[^a-z0-9])(?:' + s[1].map(function (r) {
+          return /\$$/.test(r) ? r.slice(0, -1) + '(?![a-z0-9])' : r;
+        }).join('|') + ')')
+      };
+    });
+    // skupine iz RIJECI → ikona palete
+    const STARE_U_PALETU = {
+      list: 'leaf', dijamant: 'diamond', aktovka: 'briefcase', mjesec: 'moon', sunce: 'sun',
+      pahulja: 'snowflake', kalendar: 'calendar', sat: 'hourglass', iskrice: 'sparkles', srce: 'heart',
+      plamen: 'flame', cvijet: 'flower', drvo: 'tree', citrus: 'lemon', kapljica: 'droplet',
+      slatko: 'candy', poklon: 'gift', oblak: 'cloud', munja: 'bolt'
+    };
+    const PALETA_PO_MJESTU = ['perfume', 'calendar', 'hourglass'];
+
+    // skupina prve prepoznate riječi u tekstu (kao u ikonaOsobine)
+    function prvoPravilo(pravila, t) {
+      let najbolja = '', gdje = Infinity;
+      for (let j = 0; j < pravila.length; j++) {
+        const m = pravila[j].re.exec(t);
+        if (m && m.index < gdje) { gdje = m.index; najbolja = pravila[j].ikona; }
+      }
+      return najbolja;
+    }
+
+    function ikonaPaletePremaRijecima(tekst, i, zauzete) {
+      const t = bezKvacica(tekst);
+      const kandidati = [
+        prvoPravilo(PRAVILA_PALETE, t),
+        STARE_U_PALETU[prvoPravilo(PRAVILA, t)],
+        PALETA_PO_MJESTU[i]
+      ].concat(PALETA_PO_MJESTU, ['sparkles', 'star', 'diamond']);
+      for (let j = 0; j < kandidati.length; j++) {
+        if (kandidati[j] && IKONE_PALETE[kandidati[j]] && !zauzete[kandidati[j]]) return kandidati[j];
+      }
+      return PALETA_PO_MJESTU[i] || PALETA_PO_MJESTU[0];
     }
 
     // bočica kad artikl nema sliku
@@ -767,7 +1011,9 @@
     }
 
     // Osobine artikla: niz tekstova ili { text, icon }, a može i jedan tekst
-    // s osobinama odvojenima znakom | ili ; → [{ tekst, ikona }], najviše tri
+    // s osobinama odvojenima znakom | ili ; → [{ tekst, ikona, emoji }],
+    // najviše tri. Emoji ("🌊 Svjež morski miris", ili u polju icon/emoji) se
+    // odvoji od teksta; tekst ostaje bez ijednog emojija.
     function uzmiOsobine(v) {
       if (typeof v === 'string') v = v.split(/\s*[|;\n]\s*/);
       if (!Array.isArray(v)) return [];
@@ -777,13 +1023,17 @@
         let t = '', ikona = '';
         if (o && typeof o === 'object') {
           t = prvo(o.text, o.tekst, o.naziv, o.label, o.title);
-          ikona = prvo(o.icon, o.ikona) || '';
+          ikona = prvo(o.icon, o.ikona, o.emoji) || '';
         } else {
           t = o;
         }
-        t = tekst(t).replace(/\*\*|__|`/g, '').replace(/^[\s\-–•*·]+/, '').replace(/[\s.]+$/, '');
+        const uIkoni = odvojiEmoji(tekst(ikona));
+        const uTekstu = odvojiEmoji(tekst(t));
+        const emoji = uIkoni.emoji || uTekstu.emoji;
+        if (uIkoni.emoji) ikona = uIkoni.tekst;
+        t = uTekstu.tekst.replace(/\*\*|__|`/g, '').replace(/^[\s\-–•*·]+/, '').replace(/[\s.]+$/, '');
         if (!t) return;
-        van.push({ tekst: skrati(t, P.znakovaOsobine), ikona: tekst(ikona) });
+        van.push({ tekst: skrati(t, P.znakovaOsobine), ikona: tekst(ikona), emoji: emoji });
       });
       return van;
     }
@@ -1265,9 +1515,22 @@
       const lista = el('ul', 'mx-osobine');
       lista.setAttribute('role', 'list');
       lista.style.setProperty('--mx-stupaca', String(k.osobine.length));
+      // Kartica parfema (barem jedna osobina s emojijem iz palete): sve ikone
+      // su iz palete i nijedna se ne ponavlja. Ostale kartice: kao dosad.
+      const sPaletom = k.osobine.some(function (o) { return ikonaEmojija(o.emoji); });
+      const zauzete = {};
       k.osobine.forEach(function (o, i) {
         const stavka = el('li', 'mx-osobina');
-        stavka.innerHTML = svg(IKONE[ikonaOsobine(o.tekst, o.ikona, i)], 'mx-ikona');
+        let crtez;
+        if (sPaletom) {
+          let ime = ikonaEmojija(o.emoji);
+          if (!ime || zauzete[ime]) ime = ikonaPaletePremaRijecima(o.tekst, i, zauzete);
+          zauzete[ime] = true;
+          crtez = IKONE_PALETE[ime];
+        } else {
+          crtez = IKONE[ikonaOsobine(o.tekst, o.ikona, i)];
+        }
+        stavka.innerHTML = svg(crtez, 'mx-ikona');
         const t = el('span', 'mx-osobina-tekst');
         dvaReda(o.tekst).forEach(function (r, j) {
           if (j) t.appendChild(el('br'));
