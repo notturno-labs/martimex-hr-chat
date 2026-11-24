@@ -20,4 +20,5 @@ Marti chat je AI asistentica webshopa martimex.hr. Repozitorij se objavljuje pre
 ## Navike
 
 - Komentari, poruke u konzoli i opisi commitova su na hrvatskom.
-- Svaka datoteka na početku ima kratak opis koji počinje s „Ukratko:” (u HTML-u je to komentar u `<head>`). Nova datoteka dodaje se zasebnim commitom kojemu je poruka taj opis, pa ga GitHub pokazuje uz ime datoteke.
+- Svaka datoteka na početku ima kratak opis koji počinje s „Ukratko:” (u HTML-u je to komentar u `<head>`; JSON koji ne smije imati komentare, poput `.claude/settings.json`, nema ga, nego je opis samo u poruci commita). Nova datoteka dodaje se zasebnim commitom kojemu je poruka taj opis, pa ga GitHub pokazuje uz ime datoteke.
+- Svi alati Voiceflowa dozvoljeni su u `.claude/settings.json`, pa ne traže klik na „Allow”. U Voiceflowu radi bez traženja potvrde u chatu, i za brisanje, objavu i spajanje, osim objave na okruženje Main projekta „v2 - prvi dio” (`6af2ea688e4fa5522c532d4f`).
